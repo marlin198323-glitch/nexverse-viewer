@@ -1,4 +1,4 @@
-# NexVerse Viewer – Arbeitsstand
+# OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
 
 > **WICHTIG:** `projectplan.md` ist für Architektur, Reihenfolge und Projektumfang immer maßgebend.
 > Diese Datei ist ausschließlich das fortlaufende Arbeitsprotokoll und der Wiedereinstiegspunkt für neue Chats.
@@ -28,7 +28,7 @@ Der Benutzer möchte nicht nach jedem kleinen Commit erneut lokal kompilieren. E
 
 ## 2. Festgelegte Produktarchitektur
 
-NexVerse Viewer ist ein eigenständiger OpenSim-Viewer und kein Firestorm-Fork.
+OpenGenesisLINK Viewer ist in diesem Projekt der eigenständige OpenSim-Viewer für NexVerse und kein Firestorm-Fork.
 
 Technische Basis:
 
@@ -201,7 +201,34 @@ Dieser Bildschirm ist aktuell eine Phase-0-Design-/Renderer-Demonstration. Die L
 
 ---
 
-## 7. Designreferenz
+## 7. Produktname und Desktop-Icon
+
+Produktname:
+
+```text
+OpenGenesisLINK Viewer
+```
+
+Einsatz/Zielwelt:
+
+```text
+NexVerse
+```
+
+Das vom Benutzer bereitgestellte OpenGenesisLINK-Viewer-Icon ist das vorgesehene Desktop-/Anwendungsicon dieses Projekts und keine bloße Stilreferenz.
+
+Es soll später für alle Zielplattformen integriert werden:
+
+- Linux Desktop/Icon-Paket
+- Windows EXE/Installer `.ico`
+- macOS App Bundle/`.icns`
+- Viewer-Fenstericon, soweit die Plattform dies unterstützt
+
+Das Repository heißt weiterhin `nexverse-viewer`; Produktname und Repositoryname müssen nicht identisch sein.
+
+---
+
+## 8. Designreferenz
 
 Der Benutzer hat zwei visuelle Referenzen bereitgestellt:
 
@@ -251,7 +278,7 @@ Wichtig: Die Phase-0-Login-Shell ist nicht das fertige In-World-HUD. Das Zielbil
 
 ---
 
-## 8. Aktuelle Design-/UI-Bewertung
+## 9. Aktuelle Design-/UI-Bewertung
 
 Der aktuelle Phase-0-Build funktioniert technisch, ist optisch aber noch deutlich einfacher als das Zielbild.
 
@@ -276,7 +303,7 @@ Kein Pixel-für-Pixel-Nachbau von Firestorm oder OpenGenesisLINK.
 
 ---
 
-## 9. CI-Status
+## 10. CI-Status
 
 Phase-0 CI wurde bereits erfolgreich auf folgenden Zielsystemen ausgeführt:
 
@@ -293,7 +320,7 @@ ci: pin Windows build to MSVC x64
 
 ---
 
-## 10. Letzte wichtige Commits
+## 11. Letzte wichtige Commits
 
 ```text
 de3202b build: support Unix source paths containing spaces
@@ -311,7 +338,7 @@ Der Benutzer hat den lokalen Ordner inzwischen auf `OGL-Viewer` ohne Leerzeichen
 
 ---
 
-## 11. Nächster Arbeitsblock
+## 12. Nächster Arbeitsblock
 
 Weiterarbeit innerhalb **Phase 0**, bevor Phase 1 begonnen wird:
 
@@ -342,7 +369,7 @@ GET http://hg.stadt-nexverse.de/get_grid_info
 
 ---
 
-## 12. Arbeitsregel für zukünftige Änderungen
+## 13. Arbeitsregel für zukünftige Änderungen
 
 Nach jedem größeren abgeschlossenen Block:
 
