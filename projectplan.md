@@ -1019,7 +1019,7 @@ Später verwendete Bereiche:
 
 ---
 
-## Phase 5 – WorldModel 🧪 Implementierung vollständig · NexVerse-Echttest ausstehend
+## Phase 5 – WorldModel ✅ abgeschlossen · NexVerse-Echttest 06.10.2026
 
 Ziel: Ein rendering-unabhängiges Abbild der Welt.
 

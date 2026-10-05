@@ -381,10 +381,10 @@ Aktuell:
 - Terrain, Parcel, KillObject, CoarseLocation und AvatarAppearance werden während einer nicht verbundenen Regionstransition verworfen
 - `WorldSnapshot` liefert eine immutable Kopie von Grid, Region, Agent, Profil, Avataren, Objekten, Terrain, Parcel und Environment
 - Snapshot bleibt nach späteren WorldModel-Mutationen stabil und bildet die Übergabegrenze für Renderer/UI
-- Phase-5-Codebasis ist damit strukturell vollständig; finaler NexVerse-Echttest für den aktuellen Abschlussstand steht noch aus
+- Phase 5 am 06.10.2026 mit `0.2.0-alpha.11` im echten NexVerse erfolgreich abgenommen
 - Teilabnahme im echten NexVerse mit `0.2.0-alpha.7` bereits erfolgreich: Login, LLUDP `UDP LIVE`, CAPS/SimulatorFeatures, EnvironmentSettings, Full/Cached/Terse Object Streams, Terrain-Stream, Coarse-Avatar-Stream, EventQueue und `WorldModel READY`
-- seit dieser Teilabnahme hinzugekommen und deshalb mit `0.2.0-alpha.11` noch real zu bestätigen: echte Terrain-Höhendekodierung, Parcel-State, RegionHandshake-/AgentMovementComplete-Metadaten, Region-Transition-Gates und READY-Snapshot-Zusammenfassung
-- READY-Abnahmelog enthält Terrain-Patchanzahl, Objekt-/Avataranzahl sowie Parcel-/Environment-Status ohne Capability-URLs oder Credentials
+- Echttest `0.2.0-alpha.11`: RegionHandshake-Metadaten validiert, AgentMovementComplete validiert, `UDP LIVE`, CAPS 16 Endpunkte, SimulatorFeatures OK, EnvironmentSettings OK, Full/Terse/Cached Object Streams validiert, Terrain-Höhendaten validiert, EventQueue LIVE und WorldModel READY
+- READY-Abnahmelog: `terrain_patches=40; objects=49; avatars=0; parcel=-; environment=OK`; `parcel=-` bedeutet nur, dass in diesem Lauf keine `ParcelProperties`-Nachricht vom Simulator eingetroffen ist – Decoder und Parcel-State bleiben implementiert
 - aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.11`
 - kompletter Debug-Build nach Phase-5-Abschlussblock: 15/15 Tests grün
 

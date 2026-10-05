@@ -8,7 +8,7 @@ It is not a Firestorm fork. The project is designed around a strict separation b
 
 Version: `0.2.0-alpha.11`
 
-Phase 5 (WorldModel) implementation is complete; live NexVerse acceptance is pending.
+Phase 5 (WorldModel) is complete and was accepted against the live NexVerse grid on 2026-10-06.
 
 The current executable provides the first native desktop shell:
 
