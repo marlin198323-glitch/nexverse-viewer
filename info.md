@@ -124,8 +124,18 @@ Bereits vorhanden:
 - eigene einfache native UI-Rendering-Schicht
 - NexVerse Dark/Cyan/Violet Theme
 - Phase-0 Login-Shell
+- responsive UI-Skalierung für große/kleine Fenster
+- Login-UI in eigene `LoginModel`- und `LoginScreen`-Komponenten zerlegt
+- Mausfokus für Login-Felder
+- Tab / Shift+Tab Navigation
+- echte Texteingabe
+- Backspace
+- Passwortmaskierung
+- Startregion als UI-Zustand
+- Button-Aktivierung und Hover-Zustand
 - Phase-0 World-Preview
 - Statusanzeige
+- Produktname im Fenstertitel: `OpenGenesisLINK Viewer`
 - `--version`
 - `--help`
 
@@ -181,14 +191,15 @@ Der erste Versuch lag unter `OGL Viewer` mit Leerzeichen. Ein autotools/vcpkg-Po
 Der reale Phase-0-Build zeigt derzeit:
 
 - sehr dunkle native Desktop-Oberfläche
-- Kopfzeile `NEXVERSE VIEWER`
+- Kopfzeile `OpenGenesisLINK` / `VIEWER FOR NEXVERSE`
 - Versionsanzeige rechts
 - linke Login-Karte
-- Grid-/Server-URL
-- Benutzername
-- Passwort
-- Startregion
-- `WELT BETRETEN`
+- feste NexVerse-Grid-Anzeige `hg.stadt-nexverse.de`
+- Hinweis `AUTO DISCOVERY ON START`
+- Benutzername als echtes Eingabefeld
+- Passwort als echtes, maskiertes Eingabefeld
+- Startregion als echtes Eingabefeld
+- `WELT BETRETEN` mit Aktiv-/Hover-Zustand
 - große World-Preview-Fläche
 - abstrakte Stadt-Silhouette
 - Status-Karte:
@@ -197,7 +208,7 @@ Der reale Phase-0-Build zeigt derzeit:
   - OpenSim protocol NEXT
   - World stream PENDING
 
-Dieser Bildschirm ist aktuell eine Phase-0-Design-/Renderer-Demonstration. Die Login-Felder sind noch nicht mit OpenSim verbunden.
+Dieser Bildschirm ist aktuell eine Phase-0-Design-/Renderer-Demonstration. Die Eingabefelder funktionieren lokal bereits, senden aber bewusst noch keinen OpenSim-Login. Die GridInfo-Anzeige ist vorbereitet; der echte automatische Abruf folgt in Phase 1.
 
 ---
 
@@ -285,17 +296,12 @@ Der aktuelle Phase-0-Build funktioniert technisch, ist optisch aber noch deutlic
 Noch zu verbessern:
 
 - NexVerse-Logo statt reiner Textmarke
-- saubere responsive Skalierung
-- HiDPI / 4K-Skalierung
+- HiDPI-Feinschliff über die bereits vorhandene responsive Skalierung
 - bessere visuelle Hierarchie
 - konsistentere Abstände
 - hochwertigere Karten/Panels
-- Hover/Focus/Pressed-Zustände
-- echte Texteingabe
-- Passwort-Masking als echter UI-Zustand
-- Tastaturnavigation
-- Button-Interaktion
-- Fenster-/App-Icon
+- Pressed-Zustände
+- Fenster-/App-Icon binär integrieren
 - spätere Trennung Login-Ansicht / In-World-Shell
 - Internationalisierung vorbereiten
 
@@ -311,12 +317,14 @@ Phase-0 CI wurde bereits erfolgreich auf folgenden Zielsystemen ausgeführt:
 - Windows x64 / MSVC
 - macOS
 
-Bekannter erfolgreicher Stand vor den reinen Dokumentations-/Pfadänderungen:
+Aktueller geprüfter Code-Stand:
 
 ```text
-b6d4fe7dc005eb66b5c27085c25cfe5bd35322c2
-ci: pin Windows build to MSVC x64
+ef69d819595e8d32ca6d6c3261f328a679ce4fd6
+fix: avoid password byte signedness warning
 ```
+
+Der Pull-Request-Matrixlauf für diesen Code-Stand war auf Linux x64, Windows x64/MSVC und macOS erfolgreich. Spätere Branding-/Dokumentationscommits ändern diesen Code nicht.
 
 ---
 
@@ -340,32 +348,35 @@ Der Benutzer hat den lokalen Ordner inzwischen auf `OGL-Viewer` ohne Leerzeichen
 
 ## 12. Nächster Arbeitsblock
 
-Weiterarbeit innerhalb **Phase 0**, bevor Phase 1 begonnen wird:
+Der interaktive Phase-0-UI-Block ist abgeschlossen und plattformübergreifend gebaut.
 
-1. Build-Konfiguration nach der lokalen Ordnerumbenennung bereinigen.
-2. Phase-0 UI in klar getrennte Komponenten zerlegen statt alles dauerhaft in `application.cpp` zu halten.
-3. UI-Skalierungsmodell für 1080p / 1440p / 4K vorbereiten.
-4. Login-Formular als echten UI-Zustand implementieren:
-   - Fokus
-   - Maus
-   - Tastatur
-   - Textfelder
-   - Passwortmaskierung
-   - Startregion
-   - Button
-5. Noch **keinen echten Login** senden.
-6. Grid-Adresse im UI künftig nicht als manuell notwendige Konfiguration behandeln; NexVerse Discovery wird automatisch über `get_grid_info` erfolgen.
-7. NexVerse Branding/App-Icon vorbereiten.
-8. Tests für UI-State und Startkonfiguration ergänzen.
-9. CI wieder vollständig grün prüfen.
-10. Dann einen neuen lokalen Teststand an den Benutzer geben.
+Noch offen in Phase 0:
 
-Erst danach beginnt gemäß `projectplan.md`:
+1. Das vom Benutzer bereitgestellte OpenGenesisLINK-Desktop-Icon als echte Binärassets für Linux/Windows/macOS ins Repository übernehmen.
+2. App-/Window-Icon in den jeweiligen Plattformpfaden anbinden.
+3. Späterer visueller Feinschliff darf Phase 1 nicht blockieren.
+
+**Nächster technischer Block gemäß `projectplan.md`:**
 
 ```text
 Phase 1 – OpenSim Grid Discovery
 GET http://hg.stadt-nexverse.de/get_grid_info
 ```
+
+Reihenfolge für Phase 1:
+
+1. HTTP-Transport mit klaren Timeout- und Größenlimits.
+2. Parser für das echte OpenSimulator-`<gridinfo>...</gridinfo>`-Format.
+3. Alle unbekannten/additiven XML-Felder tolerieren und erhalten.
+4. `login` als notwendiges Feld validieren.
+5. letzte gültige GridInfo lokal cachen.
+6. bei jedem Viewer-Start Live-Abruf durchführen.
+7. Live-Daten mit Cache vergleichen und Änderungen erkennen.
+8. bei gültigem Live-Abruf Cache ersetzen.
+9. bei Netz-/Parsefehler nur die letzte gültige Cache-Version verwenden.
+10. Discovery-Status in der Login-Oberfläche anzeigen.
+11. noch keinen Benutzer-Login senden.
+12. Unit-Tests und CI auf Linux/Windows/macOS.
 
 ---
 
