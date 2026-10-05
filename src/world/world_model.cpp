@@ -31,7 +31,29 @@ void WorldModel::apply_region(const RegionUpdate& update)
     region_.handle = update.handle;
     region_.name = update.name;
     region_.agent_position = update.agent_position;
+    region_.simulator_ip = update.simulator_ip;
+    region_.simulator_port = update.simulator_port;
+    region_.seed_capability = update.seed_capability;
+    region_.size_x = update.size_x;
+    region_.size_y = update.size_y;
     region_.connected = update.connected;
+}
+
+void WorldModel::begin_region_transition(const RegionUpdate& update)
+{
+    const std::uint32_t generation = region_.generation + 1U;
+
+    avatars_.clear();
+    objects_.clear();
+    terrain_ = {};
+    parcel_ = {};
+    environment_ = {};
+
+    apply_region(update);
+    region_.generation = generation;
+
+    agent_.position = update.agent_position;
+    agent_.present = false;
 }
 
 void WorldModel::apply_agent(const AgentUpdate& update)

@@ -11,6 +11,7 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
+#include "nexverse/protocol/caps_world_events.hpp"
 #include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
@@ -1574,10 +1575,95 @@ int Application::run()
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
 
+    caps_event_dispatcher.register_handler(
+        "EnableSimulator",
+        [](const protocol::EventQueueEvent& event)
+        {
+            if (protocol::parse_enable_simulator_event(event).has_value())
+            {
+                core::info("CAPS EnableSimulator world event validated");
+            }
+        });
+
+    caps_event_dispatcher.register_handler(
+        "EstablishAgentCommunication",
+        [](const protocol::EventQueueEvent& event)
+        {
+            if (protocol::parse_establish_agent_communication_event(event).has_value())
+            {
+                core::info(
+                    "CAPS EstablishAgentCommunication world event validated");
+            }
+        });
+
+    caps_event_dispatcher.register_handler(
+        "TeleportFinish",
+        [&world_model, &world_mutex](const protocol::EventQueueEvent& event)
+        {
+            const auto teleport =
+                protocol::parse_teleport_finish_caps_event(event);
+            if (!teleport.has_value())
+            {
+                core::warning("CAPS TeleportFinish world event rejected");
+                return;
+            }
+
+            std::scoped_lock lock{world_mutex};
+            if (teleport->agent_id != world_model.agent().agent_id)
+            {
+                return;
+            }
+
+            world_model.begin_region_transition({
+                teleport->simulator.region_handle,
+                {},
+                {},
+                teleport->simulator.simulator_ip,
+                teleport->simulator.simulator_port,
+                teleport->simulator.seed_capability,
+                teleport->simulator.region_size_x,
+                teleport->simulator.region_size_y,
+                false});
+
+            core::info("WorldModel region transition started from TeleportFinish");
+        });
+
+    caps_event_dispatcher.register_handler(
+        "CrossedRegion",
+        [&world_model, &world_mutex](const protocol::EventQueueEvent& event)
+        {
+            const auto crossed =
+                protocol::parse_crossed_region_caps_event(event);
+            if (!crossed.has_value())
+            {
+                core::warning("CAPS CrossedRegion world event rejected");
+                return;
+            }
+
+            std::scoped_lock lock{world_mutex};
+            if (crossed->agent_id != world_model.agent().agent_id ||
+                crossed->session_id != world_model.agent().session_id)
+            {
+                return;
+            }
+
+            world_model.begin_region_transition({
+                crossed->simulator.region_handle,
+                {},
+                crossed->position,
+                crossed->simulator.simulator_ip,
+                crossed->simulator.simulator_port,
+                crossed->simulator.seed_capability,
+                crossed->simulator.region_size_x,
+                crossed->simulator.region_size_y,
+                false});
+
+            core::info("WorldModel region transition started from CrossedRegion");
+        });
+
     caps_event_dispatcher.set_fallback_handler(
         [](const protocol::EventQueueEvent&)
         {
-            // Phase 5 installs concrete world-state handlers.
         });
 
     std::atomic_uint32_t local_chat_received{0U};
@@ -2175,6 +2261,11 @@ int Application::run()
                                 region_handle,
                                 std::move(region_name),
                                 {},
+                                active_session->simulator_ip,
+                                active_session->simulator_port,
+                                active_session->seed_capability,
+                                256U,
+                                256U,
                                 false});
                             world_model.apply_agent({
                                 active_session->agent_id,
@@ -2587,11 +2678,22 @@ int Application::run()
 
                 std::scoped_lock lock{world_mutex};
                 const world::RegionState region_snapshot = world_model.region();
+                const bool circuit_matches_region =
+                    region_snapshot.simulator_ip == active_session->simulator_ip &&
+                    region_snapshot.simulator_port == active_session->simulator_port;
+                const bool region_circuit_active =
+                    circuit_active && circuit_matches_region;
+
                 world_model.apply_region({
                     region_snapshot.handle,
                     region_snapshot.name,
                     region_snapshot.agent_position,
-                    circuit_active});
+                    region_snapshot.simulator_ip,
+                    region_snapshot.simulator_port,
+                    region_snapshot.seed_capability,
+                    region_snapshot.size_x,
+                    region_snapshot.size_y,
+                    region_circuit_active});
 
                 const world::AgentState agent_snapshot = world_model.agent();
                 world_model.apply_agent({
@@ -2599,7 +2701,7 @@ int Application::run()
                     agent_snapshot.session_id,
                     agent_snapshot.position,
                     agent_snapshot.rotation,
-                    circuit_active});
+                    region_circuit_active});
 
                 simulation_ready = world_model.ready();
             }
@@ -2608,7 +2710,11 @@ int Application::run()
                 simulation_ready = false;
             }
 
-            if (simulation_ready && !world_ready_logged)
+            if (!simulation_ready)
+            {
+                world_ready_logged = false;
+            }
+            else if (!world_ready_logged)
             {
                 world_ready_logged = true;
                 core::info("WorldModel READY; simulation UI may unlock");

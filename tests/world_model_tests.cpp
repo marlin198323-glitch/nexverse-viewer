@@ -19,6 +19,11 @@ int main()
         0x0000010000000200ULL,
         "NexVerse",
         {128.0f, 128.0f, 25.0f},
+        "127.0.0.1",
+        9000U,
+        "https://caps.example/seed",
+        256U,
+        256U,
         true});
     world.apply_agent({
         "11111111-2222-3333-4444-555555555555",
@@ -69,11 +74,44 @@ int main()
         return 4;
     }
 
-    world.remove_avatar("avatar-1");
-    world.remove_object(42U);
-    if (!world.avatars().empty() || !world.objects().empty())
+    world.set_parcel({
+        9U,
+        "Parcel",
+        "Description",
+        "owner",
+        4096,
+        0U,
+        0,
+        {},
+        {},
+        true});
+    world.set_environment({1U, true});
+
+    const std::uint32_t previous_generation =
+        world.region().generation;
+
+    world.begin_region_transition({
+        0x0000030000000400ULL,
+        {},
+        {10.0f, 20.0f, 30.0f},
+        "192.0.2.10",
+        9100U,
+        "https://caps.example/new",
+        256U,
+        256U,
+        false});
+
+    if (world.ready() ||
+        world.region().generation != previous_generation + 1U ||
+        world.region().handle != 0x0000030000000400ULL ||
+        world.terrain().available ||
+        world.parcel().available ||
+        world.environment().available ||
+        !world.avatars().empty() ||
+        !world.objects().empty() ||
+        world.agent().present)
     {
-        std::cerr << "World entity removal failed\n";
+        std::cerr << "WorldModel region transition invalidation failed\n";
         return 5;
     }
 

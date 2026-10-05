@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.8`.
+Aktuelle Viewer-Version: `0.2.0-alpha.9`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -363,8 +363,15 @@ Aktuell:
 - WorldModel hält jetzt ein 256×256-Höhenfeld, Patch-Gültigkeit und Patch-Abdeckung
 - `simulation_ready` wird erst durch tatsächlich dekodierte Terrain-Patches freigegeben
 - neuer `nexverse-terrain-codec-tests` Test
-- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.8`
-- kompletter Debug-Build nach Phase-5-Terrain-Decode-Block: 14/14 Tests grün
+- typisierte EventQueue-World-Parser für `EnableSimulator`, `EstablishAgentCommunication`, `TeleportFinish` und `CrossedRegion`
+- RegionHandle-Binary wird 64-Bit-sicher dekodiert; IPv4/IPv6-Simulatoradressen, Port und Regionsgröße werden validiert
+- `TeleportFinish` und `CrossedRegion` starten eine echte WorldModel-Regionstransition
+- beim Regionswechsel werden Terrain, Parcel, Environment, Avatare und Objekte der alten Region invalidiert
+- Region `generation` wird bei jedem World-Wechsel erhöht
+- alter LLUDP-Circuit darf eine neue Region nicht mehr fälschlich als verbunden markieren; Simulator-IP/Port müssen zum Login-Circuit passen
+- neuer `nexverse-caps-world-events-tests` Test
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.9`
+- kompletter Debug-Build nach Phase-5-EventQueue-/Transition-Block: 15/15 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

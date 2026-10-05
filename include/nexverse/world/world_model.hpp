@@ -29,6 +29,12 @@ struct RegionState
     std::uint64_t handle = 0U;
     std::string name;
     Vec3 agent_position;
+    std::string simulator_ip;
+    std::uint16_t simulator_port = 0U;
+    std::string seed_capability;
+    std::uint32_t size_x = 256U;
+    std::uint32_t size_y = 256U;
+    std::uint32_t generation = 0U;
     bool connected = false;
 };
 
@@ -106,6 +112,11 @@ struct RegionUpdate
     std::uint64_t handle = 0U;
     std::string name;
     Vec3 agent_position;
+    std::string simulator_ip;
+    std::uint16_t simulator_port = 0U;
+    std::string seed_capability;
+    std::uint32_t size_x = 256U;
+    std::uint32_t size_y = 256U;
     bool connected = false;
 };
 
@@ -125,6 +136,7 @@ public:
 
     void set_grid(GridState grid);
     void apply_region(const RegionUpdate& update);
+    void begin_region_transition(const RegionUpdate& update);
     void apply_agent(const AgentUpdate& update);
     void set_agent_profile(AgentProfileState profile);
     void upsert_avatar(AvatarState avatar);

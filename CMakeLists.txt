@@ -80,6 +80,7 @@ add_library(nexverse-protocol
     src/protocol/terrain_codec.cpp
     src/protocol/caps.cpp
     src/protocol/caps_event_dispatcher.cpp
+    src/protocol/caps_world_events.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -233,6 +234,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-terrain-codec-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-terrain-codec-tests)
     add_test(NAME nexverse-terrain-codec-tests COMMAND nexverse-terrain-codec-tests)
+
+    add_executable(nexverse-caps-world-events-tests tests/caps_world_events_tests.cpp)
+    target_link_libraries(nexverse-caps-world-events-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-caps-world-events-tests)
+    add_test(NAME nexverse-caps-world-events-tests COMMAND nexverse-caps-world-events-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()
