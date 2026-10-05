@@ -16,6 +16,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
+#include "nexverse/ui/welcome_page.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -640,7 +641,8 @@ void render_shell(
     const LoginUiState& login,
     const nexverse::protocol::LoginSession* session,
     const nexverse::protocol::CircuitStatus& circuit,
-    bool simulation_ready)
+    bool simulation_ready,
+    unsigned int welcome_texture)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -751,6 +753,24 @@ void render_shell(
 
     if (!simulation_ready)
     {
+        if (welcome_texture != 0U)
+        {
+            renderer.image(
+                welcome_texture,
+                0.0f,
+                content_y,
+                w,
+                std::max(1.0f, h - content_y - bottom_h),
+                1.0f);
+            renderer.rect(
+                0.0f,
+                content_y,
+                w,
+                std::max(1.0f, h - content_y - bottom_h),
+                Color{0.004f, 0.012f, 0.028f, 0.56f},
+                0.0f);
+        }
+
         const float panel_w = std::min(760.0f * scale, w - 80.0f * scale);
         const float panel_h = login.authenticated ? 250.0f * scale : 230.0f * scale;
         const float panel_x = (w - panel_w) * 0.5f;
@@ -1528,6 +1548,17 @@ int Application::run()
             return 13;
         }
 
+        ui::WelcomePage welcome_page;
+        unsigned int welcome_texture = 0U;
+        int welcome_texture_width = 0;
+        int welcome_texture_height = 0;
+        bool welcome_failure_logged = false;
+
+        if (!welcome_page.initialize(window_width, window_height))
+        {
+            core::warning("Embedded NexVerse welcome page initialization failed");
+        }
+
         const auto* gl_version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
         const auto* gl_renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
         if (gl_version != nullptr)
@@ -1839,6 +1870,53 @@ int Application::run()
                 continue;
             }
 
+            welcome_page.resize(window_width, window_height);
+            welcome_page.pump();
+            glfwMakeContextCurrent(window);
+
+            const ui::WelcomeFrame& welcome_frame = welcome_page.frame();
+            if (welcome_frame.ready &&
+                !welcome_frame.rgba.empty() &&
+                welcome_frame.width > 0 &&
+                welcome_frame.height > 0)
+            {
+                if (welcome_texture == 0U)
+                {
+                    welcome_texture = renderer.create_rgba_texture(
+                        welcome_frame.width,
+                        welcome_frame.height,
+                        welcome_frame.rgba.data());
+                    welcome_texture_width = welcome_frame.width;
+                    welcome_texture_height = welcome_frame.height;
+                    if (welcome_texture != 0U)
+                    {
+                        core::info(
+                            std::string{"NexVerse welcome background loaded: "} +
+                            std::string{ui::nexverse_welcome_url});
+                    }
+                }
+                else if (welcome_texture_width != welcome_frame.width ||
+                         welcome_texture_height != welcome_frame.height)
+                {
+                    if (renderer.update_rgba_texture(
+                            welcome_texture,
+                            welcome_frame.width,
+                            welcome_frame.height,
+                            welcome_frame.rgba.data()))
+                    {
+                        welcome_texture_width = welcome_frame.width;
+                        welcome_texture_height = welcome_frame.height;
+                    }
+                }
+            }
+            else if (welcome_frame.failed && !welcome_failure_logged)
+            {
+                welcome_failure_logged = true;
+                core::warning(
+                    std::string{"NexVerse welcome background unavailable: "} +
+                    welcome_frame.status);
+            }
+
             glViewport(0, 0, framebuffer_width, framebuffer_height);
             glClearColor(
                 ui::theme::background.r,
@@ -1862,10 +1940,13 @@ int Application::run()
                 grid_name, grid_status, grid_status_color, login_ui,
                 active_session.has_value() ? &*active_session : nullptr,
                 circuit_snapshot,
-                simulation_ready);
+                simulation_ready,
+                welcome_texture);
 
             glfwSwapBuffers(window);
         }
+
+        renderer.destroy_texture(welcome_texture);
     }
 
     circuit_stop.store(true);

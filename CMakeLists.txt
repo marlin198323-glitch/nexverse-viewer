@@ -36,6 +36,11 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 
+if(UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(WEBKITGTK REQUIRED IMPORTED_TARGET webkit2gtk-4.1)
+endif()
+
 add_library(nexverse-core
     src/core/logger.cpp
     src/core/version.cpp
@@ -81,6 +86,7 @@ target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tiny
 
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
+    src/ui/welcome_page.cpp
     src/app/application.cpp
 )
 add_library(NexVerse::UI ALIAS nexverse-ui)
@@ -100,6 +106,10 @@ target_link_libraries(nexverse-ui PUBLIC
 )
 
 target_link_libraries(nexverse-ui PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(nexverse-ui PRIVATE PkgConfig::WEBKITGTK)
+endif()
 
 target_compile_definitions(nexverse-ui PUBLIC GLFW_INCLUDE_NONE)
 

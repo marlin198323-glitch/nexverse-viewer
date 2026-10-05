@@ -226,6 +226,14 @@ Zusätzlich vorhanden:
 - AgentUpdate ist auf 10 Hz ausgelegt, wird aber erst gesendet, wenn `simulation_ready` aktiv ist
 - 9/9 lokale Tests grün
 
+Welcome-/Startseite:
+- feste eingebettete URL: `https://stadt-nexverse.de/service/welcome`
+- Linux verwendet WebKitGTK und rendert die Seite intern als OpenGL-Hintergrundtextur
+- die Welcome-Seite liegt hinter Login bzw. Simulations-Ladezustand
+- bei HTTP-/Ladefehlern bleibt der Viewer nutzbar und zeigt den NexVerse-Fallback-Hintergrund
+- aktueller Serverstand am 05.10.2026: die feste URL liefert HTTP 404, die Viewer-Integration selbst funktioniert und wartet auf eine erreichbare Seite
+- Plattformabstraktion ist vorhanden; Windows WebView2 und macOS WKWebView bleiben für die jeweiligen Plattform-Builds umzusetzen
+
 UI-Zustandslogik aktualisiert:
 - vor Login nur Anmeldung und Verbindungsstatus
 - nach Login/UDP-Circuit nur `Simulation wird geladen`

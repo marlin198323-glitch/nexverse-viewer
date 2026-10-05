@@ -30,6 +30,11 @@ public:
     void text(float x, float y, float pixel_size, std::string_view value, Color color);
     float text_width(float pixel_size, std::string_view value) const noexcept;
 
+    unsigned int create_rgba_texture(int width, int height, const unsigned char* pixels);
+    bool update_rgba_texture(unsigned int texture, int width, int height, const unsigned char* pixels);
+    void image(unsigned int texture, float x, float y, float width, float height, float alpha = 1.0f);
+    void destroy_texture(unsigned int texture);
+
     bool font_ready() const noexcept;
 
 private:
@@ -45,6 +50,7 @@ private:
 
     unsigned int compile_program(const char* vertex_source, const char* fragment_source);
     bool initialize_shapes();
+    bool initialize_images();
     bool initialize_text();
     void destroy();
 
@@ -58,6 +64,10 @@ private:
     unsigned int text_program_ = 0;
     unsigned int text_vao_ = 0;
     unsigned int text_vbo_ = 0;
+
+    unsigned int image_program_ = 0;
+    unsigned int image_vao_ = 0;
+    unsigned int image_vbo_ = 0;
 
     std::unordered_map<char, Glyph> glyphs_;
     bool font_ready_ = false;

@@ -12,6 +12,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <string>
@@ -61,6 +62,40 @@ void main()
 
     float alpha = 1.0 - smoothstep(-0.75, 0.75, distanceToEdge);
     FragColor = vec4(uColor.rgb, uColor.a * alpha);
+}
+)GLSL";
+
+constexpr const char* image_vertex_shader = R"GLSL(
+#version 330 core
+layout (location = 0) in vec4 aVertex;
+
+uniform vec2 uViewport;
+
+out vec2 vTexCoord;
+
+void main()
+{
+    vec2 ndc;
+    ndc.x = (aVertex.x / uViewport.x) * 2.0 - 1.0;
+    ndc.y = 1.0 - (aVertex.y / uViewport.y) * 2.0;
+    gl_Position = vec4(ndc, 0.0, 1.0);
+    vTexCoord = aVertex.zw;
+}
+)GLSL";
+
+constexpr const char* image_fragment_shader = R"GLSL(
+#version 330 core
+in vec2 vTexCoord;
+
+uniform sampler2D uImage;
+uniform float uAlpha;
+
+out vec4 FragColor;
+
+void main()
+{
+    vec4 sampleColor = texture(uImage, vTexCoord);
+    FragColor = vec4(sampleColor.rgb, sampleColor.a * uAlpha);
 }
 )GLSL";
 
@@ -171,6 +206,12 @@ bool UiRenderer::initialize(int width, int height)
         return false;
     }
 
+    if (!initialize_images())
+    {
+        core::error("UI image renderer initialization failed");
+        return false;
+    }
+
     if (!initialize_text())
     {
         core::error("UI font renderer initialization failed");
@@ -265,6 +306,39 @@ bool UiRenderer::initialize_shapes()
         GL_FALSE,
         static_cast<GLsizei>(sizeof(float) * 4),
         reinterpret_cast<void*>(sizeof(float) * 2));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    return true;
+}
+
+bool UiRenderer::initialize_images()
+{
+    image_program_ = compile_program(image_vertex_shader, image_fragment_shader);
+    if (image_program_ == 0)
+    {
+        return false;
+    }
+
+    glGenVertexArrays(1, &image_vao_);
+    glGenBuffers(1, &image_vbo_);
+
+    glBindVertexArray(image_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, image_vbo_);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(sizeof(float) * 24),
+        nullptr,
+        GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0,
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        static_cast<GLsizei>(sizeof(float) * 4),
+        nullptr);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -480,6 +554,125 @@ float UiRenderer::text_width(float pixel_size, std::string_view value) const noe
     return width;
 }
 
+unsigned int UiRenderer::create_rgba_texture(
+    int width,
+    int height,
+    const unsigned char* pixels)
+{
+    if (width <= 0 || height <= 0 || pixels == nullptr)
+    {
+        return 0U;
+    }
+
+    unsigned int texture = 0U;
+    glGenTextures(1, &texture);
+    if (texture == 0U) return 0U;
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA8,
+        width,
+        height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texture;
+}
+
+bool UiRenderer::update_rgba_texture(
+    unsigned int texture,
+    int width,
+    int height,
+    const unsigned char* pixels)
+{
+    if (texture == 0U || width <= 0 || height <= 0 || pixels == nullptr)
+    {
+        return false;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA8,
+        width,
+        height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return true;
+}
+
+void UiRenderer::image(
+    unsigned int texture,
+    float x,
+    float y,
+    float width,
+    float height,
+    float alpha)
+{
+    if (texture == 0U || width <= 0.0f || height <= 0.0f)
+    {
+        return;
+    }
+
+    const std::array<float, 24> vertices{
+        x,         y,          0.0f, 0.0f,
+        x,         y + height, 0.0f, 1.0f,
+        x + width, y + height, 1.0f, 1.0f,
+
+        x,         y,          0.0f, 0.0f,
+        x + width, y + height, 1.0f, 1.0f,
+        x + width, y,          1.0f, 0.0f
+    };
+
+    glUseProgram(image_program_);
+    glUniform2f(
+        glGetUniformLocation(image_program_, "uViewport"),
+        static_cast<float>(width_),
+        static_cast<float>(height_));
+    glUniform1f(
+        glGetUniformLocation(image_program_, "uAlpha"),
+        std::clamp(alpha, 0.0f, 1.0f));
+    glUniform1i(glGetUniformLocation(image_program_, "uImage"), 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindVertexArray(image_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, image_vbo_);
+    glBufferSubData(
+        GL_ARRAY_BUFFER,
+        0,
+        static_cast<GLsizeiptr>(sizeof(vertices)),
+        vertices.data());
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+}
+
+void UiRenderer::destroy_texture(unsigned int texture)
+{
+    if (texture != 0U)
+    {
+        glDeleteTextures(1, &texture);
+    }
+}
+
 bool UiRenderer::font_ready() const noexcept
 {
     return font_ready_;
@@ -501,6 +694,10 @@ void UiRenderer::destroy()
     if (text_vao_ != 0) glDeleteVertexArrays(1, &text_vao_);
     if (text_program_ != 0) glDeleteProgram(text_program_);
 
+    if (image_vbo_ != 0) glDeleteBuffers(1, &image_vbo_);
+    if (image_vao_ != 0) glDeleteVertexArrays(1, &image_vao_);
+    if (image_program_ != 0) glDeleteProgram(image_program_);
+
     if (shape_vbo_ != 0) glDeleteBuffers(1, &shape_vbo_);
     if (shape_vao_ != 0) glDeleteVertexArrays(1, &shape_vao_);
     if (shape_program_ != 0) glDeleteProgram(shape_program_);
@@ -508,6 +705,9 @@ void UiRenderer::destroy()
     text_vbo_ = 0;
     text_vao_ = 0;
     text_program_ = 0;
+    image_vbo_ = 0;
+    image_vao_ = 0;
+    image_program_ = 0;
     shape_vbo_ = 0;
     shape_vao_ = 0;
     shape_program_ = 0;
