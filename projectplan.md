@@ -124,6 +124,13 @@ http://hg.stadt-nexverse.de/get_grid_info
 
 Dieser Endpunkt ist die maßgebliche Quelle für die Grid-Konfiguration des Viewers.
 
+Verbindliche Produktregel für den NexVerse-Build:
+- Der Discovery-Endpunkt ist fest im Viewer verdrahtet und kann in der normalen Anwendung nicht geändert werden.
+- Es gibt keine Grid-Auswahl und kein Eingabefeld für eine alternative Login-/Grid-Adresse.
+- Bei jedem Start wird ausschließlich `http://hg.stadt-nexverse.de/get_grid_info` neu abgefragt.
+- Die vom Server aktuell gelieferte `login`-URI und die übrigen GridInfo-Werte werden anschließend verwendet.
+- Ändert sich die XML auf dem NexVerse-Server, wird die Änderung beim nächsten Start automatisch übernommen.
+
 ### Verhalten bei jedem Viewer-Start
 
 Bei jedem Start des NexVerse Viewers muss vor dem eigentlichen Login automatisch `get_grid_info` abgerufen werden.

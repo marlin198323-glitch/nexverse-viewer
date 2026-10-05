@@ -14,14 +14,16 @@ class FakeTransport final : public nexverse::net::IHttpTransport
 public:
     nexverse::net::HttpResponse response;
     int calls = 0;
+    std::string last_get_url;
 
     nexverse::net::HttpResponse get(
-        std::string_view,
+        std::string_view url,
         std::size_t,
         std::chrono::milliseconds,
         std::chrono::milliseconds) override
     {
         ++calls;
+        last_get_url = std::string{url};
         return response;
     }
 
@@ -53,11 +55,12 @@ int main()
         "<gridinfo><login>http://hg.stadt-nexverse.de:8002/</login><gridname>NexVerse</gridname></gridinfo>",
         {}};
 
-    GridDiscoveryService discovery{transport, cache, "http://test.invalid/get_grid_info"};
+    GridDiscoveryService discovery{transport, cache};
 
     const auto first = discovery.refresh();
     if (!first.success || first.source != GridInfoSource::live || !first.changed) return 1;
-    if (!std::filesystem::exists(cache)) return 2;
+    if (transport->last_get_url != nexverse::protocol::nexverse_grid_info_endpoint) return 2;
+    if (!std::filesystem::exists(cache)) return 3;
 
     const auto second = discovery.refresh();
     if (!second.success || second.source != GridInfoSource::live || second.changed) return 3;

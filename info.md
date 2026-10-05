@@ -60,6 +60,11 @@ Vorhanden:
 - asynchroner Discovery-Start im grafischen Viewer
 - CLI `--grid-info`
 - Unit-Tests für Parser und Discovery
+- der Discovery-Endpunkt ist fest im Viewer verdrahtet: `http://hg.stadt-nexverse.de/get_grid_info`
+- bei jedem Start wird ausschließlich dieser NexVerse-Endpunkt neu abgerufen
+- die aktuell vom Server gelieferte XML wird neu ausgewertet und übernommen
+- insbesondere wird die jeweils aktuelle `login`-URI aus der XML verwendet
+- es gibt keine manuell eintragbare oder alternative Grid-/Login-Adresse im normalen Viewer
 
 Echter NexVerse-Test am 05.10.2026:
 

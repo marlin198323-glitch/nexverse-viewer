@@ -70,11 +70,9 @@ std::filesystem::path default_grid_info_cache_path()
 
 GridDiscoveryService::GridDiscoveryService(
     std::shared_ptr<net::IHttpTransport> transport,
-    std::filesystem::path cache_path,
-    std::string endpoint)
+    std::filesystem::path cache_path)
     : transport_{std::move(transport)},
-      cache_path_{std::move(cache_path)},
-      endpoint_{std::move(endpoint)}
+      cache_path_{std::move(cache_path)}
 {
 }
 
@@ -88,7 +86,10 @@ GridDiscoveryResult GridDiscoveryService::refresh()
         constexpr auto total_timeout = std::chrono::seconds{10};
 
         const net::HttpResponse response = transport_->get(
-            endpoint_, max_grid_info_bytes, connect_timeout, total_timeout);
+            nexverse_grid_info_endpoint,
+            max_grid_info_bytes,
+            connect_timeout,
+            total_timeout);
 
         if (response.ok())
         {

@@ -42,8 +42,7 @@ class GridDiscoveryService
 public:
     explicit GridDiscoveryService(
         std::shared_ptr<net::IHttpTransport> transport,
-        std::filesystem::path cache_path = default_grid_info_cache_path(),
-        std::string endpoint = std::string{nexverse_grid_info_endpoint});
+        std::filesystem::path cache_path = default_grid_info_cache_path());
 
     [[nodiscard]] GridDiscoveryResult refresh();
 
@@ -53,6 +52,5 @@ private:
 
     std::shared_ptr<net::IHttpTransport> transport_;
     std::filesystem::path cache_path_;
-    std::string endpoint_;
 };
 }
