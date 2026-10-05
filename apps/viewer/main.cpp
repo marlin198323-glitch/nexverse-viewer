@@ -64,7 +64,7 @@ int main(int argc, char** argv)
         {
             std::cout
                 << "OpenGenesisLINK Viewer for NexVerse\n"
-                << "Usage: nexverse-viewer [--version|--grid-info|--help]\n"
+                << "Usage: opengenesislink-viewer [--version|--grid-info|--help]\n"
                 << "\n"
                 << "--grid-info  Refresh and print the current NexVerse GridInfo.\n"
                 << "Normal startup refreshes GridInfo automatically before login.\n";
