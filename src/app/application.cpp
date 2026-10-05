@@ -738,18 +738,23 @@ void render_shell(
         52.0f * scale,
         with_alpha(theme::blue, 0.18f),
         26.0f * scale);
+    const std::string profile_name = login.authenticated
+        ? login.username
+        : "Nicht angemeldet";
     renderer.text(
         86.0f * scale,
         profile_y + 16.0f * scale,
         13.5f * scale,
-        "Nicht angemeldet",
+        profile_name,
         theme::text);
     renderer.text(
         86.0f * scale,
         profile_y + 43.0f * scale,
         9.5f * scale,
-        "OpenSim Login folgt in Phase 2",
-        theme::text_muted);
+        login.authenticated
+            ? "OpenSim Session aktiv"
+            : "NexVerse Login bereit",
+        login.authenticated ? theme::success : theme::text_muted);
 
     const float center_x = left_w + gap;
     const float center_w = std::max(
@@ -885,8 +890,8 @@ void render_shell(
         right_x + 24.0f * scale,
         panel_y + 46.0f * scale,
         10.0f * scale,
-        "Noch keine Weltverbindung",
-        theme::text_muted);
+        login.authenticated ? "Session erfolgreich aufgebaut" : "Noch keine Weltverbindung",
+        login.authenticated ? theme::success : theme::text_muted);
     renderer.text(
         right_x + 24.0f * scale,
         panel_y + 68.0f * scale,

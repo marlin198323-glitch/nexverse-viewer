@@ -138,13 +138,16 @@ Vorhanden:
 - 8 Sekunden Connect-Timeout / 30 Sekunden Gesamt-Timeout
 - Login-Response-Parser
 - Session-Daten für Agent ID, Session ID, Secure Session ID, Circuit Code, Simulator IP/Port, Region X/Y und Seed Capability
+- Inventar-Root, Inventar-Skeleton, Library-Root, Library-Skeleton und Library-Owner werden aus der Login-Antwort übernommen
+- Buddy-Liste inklusive Rechtewerten wird aus der Login-Antwort übernommen
 - Fehler-/Reason-/Message-Auswertung
 - echte Benutzername-/Passwort-Eingabe im Viewer
 - Passwortmaskierung
 - Mausfokus, Tab, Backspace und Enter
 - asynchroner Login, damit die UI nicht blockiert
 - Login-Status READY / CONNECTING / CONNECTED / ERROR in der Oberfläche
-- Unit-Test für Request, Hash, Erfolgsantwort, Fehlerantwort und Transportvertrag
+- nach erfolgreichem Login zeigt die Oberfläche den angemeldeten Avatar und eine aktive OpenSim-Session
+- Unit-Test für Request, Hash, Erfolgsantwort, Fehlerantwort, Bootstrapdaten und Transportvertrag
 
 Teststand:
 - 5/5 lokale Tests grün

@@ -153,6 +153,48 @@ std::map<std::string, std::string, std::less<>> parse_scalar_members(const XMLEl
     return fields;
 }
 
+const XMLElement* member_value(const XMLElement* structure, std::string_view key)
+{
+    if (structure == nullptr) return nullptr;
+
+    for (const XMLElement* member = structure->FirstChildElement("member");
+         member != nullptr;
+         member = member->NextSiblingElement("member"))
+    {
+        const XMLElement* name = member->FirstChildElement("name");
+        if (name == nullptr || name->GetText() == nullptr) continue;
+        if (std::string_view{name->GetText()} == key)
+        {
+            return member->FirstChildElement("value");
+        }
+    }
+    return nullptr;
+}
+
+std::vector<std::map<std::string, std::string, std::less<>>> parse_array_of_structs(
+    const XMLElement* value)
+{
+    std::vector<std::map<std::string, std::string, std::less<>>> result;
+    if (value == nullptr) return result;
+
+    const XMLElement* array = value->FirstChildElement("array");
+    if (array == nullptr) return result;
+
+    const XMLElement* data = array->FirstChildElement("data");
+    if (data == nullptr) return result;
+
+    for (const XMLElement* item = data->FirstChildElement("value");
+         item != nullptr;
+         item = item->NextSiblingElement("value"))
+    {
+        const XMLElement* structure = item->FirstChildElement("struct");
+        if (structure == nullptr) continue;
+        result.push_back(parse_scalar_members(structure));
+    }
+
+    return result;
+}
+
 std::string field(
     const std::map<std::string, std::string, std::less<>>& fields,
     std::string_view key)
@@ -167,6 +209,62 @@ Integer parse_integer(std::string_view value)
     Integer result{};
     const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
     return parsed.ec == std::errc{} ? result : Integer{};
+}
+
+std::vector<nexverse::protocol::InventoryFolder> parse_inventory_folders(
+    const XMLElement* value)
+{
+    std::vector<nexverse::protocol::InventoryFolder> folders;
+    for (const auto& item : parse_array_of_structs(value))
+    {
+        nexverse::protocol::InventoryFolder folder;
+        folder.folder_id = field(item, "folder_id");
+        folder.parent_id = field(item, "parent_id");
+        folder.name = field(item, "name");
+        folder.type_default = parse_integer<std::int32_t>(field(item, "type_default"));
+        folder.version = parse_integer<std::int32_t>(field(item, "version"));
+
+        if (!folder.folder_id.empty())
+        {
+            folders.push_back(std::move(folder));
+        }
+    }
+    return folders;
+}
+
+std::vector<nexverse::protocol::BuddyEntry> parse_buddies(const XMLElement* value)
+{
+    std::vector<nexverse::protocol::BuddyEntry> buddies;
+    for (const auto& item : parse_array_of_structs(value))
+    {
+        nexverse::protocol::BuddyEntry buddy;
+        buddy.buddy_id = field(item, "buddy_id");
+        buddy.rights_has = parse_integer<std::int32_t>(field(item, "buddy_rights_has"));
+        buddy.rights_given = parse_integer<std::int32_t>(field(item, "buddy_rights_given"));
+
+        if (!buddy.buddy_id.empty())
+        {
+            buddies.push_back(std::move(buddy));
+        }
+    }
+    return buddies;
+}
+
+std::string first_array_scalar(
+    const XMLElement* value,
+    std::string_view preferred_key)
+{
+    const auto items = parse_array_of_structs(value);
+    if (items.empty()) return {};
+
+    const std::string preferred = field(items.front(), preferred_key);
+    if (!preferred.empty()) return preferred;
+
+    if (!items.front().empty())
+    {
+        return items.front().begin()->second;
+    }
+    return {};
 }
 
 bool login_true(std::string_view value)
@@ -307,6 +405,23 @@ LoginResult parse_login_xml_rpc_response(std::string_view xml)
     session.simulator_port = parse_integer<std::uint16_t>(field(fields, "sim_port"));
     session.region_x = parse_integer<std::uint32_t>(field(fields, "region_x"));
     session.region_y = parse_integer<std::uint32_t>(field(fields, "region_y"));
+
+    session.inventory_root_id = first_array_scalar(
+        member_value(structure, "inventory-root"),
+        "folder_id");
+    session.inventory_library_root_id = first_array_scalar(
+        member_value(structure, "inventory-lib-root"),
+        "folder_id");
+    session.inventory_library_owner_id = first_array_scalar(
+        member_value(structure, "inventory-lib-owner"),
+        "agent_id");
+    session.inventory_skeleton = parse_inventory_folders(
+        member_value(structure, "inventory-skeleton"));
+    session.library_skeleton = parse_inventory_folders(
+        member_value(structure, "inventory-skel-lib"));
+    session.buddies = parse_buddies(
+        member_value(structure, "buddy-list"));
+
     session.scalar_fields = std::move(fields);
 
     if (session.agent_id.empty() ||

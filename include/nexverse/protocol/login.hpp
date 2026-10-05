@@ -12,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace nexverse::protocol
 {
@@ -23,6 +24,22 @@ struct LoginCredentials
     std::string last_name;
     std::string password;
     std::string start = "last";
+};
+
+struct InventoryFolder
+{
+    std::string folder_id;
+    std::string parent_id;
+    std::string name;
+    std::int32_t type_default = 0;
+    std::int32_t version = 0;
+};
+
+struct BuddyEntry
+{
+    std::string buddy_id;
+    std::int32_t rights_has = 0;
+    std::int32_t rights_given = 0;
 };
 
 struct LoginSession
@@ -39,6 +56,12 @@ struct LoginSession
     std::string first_name;
     std::string last_name;
     std::string start_location;
+    std::string inventory_root_id;
+    std::string inventory_library_root_id;
+    std::string inventory_library_owner_id;
+    std::vector<InventoryFolder> inventory_skeleton;
+    std::vector<InventoryFolder> library_skeleton;
+    std::vector<BuddyEntry> buddies;
     std::map<std::string, std::string, std::less<>> scalar_fields;
 };
 

@@ -82,6 +82,46 @@ int main()
 <member><name>first_name</name><value><string>Jane</string></value></member>
 <member><name>last_name</name><value><string>Doe</string></value></member>
 <member><name>start_location</name><value><string>home</string></value></member>
+<member><name>inventory-root</name><value><array><data>
+<value><struct>
+<member><name>folder_id</name><value><string>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>inventory-lib-root</name><value><array><data>
+<value><struct>
+<member><name>folder_id</name><value><string>bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>inventory-lib-owner</name><value><array><data>
+<value><struct>
+<member><name>agent_id</name><value><string>cccccccc-cccc-cccc-cccc-cccccccccccc</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>inventory-skeleton</name><value><array><data>
+<value><struct>
+<member><name>folder_id</name><value><string>dddddddd-dddd-dddd-dddd-dddddddddddd</string></value></member>
+<member><name>parent_id</name><value><string>aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</string></value></member>
+<member><name>name</name><value><string>Objects</string></value></member>
+<member><name>type_default</name><value><int>6</int></value></member>
+<member><name>version</name><value><int>12</int></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>inventory-skel-lib</name><value><array><data>
+<value><struct>
+<member><name>folder_id</name><value><string>eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee</string></value></member>
+<member><name>parent_id</name><value><string>bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb</string></value></member>
+<member><name>name</name><value><string>Library Objects</string></value></member>
+<member><name>type_default</name><value><int>6</int></value></member>
+<member><name>version</name><value><int>1</int></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>buddy-list</name><value><array><data>
+<value><struct>
+<member><name>buddy_id</name><value><string>ffffffff-ffff-ffff-ffff-ffffffffffff</string></value></member>
+<member><name>buddy_rights_has</name><value><int>1</int></value></member>
+<member><name>buddy_rights_given</name><value><int>3</int></value></member>
+</struct></value>
+</data></array></value></member>
 </struct></value></param></params></methodResponse>
 )XML";
 
@@ -94,9 +134,19 @@ int main()
 
     if (parsed.session->circuit_code != 424242U ||
         parsed.session->simulator_port != 9000U ||
-        parsed.session->seed_capability != "https://caps.example.test/seed")
+        parsed.session->seed_capability != "https://caps.example.test/seed" ||
+        parsed.session->inventory_root_id != "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" ||
+        parsed.session->inventory_library_root_id != "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" ||
+        parsed.session->inventory_library_owner_id != "cccccccc-cccc-cccc-cccc-cccccccccccc" ||
+        parsed.session->inventory_skeleton.size() != 1U ||
+        parsed.session->inventory_skeleton.front().name != "Objects" ||
+        parsed.session->inventory_skeleton.front().version != 12 ||
+        parsed.session->library_skeleton.size() != 1U ||
+        parsed.session->buddies.size() != 1U ||
+        parsed.session->buddies.front().rights_has != 1 ||
+        parsed.session->buddies.front().rights_given != 3)
     {
-        std::cerr << "Session fields were not parsed correctly\n";
+        std::cerr << "Session or bootstrap data was not parsed correctly\n";
         return 4;
     }
 
