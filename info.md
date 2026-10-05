@@ -30,6 +30,13 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
+Aktuelle Viewer-Version: `0.2.0-alpha.1`.
+
+Versionsregel:
+- Entwicklungsstände werden fortlaufend versioniert.
+- Phase 5 startet mit `0.2.0-alpha.1`.
+- Beta/RC werden erst nach vollständiger Release-Baseline verwendet.
+- stabile Zielversion des ersten Releases ist `1.0.0`.
 
 ## Phase 0
 
@@ -322,7 +329,14 @@ Aktuell:
 - `simulation_ready` wird jetzt aus `WorldModel::ready()` abgeleitet
 - wichtig: Login + `UDP LIVE` reichen weiterhin nicht; `ready()` verlangt zusätzlich validierte Weltdaten (derzeit Terrain)
 - neuer `nexverse-world-model-tests` Test
-- kompletter Debug-Build nach Phase-5-Grundblock: 13/13 Tests grün
+- `LayerData` wird jetzt strukturell validiert (Layer-Typ + 16-Bit-Datenlänge + Payload-Grenze)
+- nur Land (`0x4C`) und LandExtended (`0x4D`) markieren WorldModel-Terrain als verfügbar
+- Wind/sonstige Layer können `simulation_ready` nicht auslösen
+- gültiges Terrain erhöht eine Terrain-Revision im WorldModel
+- persistente Diagnose meldet einmalig `WorldModel terrain stream validated`
+- erster Ready-Übergang meldet `WorldModel READY; simulation UI may unlock`
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.1`
+- kompletter Debug-Build nach Phase-5-Terrainblock: 13/13 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

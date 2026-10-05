@@ -104,6 +104,20 @@ struct LocalChatMessage
     std::int32_t channel = 0;
 };
 
+inline constexpr std::uint8_t layer_type_land = 0x4CU;
+inline constexpr std::uint8_t layer_type_land_extended = 0x4DU;
+
+struct LayerDataMessage
+{
+    std::uint8_t type = 0U;
+    std::vector<std::uint8_t> data;
+
+    [[nodiscard]] bool is_terrain() const noexcept
+    {
+        return type == layer_type_land || type == layer_type_land_extended;
+    }
+};
+
 struct IncomingLocalChat
 {
     std::string from_name;
@@ -143,6 +157,9 @@ struct TeleportFailureEvent
     std::uint32_t sequence,
     const LoginSession& session,
     const LocalChatMessage& chat);
+
+[[nodiscard]] std::optional<LayerDataMessage> decode_layer_data(
+    std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload);

@@ -1569,6 +1569,7 @@ int Application::run()
 
     protocol::OutboundCommandQueue outbound_queue{512U};
     world::WorldModel world_model;
+    std::mutex world_mutex;
     bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
@@ -1581,6 +1582,8 @@ int Application::run()
 
     std::atomic_uint32_t local_chat_received{0U};
     std::atomic_uint32_t terrain_packets{0U};
+    std::atomic_bool terrain_live_logged{false};
+    bool world_ready_logged = false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_uint32_t other_packets{0U};
@@ -1597,9 +1600,30 @@ int Application::run()
 
     packet_dispatcher.register_handler(
         protocol::msg_layer_data,
-        [&terrain_packets](const protocol::DecodedPacket&)
+        [&terrain_packets,
+         &terrain_live_logged,
+         &world_model,
+         &world_mutex](
+            const protocol::DecodedPacket& packet)
         {
+            const auto layer = protocol::decode_layer_data(packet.payload);
+            if (!layer.has_value() || !layer->is_terrain())
+            {
+                return;
+            }
+
             terrain_packets.fetch_add(1U, std::memory_order_relaxed);
+
+            if (!terrain_live_logged.exchange(true))
+            {
+                core::info("WorldModel terrain stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            world::TerrainState terrain = world_model.terrain();
+            ++terrain.revision;
+            terrain.available = true;
+            world_model.set_terrain(std::move(terrain));
         });
 
     const auto count_object_packet =
@@ -1754,9 +1778,6 @@ int Application::run()
                         login_ui.password.clear();
                         core::info("OpenSim login succeeded; simulator session established");
 
-                        world_model.reset();
-                        world_model.set_grid({grid_name, active_login_uri});
-
                         const std::uint64_t region_handle =
                             (static_cast<std::uint64_t>(active_session->region_x) << 32U) |
                             static_cast<std::uint64_t>(active_session->region_y);
@@ -1768,20 +1789,23 @@ int Application::run()
                             region_name = found->second;
                         }
 
-                        world_model.apply_region({
-                            region_handle,
-                            std::move(region_name),
-                            {},
-                            false});
-
-                        world_model.apply_agent({
-                            active_session->agent_id,
-                            active_session->session_id,
-                            {},
-                            {},
-                            false});
-
-                        simulation_ready = world_model.ready();
+                        {
+                            std::scoped_lock lock{world_mutex};
+                            world_model.reset();
+                            world_model.set_grid({grid_name, active_login_uri});
+                            world_model.apply_region({
+                                region_handle,
+                                std::move(region_name),
+                                {},
+                                false});
+                            world_model.apply_agent({
+                                active_session->agent_id,
+                                active_session->session_id,
+                                {},
+                                {},
+                                false});
+                            simulation_ready = world_model.ready();
+                        }
 
                         if (!caps_started &&
                             active_session.has_value() &&
@@ -2142,6 +2166,7 @@ int Application::run()
                 const bool circuit_active =
                     current_circuit_state == protocol::CircuitState::active;
 
+                std::scoped_lock lock{world_mutex};
                 const world::RegionState region_snapshot = world_model.region();
                 world_model.apply_region({
                     region_snapshot.handle,
@@ -2156,9 +2181,19 @@ int Application::run()
                     agent_snapshot.position,
                     agent_snapshot.rotation,
                     circuit_active});
+
+                simulation_ready = world_model.ready();
+            }
+            else
+            {
+                simulation_ready = false;
             }
 
-            simulation_ready = world_model.ready();
+            if (simulation_ready && !world_ready_logged)
+            {
+                world_ready_logged = true;
+                core::info("WorldModel READY; simulation UI may unlock");
+            }
 
             const auto now = std::chrono::steady_clock::now();
             if (simulation_ready &&

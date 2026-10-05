@@ -68,6 +68,18 @@ Technische Basis:
 8. Externe Daten werden validiert und mit Größenlimits verarbeitet.
 9. Passwörter werden niemals als Kommandozeilenargumente oder in Logs gespeichert.
 10. Neue Module erhalten Tests, bevor die nächste große Schicht darauf aufgebaut wird.
+11. Die Viewer-Version wird mit jedem abgeschlossenen Entwicklungsblock fortgeschrieben und niemals künstlich als Release markiert.
+
+### Verbindliche Versionsstrategie
+
+- `0.1.x-alpha`: Protokoll-/Login-/LLUDP-/CAPS-Grundlagen
+- `0.2.x-alpha`: WorldModel, Scene-Grundlagen und erste echte Weltdaten
+- spätere `0.x`-Alpha-Stände: weitere Funktionsphasen bis zur vollständigen Viewer-Baseline
+- `1.0.0-beta.N`: Feature-Complete-Testphase der definierten Release-Baseline
+- `1.0.0-rc.N`: Release-Candidate nach bestandenen Plattform-, Grid- und Regressionstests
+- `1.0.0`: erste stabile Release-Version
+
+Die konkrete Versionsnummer in `VERSION` wird bei jedem getesteten Entwicklungsblock aktualisiert. Eine stabile Release-Version darf erst gesetzt werden, wenn die für den Release definierten Phasen und Tests vollständig abgeschlossen sind.
 
 ---
 

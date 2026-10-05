@@ -189,6 +189,34 @@ std::vector<std::uint8_t> encode_chat_from_viewer(
     return encode_packet(packet_reliable, sequence, msg_chat_from_viewer, payload);
 }
 
+std::optional<LayerDataMessage> decode_layer_data(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 3U)
+    {
+        return std::nullopt;
+    }
+
+    LayerDataMessage message;
+    message.type = payload[0U];
+
+    const std::size_t data_size = read_le_u16(payload, 1U);
+    if (data_size == 0U || data_size > lludp_max_payload)
+    {
+        return std::nullopt;
+    }
+
+    if (3U + data_size != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    message.data.assign(
+        payload.begin() + 3,
+        payload.end());
+    return message;
+}
+
 std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload)
 {

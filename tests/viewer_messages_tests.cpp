@@ -40,6 +40,46 @@ int main()
         return 2;
     }
 
+    std::vector<std::uint8_t> layer_payload{
+        layer_type_land,
+        0x04U, 0x00U,
+        0x10U, 0x20U, 0x30U, 0x40U};
+
+    const auto layer = decode_layer_data(layer_payload);
+    if (!layer.has_value() ||
+        layer->type != layer_type_land ||
+        !layer->is_terrain() ||
+        layer->data.size() != 4U ||
+        layer->data[0] != 0x10U ||
+        layer->data[3] != 0x40U)
+    {
+        std::cerr << "LayerData decode failed\n";
+        return 3;
+    }
+
+    std::vector<std::uint8_t> wind_layer{
+        0x37U,
+        0x01U, 0x00U,
+        0xAAU};
+
+    const auto wind = decode_layer_data(wind_layer);
+    if (!wind.has_value() || wind->is_terrain())
+    {
+        std::cerr << "Non-terrain LayerData classification failed\n";
+        return 4;
+    }
+
+    std::vector<std::uint8_t> invalid_layer{
+        layer_type_land,
+        0x05U, 0x00U,
+        0x10U, 0x20U, 0x30U, 0x40U};
+
+    if (decode_layer_data(invalid_layer).has_value())
+    {
+        std::cerr << "Invalid LayerData unexpectedly accepted\n";
+        return 4;
+    }
+
     std::vector<std::uint8_t> incoming_payload;
     incoming_payload.push_back(3U);
     incoming_payload.insert(incoming_payload.end(), {'J','a','m'});
@@ -76,7 +116,7 @@ int main()
         incoming->source_type != 1U)
     {
         std::cerr << "ChatFromSimulator decode failed\n";
-        return 3;
+        return 5;
     }
 
     TeleportLocation teleport;
@@ -91,7 +131,7 @@ int main()
         decoded_teleport.packet->payload.size() != 64U)
     {
         std::cerr << "TeleportLocationRequest encoding failed\n";
-        return 4;
+        return 6;
     }
 
     std::vector<std::uint8_t> progress_payload(16U, 0U);
@@ -108,7 +148,7 @@ int main()
         progress->message != "Movin")
     {
         std::cerr << "TeleportProgress decode failed\n";
-        return 5;
+        return 7;
     }
 
     std::cout << "Viewer message codec tests passed\n";

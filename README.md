@@ -6,9 +6,9 @@ It is not a Firestorm fork. The project is designed around a strict separation b
 
 ## Current status
 
-Version: `0.1.0-alpha.1`
+Version: `0.2.0-alpha.1`
 
-Phase 0 is under active development.
+Phase 5 (WorldModel) is under active development.
 
 The current executable provides the first native desktop shell:
 
@@ -19,12 +19,13 @@ The current executable provides the first native desktop shell:
 - FreeType system-font rendering
 - NexVerse dark/cyan/violet design system
 - graphical login shell
-- graphical world-preview placeholder
-- version reporting
-- logging
-- unit-test foundation
-
-No OpenSim login or network traffic is performed in Phase 0.
+- OpenSim GridInfo discovery and login
+- live LLUDP circuit and CAPS/EventQueue
+- locale-independent LLSD XML/Binary handling
+- renderer-independent WorldModel foundation
+- validated LayerData ingestion for WorldModel terrain readiness
+- persistent viewer logging
+- version reporting and unit-test foundation
 
 ## Architecture
 
