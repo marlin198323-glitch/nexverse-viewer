@@ -29,6 +29,7 @@ option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 find_package(CURL REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
@@ -63,13 +64,14 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 add_library(nexverse-protocol
     src/protocol/grid_info.cpp
     src/protocol/grid_discovery.cpp
+    src/protocol/login.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tinyxml2::tinyxml2)
+target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tinyxml2::tinyxml2 OpenSSL::Crypto)
 
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
@@ -149,6 +151,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-grid-discovery-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-grid-discovery-tests)
     add_test(NAME nexverse-grid-discovery-tests COMMAND nexverse-grid-discovery-tests)
+
+    add_executable(nexverse-login-tests tests/login_tests.cpp)
+    target_link_libraries(nexverse-login-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-login-tests)
+    add_test(NAME nexverse-login-tests COMMAND nexverse-login-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

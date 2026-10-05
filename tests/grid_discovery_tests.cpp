@@ -24,6 +24,17 @@ public:
         ++calls;
         return response;
     }
+
+    nexverse::net::HttpResponse post(
+        std::string_view,
+        std::string_view,
+        std::string_view,
+        std::size_t,
+        std::chrono::milliseconds,
+        std::chrono::milliseconds) override
+    {
+        return {0, {}, "unexpected POST"};
+    }
 };
 }
 

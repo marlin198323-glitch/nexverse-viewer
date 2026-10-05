@@ -121,6 +121,31 @@ Die UI orientiert sich am bereitgestellten NexVerse-Konzeptbild, bleibt aber tec
 
 Das bereitgestellte OpenGenesisLINK-Anwendungsicon ist die verbindliche Branding-Quelle für Linux, Windows und macOS. Die plattformspezifische Binär-/Bundle-Einbindung bleibt als Packaging-Schritt offen.
 
+## Phase 2 – OpenSim Login
+
+Phase 2 ist lokal in Arbeit. Der Protokollkern und die UI-Anbindung sind implementiert.
+
+Vorhanden:
+- XML-RPC `login_to_simulator` Request
+- kompatibles `$1$<md5>` Passwortformat
+- Klartextpasswort wird nicht geloggt und nicht per CLI verwendet
+- HTTP POST über den bestehenden libcurl-Transport
+- 8 Sekunden Connect-Timeout / 30 Sekunden Gesamt-Timeout
+- Login-Response-Parser
+- Session-Daten für Agent ID, Session ID, Secure Session ID, Circuit Code, Simulator IP/Port, Region X/Y und Seed Capability
+- Fehler-/Reason-/Message-Auswertung
+- echte Benutzername-/Passwort-Eingabe im Viewer
+- Passwortmaskierung
+- Mausfokus, Tab, Backspace und Enter
+- asynchroner Login, damit die UI nicht blockiert
+- Login-Status READY / CONNECTING / CONNECTED / ERROR in der Oberfläche
+- Unit-Test für Request, Hash, Erfolgsantwort, Fehlerantwort und Transportvertrag
+
+Teststand:
+- 5/5 lokale Tests grün
+- Viewer startet und lädt die Live-GridInfo
+- echter Login gegen NexVerse muss jetzt manuell mit einem vorhandenen Benutzerkonto bestätigt werden; Zugangsdaten werden nicht an ChatGPT übermittelt.
+
 ## Nächster technischer Schritt
 
 Nach Sicherung dieses lokalen Phase-1-Blocks:

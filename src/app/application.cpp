@@ -10,6 +10,7 @@
 #include "nexverse/core/version.hpp"
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
+#include "nexverse/protocol/login.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 
@@ -23,6 +24,7 @@
 #include <exception>
 #include <future>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -32,12 +34,236 @@ using nexverse::ui::Color;
 using nexverse::ui::UiRenderer;
 namespace theme = nexverse::ui::theme;
 
+enum class LoginField
+{
+    username,
+    password
+};
+
+struct LoginUiState
+{
+    LoginField focused = LoginField::username;
+    std::string username;
+    std::string password;
+    std::string status = "READY";
+    std::string notice = "Avatarname und Passwort eingeben.";
+    bool submit_requested = false;
+    bool busy = false;
+    bool authenticated = false;
+};
+
+struct InputContext
+{
+    LoginUiState* login = nullptr;
+};
+
+std::string masked_password(std::string_view password)
+{
+    std::string masked;
+    for (const char raw : password)
+    {
+        const auto byte = static_cast<unsigned char>(raw);
+        if ((byte & 0xC0U) != 0x80U)
+        {
+            masked.push_back('*');
+        }
+    }
+    return masked;
+}
+
+void append_utf8(std::string& target, char32_t codepoint, std::size_t limit)
+{
+    if (codepoint < U' ' || codepoint == 0x7FU) return;
+
+    std::string encoded;
+    if (codepoint <= 0x7FU)
+    {
+        encoded.push_back(static_cast<char>(codepoint));
+    }
+    else if (codepoint <= 0x7FFU)
+    {
+        encoded.push_back(static_cast<char>(0xC0U | ((codepoint >> 6U) & 0x1FU)));
+        encoded.push_back(static_cast<char>(0x80U | (codepoint & 0x3FU)));
+    }
+    else if (codepoint <= 0xFFFFU)
+    {
+        encoded.push_back(static_cast<char>(0xE0U | ((codepoint >> 12U) & 0x0FU)));
+        encoded.push_back(static_cast<char>(0x80U | ((codepoint >> 6U) & 0x3FU)));
+        encoded.push_back(static_cast<char>(0x80U | (codepoint & 0x3FU)));
+    }
+    else if (codepoint <= 0x10FFFFU)
+    {
+        encoded.push_back(static_cast<char>(0xF0U | ((codepoint >> 18U) & 0x07U)));
+        encoded.push_back(static_cast<char>(0x80U | ((codepoint >> 12U) & 0x3FU)));
+        encoded.push_back(static_cast<char>(0x80U | ((codepoint >> 6U) & 0x3FU)));
+        encoded.push_back(static_cast<char>(0x80U | (codepoint & 0x3FU)));
+    }
+
+    if (target.size() + encoded.size() <= limit)
+    {
+        target += encoded;
+    }
+}
+
+void erase_last_utf8(std::string& target)
+{
+    if (target.empty()) return;
+    auto index = target.size() - 1U;
+    while (index > 0U &&
+           (static_cast<unsigned char>(target[index]) & 0xC0U) == 0x80U)
+    {
+        --index;
+    }
+    target.erase(index);
+}
+
+void character_callback(GLFWwindow* window, unsigned int codepoint)
+{
+    auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if (context == nullptr || context->login == nullptr || context->login->busy) return;
+
+    LoginUiState& state = *context->login;
+    if (state.focused == LoginField::username)
+    {
+        append_utf8(state.username, static_cast<char32_t>(codepoint), 96U);
+    }
+    else
+    {
+        append_utf8(state.password, static_cast<char32_t>(codepoint), 255U);
+    }
+}
+
+void key_callback(GLFWwindow* window, int key, int, int action, int)
+{
+    auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        return;
+    }
+
+    if (context == nullptr || context->login == nullptr) return;
+    LoginUiState& state = *context->login;
+
+    if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
+    {
+        state.focused = state.focused == LoginField::username
+            ? LoginField::password
+            : LoginField::username;
+        return;
+    }
+
+    if (state.busy) return;
+
+    if (key == GLFW_KEY_BACKSPACE &&
+        (action == GLFW_PRESS || action == GLFW_REPEAT))
+    {
+        if (state.focused == LoginField::username) erase_last_utf8(state.username);
+        else erase_last_utf8(state.password);
+        return;
+    }
+
+    if ((key == GLFW_KEY_ENTER || key == GLFW_KEY_KP_ENTER) &&
+        action == GLFW_PRESS)
+    {
+        state.submit_requested = true;
+    }
+}
+
 bool point_inside(double px, double py, float x, float y, float width, float height)
 {
     return px >= static_cast<double>(x) &&
            py >= static_cast<double>(y) &&
            px <= static_cast<double>(x + width) &&
            py <= static_cast<double>(y + height);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int)
+{
+    if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
+
+    auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if (context == nullptr || context->login == nullptr) return;
+
+    int width = 0;
+    int height = 0;
+    glfwGetWindowSize(window, &width, &height);
+
+    const float w = static_cast<float>(std::max(width, 1));
+    const float h = static_cast<float>(std::max(height, 1));
+    const float scale = std::clamp(
+        std::min(w / 1536.0f, h / 960.0f),
+        0.72f,
+        1.55f);
+
+    const float left_w = 252.0f * scale;
+    const float bottom_h = 106.0f * scale;
+    const float bottom_y = h - bottom_h;
+    const float login_x = left_w + 20.0f * scale;
+    const float login_y = bottom_y + 20.0f * scale;
+    const float field_w = 184.0f * scale;
+    const float field_h = 48.0f * scale;
+    const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
+    const float button_w = 164.0f * scale;
+
+    double mouse_x = 0.0;
+    double mouse_y = 0.0;
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+
+    LoginUiState& state = *context->login;
+    if (point_inside(mouse_x, mouse_y, login_x, login_y, field_w, field_h))
+    {
+        state.focused = LoginField::username;
+    }
+    else if (point_inside(
+                 mouse_x,
+                 mouse_y,
+                 login_x + field_w + 8.0f * scale,
+                 login_y,
+                 field_w,
+                 field_h))
+    {
+        state.focused = LoginField::password;
+    }
+    else if (point_inside(mouse_x, mouse_y, button_x, login_y, button_w, field_h) &&
+             !state.busy)
+    {
+        state.submit_requested = true;
+    }
+}
+
+std::optional<std::pair<std::string, std::string>> split_avatar_name(std::string_view name)
+{
+    const std::size_t first = name.find_first_not_of(' ');
+    const std::size_t last = name.find_last_not_of(' ');
+    if (first == std::string_view::npos || last == std::string_view::npos)
+    {
+        return std::nullopt;
+    }
+
+    const std::string_view trimmed = name.substr(first, last - first + 1U);
+    const std::size_t separator = trimmed.find(' ');
+    if (separator == std::string_view::npos)
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t last_first = trimmed.find_first_not_of(' ', separator);
+    if (last_first == std::string_view::npos)
+    {
+        return std::nullopt;
+    }
+
+    std::string first_name{trimmed.substr(0, separator)};
+    std::string last_name{trimmed.substr(last_first)};
+    if (first_name.empty() || last_name.empty())
+    {
+        return std::nullopt;
+    }
+
+    return std::pair<std::string, std::string>{
+        std::move(first_name),
+        std::move(last_name)};
 }
 
 Color with_alpha(Color color, float alpha)
@@ -366,7 +592,8 @@ void render_shell(
     double mouse_y,
     std::string_view grid_name,
     std::string_view grid_status,
-    Color grid_status_color)
+    Color grid_status_color,
+    const LoginUiState& login)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -374,6 +601,14 @@ void render_shell(
         std::min(w / 1536.0f, h / 960.0f),
         0.72f,
         1.55f);
+
+    const Color login_color = login.authenticated
+        ? theme::success
+        : login.busy
+            ? theme::cyan
+            : login.status == "ERROR"
+                ? theme::magenta
+                : theme::warning;
 
     renderer.resize(width, height);
     renderer.rect(0.0f, 0.0f, w, h, Color{0.008f, 0.018f, 0.035f, 1.0f}, 0.0f);
@@ -449,7 +684,7 @@ void render_shell(
     const float chip_start = std::max(location_x + location_w + 16.0f * scale, w - chips_total - 26.0f * scale);
 
     status_chip(renderer, chip_start, 14.0f * scale, chip_w, scale, "GRID", grid_status, grid_status_color);
-    status_chip(renderer, chip_start + chip_w + chip_gap, 14.0f * scale, chip_w, scale, "PROTOCOL", "PHASE 1", theme::warning);
+    status_chip(renderer, chip_start + chip_w + chip_gap, 14.0f * scale, chip_w, scale, "LOGIN", login.status, login_color);
     status_chip(renderer, chip_start + (chip_w + chip_gap) * 2.0f, 14.0f * scale, chip_w, scale, "WORLD", "OFFLINE", theme::text_muted);
 
     const float content_y = top_h + gap;
@@ -615,8 +850,8 @@ void render_shell(
         right_x + 96.0f * scale,
         panel_y + 95.0f * scale,
         10.5f * scale,
-        "Phase 2",
-        theme::warning);
+        login.status,
+        login_color);
 
     renderer.rect(
         right_x + 24.0f * scale,
@@ -727,28 +962,54 @@ void render_shell(
         login_y,
         field_w,
         field_h,
-        Color{0.024f, 0.052f, 0.090f, 0.96f},
+        login.focused == LoginField::username
+            ? Color{0.035f, 0.085f, 0.145f, 0.98f}
+            : Color{0.024f, 0.052f, 0.090f, 0.96f},
         11.0f * scale);
+    if (login.focused == LoginField::username)
+    {
+        renderer.rect(
+            login_x,
+            login_y + field_h - 2.0f * scale,
+            field_w,
+            2.0f * scale,
+            theme::cyan,
+            1.0f * scale);
+    }
     renderer.text(
         login_x + 14.0f * scale,
         login_y + 14.0f * scale,
         11.0f * scale,
-        "Avatar Name",
-        theme::text_muted);
+        login.username.empty() ? "Avatar Name" : login.username,
+        login.username.empty() ? theme::text_muted : theme::text);
 
+    const float password_x = login_x + field_w + 8.0f * scale;
     renderer.rect(
-        login_x + field_w + 8.0f * scale,
+        password_x,
         login_y,
         field_w,
         field_h,
-        Color{0.024f, 0.052f, 0.090f, 0.96f},
+        login.focused == LoginField::password
+            ? Color{0.035f, 0.085f, 0.145f, 0.98f}
+            : Color{0.024f, 0.052f, 0.090f, 0.96f},
         11.0f * scale);
+    if (login.focused == LoginField::password)
+    {
+        renderer.rect(
+            password_x,
+            login_y + field_h - 2.0f * scale,
+            field_w,
+            2.0f * scale,
+            theme::cyan,
+            1.0f * scale);
+    }
+    const std::string password_mask = masked_password(login.password);
     renderer.text(
-        login_x + field_w + 22.0f * scale,
+        password_x + 14.0f * scale,
         login_y + 14.0f * scale,
         11.0f * scale,
-        "Passwort",
-        theme::text_muted);
+        password_mask.empty() ? "Passwort" : password_mask,
+        password_mask.empty() ? theme::text_muted : theme::text);
 
     const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
     const float button_w = 164.0f * scale;
@@ -760,19 +1021,48 @@ void render_shell(
         button_w,
         field_h);
 
+    const bool can_submit =
+        !login.busy &&
+        !login.authenticated &&
+        !login.username.empty() &&
+        !login.password.empty() &&
+        (grid_status == "LIVE" || grid_status == "CACHE");
+
+    Color button_color = can_submit
+        ? theme::blue
+        : Color{0.075f, 0.120f, 0.185f, 1.0f};
+    if (can_submit && hover)
+    {
+        button_color = Color{0.080f, 0.690f, 0.960f, 1.0f};
+    }
+
     renderer.rect(
         button_x,
         login_y,
         button_w,
         field_h,
-        hover ? Color{0.080f, 0.690f, 0.960f, 1.0f} : theme::blue,
+        button_color,
         11.0f * scale);
+
+    const std::string_view button_label = login.busy
+        ? "VERBINDE..."
+        : login.authenticated
+            ? "ANGEMELDET"
+            : "WELT BETRETEN";
+    const float button_label_w = renderer.text_width(10.5f * scale, button_label);
     renderer.text(
-        button_x + 29.0f * scale,
+        button_x + (button_w - button_label_w) * 0.5f,
         login_y + 14.0f * scale,
-        11.0f * scale,
-        "WELT BETRETEN",
-        theme::text);
+        10.5f * scale,
+        button_label,
+        can_submit || login.authenticated ? theme::text : theme::text_muted);
+
+    renderer.text(
+        login_x,
+        bottom_y + 76.0f * scale,
+        8.5f * scale,
+        login.notice,
+        login.authenticated ? theme::success : theme::text_muted);
 
     const float dock_x = button_x + button_w + 20.0f * scale;
     const std::array<std::string_view, 6> dock{
@@ -866,6 +1156,13 @@ int Application::run()
     int window_height = 0;
     glfwGetWindowSize(window, &window_width, &window_height);
 
+    LoginUiState login_ui;
+    InputContext input_context{&login_ui};
+    glfwSetWindowUserPointer(window, &input_context);
+    glfwSetCharCallback(window, character_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
     auto transport = std::make_shared<net::CurlHttpTransport>();
     auto discovery_future = std::async(
         std::launch::async,
@@ -878,7 +1175,11 @@ int Application::run()
     std::string grid_name{protocol::nexverse_grid_host};
     std::string grid_status = "CHECKING";
     Color grid_status_color = theme::cyan;
+    std::string active_login_uri;
     bool discovery_applied = false;
+
+    std::future<protocol::LoginResult> login_future;
+    std::optional<protocol::LoginSession> active_session;
 
     {
         ui::UiRenderer renderer;
@@ -934,9 +1235,10 @@ int Application::run()
                             grid_status_color = theme::warning;
                         }
 
+                        active_login_uri = std::string{result.info.login_uri()};
                         core::info(
                             std::string{"Active OpenSim login URI: "} +
-                            std::string{result.info.login_uri()});
+                            active_login_uri);
                     }
                     else
                     {
@@ -956,6 +1258,102 @@ int Application::run()
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             {
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
+
+            if (login_ui.busy &&
+                login_future.valid() &&
+                login_future.wait_for(std::chrono::milliseconds{0}) == std::future_status::ready)
+            {
+                login_ui.busy = false;
+
+                try
+                {
+                    protocol::LoginResult result = login_future.get();
+                    if (result.success && result.session.has_value())
+                    {
+                        active_session = std::move(result.session);
+                        login_ui.authenticated = true;
+                        login_ui.status = "CONNECTED";
+                        login_ui.notice = result.message.empty()
+                            ? "OpenSim-Anmeldung erfolgreich."
+                            : result.message;
+                        login_ui.password.clear();
+                        core::info("OpenSim login succeeded; simulator session established");
+                    }
+                    else
+                    {
+                        login_ui.status = "ERROR";
+                        login_ui.notice = result.message.empty()
+                            ? "OpenSim-Anmeldung fehlgeschlagen."
+                            : result.message;
+                        core::warning(
+                            std::string{"OpenSim login failed: "} +
+                            (result.reason.empty() ? "unknown" : result.reason));
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    login_ui.status = "ERROR";
+                    login_ui.notice = "Anmeldevorgang konnte nicht abgeschlossen werden.";
+                    core::error(std::string{"OpenSim login worker failed: "} + error.what());
+                }
+            }
+
+            if (login_ui.submit_requested)
+            {
+                login_ui.submit_requested = false;
+
+                if (login_ui.busy || login_ui.authenticated)
+                {
+                    // Ignore duplicate submit while a login is active or already complete.
+                }
+                else if (active_login_uri.empty() ||
+                         (grid_status != "LIVE" && grid_status != "CACHE"))
+                {
+                    login_ui.status = "ERROR";
+                    login_ui.notice = "Keine gueltige Grid-Konfiguration verfuegbar.";
+                }
+                else if (login_ui.username.empty() || login_ui.password.empty())
+                {
+                    login_ui.status = "READY";
+                    login_ui.notice = "Avatarname und Passwort eingeben.";
+                }
+                else
+                {
+                    const auto avatar_name = split_avatar_name(login_ui.username);
+                    if (!avatar_name.has_value())
+                    {
+                        login_ui.status = "READY";
+                        login_ui.notice = "Avatarname als Vorname Nachname eingeben.";
+                    }
+                    else
+                    {
+                        protocol::LoginCredentials credentials;
+                        credentials.first_name = avatar_name->first;
+                        credentials.last_name = avatar_name->second;
+                        credentials.password = login_ui.password;
+                        credentials.start = "last";
+
+                        const std::string login_uri = active_login_uri;
+                        const std::string viewer_version{core::version()};
+
+                        login_ui.busy = true;
+                        login_ui.status = "CONNECTING";
+                        login_ui.notice = "Anmeldung bei NexVerse wird ausgefuehrt...";
+
+                        login_future = std::async(
+                            std::launch::async,
+                            [transport, login_uri, credentials = std::move(credentials), viewer_version]
+                            {
+                                protocol::LoginService service{transport};
+                                return service.login(
+                                    login_uri,
+                                    credentials,
+                                    "OpenGenesisLINK Viewer",
+                                    viewer_version);
+                            });
+                    }
+                }
             }
 
             int framebuffer_width = 0;
@@ -983,12 +1381,13 @@ int Application::run()
 
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
-                grid_name, grid_status, grid_status_color);
+                grid_name, grid_status, grid_status_color, login_ui);
 
             glfwSwapBuffers(window);
         }
     }
 
+    glfwSetWindowUserPointer(window, nullptr);
     core::info("OpenGenesisLINK Viewer shutdown");
     glfwDestroyWindow(window);
     glfwTerminate();

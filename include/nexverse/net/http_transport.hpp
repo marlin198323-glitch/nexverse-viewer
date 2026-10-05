@@ -33,6 +33,14 @@ public:
         std::size_t max_bytes,
         std::chrono::milliseconds connect_timeout,
         std::chrono::milliseconds total_timeout) = 0;
+
+    virtual HttpResponse post(
+        std::string_view url,
+        std::string_view content_type,
+        std::string_view body,
+        std::size_t max_bytes,
+        std::chrono::milliseconds connect_timeout,
+        std::chrono::milliseconds total_timeout) = 0;
 };
 
 class CurlHttpTransport final : public IHttpTransport
@@ -40,6 +48,14 @@ class CurlHttpTransport final : public IHttpTransport
 public:
     HttpResponse get(
         std::string_view url,
+        std::size_t max_bytes,
+        std::chrono::milliseconds connect_timeout,
+        std::chrono::milliseconds total_timeout) override;
+
+    HttpResponse post(
+        std::string_view url,
+        std::string_view content_type,
+        std::string_view body,
         std::size_t max_bytes,
         std::chrono::milliseconds connect_timeout,
         std::chrono::milliseconds total_timeout) override;

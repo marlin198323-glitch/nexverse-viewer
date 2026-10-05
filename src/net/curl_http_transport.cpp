@@ -11,6 +11,7 @@
 #include <limits>
 #include <mutex>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -54,12 +55,12 @@ long timeout_ms(std::chrono::milliseconds value)
         value.count(), 1, static_cast<std::chrono::milliseconds::rep>(std::numeric_limits<long>::max()));
     return static_cast<long>(bounded);
 }
-}
 
-namespace nexverse::net
-{
-HttpResponse CurlHttpTransport::get(
+nexverse::net::HttpResponse perform_request(
     std::string_view url,
+    std::string_view content_type,
+    std::string_view body,
+    bool is_post,
     std::size_t max_bytes,
     std::chrono::milliseconds connect_timeout,
     std::chrono::milliseconds total_timeout)
@@ -67,13 +68,13 @@ HttpResponse CurlHttpTransport::get(
     std::call_once(curl_init_flag, initialize_curl);
     if (curl_init_result != CURLE_OK)
     {
-        return HttpResponse{0, {}, "libcurl global initialization failed"};
+        return {0, {}, "libcurl global initialization failed"};
     }
 
     CURL* curl = curl_easy_init();
     if (curl == nullptr)
     {
-        return HttpResponse{0, {}, "libcurl handle initialization failed"};
+        return {0, {}, "libcurl handle initialization failed"};
     }
 
     WriteContext context;
@@ -96,25 +97,69 @@ HttpResponse CurlHttpTransport::get(
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &context);
 
+    curl_slist* headers = nullptr;
+    if (is_post)
+    {
+        const std::string type_header = "Content-Type: " + std::string{content_type};
+        headers = curl_slist_append(headers, type_header.c_str());
+        headers = curl_slist_append(headers, "Accept: text/xml, application/xml");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.data());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
+    }
+
     const CURLcode result = curl_easy_perform(curl);
+
     long status_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status_code);
+
+    if (headers != nullptr)
+    {
+        curl_slist_free_all(headers);
+    }
     curl_easy_cleanup(curl);
 
     if (context.exceeded)
     {
-        return HttpResponse{status_code, {}, "HTTP response exceeds configured size limit"};
-    }
-    if (result != CURLE_OK)
-    {
-        return HttpResponse{status_code, {}, std::string{"HTTP request failed: "} + curl_easy_strerror(result)};
+        return {status_code, {}, "HTTP response exceeds configured size limit"};
     }
 
-    HttpResponse response{status_code, std::move(context.body), {}};
+    if (result != CURLE_OK)
+    {
+        return {status_code, {}, std::string{"HTTP request failed: "} + curl_easy_strerror(result)};
+    }
+
+    nexverse::net::HttpResponse response{status_code, std::move(context.body), {}};
     if (!response.ok())
     {
         response.error = "HTTP server returned status " + std::to_string(status_code);
     }
     return response;
+}
+}
+
+namespace nexverse::net
+{
+HttpResponse CurlHttpTransport::get(
+    std::string_view url,
+    std::size_t max_bytes,
+    std::chrono::milliseconds connect_timeout,
+    std::chrono::milliseconds total_timeout)
+{
+    return perform_request(
+        url, {}, {}, false, max_bytes, connect_timeout, total_timeout);
+}
+
+HttpResponse CurlHttpTransport::post(
+    std::string_view url,
+    std::string_view content_type,
+    std::string_view body,
+    std::size_t max_bytes,
+    std::chrono::milliseconds connect_timeout,
+    std::chrono::milliseconds total_timeout)
+{
+    return perform_request(
+        url, content_type, body, true, max_bytes, connect_timeout, total_timeout);
 }
 }
