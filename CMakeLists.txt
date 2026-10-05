@@ -16,6 +16,7 @@ option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 find_package(CURL CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
@@ -88,6 +89,10 @@ target_link_libraries(nexverse-ui PUBLIC
     glfw
     glad::glad
     Freetype::Freetype
+)
+
+target_link_libraries(nexverse-ui PRIVATE
+    Threads::Threads
 )
 
 target_compile_definitions(nexverse-ui PUBLIC GLFW_INCLUDE_NONE)
