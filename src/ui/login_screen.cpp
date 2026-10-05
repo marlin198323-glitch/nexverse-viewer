@@ -163,7 +163,10 @@ void status_row(
     renderer.text(x + 205.0f * scale - value_width, y, 12.0f * scale, value, state);
 }
 
-void render_world_preview(UiRenderer& renderer, const Layout& layout)
+void render_world_preview(
+    UiRenderer& renderer,
+    const LoginModel& model,
+    const Layout& layout)
 {
     const float x = layout.preview_x;
     const float y = layout.content_y;
@@ -252,7 +255,33 @@ void render_world_preview(UiRenderer& renderer, const Layout& layout)
 
     status_row(renderer, status_x + 18.0f * s, status_y + 52.0f * s, s, "Desktop shell", "READY", theme::success);
     status_row(renderer, status_x + 18.0f * s, status_y + 80.0f * s, s, "Renderer", "READY", theme::success);
-    status_row(renderer, status_x + 18.0f * s, status_y + 108.0f * s, s, "Grid discovery", "NEXT", theme::warning);
+
+    Color discovery_color = theme::warning;
+    switch (model.grid_discovery_state())
+    {
+        case nexverse::ui::GridDiscoveryState::checking:
+            discovery_color = theme::cyan;
+            break;
+        case nexverse::ui::GridDiscoveryState::live:
+            discovery_color = theme::success;
+            break;
+        case nexverse::ui::GridDiscoveryState::cache:
+            discovery_color = theme::warning;
+            break;
+        case nexverse::ui::GridDiscoveryState::failed:
+            discovery_color = theme::magenta;
+            break;
+    }
+
+    status_row(
+        renderer,
+        status_x + 18.0f * s,
+        status_y + 108.0f * s,
+        s,
+        "Grid discovery",
+        model.grid_status_label(),
+        discovery_color);
+
     status_row(renderer, status_x + 18.0f * s, status_y + 136.0f * s, s, "World stream", "PENDING", theme::text_muted);
 
     renderer.rect(
@@ -267,7 +296,7 @@ void render_world_preview(UiRenderer& renderer, const Layout& layout)
         x + 40.0f * s,
         y + height - 49.0f * s,
         12.0f * s,
-        "Phase 0 - UI interaction only, no OpenSim login is sent.",
+        "Phase 1 - Grid discovery active; avatar login remains disabled.",
         theme::text_muted);
 }
 }
@@ -320,8 +349,28 @@ void LoginScreen::render(
 
     renderer.text(left_x, layout.content_y + 138.0f * s, 11.0f * s, "NEXVERSE GRID", theme::text_muted);
     renderer.rect(left_x, layout.content_y + 160.0f * s, layout.left_width - 52.0f * s, 58.0f * s, theme::surface_soft, 10.0f * s);
-    renderer.text(left_x + 14.0f * s, layout.content_y + 170.0f * s, 14.0f * s, "hg.stadt-nexverse.de", theme::text);
-    renderer.text(left_x + 14.0f * s, layout.content_y + 193.0f * s, 9.0f * s, "AUTO DISCOVERY ON START", theme::cyan);
+    renderer.text(
+        left_x + 14.0f * s,
+        layout.content_y + 170.0f * s,
+        14.0f * s,
+        model.grid_display_name(),
+        theme::text);
+
+    const Color grid_status_color =
+        model.grid_discovery_state() == GridDiscoveryState::live
+            ? theme::success
+            : model.grid_discovery_state() == GridDiscoveryState::failed
+                ? theme::magenta
+                : model.grid_discovery_state() == GridDiscoveryState::cache
+                    ? theme::warning
+                    : theme::cyan;
+
+    renderer.text(
+        left_x + 14.0f * s,
+        layout.content_y + 193.0f * s,
+        9.0f * s,
+        model.grid_status_label(),
+        grid_status_color);
 
     draw_field(renderer, model, LoginField::username, layout.username, s, "BENUTZERNAME", "Avatar Name");
     draw_field(renderer, model, LoginField::password, layout.password, s, "PASSWORT", "Passwort");
@@ -356,13 +405,13 @@ void LoginScreen::render(
             theme::text_muted);
     }
 
-    render_world_preview(renderer, layout);
+    render_world_preview(renderer, model, layout);
 
     renderer.text(
         32.0f * s,
         h - 24.0f * s,
         10.0f * s,
-        "OpenGenesisLINK Viewer | NexVerse | MPL 2.0 | Phase 0",
+        "OpenGenesisLINK Viewer | NexVerse | MPL 2.0 | Phase 1",
         theme::text_muted);
 }
 
