@@ -161,6 +161,36 @@ struct ObjectUpdateMessage
     std::vector<ObjectUpdateEntry> objects;
 };
 
+struct ObjectUpdateCachedEntry
+{
+    std::uint32_t local_id = 0U;
+    std::uint32_t crc = 0U;
+    std::uint32_t update_flags = 0U;
+};
+
+struct ObjectUpdateCachedMessage
+{
+    std::uint64_t region_handle = 0U;
+    std::uint16_t time_dilation = 0U;
+    std::vector<ObjectUpdateCachedEntry> objects;
+};
+
+struct ObjectUpdateCompressedEntry
+{
+    std::uint32_t local_id = 0U;
+    std::string id;
+    std::uint8_t pcode = 0U;
+    Vec3 position;
+    Quaternion rotation;
+};
+
+struct ObjectUpdateCompressedMessage
+{
+    std::uint64_t region_handle = 0U;
+    std::uint16_t time_dilation = 0U;
+    std::vector<ObjectUpdateCompressedEntry> objects;
+};
+
 struct TerseObjectUpdate
 {
     std::uint32_t local_id = 0U;
@@ -174,6 +204,17 @@ struct ImprovedTerseObjectUpdateMessage
     std::uint64_t region_handle = 0U;
     std::uint16_t time_dilation = 0U;
     std::vector<TerseObjectUpdate> updates;
+};
+
+struct AgentDataUpdateMessage
+{
+    std::string agent_id;
+    std::string first_name;
+    std::string last_name;
+    std::string group_title;
+    std::string active_group_id;
+    std::uint64_t group_powers = 0U;
+    std::string group_name;
 };
 
 struct IncomingLocalChat
@@ -226,6 +267,13 @@ struct TeleportFailureEvent
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<ObjectUpdateMessage> decode_object_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<ObjectUpdateCompressedMessage>
+decode_object_update_compressed(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<ObjectUpdateCachedMessage> decode_object_update_cached(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<ImprovedTerseObjectUpdateMessage>

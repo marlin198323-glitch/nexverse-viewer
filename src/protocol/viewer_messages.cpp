@@ -530,6 +530,120 @@ std::optional<ObjectUpdateMessage> decode_object_update(
     return message;
 }
 
+std::optional<ObjectUpdateCompressedMessage>
+decode_object_update_compressed(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 11U)
+    {
+        return std::nullopt;
+    }
+
+    ObjectUpdateCompressedMessage message;
+    std::size_t offset = 0U;
+    message.region_handle = read_le_u64(payload, offset);
+    offset += 8U;
+    message.time_dilation = read_le_u16(payload, offset);
+    offset += 2U;
+
+    const std::size_t count = payload[offset++];
+    message.objects.reserve(count);
+
+    for (std::size_t index = 0U; index < count; ++index)
+    {
+        if (offset + 6U > payload.size())
+        {
+            return std::nullopt;
+        }
+
+        offset += 4U; // update flags
+        const std::size_t data_size = read_le_u16(payload, offset);
+        offset += 2U;
+
+        if (data_size < 64U || offset + data_size > payload.size())
+        {
+            return std::nullopt;
+        }
+
+        const auto data = payload.subspan(offset, data_size);
+        offset += data_size;
+
+        ObjectUpdateCompressedEntry object;
+        object.id = uuid_from_bytes(data, 0U);
+        object.local_id = read_le_u32(data, 16U);
+        object.pcode = data[20U];
+        object.position.x = read_f32(data, 40U);
+        object.position.y = read_f32(data, 44U);
+        object.position.z = read_f32(data, 48U);
+        object.rotation.x = read_f32(data, 52U);
+        object.rotation.y = read_f32(data, 56U);
+        object.rotation.z = read_f32(data, 60U);
+        const float ww = std::max(
+            0.0f,
+            1.0f - object.rotation.x * object.rotation.x -
+            object.rotation.y * object.rotation.y -
+            object.rotation.z * object.rotation.z);
+        object.rotation.w = std::sqrt(ww);
+
+        if (object.local_id == 0U || object.id.empty())
+        {
+            return std::nullopt;
+        }
+
+        message.objects.push_back(std::move(object));
+    }
+
+    if (offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    return message;
+}
+
+std::optional<ObjectUpdateCachedMessage> decode_object_update_cached(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 11U)
+    {
+        return std::nullopt;
+    }
+
+    ObjectUpdateCachedMessage message;
+    std::size_t offset = 0U;
+    message.region_handle = read_le_u64(payload, offset);
+    offset += 8U;
+    message.time_dilation = read_le_u16(payload, offset);
+    offset += 2U;
+
+    const std::size_t count = payload[offset++];
+    if (offset + count * 12U != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    message.objects.reserve(count);
+    for (std::size_t index = 0U; index < count; ++index)
+    {
+        ObjectUpdateCachedEntry object;
+        object.local_id = read_le_u32(payload, offset);
+        offset += 4U;
+        object.crc = read_le_u32(payload, offset);
+        offset += 4U;
+        object.update_flags = read_le_u32(payload, offset);
+        offset += 4U;
+
+        if (object.local_id == 0U)
+        {
+            return std::nullopt;
+        }
+
+        message.objects.push_back(object);
+    }
+
+    return message;
+}
+
 std::optional<ImprovedTerseObjectUpdateMessage>
 decode_improved_terse_object_update(
     std::span<const std::uint8_t> payload)

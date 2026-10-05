@@ -1588,6 +1588,8 @@ int Application::run()
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
+    std::atomic_bool compressed_object_live_logged{false};
+    std::atomic_bool cached_object_live_logged{false};
     std::atomic_bool terse_object_live_logged{false};
     std::atomic_uint32_t other_packets{0U};
 
@@ -1628,12 +1630,6 @@ int Application::run()
             terrain.available = true;
             world_model.set_terrain(std::move(terrain));
         });
-
-    const auto count_object_packet =
-        [&object_packets](const protocol::DecodedPacket&)
-        {
-            object_packets.fetch_add(1U, std::memory_order_relaxed);
-        };
 
     packet_dispatcher.register_handler(
         protocol::msg_object_update,
@@ -1700,8 +1696,90 @@ int Application::run()
             }
         });
 
-    packet_dispatcher.register_handler(protocol::msg_object_update_compressed, count_object_packet);
-    packet_dispatcher.register_handler(protocol::msg_object_update_cached, count_object_packet);
+    packet_dispatcher.register_handler(
+        protocol::msg_object_update_compressed,
+        [&object_packets,
+         &avatar_packets,
+         &compressed_object_live_logged,
+         &world_model,
+         &world_mutex](const protocol::DecodedPacket& packet)
+        {
+            const auto update =
+                protocol::decode_object_update_compressed(packet.payload);
+            if (!update.has_value())
+            {
+                return;
+            }
+
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+            if (!compressed_object_live_logged.exchange(true))
+            {
+                core::info("WorldModel compressed object stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            const std::string self_id = world_model.agent().agent_id;
+
+            for (const auto& entry : update->objects)
+            {
+                if (entry.pcode == protocol::pcode_avatar)
+                {
+                    avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+
+                    if (entry.id == self_id)
+                    {
+                        const world::AgentState current = world_model.agent();
+                        world_model.apply_agent({
+                            current.agent_id,
+                            current.session_id,
+                            entry.position,
+                            entry.rotation,
+                            current.present});
+                        continue;
+                    }
+
+                    world::AvatarState avatar;
+                    avatar.id = entry.id;
+                    avatar.position = entry.position;
+                    avatar.rotation = entry.rotation;
+                    avatar.local_id = entry.local_id;
+
+                    if (const auto existing = world_model.avatars().find(entry.id);
+                        existing != world_model.avatars().end())
+                    {
+                        avatar.name = existing->second.name;
+                    }
+
+                    world_model.upsert_avatar(std::move(avatar));
+                    continue;
+                }
+
+                world_model.upsert_object({
+                    entry.local_id,
+                    entry.id,
+                    entry.position,
+                    entry.rotation});
+            }
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_object_update_cached,
+        [&object_packets, &cached_object_live_logged](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto cached =
+                protocol::decode_object_update_cached(packet.payload);
+            if (!cached.has_value())
+            {
+                return;
+            }
+
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+            if (!cached_object_live_logged.exchange(true))
+            {
+                core::info("WorldModel cached object stream validated");
+            }
+        });
 
     packet_dispatcher.register_handler(
         protocol::msg_improved_terse_object_update,

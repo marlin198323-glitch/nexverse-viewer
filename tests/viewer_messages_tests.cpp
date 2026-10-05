@@ -1,5 +1,6 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 
+#include <algorithm>
 #include <bit>
 #include <cstdint>
 #include <iostream>
@@ -294,6 +295,53 @@ int main()
     {
         std::cerr << "Invalid ObjectUpdate unexpectedly accepted\n";
         return 13;
+    }
+
+    std::vector<std::uint8_t> compressed_payload{
+        0x88U,0x77U,0x66U,0x55U,0x44U,0x33U,0x22U,0x11U,
+        0x34U,0x12U,1U};
+    append_u32_vec(compressed_payload, 0U);
+    std::vector<std::uint8_t> compressed_data(64U, 0U);
+    const auto compressed_id =
+        uuid_to_bytes("44444444-4444-4444-4444-444444444444");
+    std::copy(compressed_id->begin(), compressed_id->end(), compressed_data.begin());
+    put_u32(compressed_data, 16U, 77U);
+    compressed_data[20U] = pcode_prim;
+    put_f32(compressed_data, 40U, 12.0f);
+    put_f32(compressed_data, 44U, 34.0f);
+    put_f32(compressed_data, 48U, 56.0f);
+    compressed_payload.push_back(64U);
+    compressed_payload.push_back(0U);
+    compressed_payload.insert(
+        compressed_payload.end(),
+        compressed_data.begin(),
+        compressed_data.end());
+
+    const auto compressed = decode_object_update_compressed(compressed_payload);
+    if (!compressed.has_value() ||
+        compressed->objects.size() != 1U ||
+        compressed->objects[0].local_id != 77U ||
+        compressed->objects[0].position.z != 56.0f)
+    {
+        std::cerr << "ObjectUpdateCompressed decode failed\n";
+        return 14;
+    }
+
+    std::vector<std::uint8_t> cached_payload{
+        0x88U,0x77U,0x66U,0x55U,0x44U,0x33U,0x22U,0x11U,
+        0x34U,0x12U,1U};
+    append_u32_vec(cached_payload, 77U);
+    append_u32_vec(cached_payload, 0xAABBCCDDU);
+    append_u32_vec(cached_payload, 0x01020304U);
+
+    const auto cached = decode_object_update_cached(cached_payload);
+    if (!cached.has_value() ||
+        cached->objects.size() != 1U ||
+        cached->objects[0].local_id != 77U ||
+        cached->objects[0].crc != 0xAABBCCDDU)
+    {
+        std::cerr << "ObjectUpdateCached decode failed\n";
+        return 15;
     }
 
     std::vector<std::uint8_t> incoming_payload;
