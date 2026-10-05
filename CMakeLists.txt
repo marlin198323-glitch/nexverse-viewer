@@ -77,6 +77,7 @@ add_library(nexverse-protocol
     src/protocol/viewer_messages.cpp
     src/protocol/outbound_queue.cpp
     src/protocol/llsd.cpp
+    src/protocol/terrain_codec.cpp
     src/protocol/caps.cpp
     src/protocol/caps_event_dispatcher.cpp
 )
@@ -227,6 +228,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
     nexverse_enable_warnings(nexverse-world-model-tests)
     add_test(NAME nexverse-world-model-tests COMMAND nexverse-world-model-tests)
+
+    add_executable(nexverse-terrain-codec-tests tests/terrain_codec_tests.cpp)
+    target_link_libraries(nexverse-terrain-codec-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-terrain-codec-tests)
+    add_test(NAME nexverse-terrain-codec-tests COMMAND nexverse-terrain-codec-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

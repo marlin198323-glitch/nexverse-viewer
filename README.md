@@ -6,7 +6,7 @@ It is not a Firestorm fork. The project is designed around a strict separation b
 
 ## Current status
 
-Version: `0.2.0-alpha.7`
+Version: `0.2.0-alpha.8`
 
 Phase 5 (WorldModel) is under active development.
 

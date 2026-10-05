@@ -81,6 +81,41 @@ void WorldModel::set_terrain(TerrainState terrain)
     terrain_ = std::move(terrain);
 }
 
+void WorldModel::apply_terrain_patch(const protocol::TerrainPatch& patch)
+{
+    if (patch.x >= 16U || patch.y >= 16U)
+    {
+        return;
+    }
+
+    const std::size_t patch_slot =
+        static_cast<std::size_t>(patch.y) * 16U +
+        static_cast<std::size_t>(patch.x);
+
+    if (!terrain_.valid_patches[patch_slot])
+    {
+        terrain_.valid_patches[patch_slot] = true;
+        ++terrain_.valid_patch_count;
+    }
+
+    const std::size_t base_x = static_cast<std::size_t>(patch.x) * 16U;
+    const std::size_t base_y = static_cast<std::size_t>(patch.y) * 16U;
+
+    for (std::size_t local_y = 0U; local_y < 16U; ++local_y)
+    {
+        for (std::size_t local_x = 0U; local_x < 16U; ++local_x)
+        {
+            const std::size_t world_x = base_x + local_x;
+            const std::size_t world_y = base_y + local_y;
+            terrain_.heights[world_y * 256U + world_x] =
+                patch.heights[local_y * 16U + local_x];
+        }
+    }
+
+    ++terrain_.revision;
+    terrain_.available = terrain_.valid_patch_count > 0U;
+}
+
 void WorldModel::set_parcel(ParcelState parcel)
 {
     parcel_ = std::move(parcel);

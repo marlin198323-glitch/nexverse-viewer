@@ -4,8 +4,10 @@
  */
 #pragma once
 
+#include "nexverse/protocol/terrain_codec.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 
+#include <array>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -74,6 +76,9 @@ struct TerrainState
 {
     std::uint32_t revision = 0U;
     bool available = false;
+    std::array<float, 256U * 256U> heights{};
+    std::array<bool, 16U * 16U> valid_patches{};
+    std::uint16_t valid_patch_count = 0U;
 };
 
 struct ParcelState
@@ -127,6 +132,7 @@ public:
     void upsert_object(ObjectState object);
     void remove_object(std::uint32_t local_id);
     void set_terrain(TerrainState terrain);
+    void apply_terrain_patch(const protocol::TerrainPatch& patch);
     void set_parcel(ParcelState parcel);
     void set_environment(EnvironmentState environment);
 

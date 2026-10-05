@@ -33,10 +33,22 @@ int main()
         return 2;
     }
 
-    world.set_terrain({1U, true});
-    if (!world.ready())
+    nexverse::protocol::TerrainPatch terrain_patch;
+    terrain_patch.x = 2U;
+    terrain_patch.y = 3U;
+    terrain_patch.heights.fill(42.25f);
+    world.apply_terrain_patch(terrain_patch);
+
+    const std::size_t terrain_sample =
+        (3U * 16U + 5U) * 256U +
+        (2U * 16U + 7U);
+
+    if (!world.ready() ||
+        world.terrain().valid_patch_count != 1U ||
+        !world.terrain().valid_patches[3U * 16U + 2U] ||
+        world.terrain().heights[terrain_sample] != 42.25f)
     {
-        std::cerr << "Validated region + agent + terrain did not make WorldModel ready\n";
+        std::cerr << "Validated terrain patch did not populate WorldModel\n";
         return 3;
     }
 

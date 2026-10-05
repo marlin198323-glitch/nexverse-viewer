@@ -1618,6 +1618,17 @@ int Application::run()
                 return;
             }
 
+            const auto terrain = protocol::decode_terrain_layer(
+                layer->data,
+                layer->type);
+            if (!terrain.success)
+            {
+                core::warning(
+                    "Terrain LayerData decode failed: " +
+                    terrain.message);
+                return;
+            }
+
             terrain_packets.fetch_add(1U, std::memory_order_relaxed);
 
             if (!terrain_live_logged.exchange(true))
@@ -1626,10 +1637,10 @@ int Application::run()
             }
 
             std::scoped_lock lock{world_mutex};
-            world::TerrainState terrain = world_model.terrain();
-            ++terrain.revision;
-            terrain.available = true;
-            world_model.set_terrain(std::move(terrain));
+            for (const auto& patch : terrain.patches)
+            {
+                world_model.apply_terrain_patch(patch);
+            }
         });
 
     packet_dispatcher.register_handler(
