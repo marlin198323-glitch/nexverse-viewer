@@ -982,7 +982,7 @@ Dieser Layer darf noch keinerlei Renderer enthalten.
 
 ---
 
-## Phase 4 – CAPS / HTTP Capabilities 🚧 in Arbeit seit 05.10.2026
+## Phase 4 – CAPS / HTTP Capabilities ✅ abgeschlossen 05.10.2026 · NexVerse-Echttest erfolgreich
 
 Ziel: Der Viewer verwendet die vom Simulator bereitgestellten Capability-Endpunkte.
 
@@ -1007,7 +1007,7 @@ Später verwendete Bereiche:
 
 ---
 
-## Phase 5 – WorldModel
+## Phase 5 – WorldModel 🚧 in Arbeit seit 05.10.2026
 
 Ziel: Ein rendering-unabhängiges Abbild der Welt.
 

@@ -273,13 +273,56 @@ Bereits implementiert:
 - automatischer CAPS-Worker startet nach erfolgreichem Login
 - Capability-URLs werden nicht geloggt
 - Ladebildschirm zeigt CAPS-Status, Endpoint-Anzahl, SimulatorFeatures-Status und Eventanzahl
-- 12/12 lokale Tests grün
+- sichere Phase-4-Diagnoselogs ohne Capability-URLs oder Zugangsdaten:
+  - Seed-Discovery erfolgreich/fehlgeschlagen plus Anzahl akzeptierter Endpunkte
+  - SimulatorFeatures erfolgreich/fehlgeschlagen/nicht angeboten
+  - EventQueueGet vorhanden/nicht angeboten
+  - erster erfolgreicher EventQueue-Batch wird einmalig als `CAPS EventQueue live` geloggt
+  - EventQueue-Retries werden mit Retry-Zähler geloggt
+- 12/12 lokale Tests grün nach dem Diagnoseblock
 
-Noch offen für Phase 4:
-- echter NexVerse-Seed-Capability-Echttest
-- echten `SimulatorFeatures`-Abruf bestätigen
-- echte EventQueue gegen NexVerse bestätigen
-- danach Phase 4 als abgeschlossen markieren
+NexVerse-Echttest am 05.10.2026:
+- Seed-Capability erfolgreich: 16 valide Capability-Endpunkte erkannt
+- `EventQueueGet` wird vom Simulator angeboten
+- EventQueue-Long-Poll erfolgreich: erster echter Batch empfangen, Status `CAPS LIVE`
+- LLUDP blieb parallel `UDP LIVE`
+- `SimulatorFeatures` wird angeboten, der Abruf ist im Echttest jedoch noch fehlgeschlagen
+- Diagnose wurde erweitert: der nächste Testlauf protokolliert den konkreten HTTP-/LLSD-Fehler ohne Capability-URL
+
+SimulatorFeatures-Fehleranalyse am 05.10.2026:
+- Echttest meldete zunächst `LLSD real is invalid`
+- zweiter Diagnose-Echttest zeigte den konkreten gültigen NexVerse-Wert `11.001100540161133`
+- Ursache: `std::strtod` war locale-abhängig und lief unter `de_DE`; LLSD verwendet unabhängig von der System-Locale Punktnotation
+- LLSD-`real` wird jetzt locale-unabhängig mit `std::from_chars` geparst
+- OpenSim-kompatible leere Real-Werte `<real/>` werden als `0.0` akzeptiert
+- führender/nachgestellter XML-Whitespace bei Real-Werten wird akzeptiert
+- Regressionstests für `<real/>`, `<real>  1.5000  </real>` und den echten NexVerse-Wert `11.001100540161133` ergänzt
+- kompletter Debug-Build erfolgreich, 12/12 Tests grün
+- persistente Viewer-Logdatei ergänzt, damit Echttests unabhängig vom Startweg auswertbar sind
+  - Linux: `~/.local/state/opengenesislink/viewer.log` bzw. `$XDG_STATE_HOME/opengenesislink/viewer.log`
+  - Windows: `%LOCALAPPDATA%\\OpenGenesisLINK\\viewer.log`
+  - macOS: `~/Library/Logs/OpenGenesisLINK/viewer.log`
+- Logger schreibt weiterhin auf Konsole und zusätzlich sofort in die Logdatei
+
+Phase 4 abgeschlossen am 05.10.2026:
+- finaler NexVerse-Echttest erfolgreich
+- Seed-Capability: 16 valide Endpunkte
+- `SimulatorFeatures`: erfolgreich geladen
+- `EventQueueGet`: verfügbar und echter Long-Poll-Batch empfangen
+- LLUDP parallel `UDP LIVE`
+- Phase 4 ist damit vollständig abgeschlossen
+
+Aktuell:
+- Phase 5 – WorldModel ist gestartet
+- eigenes Modul `NexVerse::World` angelegt
+- renderer-unabhängiges `WorldModel` mit Grid, Region, Agent, Avatar, Object, Terrain, Parcel und Environment
+- WorldModel akzeptiert nur typisierte/validierte Zustandsupdates; keine LLUDP-/CAPS-Rohdaten und keine Renderer-Abhängigkeit
+- Login initialisiert Grid/Region/Agent im WorldModel
+- LLUDP-Circuit aktualisiert ausschließlich den verbunden/anwesend-Zustand von Region und Agent
+- `simulation_ready` wird jetzt aus `WorldModel::ready()` abgeleitet
+- wichtig: Login + `UDP LIVE` reichen weiterhin nicht; `ready()` verlangt zusätzlich validierte Weltdaten (derzeit Terrain)
+- neuer `nexverse-world-model-tests` Test
+- kompletter Debug-Build nach Phase-5-Grundblock: 13/13 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

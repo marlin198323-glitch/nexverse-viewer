@@ -11,6 +11,7 @@
 #include <array>
 #include <bit>
 #include <charconv>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -173,13 +174,48 @@ LlsdParseResult parse_xml_value(const XMLElement* element)
     }
     if (name == "real")
     {
-        const std::string value = text_of(element);
-        char* end = nullptr;
-        const double result = std::strtod(value.c_str(), &end);
-        if (end == value.c_str() || (end != nullptr && *end != '\0'))
+        const std::string raw = text_of(element);
+        if (raw.empty())
         {
-            return {std::nullopt, "LLSD real is invalid"};
+            return {LlsdValue::real(0.0), {}};
         }
+
+        std::size_t first = 0U;
+        while (first < raw.size() &&
+               std::isspace(static_cast<unsigned char>(raw[first])) != 0)
+        {
+            ++first;
+        }
+
+        std::size_t last = raw.size();
+        while (last > first &&
+               std::isspace(static_cast<unsigned char>(raw[last - 1U])) != 0)
+        {
+            --last;
+        }
+
+        if (first == last)
+        {
+            return {LlsdValue::real(0.0), {}};
+        }
+
+        const std::string_view value{raw.data() + first, last - first};
+        double result = 0.0;
+        const auto parsed = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            result,
+            std::chars_format::general);
+
+        if (parsed.ec != std::errc{} ||
+            parsed.ptr != value.data() + value.size())
+        {
+            const std::string shown{value.substr(0U, 64U)};
+            return {
+                std::nullopt,
+                "LLSD real is invalid: '" + shown + "'"};
+        }
+
         return {LlsdValue::real(result), {}};
     }
     if (name == "string")

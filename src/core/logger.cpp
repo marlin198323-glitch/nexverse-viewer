@@ -7,15 +7,69 @@
 #include "nexverse/core/logger.hpp"
 
 #include <chrono>
+#include <cstdlib>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <optional>
+#include <string>
 
 namespace
 {
 std::mutex g_log_mutex;
 nexverse::core::LogLevel g_level = nexverse::core::LogLevel::info;
+std::optional<std::ofstream> g_log_file;
+
+std::filesystem::path log_file_path()
+{
+#if defined(_WIN32)
+    if (const char* base = std::getenv("LOCALAPPDATA"); base != nullptr && *base != '\0')
+    {
+        return std::filesystem::path{base} / "OpenGenesisLINK" / "viewer.log";
+    }
+#elif defined(__APPLE__)
+    if (const char* home = std::getenv("HOME"); home != nullptr && *home != '\0')
+    {
+        return std::filesystem::path{home} / "Library" / "Logs" /
+               "OpenGenesisLINK" / "viewer.log";
+    }
+#else
+    if (const char* state = std::getenv("XDG_STATE_HOME"); state != nullptr && *state != '\0')
+    {
+        return std::filesystem::path{state} / "opengenesislink" / "viewer.log";
+    }
+    if (const char* home = std::getenv("HOME"); home != nullptr && *home != '\0')
+    {
+        return std::filesystem::path{home} / ".local" / "state" /
+               "opengenesislink" / "viewer.log";
+    }
+#endif
+    return std::filesystem::current_path() / "viewer.log";
+}
+
+std::ofstream* persistent_log_stream()
+{
+    if (g_log_file.has_value())
+    {
+        return g_log_file->is_open() ? &*g_log_file : nullptr;
+    }
+
+    try
+    {
+        const std::filesystem::path path = log_file_path();
+        std::filesystem::create_directories(path.parent_path());
+        g_log_file.emplace(path, std::ios::out | std::ios::app);
+    }
+    catch (...)
+    {
+        g_log_file.emplace();
+    }
+
+    return g_log_file->is_open() ? &*g_log_file : nullptr;
+}
 
 constexpr int rank(nexverse::core::LogLevel level) noexcept
 {
@@ -61,9 +115,19 @@ void log(LogLevel level, std::string_view message)
 #endif
 
     std::scoped_lock lock(g_log_mutex);
-    std::clog << std::put_time(&local, "%H:%M:%S")
-              << " [" << label(level) << "] "
-              << message << '\n';
+
+    std::ostringstream line;
+    line << std::put_time(&local, "%Y-%m-%d %H:%M:%S")
+         << " [" << label(level) << "] "
+         << message;
+
+    std::clog << line.str() << '\n';
+
+    if (std::ofstream* file = persistent_log_stream(); file != nullptr)
+    {
+        *file << line.str() << '\n';
+        file->flush();
+    }
 }
 
 void debug(std::string_view message) { log(LogLevel::debug, message); }

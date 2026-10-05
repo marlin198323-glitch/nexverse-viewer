@@ -78,11 +78,33 @@ int main()
         return 5;
     }
 
+    constexpr std::string_view opensim_reals_xml =
+        "<llsd><map>"
+        "<key>empty</key><real/>"
+        "<key>spaced</key><real>  1.5000  </real>"
+        "<key>nexverse</key><real>11.001100540161133</real>"
+        "</map></llsd>";
+
+    const auto opensim_reals = parse_llsd_xml(opensim_reals_xml);
+    if (!opensim_reals.ok() ||
+        opensim_reals.value->find("empty") == nullptr ||
+        opensim_reals.value->find("empty")->real_value != 0.0 ||
+        opensim_reals.value->find("spaced") == nullptr ||
+        std::abs(opensim_reals.value->find("spaced")->real_value - 1.5) > 0.000001 ||
+        opensim_reals.value->find("nexverse") == nullptr ||
+        std::abs(
+            opensim_reals.value->find("nexverse")->real_value -
+            11.001100540161133) > 0.000000000001)
+    {
+        std::cerr << "OpenSim LLSD real compatibility failed\n";
+        return 6;
+    }
+
     const std::vector<std::uint8_t> invalid{'[', 0U, 0U, 0U, 1U, 's'};
     if (parse_llsd_binary(invalid).ok())
     {
         std::cerr << "Invalid LLSD binary unexpectedly accepted\n";
-        return 6;
+        return 7;
     }
 
     std::cout << "LLSD XML and binary tests passed\n";

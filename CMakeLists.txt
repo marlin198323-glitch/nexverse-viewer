@@ -87,6 +87,16 @@ target_include_directories(nexverse-protocol PUBLIC
 )
 target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tinyxml2::tinyxml2 OpenSSL::Crypto)
 
+add_library(nexverse-world
+    src/world/world_model.cpp
+)
+add_library(NexVerse::World ALIAS nexverse-world)
+target_include_directories(nexverse-world PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(nexverse-world PUBLIC NexVerse::Protocol)
+
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
     src/ui/welcome_page.cpp
@@ -102,6 +112,7 @@ target_include_directories(nexverse-ui PUBLIC
 target_link_libraries(nexverse-ui PUBLIC
     NexVerse::Core
     NexVerse::Protocol
+    NexVerse::World
     OpenGL::GL
     glfw
     glad::glad
@@ -143,6 +154,7 @@ endfunction()
 nexverse_enable_warnings(nexverse-core)
 nexverse_enable_warnings(nexverse-net)
 nexverse_enable_warnings(nexverse-protocol)
+nexverse_enable_warnings(nexverse-world)
 nexverse_enable_warnings(nexverse-ui)
 
 add_executable(nexverse-viewer apps/viewer/main.cpp)
@@ -210,6 +222,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-caps-event-dispatcher-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-caps-event-dispatcher-tests)
     add_test(NAME nexverse-caps-event-dispatcher-tests COMMAND nexverse-caps-event-dispatcher-tests)
+
+    add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
+    target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-world-model-tests)
+    add_test(NAME nexverse-world-model-tests COMMAND nexverse-world-model-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

@@ -18,6 +18,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
+#include "nexverse/world/world_model.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
 #include <glad/glad.h>
@@ -1567,6 +1568,7 @@ int Application::run()
     std::optional<protocol::LoginSession> active_session;
 
     protocol::OutboundCommandQueue outbound_queue{512U};
+    world::WorldModel world_model;
     bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
@@ -1752,6 +1754,35 @@ int Application::run()
                         login_ui.password.clear();
                         core::info("OpenSim login succeeded; simulator session established");
 
+                        world_model.reset();
+                        world_model.set_grid({grid_name, active_login_uri});
+
+                        const std::uint64_t region_handle =
+                            (static_cast<std::uint64_t>(active_session->region_x) << 32U) |
+                            static_cast<std::uint64_t>(active_session->region_y);
+
+                        std::string region_name = active_session->start_location;
+                        if (const auto found = active_session->scalar_fields.find("sim_name");
+                            found != active_session->scalar_fields.end() && !found->second.empty())
+                        {
+                            region_name = found->second;
+                        }
+
+                        world_model.apply_region({
+                            region_handle,
+                            std::move(region_name),
+                            {},
+                            false});
+
+                        world_model.apply_agent({
+                            active_session->agent_id,
+                            active_session->session_id,
+                            {},
+                            {},
+                            false});
+
+                        simulation_ready = world_model.ready();
+
                         if (!caps_started &&
                             active_session.has_value() &&
                             !active_session->seed_capability.empty())
@@ -1781,13 +1812,22 @@ int Application::run()
 
                                     if (!discovery.success)
                                     {
-                                        std::scoped_lock lock{caps_mutex};
-                                        caps_state.status = "ERROR";
+                                        {
+                                            std::scoped_lock lock{caps_mutex};
+                                            caps_state.status = "ERROR";
+                                        }
+                                        core::error(
+                                            "CAPS seed discovery failed; no capability endpoints accepted");
                                         return;
                                     }
 
+                                    core::info(
+                                        "CAPS seed discovery succeeded; endpoints=" +
+                                        std::to_string(discovery.capabilities.size()));
+
                                     std::string event_queue_uri;
                                     std::string simulator_features_uri;
+                                    std::string simulator_features_message;
 
                                     {
                                         std::scoped_lock lock{caps_mutex};
@@ -1820,10 +1860,30 @@ int Application::run()
                                         std::scoped_lock lock{caps_mutex};
                                         caps_state.simulator_features_loaded =
                                             features.success;
+                                        simulator_features_message = features.message;
                                         if (!features.success)
                                         {
                                             caps_state.status = "CAPS PARTIAL";
                                         }
+                                    }
+
+                                    if (!simulator_features_uri.empty())
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        if (caps_state.simulator_features_loaded)
+                                        {
+                                            core::info("CAPS SimulatorFeatures loaded successfully");
+                                        }
+                                        else
+                                        {
+                                            core::warning(
+                                                "CAPS SimulatorFeatures request failed: " +
+                                                simulator_features_message);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        core::warning("CAPS SimulatorFeatures endpoint not advertised");
                                     }
 
                                     if (event_queue_uri.empty())
@@ -1834,8 +1894,11 @@ int Application::run()
                                         {
                                             caps_state.status = "CAPS READY";
                                         }
+                                        core::warning("CAPS EventQueueGet endpoint not advertised");
                                         return;
                                     }
+
+                                    core::info("CAPS EventQueueGet endpoint available; long-poll starting");
 
                                     {
                                         std::scoped_lock lock{caps_mutex};
@@ -1845,6 +1908,7 @@ int Application::run()
 
                                     std::optional<std::int32_t> acknowledgement;
                                     std::uint32_t failures = 0U;
+                                    bool event_queue_live_logged = false;
 
                                     while (!caps_stop.load())
                                     {
@@ -1871,6 +1935,13 @@ int Application::run()
                                                 caps_state.status = "CAPS LIVE";
                                             }
 
+                                            if (!event_queue_live_logged)
+                                            {
+                                                event_queue_live_logged = true;
+                                                core::info(
+                                                    "CAPS EventQueue live; first successful batch received");
+                                            }
+
                                             for (const auto& event : batch.events)
                                             {
                                                 (void)caps_event_dispatcher.dispatch(event);
@@ -1886,6 +1957,10 @@ int Application::run()
                                                     ? "ERROR"
                                                     : "CAPS RETRY";
                                         }
+
+                                        core::warning(
+                                            "CAPS EventQueue poll failed; retry=" +
+                                            std::to_string(failures));
 
                                         std::this_thread::sleep_for(
                                             std::chrono::seconds{
@@ -2061,6 +2136,29 @@ int Application::run()
                 std::scoped_lock lock{circuit_mutex};
                 current_circuit_state = circuit_status.state;
             }
+
+            if (login_ui.authenticated && active_session.has_value())
+            {
+                const bool circuit_active =
+                    current_circuit_state == protocol::CircuitState::active;
+
+                const world::RegionState region_snapshot = world_model.region();
+                world_model.apply_region({
+                    region_snapshot.handle,
+                    region_snapshot.name,
+                    region_snapshot.agent_position,
+                    circuit_active});
+
+                const world::AgentState agent_snapshot = world_model.agent();
+                world_model.apply_agent({
+                    agent_snapshot.agent_id,
+                    agent_snapshot.session_id,
+                    agent_snapshot.position,
+                    agent_snapshot.rotation,
+                    circuit_active});
+            }
+
+            simulation_ready = world_model.ready();
 
             const auto now = std::chrono::steady_clock::now();
             if (simulation_ready &&
