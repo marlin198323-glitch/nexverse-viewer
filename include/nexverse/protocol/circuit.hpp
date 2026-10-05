@@ -6,6 +6,7 @@
 
 #include "nexverse/net/udp_socket.hpp"
 #include "nexverse/protocol/lludp.hpp"
+#include "nexverse/protocol/outbound_queue.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -49,6 +50,7 @@ public:
         std::atomic_bool& stop_requested,
         StatusCallback on_status = {},
         PacketCallback on_packet = {},
+        OutboundCommandQueue* outbound = nullptr,
         std::chrono::seconds startup_timeout = std::chrono::seconds{15});
 
 private:

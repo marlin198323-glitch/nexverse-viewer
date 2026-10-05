@@ -69,6 +69,8 @@ add_library(nexverse-protocol
     src/protocol/lludp.cpp
     src/protocol/circuit.cpp
     src/protocol/packet_dispatcher.cpp
+    src/protocol/viewer_messages.cpp
+    src/protocol/outbound_queue.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -170,6 +172,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-packet-dispatcher-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-packet-dispatcher-tests)
     add_test(NAME nexverse-packet-dispatcher-tests COMMAND nexverse-packet-dispatcher-tests)
+
+    add_executable(nexverse-viewer-messages-tests tests/viewer_messages_tests.cpp)
+    target_link_libraries(nexverse-viewer-messages-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-viewer-messages-tests)
+    add_test(NAME nexverse-viewer-messages-tests COMMAND nexverse-viewer-messages-tests)
+
+    add_executable(nexverse-outbound-queue-tests tests/outbound_queue_tests.cpp)
+    target_link_libraries(nexverse-outbound-queue-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-outbound-queue-tests)
+    add_test(NAME nexverse-outbound-queue-tests COMMAND nexverse-outbound-queue-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

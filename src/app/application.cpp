@@ -12,6 +12,8 @@
 #include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/packet_dispatcher.hpp"
+#include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 
@@ -1252,6 +1254,22 @@ int Application::run()
     std::future<protocol::LoginResult> login_future;
     std::optional<protocol::LoginSession> active_session;
 
+    protocol::OutboundCommandQueue outbound_queue{512U};
+    protocol::PacketDispatcher packet_dispatcher;
+    std::atomic_uint32_t local_chat_received{0U};
+
+    packet_dispatcher.register_handler(
+        protocol::msg_chat_from_simulator,
+        [&local_chat_received](const protocol::DecodedPacket& packet)
+        {
+            if (protocol::decode_chat_from_simulator(packet.payload).has_value())
+            {
+                local_chat_received.fetch_add(1U, std::memory_order_relaxed);
+            }
+        });
+
+    auto last_agent_update = std::chrono::steady_clock::now();
+
     std::atomic_bool circuit_stop{false};
     std::future<protocol::CircuitStatus> circuit_future;
     std::mutex circuit_mutex;
@@ -1367,7 +1385,9 @@ int Application::run()
                                 [circuit_session = std::move(circuit_session),
                                  &circuit_stop,
                                  &circuit_mutex,
-                                 &circuit_status]() mutable
+                                 &circuit_status,
+                                 &packet_dispatcher,
+                                 &outbound_queue]() mutable
                                 {
                                     protocol::CircuitStatus final_status;
                                     protocol::CircuitState last_reported_state =
@@ -1399,7 +1419,12 @@ int Application::run()
                                                         std::string{circuit_state_label(update.state)} +
                                                         " - " + update.message);
                                                 }
-                                            });
+                                            },
+                                            [&packet_dispatcher](const protocol::DecodedPacket& packet)
+                                            {
+                                                (void)packet_dispatcher.dispatch(packet);
+                                            },
+                                            &outbound_queue);
 
                                         if (circuit_stop.load() ||
                                             final_status.state != protocol::CircuitState::failed)
@@ -1505,6 +1530,58 @@ int Application::run()
                             });
                     }
                 }
+            }
+
+            protocol::CircuitState current_circuit_state;
+            {
+                std::scoped_lock lock{circuit_mutex};
+                current_circuit_state = circuit_status.state;
+            }
+
+            const auto now = std::chrono::steady_clock::now();
+            if (login_ui.authenticated &&
+                current_circuit_state == protocol::CircuitState::active &&
+                now - last_agent_update >= std::chrono::milliseconds{100})
+            {
+                protocol::AgentUpdateData update;
+                std::uint32_t controls = 0U;
+
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+                    controls |= protocol::control_at_pos;
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                    controls |= protocol::control_at_neg;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+                    controls |= protocol::control_left_pos;
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+                    controls |= protocol::control_left_neg;
+                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+                    controls |= protocol::control_up_pos;
+                if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+                    controls |= protocol::control_up_neg;
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+                    controls |= protocol::control_turn_left;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+                    controls |= protocol::control_turn_right;
+                if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+                    controls |= protocol::control_fly;
+
+                if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                    glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+                {
+                    controls |= protocol::control_fast_at |
+                                protocol::control_fast_left |
+                                protocol::control_fast_up;
+                }
+
+                update.control_flags = controls;
+                update.camera_center = {128.0f, 128.0f, 30.0f};
+                update.camera_at_axis = {1.0f, 0.0f, 0.0f};
+                update.camera_left_axis = {0.0f, 1.0f, 0.0f};
+                update.camera_up_axis = {0.0f, 0.0f, 1.0f};
+                update.far_clip = 256.0f;
+
+                (void)outbound_queue.push(std::move(update));
+                last_agent_update = now;
             }
 
             int framebuffer_width = 0;

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 namespace
@@ -200,6 +201,7 @@ CircuitStatus CircuitConnection::run(
     std::atomic_bool& stop_requested,
     StatusCallback on_status,
     PacketCallback on_packet,
+    OutboundCommandQueue* outbound,
     std::chrono::seconds startup_timeout)
 {
     CircuitStatus status;
@@ -294,6 +296,60 @@ CircuitStatus CircuitConnection::run(
             status.message = "LLUDP reliable retry limit reached";
             notify();
             return status;
+        }
+
+        if (status.state == CircuitState::active && outbound != nullptr)
+        {
+            for (std::size_t command_count = 0; command_count < 16U; ++command_count)
+            {
+                auto command = outbound->try_pop();
+                if (!command.has_value()) break;
+
+                const std::uint32_t sequence = next_sequence++;
+                bool sent = true;
+
+                std::visit(
+                    [&](const auto& value)
+                    {
+                        using T = std::decay_t<decltype(value)>;
+
+                        if constexpr (std::is_same_v<T, AgentUpdateData>)
+                        {
+                            const auto packet = encode_agent_update(sequence, session_, value);
+                            sent = !packet.empty() && send_datagram(socket, packet, status);
+                        }
+                        else if constexpr (std::is_same_v<T, LocalChatMessage>)
+                        {
+                            auto packet = encode_chat_from_viewer(sequence, session_, value);
+                            sent = send_reliable(
+                                socket,
+                                tracker,
+                                std::move(packet),
+                                sequence,
+                                status);
+                        }
+                        else if constexpr (std::is_same_v<T, TeleportLocation>)
+                        {
+                            auto packet = encode_teleport_location_request(
+                                sequence,
+                                session_,
+                                value);
+                            sent = send_reliable(
+                                socket,
+                                tracker,
+                                std::move(packet),
+                                sequence,
+                                status);
+                        }
+                    },
+                    *command);
+
+                if (!sent)
+                {
+                    notify();
+                    return status;
+                }
+            }
         }
 
         auto received = socket.receive(lludp_mtu, std::chrono::milliseconds{50});

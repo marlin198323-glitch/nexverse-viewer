@@ -203,7 +203,7 @@ Bereits implementiert:
 - begrenzter Reconnect im Viewer
 - LLUDP-Status wird live in der Oberfläche angezeigt
 - Statuswechsel werden gezielt geloggt, damit Circuit-Fehler im Echttest lokalisierbar sind
-- 6/6 lokale Tests grün
+- 9/9 lokale Tests grün
 
 Echttest am 05.10.2026 erfolgreich bestätigt:
 - `SOCKET` – UDP-Socket zum echten NexVerse-Simulator geöffnet
@@ -216,11 +216,21 @@ Echttest am 05.10.2026 erfolgreich bestätigt:
 Zusätzlich vorhanden:
 - generischer `PacketDispatcher` mit registrierbaren Handlern
 - jedes dekodierte Circuit-Paket kann nach der Transportbehandlung über einen Packet-Callback an spätere WorldModel-/Chat-/Movement-/Object-Module weitergereicht werden
-- 7/7 lokale Tests grün
+- typisierte `AgentUpdate`-Nachricht für Bewegung/Kamera
+- typisierte `ChatFromViewer`-Nachricht für Local Chat
+- `ChatFromSimulator`-Decoder und registrierter Dispatcher-Handler
+- typisierte `TeleportLocationRequest`-Nachricht
+- Decoder für `TeleportProgress` und `TeleportFailed`
+- thread-sichere begrenzte Outbound-Queue zwischen UI/Input und LLUDP-Thread
+- `W/S/A/D`, Leertaste, `C`, Pfeil links/rechts und Shift werden nach `UDP LIVE` als `AgentUpdate`-Steuerflags gesendet
+- AgentUpdate wird aktuell mit 10 Hz erzeugt
+- 9/9 lokale Tests grün
 
 Noch offen für Phase 3:
-- Message-Template-Abdeckung über die Startpakete hinaus erweitern
-- konkrete Dispatch-Handler für Movement, Chat, Teleport, Avatare, Regionen und Objekte
+- echter NexVerse-Bewegungstest mit den neuen `AgentUpdate`-Paketen
+- Chat-Eingabefeld an die vorhandene Local-Chat-Outbound-Nachricht anbinden
+- Teleport-UI an `TeleportLocationRequest` anbinden
+- weitere Message-Template-Abdeckung für Avatar-, Region- und Object-Updates
 - WorldModel-Anbindung auf Basis dieser Dispatch-Schicht
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
