@@ -1,3 +1,5 @@
+[Reading 1168 lines from start (total: 1168 lines, 0 remaining)]
+
 [Reading 947 lines from start (total: 947 lines, 0 remaining)]
 
 # NexVerse Viewer – Projektplan
@@ -283,6 +285,493 @@ Diese Liste ist verbindliche Produktanforderung und wird phasenweise umgesetzt.
 Spezielle Firestorm-Power-User-Erweiterungen wie RLV/RLVa, sehr spezielle Phototools, Firestorm-spezifische Debug-Optionen oder proprietäre Service-Integrationen werden nicht automatisch übernommen. Solche Funktionen kommen nur hinzu, wenn sie für NexVerse ausdrücklich benötigt werden.
 
 Die UI muss nicht wie Firestorm aussehen. Maßgeblich bleibt das definierte OpenGenesisLINK-/NexVerse-Zieldesign. Firestorm dient hier ausschließlich als funktionaler Referenzumfang.
+
+---
+
+## 2.2 OpenGenesisLINK Next-Gen Renderer – verbindliche Zielarchitektur
+
+Diese Renderer-Vorgabe ist ab 05.10.2026 verbindlicher Bestandteil des Projektplans und muss bei allen späteren Entscheidungen zu WorldModel, Scene Layer, Rendering, Vulkan, Materialien, Terrain, Wasser, Atmosphäre, Avataren, Assets, Performance und GPU-Funktionen berücksichtigt werden.
+
+Wichtig: Diese Vorgabe beschreibt die technische und qualitative Zielrichtung. Sie ist ausdrücklich keine Aufforderung, alle Zukunftsfunktionen sofort gleichzeitig zu implementieren. Die Umsetzung erfolgt weiterhin schrittweise nach den Projektphasen und den weiteren Anweisungen im Chat.
+
+### Langfristiges Qualitätsziel
+
+OpenGenesisLINK erhält eine eigene moderne Rendering-Architektur. Bestehende OpenSim-Welten müssen kompatibel bleiben, sollen aber grafisch deutlich hochwertiger dargestellt werden als im klassischen Second-Life-/OpenSim-Viewer.
+
+Second Life beziehungsweise Firestorm dienen für die Grafikqualität nur als Mindestvergleich. Ziel ist keine optische Kopie, sondern eine eigenständige moderne Darstellung mit besserer Beleuchtung, Materialien, Wasser, Terrain, Atmosphäre, Reflexionen, Schatten, Performance und optionalem Hardware-Raytracing.
+
+### Verbindliche Architekturtrennung
+
+Grundprinzip:
+
+```text
+OpenSim / OpenGenesisLINK Netzwerkdaten
+        ↓
+WorldModel / Scene Representation
+        ↓
+OGLRender Render Abstraction Layer
+        ↓
+Render Backend
+        ↓
+GPU
+```
+
+Der Netzwerk-/OpenSim-Protokollcode darf nicht direkt von Vulkan oder einem bestimmten Rendering-Backend abhängig sein.
+
+Der bestehende Viewer-Code bleibt zuständig für unter anderem:
+
+- Netzwerk
+- OpenSim-Protokoll
+- Inventar
+- Kommunikation
+- Region-Verbindungen
+- Asset-System
+- Avatar-Daten
+- Viewer-Funktionen
+
+Die Renderingarchitektur wird davon sauber getrennt.
+
+### OGLRender
+
+Arbeitstitel der neuen Render-Abstraktionsschicht:
+
+`OGLRender`
+
+Zielstruktur, bei Bedarf später anpassbar:
+
+```text
+OGLRender/
+    Core/
+    Backend/
+    Vulkan/
+    Scene/
+    Materials/
+    Lighting/
+    Shadows/
+    Reflections/
+    Terrain/
+    Water/
+    Environment/
+    Avatars/
+    Particles/
+    PostProcessing/
+    RayTracing/
+    Upscaling/
+    Streaming/
+    Debug/
+```
+
+### Primäres Render-Backend
+
+Vulkan ist das primäre moderne Render-Backend.
+
+Zielplattformen zunächst:
+
+- Windows x86_64
+- Linux x86_64
+- Linux ARM64 soweit technisch sinnvoll
+
+Langfristig muss die Render-Abstraktion weitere Backends zulassen. Für macOS kann später Metal geprüft werden; Windows kann später optional DirectX 12 erhalten. Zunächst bleibt der Fokus auf Vulkan.
+
+### Legacy-Renderer und Migration
+
+Der vorhandene/aktuelle Renderer wird während der Entwicklung nicht sofort entfernt.
+
+Übergangsmodell:
+
+```text
+Renderer:
+- Legacy
+- OpenGenesisLINK NextGen
+```
+
+Der NextGen-Renderer darf zunächst experimentell parallel existieren. Erst wenn er ausreichend stabil und funktional vollständig ist, wird über die endgültige Ablösung des Legacy-Renderers entschieden.
+
+### OpenSim-Kompatibilität
+
+Bestehende Regionen dürfen nicht neu gebaut werden müssen.
+
+Unterstützt bleiben müssen insbesondere:
+
+- Prims
+- Meshes
+- Sculpties
+- Texturen
+- Avatare
+- Kleidung
+- Attachments
+- Terrain
+- Wasser
+- Partikel
+- Lichtquellen
+- Alpha-Materialien
+- bestehende PBR-Materialien
+- Legacy-Materialien
+
+Prinzip:
+
+```text
+bestehende OpenSim-Daten
+→ OpenGenesisLINK Scene Layer
+→ moderner Renderer
+```
+
+### Modernes Materialsystem
+
+Das Materialsystem wird langfristig PBR-basiert und glTF-kompatibel im Metallic/Roughness-Modell ausgelegt.
+
+Mindestens vorzubereiten:
+
+- Base Color
+- Normal
+- Metallic
+- Roughness
+- Ambient Occlusion
+- Emissive
+- Alpha
+- Height / Displacement
+
+Später optional:
+
+- Clearcoat
+- Clearcoat Roughness
+- Transmission
+- Subsurface Scattering
+- Anisotropy
+- Sheen
+
+Legacy-Materialien müssen automatisch möglichst sinnvoll auf das neue Materialsystem abgebildet werden.
+
+### Beleuchtung
+
+Langfristig vorzusehen:
+
+- physikalisch plausible Beleuchtung
+- HDR Rendering
+- Image Based Lighting
+- Forward+ oder Clustered Lighting
+- dynamische Lichtquellen
+- hochwertige Sonnenbeleuchtung
+- Point Lights
+- Spot Lights
+- Reflection Probes
+- Ambient Occlusion
+- Tone Mapping
+- Exposure Control
+- kontrollierbares Bloom
+- indirekte Beleuchtung soweit technisch sinnvoll
+
+Bestehende OpenSim-Lichtquellen bleiben kompatibel.
+
+### Schatten und Reflexionen
+
+Rasterpfad:
+
+- Cascaded Shadow Maps
+- hochwertige Schattenfilterung
+- dynamische Schatten
+- konfigurierbare Shadow Distance
+- konfigurierbare Shadow Resolution
+- Reflection Probes
+- Screen Space Reflections
+- Planar Reflections
+- Cubemap-Fallback
+
+Optional mit Raytracing:
+
+- Raytraced Shadows
+- Raytraced Reflections
+- Raytraced Ambient Occlusion
+- später optional RT Global Illumination
+
+### Hardware-Raytracing
+
+Raytracing bleibt ausdrücklich optional. Eine Raytracing-GPU darf niemals Voraussetzung für OpenGenesisLINK sein.
+
+```text
+GPU ohne Raytracing
+→ Vulkan Raster Rendering
+
+GPU mit Raytracing
+→ optional Hybrid Rendering
+```
+
+Die Architektur soll BLAS/TLAS berücksichtigen und dynamische OpenSim-Welten effizient behandeln. Statische Geometrie soll wiederverwendet werden; bewegliche Instanzen werden aktualisiert, ohne unnötig die gesamte Beschleunigungsstruktur neu aufzubauen.
+
+Raytracing-Reichweite und Qualitätsstufen bleiben konfigurierbar und werden später konkret festgelegt.
+
+### Hardwareerkennung
+
+Später automatisch erkennen:
+
+- GPU
+- VRAM
+- Vulkan-Unterstützung
+- relevante Vulkan Extensions
+- Hardware-Raytracing
+- Upscaling-Unterstützung
+
+Nicht unterstützte Funktionen dürfen nicht angeboten beziehungsweise automatisch deaktiviert werden.
+
+Kein GPU-Hersteller-Lock-in: NVIDIA, AMD und Intel sind grundsätzlich zu berücksichtigen.
+
+### Terrain
+
+Bestehendes OpenSim-Terrain bleibt kompatibel.
+
+Enhanced-Terrain soll langfristig unter anderem vorbereiten:
+
+- Heightmap
+- Base Color
+- Normal
+- Roughness
+- AO
+- Detail Maps
+- Height / Displacement
+- Vegetation Mask
+- Wetness Mask
+- Snow Mask
+
+Mögliche Materialtypen: Gras, Erde, Stein, Sand, Schlamm, Schnee und nasser Untergrund.
+
+### Wasser
+
+Langfristig:
+
+- hochwertige Reflexionen
+- Refraction
+- Fresnel
+- Normal Waves
+- Foam
+- Tiefenabhängigkeit
+- Unterwasser-Fog
+- Sonnenreflexion
+- Küstenübergänge
+- Reflection Probes
+- SSR
+- optional RT Reflections
+
+Bestehende OpenSim-Wasserhöhen bleiben kompatibel.
+
+### Vegetation
+
+Vorbereiten:
+
+- GPU Instancing
+- LOD
+- Distance Culling
+- Frustum Culling
+- GPU Culling
+- Wind Animation
+- optimierte Foliage Shader
+
+Später optional automatische Grasverteilung und Vegetation Masks.
+
+### Atmosphäre und Environment
+
+Langfristig:
+
+- physikalischer Himmel
+- Sonne
+- Mond
+- Sterne
+- atmosphärische Streuung
+- volumetrische Wolken
+- volumetrischer Nebel
+- moderne Tageszeiten
+
+Bestehende EEP-/Windlight-Daten müssen übernommen beziehungsweise übersetzt werden können.
+
+### Wetter
+
+Später mögliche Erweiterung:
+
+- klar
+- bewölkt
+- Regen
+- Gewitter
+- Nebel
+- Schnee
+
+Wetter kann später Materialien und Umgebung beeinflussen, etwa Wetness/Roughness/Reflexionen. Dieses System wird nicht vorzeitig implementiert.
+
+### Avatar-Rendering
+
+Bestehende OpenSim-/SL-Avatare bleiben vollständig kompatibel.
+
+Langfristige Qualitätsverbesserungen:
+
+- Skin Shader
+- bessere Hautdarstellung
+- Subsurface Scattering
+- Augen
+- Haare
+- Stoffe
+- Schatten
+- Animation Interpolation
+- Normal Maps
+- moderne PBR-Materialien
+
+### Post Processing
+
+Modular vorbereiten:
+
+- HDR
+- Tone Mapping
+- Exposure
+- Bloom
+- GTAO / HBAO
+- TAA
+- SMAA
+- Color Grading
+- Sharpening
+- Depth of Field
+- optional Motion Blur
+- volumetrische Effekte
+
+Effekte müssen einzeln deaktivierbar sein.
+
+### Upscaling
+
+Herstellerunabhängig vorbereiten:
+
+- FSR
+
+Später optional, nur bei vorhandener Unterstützung:
+
+- DLSS
+- XeSS
+
+### GPU- und Streaming-Performance
+
+Der Renderer muss nicht nur schöner, sondern effizienter werden.
+
+Vorbereiten:
+
+- Frustum Culling
+- Occlusion Culling
+- Distance Culling
+- GPU Culling
+- Instancing
+- LOD
+- Texture Streaming
+- Mesh Streaming
+- später optional Meshlets
+- GPU Driven Rendering
+- Indirect Draw
+
+Texture Streaming priorisiert sichtbare und nahe Inhalte. Mesh Streaming verwendet passende LOD-Stufen nach Entfernung und Sichtbarkeit.
+
+### Performance-Diagnose
+
+Entwickleransicht langfristig mit mindestens:
+
+- FPS
+- Frame Time
+- CPU Render Time
+- GPU Frame Time
+- VRAM Usage
+- RAM Usage
+- Draw Calls
+- Triangles
+- sichtbare Objekte
+- Texture Memory
+- Mesh Memory
+- Shadow Time
+- Raytracing Time
+- Post Processing Time
+
+### Grafikprofile
+
+Langfristig:
+
+- Sehr niedrig
+- Niedrig
+- Mittel
+- Hoch
+- Ultra
+- Benutzerdefiniert
+
+OpenGenesisLINK soll sowohl auf schwächeren Systemen als auch auf High-End-Gaming-PCs sinnvoll skalieren.
+
+### Serverunabhängigkeit und Enhanced Capabilities
+
+Der neue Renderer darf keine speziellen OpenGenesisLINK-Servererweiterungen voraussetzen.
+
+Normale OpenSim-Region:
+
+```text
+Standarddaten
+→ Compatibility Rendering
+```
+
+OpenGenesisLINK-Region kann später zusätzlich optionale Enhanced Capabilities liefern, beispielsweise:
+
+- OGL_PBR
+- OGL_TERRAIN
+- OGL_LIGHTING
+- OGL_ENVIRONMENT
+- OGL_WEATHER
+
+Fehlt eine Capability, muss immer der Standard-OpenSim-Fallback funktionieren.
+
+### Stabilität und Fallback
+
+Kann Vulkan oder der NextGen-Renderer nicht gestartet werden:
+
+```text
+Fehler erkennen
+→ Logeintrag
+→ sinnvoller Fallback
+```
+
+Solange ein Legacy-Renderer vorhanden ist, darf auf diesen zurückgefallen werden. Der Viewer darf wegen eines nicht verfügbaren NextGen-Features nicht einfach abstürzen.
+
+### Renderer-Logging
+
+Vorzusehen sind klare Renderer-Logs, beispielsweise:
+
+```text
+[OGL-RENDER] Renderer wird initialisiert
+[OGL-RENDER] GPU: ...
+[OGL-RENDER] VRAM: ...
+[OGL-RENDER] Vulkan: ...
+[OGL-RENDER] Hardware-Raytracing: Ja/Nein
+[OGL-RENDER] Renderer erfolgreich gestartet
+```
+
+Fehlerkategorien unter anderem:
+
+```text
+[OGL-RENDER-ERROR]
+[OGL-VULKAN-ERROR]
+[OGL-RT-ERROR]
+```
+
+### Schrittweise Umsetzung – verbindlich
+
+Nicht eigenständig alle Zukunftssysteme gleichzeitig bauen.
+
+Insbesondere nicht ohne passende spätere Phase sofort vollständig implementieren:
+
+- Raytracing
+- Wetter
+- Terrain 2.0
+- neue Avatar-Systeme
+- Upscaling
+- Global Illumination
+- neue Server-Protokolle
+- sämtliche Post-Processing-Systeme
+
+Vorgehen:
+
+1. Zielarchitektur bei allen Entscheidungen berücksichtigen.
+2. Bestehende Architektur analysieren.
+3. saubere World-/Scene-/Render-Abstraktionen schaffen.
+4. OpenSim-Kompatibilität erhalten.
+5. Funktionen phasenweise nach Projektplan und weiteren Chat-Anweisungen implementieren.
+
+Diese Renderer-Vorgabe ist bei jeder späteren Rendering-Phase erneut heranzuziehen. Sie darf nicht dadurch übergangen werden, dass kurzfristig ein einfacherer renderergebundener Netzwerk- oder WorldModel-Weg möglich wäre.
 
 ---
 
@@ -1164,5 +1653,7 @@ Die nächsten Arbeitsschritte sind:
 10. Danach Phase 1: OpenSim `get_grid_info`.
 
 Erst wenn Phase 0 auf allen Zielplattformen reproduzierbar baut, beginnt die eigentliche OpenSim-Protokollentwicklung.
+
+[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
 
 [executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]

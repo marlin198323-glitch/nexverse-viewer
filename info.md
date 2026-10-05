@@ -1,3 +1,5 @@
+[Reading 259 lines from start (total: 259 lines, 0 remaining)]
+
 [Reading 212 lines from start (total: 212 lines, 0 remaining)]
 
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
@@ -257,3 +259,20 @@ Ab 05.10.2026 gilt Firestorm funktional als Mindestmaßstab für die üblichen V
 Verbindlich eingeplant sind unter anderem Bewegung/Flug/Sitzen/Teleport, Kamera/Mouselook, Local Chat/IM/Gruppen, Freunde/Profile/Radar, Inventar, Attachments/Outfits/Gesten/AO, Karte/Minimap/Landmarks, Bauen/Object Edit, Parcel/Land, Media/Music/Voice, Environment sowie Diagnose-/Preferences-Funktionen.
 
 Spezielle Firestorm-Erweiterungen wie RLV/RLVa oder sehr spezielle Firestorm-Power-User-Werkzeuge sind nicht automatisch Teil der Mindestbaseline und werden nur bei Bedarf ergänzt.
+
+[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
+
+## Next-Gen Renderer Vorgabe
+
+Die vom Nutzer bereitgestellte „OpenGenesisLINK NextGen Renderer Anweisung“ ist als verbindliche technische Zielrichtung in `projectplan.md` unter Abschnitt 2.2 integriert.
+
+Für spätere Arbeit gilt:
+- Netzwerk/OpenSim bleibt vom Renderer entkoppelt.
+- WorldModel/Scene Layer ist die Grenze zwischen Protokolldaten und Rendering.
+- Vulkan ist das primäre NextGen-Backend.
+- OpenSim-Kompatibilität bleibt Pflicht.
+- OGLRender wird als modulare Render-Abstraktion vorbereitet.
+- Legacy-/NextGen-Parallelbetrieb bleibt während der Migration erlaubt.
+- PBR, modernes Lighting, Schatten, Reflexionen, Terrain, Wasser, Atmosphäre, Avatar-Rendering, Streaming, GPU-Culling und Performance-Diagnose werden schrittweise aufgebaut.
+- Raytracing, Upscaling, Wetter, GI und Enhanced Server Capabilities sind Zukunftsmodule und dürfen nicht ohne passende spätere Phase vorschnell vollständig umgesetzt werden.
+- Bei jeder Rendering-/WorldModel-Entscheidung ist Abschnitt 2.2 des `projectplan.md` erneut heranzuziehen.
