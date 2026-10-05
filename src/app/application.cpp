@@ -206,14 +206,14 @@ void render_shell(UiRenderer& renderer, int width, int height, double mouse_x, d
     float field_y = content_y + 154.0f;
 
     field(renderer, field_x, field_y, field_width, "GRID / SERVER URL", "https://...");
-    field_y += 102.0f;
+    field_y += 90.0f;
     field(renderer, field_x, field_y, field_width, "BENUTZERNAME", "Avatar Name");
-    field_y += 102.0f;
+    field_y += 90.0f;
     field(renderer, field_x, field_y, field_width, "PASSWORT", "********");
-    field_y += 102.0f;
+    field_y += 90.0f;
     field(renderer, field_x, field_y, field_width, "STARTREGION", "Home");
 
-    const float button_y = field_y + 105.0f;
+    const float button_y = field_y + 93.0f;
     const bool hover = point_inside(mouse_x, mouse_y, field_x, button_y, field_width, 52.0f);
     const Color button_color = hover ? Color{0.100f, 0.720f, 0.940f, 1.0f} : theme::blue;
 
@@ -294,60 +294,62 @@ int Application::run()
     int window_height = 0;
     glfwGetWindowSize(window, &window_width, &window_height);
 
-    ui::UiRenderer renderer;
-    if (!renderer.initialize(window_width, window_height))
     {
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return 13;
-    }
-
-    const auto* gl_version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-    const auto* gl_renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-    if (gl_version != nullptr)
-    {
-        core::info(std::string{"OpenGL: "} + gl_version);
-    }
-    if (gl_renderer != nullptr)
-    {
-        core::info(std::string{"GPU: "} + gl_renderer);
-    }
-
-    while (glfwWindowShouldClose(window) == GLFW_FALSE)
-    {
-        glfwPollEvents();
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        ui::UiRenderer renderer;
+        if (!renderer.initialize(window_width, window_height))
         {
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            glfwDestroyWindow(window);
+            glfwTerminate();
+            return 13;
         }
 
-        int framebuffer_width = 0;
-        int framebuffer_height = 0;
-        glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-        glfwGetWindowSize(window, &window_width, &window_height);
-
-        if (framebuffer_width <= 0 || framebuffer_height <= 0 ||
-            window_width <= 0 || window_height <= 0)
+        const auto* gl_version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+        const auto* gl_renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+        if (gl_version != nullptr)
         {
-            continue;
+            core::info(std::string{"OpenGL: "} + gl_version);
+        }
+        if (gl_renderer != nullptr)
+        {
+            core::info(std::string{"GPU: "} + gl_renderer);
         }
 
-        glViewport(0, 0, framebuffer_width, framebuffer_height);
-        glClearColor(
-            ui::theme::background.r,
-            ui::theme::background.g,
-            ui::theme::background.b,
-            ui::theme::background.a);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        while (glfwWindowShouldClose(window) == GLFW_FALSE)
+        {
+            glfwPollEvents();
 
-        double mouse_x = 0.0;
-        double mouse_y = 0.0;
-        glfwGetCursorPos(window, &mouse_x, &mouse_y);
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            {
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
 
-        render_shell(renderer, window_width, window_height, mouse_x, mouse_y);
+            int framebuffer_width = 0;
+            int framebuffer_height = 0;
+            glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+            glfwGetWindowSize(window, &window_width, &window_height);
 
-        glfwSwapBuffers(window);
+            if (framebuffer_width <= 0 || framebuffer_height <= 0 ||
+                window_width <= 0 || window_height <= 0)
+            {
+                continue;
+            }
+
+            glViewport(0, 0, framebuffer_width, framebuffer_height);
+            glClearColor(
+                ui::theme::background.r,
+                ui::theme::background.g,
+                ui::theme::background.b,
+                ui::theme::background.a);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            double mouse_x = 0.0;
+            double mouse_y = 0.0;
+            glfwGetCursorPos(window, &mouse_x, &mouse_y);
+
+            render_shell(renderer, window_width, window_height, mouse_x, mouse_y);
+
+            glfwSwapBuffers(window);
+        }
     }
 
     core::info("NexVerse Viewer shutdown");
