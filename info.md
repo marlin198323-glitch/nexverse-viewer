@@ -179,7 +179,7 @@ Bereits implementiert:
 - plattformübergreifender UDP-Socket für Linux/Windows/macOS
 - LLUDP Header mit Flags, Big-Endian-Sequenznummer und Extra-Header-Länge
 - High/Medium/Low/Fixed Message-ID-Encoding
-- kleine Message-Template-Registry für StartPingCheck, CompletePingCheck, UseCircuitCode, CompleteAgentMovement und PacketAck
+- kleine Message-Template-Registry für StartPingCheck, CompletePingCheck, UseCircuitCode, RegionHandshake, RegionHandshakeReply, CompleteAgentMovement, AgentMovementComplete und PacketAck
 - UUID-Wire-Encoding
 - UseCircuitCode Encoder
 - CompleteAgentMovement Encoder
@@ -193,11 +193,14 @@ Bereits implementiert:
 - MTU 1400 / Payload-Richtwert 1200
 - Circuit-State-Machine
 - UseCircuitCode wird vor CompleteAgentMovement bestätigt
+- RegionHandshake wird erkannt und mit zuverlässigem RegionHandshakeReply beantwortet
+- AgentMovementComplete markiert den Circuit als wirklich aktiv
 - StartPingCheck wird mit CompletePingCheck beantwortet
 - eingehende Reliable-Pakete werden bestätigt
 - 30-Sekunden-Inaktivitäts-Timeout
 - begrenzter Reconnect im Viewer
 - LLUDP-Status wird live in der Oberfläche angezeigt
+- Statuswechsel werden gezielt geloggt, damit Circuit-Fehler im Echttest lokalisierbar sind
 - 6/6 lokale Tests grün
 
 Noch offen für Phase 3:

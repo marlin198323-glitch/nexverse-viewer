@@ -47,7 +47,10 @@ struct MessageTemplateEntry
 inline constexpr MessageId msg_start_ping_check{MessageFrequency::high, 1U};
 inline constexpr MessageId msg_complete_ping_check{MessageFrequency::high, 2U};
 inline constexpr MessageId msg_use_circuit_code{MessageFrequency::low, 3U};
+inline constexpr MessageId msg_region_handshake{MessageFrequency::low, 148U};
+inline constexpr MessageId msg_region_handshake_reply{MessageFrequency::low, 149U};
 inline constexpr MessageId msg_complete_agent_movement{MessageFrequency::low, 249U};
+inline constexpr MessageId msg_agent_movement_complete{MessageFrequency::low, 250U};
 inline constexpr MessageId msg_packet_ack{MessageFrequency::fixed, 0xFFFFFFFBU};
 
 enum PacketFlags : std::uint8_t
@@ -153,6 +156,10 @@ private:
 [[nodiscard]] std::vector<std::uint8_t> encode_complete_agent_movement(
     std::uint32_t sequence,
     const LoginSession& session);
+[[nodiscard]] std::vector<std::uint8_t> encode_region_handshake_reply(
+    std::uint32_t sequence,
+    const LoginSession& session,
+    std::uint32_t flags = 0U);
 [[nodiscard]] std::vector<std::uint8_t> encode_complete_ping_check(
     std::uint32_t sequence,
     std::uint8_t ping_id);

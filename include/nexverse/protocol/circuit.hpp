@@ -21,6 +21,7 @@ enum class CircuitState
     opening_socket,
     awaiting_use_circuit_ack,
     awaiting_movement_ack,
+    awaiting_region_ready,
     active,
     failed
 };

@@ -46,6 +46,7 @@ std::string_view circuit_state_label(nexverse::protocol::CircuitState state)
         case CircuitState::opening_socket: return "SOCKET";
         case CircuitState::awaiting_use_circuit_ack: return "CIRCUIT";
         case CircuitState::awaiting_movement_ack: return "MOVEMENT";
+        case CircuitState::awaiting_region_ready: return "REGION";
         case CircuitState::active: return "UDP LIVE";
         case CircuitState::failed: return "UDP ERROR";
     }
@@ -62,6 +63,7 @@ Color circuit_state_color(nexverse::protocol::CircuitState state)
         case CircuitState::opening_socket:
         case CircuitState::awaiting_use_circuit_ack:
         case CircuitState::awaiting_movement_ack:
+        case CircuitState::awaiting_region_ready:
             return theme::cyan;
         case CircuitState::disconnected:
             return theme::text_muted;
@@ -1368,6 +1370,8 @@ int Application::run()
                                  &circuit_status]() mutable
                                 {
                                     protocol::CircuitStatus final_status;
+                                    protocol::CircuitState last_reported_state =
+                                        protocol::CircuitState::disconnected;
                                     constexpr int max_attempts = 3;
 
                                     for (int attempt = 1;
@@ -1377,11 +1381,24 @@ int Application::run()
                                         protocol::CircuitConnection connection{circuit_session};
                                         final_status = connection.run(
                                             circuit_stop,
-                                            [&circuit_mutex, &circuit_status](
+                                            [&circuit_mutex,
+                                             &circuit_status,
+                                             &last_reported_state](
                                                 const protocol::CircuitStatus& update)
                                             {
-                                                std::scoped_lock lock{circuit_mutex};
-                                                circuit_status = update;
+                                                {
+                                                    std::scoped_lock lock{circuit_mutex};
+                                                    circuit_status = update;
+                                                }
+
+                                                if (update.state != last_reported_state)
+                                                {
+                                                    last_reported_state = update.state;
+                                                    core::info(
+                                                        std::string{"LLUDP state: "} +
+                                                        std::string{circuit_state_label(update.state)} +
+                                                        " - " + update.message);
+                                                }
                                             });
 
                                         if (circuit_stop.load() ||

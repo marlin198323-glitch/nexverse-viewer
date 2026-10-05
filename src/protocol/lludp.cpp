@@ -159,11 +159,14 @@ bool PacketThrottle::consume(
 
 std::optional<MessageTemplateEntry> known_message_template(MessageId id)
 {
-    constexpr std::array<MessageTemplateEntry, 5> entries{
+    constexpr std::array<MessageTemplateEntry, 8> entries{
         MessageTemplateEntry{msg_start_ping_check, "StartPingCheck", false},
         MessageTemplateEntry{msg_complete_ping_check, "CompletePingCheck", false},
         MessageTemplateEntry{msg_use_circuit_code, "UseCircuitCode", true},
+        MessageTemplateEntry{msg_region_handshake, "RegionHandshake", true},
+        MessageTemplateEntry{msg_region_handshake_reply, "RegionHandshakeReply", true},
         MessageTemplateEntry{msg_complete_agent_movement, "CompleteAgentMovement", true},
+        MessageTemplateEntry{msg_agent_movement_complete, "AgentMovementComplete", false},
         MessageTemplateEntry{msg_packet_ack, "PacketAck", false}
     };
 
@@ -461,6 +464,24 @@ std::vector<std::uint8_t> encode_complete_agent_movement(
     append_le_u32(payload, session.circuit_code);
 
     return encode_packet(packet_reliable, sequence, msg_complete_agent_movement, payload);
+}
+
+std::vector<std::uint8_t> encode_region_handshake_reply(
+    std::uint32_t sequence,
+    const LoginSession& session,
+    std::uint32_t flags)
+{
+    const auto agent_id = uuid_to_bytes(session.agent_id);
+    const auto session_id = uuid_to_bytes(session.session_id);
+    if (!agent_id.has_value() || !session_id.has_value()) return {};
+
+    std::vector<std::uint8_t> payload;
+    payload.reserve(36U);
+    payload.insert(payload.end(), agent_id->begin(), agent_id->end());
+    payload.insert(payload.end(), session_id->begin(), session_id->end());
+    append_le_u32(payload, flags);
+
+    return encode_packet(packet_reliable, sequence, msg_region_handshake_reply, payload);
 }
 
 std::vector<std::uint8_t> encode_complete_ping_check(

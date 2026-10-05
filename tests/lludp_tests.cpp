@@ -131,13 +131,32 @@ int main()
         return 11;
     }
 
+    const auto region_reply = encode_region_handshake_reply(45U, session, 0U);
+    const auto decoded_region_reply = decode_lludp_packet(region_reply);
+    if (!decoded_region_reply.ok() ||
+        decoded_region_reply.packet->header.message != msg_region_handshake_reply ||
+        decoded_region_reply.packet->payload.size() != 36U)
+    {
+        std::cerr << "RegionHandshakeReply encoding failed\n";
+        return 12;
+    }
+
+    const auto movement_complete_template =
+        known_message_template(msg_agent_movement_complete);
+    if (!movement_complete_template.has_value() ||
+        movement_complete_template->name != "AgentMovementComplete")
+    {
+        std::cerr << "AgentMovementComplete template lookup failed\n";
+        return 13;
+    }
+
     PacketThrottle throttle{100U, 100U};
     const auto throttle_now = std::chrono::steady_clock::now();
     if (!throttle.consume(100U, throttle_now) ||
         throttle.consume(1U, throttle_now))
     {
         std::cerr << "Packet throttle initial budget failed\n";
-        return 12;
+        return 14;
     }
 
     if (!throttle.consume(
@@ -145,7 +164,7 @@ int main()
             throttle_now + std::chrono::milliseconds{100}))
     {
         std::cerr << "Packet throttle refill failed\n";
-        return 13;
+        return 15;
     }
 
     std::cout << "LLUDP codec, reliability and throttle tests passed\n";

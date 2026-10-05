@@ -136,10 +136,11 @@ bool CircuitConnection::handle_packet(
             status.message = "UseCircuitCode acknowledged; CompleteAgentMovement sent";
         }
 
-        if (movement_sent && ack == movement_sequence)
+        if (movement_sent && ack == movement_sequence &&
+            status.state == CircuitState::awaiting_movement_ack)
         {
-            status.state = CircuitState::active;
-            status.message = "LLUDP circuit active";
+            status.state = CircuitState::awaiting_region_ready;
+            status.message = "CompleteAgentMovement acknowledged; awaiting region readiness";
         }
     }
 
@@ -165,6 +166,31 @@ bool CircuitConnection::handle_packet(
             status.message = "Failed to answer simulator ping";
             return false;
         }
+    }
+
+    if (packet.header.message == msg_region_handshake)
+    {
+        const std::uint32_t reply_sequence = next_sequence++;
+        auto reply = encode_region_handshake_reply(reply_sequence, session_);
+        if (!send_reliable(
+                socket,
+                tracker,
+                std::move(reply),
+                reply_sequence,
+                status))
+        {
+            status.message = "Failed to send RegionHandshakeReply";
+            return false;
+        }
+
+        status.state = CircuitState::awaiting_region_ready;
+        status.message = "RegionHandshake received; reply sent";
+    }
+
+    if (packet.header.message == msg_agent_movement_complete)
+    {
+        status.state = CircuitState::active;
+        status.message = "LLUDP circuit active; AgentMovementComplete received";
     }
 
     return true;
