@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenGenesisLINK Viewer
+Comment=OpenSim Viewer for NexVerse
+Exec=opengenesislink-viewer
+Icon=opengenesislink-viewer
+Terminal=false
+Categories=Game;Network;
+StartupNotify=true
