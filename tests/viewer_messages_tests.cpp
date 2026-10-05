@@ -344,6 +344,47 @@ int main()
         return 15;
     }
 
+    std::vector<std::uint8_t> agent_data_payload;
+    const auto agent_data_id =
+        uuid_to_bytes("55555555-5555-5555-5555-555555555555");
+    const auto active_group_id =
+        uuid_to_bytes("66666666-6666-6666-6666-666666666666");
+    agent_data_payload.insert(
+        agent_data_payload.end(),
+        agent_data_id->begin(),
+        agent_data_id->end());
+    agent_data_payload.push_back(3U);
+    agent_data_payload.insert(agent_data_payload.end(), {'J','a','m'});
+    agent_data_payload.push_back(6U);
+    agent_data_payload.insert(agent_data_payload.end(), {'V','i','e','w','e','r'});
+    agent_data_payload.push_back(5U);
+    agent_data_payload.insert(agent_data_payload.end(), {'A','d','m','i','n'});
+    agent_data_payload.insert(
+        agent_data_payload.end(),
+        active_group_id->begin(),
+        active_group_id->end());
+    for (unsigned int i = 0U; i < 8U; ++i)
+    {
+        agent_data_payload.push_back(
+            static_cast<std::uint8_t>((0x1122334455667788ULL >> (i * 8U)) & 0xFFU));
+    }
+    agent_data_payload.push_back(8U);
+    agent_data_payload.insert(
+        agent_data_payload.end(),
+        {'N','e','x','V','e','r','s','e'});
+
+    const auto agent_data = decode_agent_data_update(agent_data_payload);
+    if (!agent_data.has_value() ||
+        agent_data->first_name != "Jam" ||
+        agent_data->last_name != "Viewer" ||
+        agent_data->group_title != "Admin" ||
+        agent_data->group_name != "NexVerse" ||
+        agent_data->group_powers != 0x1122334455667788ULL)
+    {
+        std::cerr << "AgentDataUpdate decode failed\n";
+        return 16;
+    }
+
     std::vector<std::uint8_t> incoming_payload;
     incoming_payload.push_back(3U);
     incoming_payload.insert(incoming_payload.end(), {'J','a','m'});

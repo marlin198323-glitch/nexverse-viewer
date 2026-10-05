@@ -13,6 +13,7 @@ void WorldModel::reset()
     grid_ = {};
     region_ = {};
     agent_ = {};
+    agent_profile_ = {};
     avatars_.clear();
     objects_.clear();
     terrain_ = {};
@@ -40,6 +41,11 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     agent_.position = update.position;
     agent_.rotation = update.rotation;
     agent_.present = update.present;
+}
+
+void WorldModel::set_agent_profile(AgentProfileState profile)
+{
+    agent_profile_ = std::move(profile);
 }
 
 void WorldModel::upsert_avatar(AvatarState avatar)
@@ -88,6 +94,7 @@ void WorldModel::set_environment(EnvironmentState environment)
 const GridState& WorldModel::grid() const noexcept { return grid_; }
 const RegionState& WorldModel::region() const noexcept { return region_; }
 const AgentState& WorldModel::agent() const noexcept { return agent_; }
+const AgentProfileState& WorldModel::agent_profile() const noexcept { return agent_profile_; }
 const TerrainState& WorldModel::terrain() const noexcept { return terrain_; }
 const ParcelState& WorldModel::parcel() const noexcept { return parcel_; }
 const EnvironmentState& WorldModel::environment() const noexcept { return environment_; }

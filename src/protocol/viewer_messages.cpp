@@ -731,6 +731,53 @@ decode_improved_terse_object_update(
     return message;
 }
 
+std::optional<AgentDataUpdateMessage> decode_agent_data_update(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 16U + 1U + 1U + 1U + 16U + 8U + 1U)
+    {
+        return std::nullopt;
+    }
+
+    AgentDataUpdateMessage message;
+    std::size_t offset = 0U;
+    message.agent_id = uuid_from_bytes(payload, offset);
+    if (message.agent_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    if (!read_variable1(payload, offset, message.first_name) ||
+        !read_variable1(payload, offset, message.last_name) ||
+        !read_variable1(payload, offset, message.group_title))
+    {
+        return std::nullopt;
+    }
+
+    message.active_group_id = uuid_from_bytes(payload, offset);
+    if (message.active_group_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    if (offset + 8U > payload.size())
+    {
+        return std::nullopt;
+    }
+    message.group_powers = read_le_u64(payload, offset);
+    offset += 8U;
+
+    if (!read_variable1(payload, offset, message.group_name) ||
+        offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    return message;
+}
+
 std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload)
 {

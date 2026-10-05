@@ -39,6 +39,16 @@ struct AgentState
     bool present = false;
 };
 
+struct AgentProfileState
+{
+    std::string first_name;
+    std::string last_name;
+    std::string group_title;
+    std::string active_group_id;
+    std::uint64_t group_powers = 0U;
+    std::string group_name;
+};
+
 struct AvatarState
 {
     std::string id;
@@ -98,6 +108,7 @@ public:
     void set_grid(GridState grid);
     void apply_region(const RegionUpdate& update);
     void apply_agent(const AgentUpdate& update);
+    void set_agent_profile(AgentProfileState profile);
     void upsert_avatar(AvatarState avatar);
     void remove_avatar(const std::string& id);
     void upsert_object(ObjectState object);
@@ -109,6 +120,7 @@ public:
     [[nodiscard]] const GridState& grid() const noexcept;
     [[nodiscard]] const RegionState& region() const noexcept;
     [[nodiscard]] const AgentState& agent() const noexcept;
+    [[nodiscard]] const AgentProfileState& agent_profile() const noexcept;
     [[nodiscard]] const TerrainState& terrain() const noexcept;
     [[nodiscard]] const ParcelState& parcel() const noexcept;
     [[nodiscard]] const EnvironmentState& environment() const noexcept;
@@ -121,6 +133,7 @@ private:
     GridState grid_;
     RegionState region_;
     AgentState agent_;
+    AgentProfileState agent_profile_;
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
     TerrainState terrain_;

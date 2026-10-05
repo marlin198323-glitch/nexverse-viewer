@@ -280,6 +280,9 @@ decode_object_update_compressed(
 decode_improved_terse_object_update(
     std::span<const std::uint8_t> payload);
 
+[[nodiscard]] std::optional<AgentDataUpdateMessage> decode_agent_data_update(
+    std::span<const std::uint8_t> payload);
+
 [[nodiscard]] std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload);
 

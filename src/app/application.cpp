@@ -1930,7 +1930,34 @@ int Application::run()
         };
 
     packet_dispatcher.register_handler(protocol::msg_avatar_appearance, count_avatar_packet);
-    packet_dispatcher.register_handler(protocol::msg_agent_data_update, count_avatar_packet);
+
+    packet_dispatcher.register_handler(
+        protocol::msg_agent_data_update,
+        [&avatar_packets, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto data = protocol::decode_agent_data_update(packet.payload);
+            if (!data.has_value())
+            {
+                return;
+            }
+
+            avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+
+            std::scoped_lock lock{world_mutex};
+            if (data->agent_id != world_model.agent().agent_id)
+            {
+                return;
+            }
+
+            world_model.set_agent_profile({
+                data->first_name,
+                data->last_name,
+                data->group_title,
+                data->active_group_id,
+                data->group_powers,
+                data->group_name});
+        });
 
     packet_dispatcher.set_fallback_handler(
         [&other_packets](const protocol::DecodedPacket&)
