@@ -53,6 +53,8 @@ target_link_libraries(nexverse-ui PUBLIC
     Freetype::Freetype
 )
 
+target_compile_definitions(nexverse-ui PUBLIC GLFW_INCLUDE_NONE)
+
 if(APPLE)
     target_compile_definitions(nexverse-ui PRIVATE GL_SILENCE_DEPRECATION)
 endif()
