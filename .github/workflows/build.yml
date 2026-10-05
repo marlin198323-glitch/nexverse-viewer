@@ -1,4 +1,4 @@
-name: Phase 0 Build
+name: OpenGenesisLINK Viewer Build
 
 on:
   push:
@@ -7,14 +7,13 @@ on:
       - develop
   pull_request:
     branches:
-      - main
       - develop
 
 permissions:
   contents: read
 
 concurrency:
-  group: phase0-${{ github.workflow }}-${{ github.ref }}
+  group: viewer-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
