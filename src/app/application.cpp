@@ -639,7 +639,8 @@ void render_shell(
     Color grid_status_color,
     const LoginUiState& login,
     const nexverse::protocol::LoginSession* session,
-    const nexverse::protocol::CircuitStatus& circuit)
+    const nexverse::protocol::CircuitStatus& circuit,
+    bool simulation_ready)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -738,11 +739,252 @@ void render_shell(
         chip_w,
         scale,
         "WORLD",
-        circuit_state_label(circuit.state),
-        circuit_state_color(circuit.state));
+        simulation_ready
+            ? circuit_state_label(circuit.state)
+            : (login.authenticated ? "LOADING" : "OFFLINE"),
+        simulation_ready
+            ? circuit_state_color(circuit.state)
+            : (login.authenticated ? theme::cyan : theme::text_muted));
 
     const float content_y = top_h + gap;
     const float content_h = std::max(380.0f * scale, h - top_h - bottom_h - gap * 2.0f);
+
+    if (!simulation_ready)
+    {
+        const float panel_w = std::min(760.0f * scale, w - 80.0f * scale);
+        const float panel_h = login.authenticated ? 250.0f * scale : 230.0f * scale;
+        const float panel_x = (w - panel_w) * 0.5f;
+        const float panel_y = top_h + std::max(44.0f * scale, (h - top_h - bottom_h - panel_h) * 0.5f);
+
+        renderer.rect(
+            panel_x,
+            panel_y,
+            panel_w,
+            panel_h,
+            Color{0.016f, 0.034f, 0.063f, 0.98f},
+            16.0f * scale);
+
+        renderer.text(
+            panel_x + 28.0f * scale,
+            panel_y + 24.0f * scale,
+            10.0f * scale,
+            login.authenticated ? "SIMULATION" : "NEXVERSE LOGIN",
+            theme::cyan);
+
+        renderer.text(
+            panel_x + 28.0f * scale,
+            panel_y + 52.0f * scale,
+            22.0f * scale,
+            login.authenticated
+                ? "Simulation wird geladen"
+                : "Willkommen bei NexVerse",
+            theme::text);
+
+        renderer.text(
+            panel_x + 28.0f * scale,
+            panel_y + 88.0f * scale,
+            11.0f * scale,
+            login.authenticated
+                ? "Die Viewer-Oberflaeche wird erst eingeblendet, wenn Region und WorldModel bereit sind."
+                : "Melde dich mit deinem NexVerse-Avatar an.",
+            theme::text_muted);
+
+        status_row(
+            renderer,
+            panel_x + 28.0f * scale,
+            panel_y + 126.0f * scale,
+            "Grid",
+            grid_status,
+            grid_status_color);
+        status_row(
+            renderer,
+            panel_x + 28.0f * scale,
+            panel_y + 154.0f * scale,
+            "Login",
+            login.status,
+            login_color);
+        status_row(
+            renderer,
+            panel_x + 28.0f * scale,
+            panel_y + 182.0f * scale,
+            "Simulation",
+            login.authenticated
+                ? (circuit.state == nexverse::protocol::CircuitState::active ? "WORLD DATA" : circuit_state_label(circuit.state))
+                : "WARTET",
+            login.authenticated
+                ? (circuit.state == nexverse::protocol::CircuitState::active ? theme::cyan : circuit_state_color(circuit.state))
+                : theme::text_muted);
+
+        const float bottom_y = h - bottom_h;
+        renderer.rect(
+            0.0f,
+            bottom_y,
+            w,
+            bottom_h,
+            Color{0.010f, 0.026f, 0.050f, 0.99f},
+            0.0f);
+        renderer.rect(
+            0.0f,
+            bottom_y,
+            w,
+            1.0f,
+            with_alpha(theme::cyan, 0.20f),
+            0.0f);
+
+        const float login_x = left_w + 20.0f * scale;
+        const float login_y = bottom_y + 20.0f * scale;
+        const float field_w = 184.0f * scale;
+        const float field_h = 48.0f * scale;
+
+        if (!login.authenticated)
+        {
+            renderer.text(
+                login_x,
+                bottom_y + 7.0f * scale,
+                8.5f * scale,
+                "ANMELDUNG",
+                theme::text_muted);
+
+            renderer.rect(
+                login_x,
+                login_y,
+                field_w,
+                field_h,
+                login.focused == LoginField::username
+                    ? Color{0.035f, 0.085f, 0.145f, 0.98f}
+                    : Color{0.024f, 0.052f, 0.090f, 0.96f},
+                11.0f * scale);
+            if (login.focused == LoginField::username)
+            {
+                renderer.rect(
+                    login_x,
+                    login_y + field_h - 2.0f * scale,
+                    field_w,
+                    2.0f * scale,
+                    theme::cyan,
+                    1.0f * scale);
+            }
+            renderer.text(
+                login_x + 14.0f * scale,
+                login_y + 14.0f * scale,
+                11.0f * scale,
+                login.username.empty() ? "Avatar Name" : login.username,
+                login.username.empty() ? theme::text_muted : theme::text);
+
+            const float password_x = login_x + field_w + 8.0f * scale;
+            renderer.rect(
+                password_x,
+                login_y,
+                field_w,
+                field_h,
+                login.focused == LoginField::password
+                    ? Color{0.035f, 0.085f, 0.145f, 0.98f}
+                    : Color{0.024f, 0.052f, 0.090f, 0.96f},
+                11.0f * scale);
+            if (login.focused == LoginField::password)
+            {
+                renderer.rect(
+                    password_x,
+                    login_y + field_h - 2.0f * scale,
+                    field_w,
+                    2.0f * scale,
+                    theme::cyan,
+                    1.0f * scale);
+            }
+
+            const std::string password_mask = masked_password(login.password);
+            renderer.text(
+                password_x + 14.0f * scale,
+                login_y + 14.0f * scale,
+                11.0f * scale,
+                password_mask.empty() ? "Passwort" : password_mask,
+                password_mask.empty() ? theme::text_muted : theme::text);
+
+            const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
+            const float button_w = 164.0f * scale;
+            const bool hover = point_inside(
+                mouse_x,
+                mouse_y,
+                button_x,
+                login_y,
+                button_w,
+                field_h);
+
+            const bool can_submit =
+                !login.busy &&
+                !login.username.empty() &&
+                !login.password.empty() &&
+                (grid_status == "LIVE" || grid_status == "CACHE");
+
+            Color button_color = can_submit
+                ? theme::blue
+                : Color{0.075f, 0.120f, 0.185f, 1.0f};
+            if (can_submit && hover)
+            {
+                button_color = Color{0.080f, 0.690f, 0.960f, 1.0f};
+            }
+
+            renderer.rect(
+                button_x,
+                login_y,
+                button_w,
+                field_h,
+                button_color,
+                11.0f * scale);
+
+            const std::string_view button_label = login.busy
+                ? "VERBINDE..."
+                : "WELT BETRETEN";
+            const float button_label_w = renderer.text_width(10.5f * scale, button_label);
+            renderer.text(
+                button_x + (button_w - button_label_w) * 0.5f,
+                login_y + 14.0f * scale,
+                10.5f * scale,
+                button_label,
+                can_submit ? theme::text : theme::text_muted);
+
+            renderer.text(
+                login_x,
+                bottom_y + 76.0f * scale,
+                8.5f * scale,
+                login.notice,
+                theme::text_muted);
+        }
+        else
+        {
+            renderer.text(
+                24.0f * scale,
+                bottom_y + 20.0f * scale,
+                10.0f * scale,
+                "ANGEMELDET",
+                theme::success);
+            renderer.text(
+                24.0f * scale,
+                bottom_y + 44.0f * scale,
+                13.0f * scale,
+                login.username,
+                theme::text);
+            renderer.text(
+                24.0f * scale,
+                bottom_y + 68.0f * scale,
+                9.5f * scale,
+                circuit.state == nexverse::protocol::CircuitState::active
+                    ? "Verbindung steht. Warte auf Region, WorldModel und Renderer."
+                    : circuit.message,
+                theme::text_muted);
+        }
+
+        const std::string version =
+            std::string{"v"} + std::string{nexverse::core::version()};
+        const float version_w = renderer.text_width(9.0f * scale, version);
+        renderer.text(
+            w - version_w - 18.0f * scale,
+            bottom_y + bottom_h - 20.0f * scale,
+            9.0f * scale,
+            version,
+            theme::text_muted);
+        return;
+    }
 
     renderer.rect(
         0.0f, content_y, left_w, content_h,
@@ -1255,6 +1497,7 @@ int Application::run()
     std::optional<protocol::LoginSession> active_session;
 
     protocol::OutboundCommandQueue outbound_queue{512U};
+    bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
     std::atomic_uint32_t local_chat_received{0U};
 
@@ -1539,7 +1782,8 @@ int Application::run()
             }
 
             const auto now = std::chrono::steady_clock::now();
-            if (login_ui.authenticated &&
+            if (simulation_ready &&
+                login_ui.authenticated &&
                 current_circuit_state == protocol::CircuitState::active &&
                 now - last_agent_update >= std::chrono::milliseconds{100})
             {
@@ -1617,7 +1861,8 @@ int Application::run()
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
                 active_session.has_value() ? &*active_session : nullptr,
-                circuit_snapshot);
+                circuit_snapshot,
+                simulation_ready);
 
             glfwSwapBuffers(window);
         }

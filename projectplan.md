@@ -235,6 +235,13 @@ Diese Liste ist verbindliche Produktanforderung und wird phasenweise umgesetzt.
 - Land
 - Marketplace-Anbindung nur über eine dafür vorgesehene NexVerse-/Web-Schnittstelle
 
+### UI-Zustandsregel
+- Vor erfolgreichem Login werden nur Branding, Grid-/Verbindungsstatus und die Anmeldung angezeigt.
+- Nach erfolgreichem Login, aber vor geladenem WorldModel/Renderer, wird ausschließlich ein Ladezustand für die Simulation angezeigt.
+- Navigation, Freunde, Orte, Inventar, Teleport, Bauen, In-World-Toolbar und rechte Kontextleisten dürfen erst sichtbar bzw. bedienbar werden, wenn die Simulation/Region tatsächlich geladen und der WorldModel-Status `ready` ist.
+- LLUDP `UDP LIVE` allein reicht ausdrücklich nicht aus, um die In-World-Oberfläche freizuschalten.
+- Bewegung und andere In-World-Befehle dürfen erst gesendet werden, wenn die Simulation als bereit markiert ist.
+
 ### UI-Standardfunktionen
 - Toolbar
 - konfigurierbare Panels

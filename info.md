@@ -222,12 +222,18 @@ Zusätzlich vorhanden:
 - typisierte `TeleportLocationRequest`-Nachricht
 - Decoder für `TeleportProgress` und `TeleportFailed`
 - thread-sichere begrenzte Outbound-Queue zwischen UI/Input und LLUDP-Thread
-- `W/S/A/D`, Leertaste, `C`, Pfeil links/rechts und Shift werden nach `UDP LIVE` als `AgentUpdate`-Steuerflags gesendet
-- AgentUpdate wird aktuell mit 10 Hz erzeugt
+- `W/S/A/D`, Leertaste, `C`, Pfeil links/rechts und Shift sind als `AgentUpdate`-Steuerflags vorbereitet
+- AgentUpdate ist auf 10 Hz ausgelegt, wird aber erst gesendet, wenn `simulation_ready` aktiv ist
 - 9/9 lokale Tests grün
 
+UI-Zustandslogik aktualisiert:
+- vor Login nur Anmeldung und Verbindungsstatus
+- nach Login/UDP-Circuit nur `Simulation wird geladen`
+- Navigation, In-World-Dock, rechte Welt-/Freunde-/Region-Panels und Bewegungsinput bleiben gesperrt, bis ein zukünftiger WorldModel-/Renderer-Status `simulation_ready` liefert
+- `UDP LIVE` allein schaltet die Viewer-Navigation nicht mehr frei
+
 Noch offen für Phase 3:
-- echter NexVerse-Bewegungstest mit den neuen `AgentUpdate`-Paketen
+- echter NexVerse-Bewegungstest mit den neuen `AgentUpdate`-Paketen, sobald die Simulation sichtbar geladen wird
 - Chat-Eingabefeld an die vorhandene Local-Chat-Outbound-Nachricht anbinden
 - Teleport-UI an `TeleportLocationRequest` anbinden
 - weitere Message-Template-Abdeckung für Avatar-, Region- und Object-Updates
