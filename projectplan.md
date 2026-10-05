@@ -97,10 +97,10 @@ nexverse-viewer --version
 liefert beispielsweise:
 
 ```text
-NexVerse Viewer 0.1.0-alpha.1
+OpenGenesisLINK Viewer 0.1.0-alpha.1
 ```
 
-Status: ALS NÄCHSTES
+Status: IN ARBEIT
 
 ---
 
@@ -126,7 +126,7 @@ Dieser Endpunkt ist die maßgebliche Quelle für die Grid-Konfiguration des View
 
 ### Verhalten bei jedem Viewer-Start
 
-Bei jedem Start des NexVerse Viewers muss vor dem eigentlichen Login automatisch `get_grid_info` abgerufen werden.
+Bei jedem Start des OpenGenesisLINK Viewers muss vor dem eigentlichen Login automatisch `get_grid_info` abgerufen werden.
 
 Ablauf:
 
