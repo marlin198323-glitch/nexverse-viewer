@@ -42,6 +42,33 @@ struct BuddyEntry
     std::int32_t rights_given = 0;
 };
 
+struct GestureEntry
+{
+    std::string item_id;
+    std::string asset_id;
+};
+
+struct InitialOutfit
+{
+    std::string folder_name;
+    std::string gender;
+};
+
+struct LoginFlags
+{
+    std::string ever_logged_in;
+    std::string stipend_since_login;
+    std::string gendered;
+    std::string daylight_savings;
+};
+
+struct GlobalTextures
+{
+    std::string cloud_texture_id;
+    std::string sun_texture_id;
+    std::string moon_texture_id;
+};
+
 struct LoginSession
 {
     std::string agent_id;
@@ -62,6 +89,10 @@ struct LoginSession
     std::vector<InventoryFolder> inventory_skeleton;
     std::vector<InventoryFolder> library_skeleton;
     std::vector<BuddyEntry> buddies;
+    std::vector<GestureEntry> gestures;
+    std::vector<InitialOutfit> initial_outfits;
+    LoginFlags login_flags;
+    GlobalTextures global_textures;
     std::map<std::string, std::string, std::less<>> scalar_fields;
 };
 

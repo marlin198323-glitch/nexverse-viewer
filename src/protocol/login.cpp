@@ -267,6 +267,65 @@ std::string first_array_scalar(
     return {};
 }
 
+std::vector<nexverse::protocol::GestureEntry> parse_gestures(const XMLElement* value)
+{
+    std::vector<nexverse::protocol::GestureEntry> gestures;
+    for (const auto& item : parse_array_of_structs(value))
+    {
+        nexverse::protocol::GestureEntry gesture;
+        gesture.item_id = field(item, "item_id");
+        gesture.asset_id = field(item, "asset_id");
+
+        if (!gesture.item_id.empty() || !gesture.asset_id.empty())
+        {
+            gestures.push_back(std::move(gesture));
+        }
+    }
+    return gestures;
+}
+
+std::vector<nexverse::protocol::InitialOutfit> parse_initial_outfits(const XMLElement* value)
+{
+    std::vector<nexverse::protocol::InitialOutfit> outfits;
+    for (const auto& item : parse_array_of_structs(value))
+    {
+        nexverse::protocol::InitialOutfit outfit;
+        outfit.folder_name = field(item, "folder_name");
+        outfit.gender = field(item, "gender");
+
+        if (!outfit.folder_name.empty() || !outfit.gender.empty())
+        {
+            outfits.push_back(std::move(outfit));
+        }
+    }
+    return outfits;
+}
+
+nexverse::protocol::LoginFlags parse_login_flags(const XMLElement* value)
+{
+    nexverse::protocol::LoginFlags flags;
+    const auto items = parse_array_of_structs(value);
+    if (items.empty()) return flags;
+
+    flags.ever_logged_in = field(items.front(), "ever_logged_in");
+    flags.stipend_since_login = field(items.front(), "stipend_since_login");
+    flags.gendered = field(items.front(), "gendered");
+    flags.daylight_savings = field(items.front(), "daylight_savings");
+    return flags;
+}
+
+nexverse::protocol::GlobalTextures parse_global_textures(const XMLElement* value)
+{
+    nexverse::protocol::GlobalTextures textures;
+    const auto items = parse_array_of_structs(value);
+    if (items.empty()) return textures;
+
+    textures.cloud_texture_id = field(items.front(), "cloud_texture_id");
+    textures.sun_texture_id = field(items.front(), "sun_texture_id");
+    textures.moon_texture_id = field(items.front(), "moon_texture_id");
+    return textures;
+}
+
 bool login_true(std::string_view value)
 {
     return value == "true" || value == "1";
@@ -421,6 +480,14 @@ LoginResult parse_login_xml_rpc_response(std::string_view xml)
         member_value(structure, "inventory-skel-lib"));
     session.buddies = parse_buddies(
         member_value(structure, "buddy-list"));
+    session.gestures = parse_gestures(
+        member_value(structure, "gestures"));
+    session.initial_outfits = parse_initial_outfits(
+        member_value(structure, "initial-outfit"));
+    session.login_flags = parse_login_flags(
+        member_value(structure, "login-flags"));
+    session.global_textures = parse_global_textures(
+        member_value(structure, "global-textures"));
 
     session.scalar_fields = std::move(fields);
 

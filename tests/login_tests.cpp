@@ -122,6 +122,33 @@ int main()
 <member><name>buddy_rights_given</name><value><int>3</int></value></member>
 </struct></value>
 </data></array></value></member>
+<member><name>gestures</name><value><array><data>
+<value><struct>
+<member><name>item_id</name><value><string>12121212-1212-1212-1212-121212121212</string></value></member>
+<member><name>asset_id</name><value><string>34343434-3434-3434-3434-343434343434</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>initial-outfit</name><value><array><data>
+<value><struct>
+<member><name>folder_name</name><value><string>Default Outfit</string></value></member>
+<member><name>gender</name><value><string>female</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>login-flags</name><value><array><data>
+<value><struct>
+<member><name>ever_logged_in</name><value><string>Y</string></value></member>
+<member><name>stipend_since_login</name><value><string>N</string></value></member>
+<member><name>gendered</name><value><string>Y</string></value></member>
+<member><name>daylight_savings</name><value><string>N</string></value></member>
+</struct></value>
+</data></array></value></member>
+<member><name>global-textures</name><value><array><data>
+<value><struct>
+<member><name>cloud_texture_id</name><value><string>56565656-5656-5656-5656-565656565656</string></value></member>
+<member><name>sun_texture_id</name><value><string>78787878-7878-7878-7878-787878787878</string></value></member>
+<member><name>moon_texture_id</name><value><string>90909090-9090-9090-9090-909090909090</string></value></member>
+</struct></value>
+</data></array></value></member>
 </struct></value></param></params></methodResponse>
 )XML";
 
@@ -144,7 +171,13 @@ int main()
         parsed.session->library_skeleton.size() != 1U ||
         parsed.session->buddies.size() != 1U ||
         parsed.session->buddies.front().rights_has != 1 ||
-        parsed.session->buddies.front().rights_given != 3)
+        parsed.session->buddies.front().rights_given != 3 ||
+        parsed.session->gestures.size() != 1U ||
+        parsed.session->gestures.front().item_id != "12121212-1212-1212-1212-121212121212" ||
+        parsed.session->initial_outfits.size() != 1U ||
+        parsed.session->initial_outfits.front().gender != "female" ||
+        parsed.session->login_flags.ever_logged_in != "Y" ||
+        parsed.session->global_textures.sun_texture_id != "78787878-7878-7878-7878-787878787878")
     {
         std::cerr << "Session or bootstrap data was not parsed correctly\n";
         return 4;

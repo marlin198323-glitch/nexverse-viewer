@@ -593,7 +593,8 @@ void render_shell(
     std::string_view grid_name,
     std::string_view grid_status,
     Color grid_status_color,
-    const LoginUiState& login)
+    const LoginUiState& login,
+    const nexverse::protocol::LoginSession* session)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -685,7 +686,15 @@ void render_shell(
 
     status_chip(renderer, chip_start, 14.0f * scale, chip_w, scale, "GRID", grid_status, grid_status_color);
     status_chip(renderer, chip_start + chip_w + chip_gap, 14.0f * scale, chip_w, scale, "LOGIN", login.status, login_color);
-    status_chip(renderer, chip_start + (chip_w + chip_gap) * 2.0f, 14.0f * scale, chip_w, scale, "WORLD", "OFFLINE", theme::text_muted);
+    status_chip(
+        renderer,
+        chip_start + (chip_w + chip_gap) * 2.0f,
+        14.0f * scale,
+        chip_w,
+        scale,
+        "WORLD",
+        session != nullptr ? "SESSION" : "OFFLINE",
+        session != nullptr ? theme::success : theme::text_muted);
 
     const float content_y = top_h + gap;
     const float content_h = std::max(380.0f * scale, h - top_h - bottom_h - gap * 2.0f);
@@ -896,13 +905,19 @@ void render_shell(
         right_x + 24.0f * scale,
         panel_y + 68.0f * scale,
         9.0f * scale,
-        "Avatare und Regionen werden",
+        session != nullptr
+            ? ("Simulator: " + session->simulator_ip + ":" + std::to_string(session->simulator_port))
+            : "Avatare und Regionen werden",
         theme::text_muted);
     renderer.text(
         right_x + 24.0f * scale,
         panel_y + 85.0f * scale,
         9.0f * scale,
-        "nach dem Login live geladen.",
+        session != nullptr
+            ? ("Inventar " + std::to_string(session->inventory_skeleton.size()) +
+               " | Freunde " + std::to_string(session->buddies.size()) +
+               " | Gesten " + std::to_string(session->gestures.size()))
+            : "nach dem Login live geladen.",
         theme::text_muted);
 
     panel_y += 156.0f * scale;
@@ -1336,7 +1351,8 @@ int Application::run()
                         protocol::LoginCredentials credentials;
                         credentials.first_name = avatar_name->first;
                         credentials.last_name = avatar_name->second;
-                        credentials.password = login_ui.password;
+                        credentials.password = std::move(login_ui.password);
+                        login_ui.password.clear();
                         credentials.start = "last";
 
                         const std::string login_uri = active_login_uri;
@@ -1348,14 +1364,22 @@ int Application::run()
 
                         login_future = std::async(
                             std::launch::async,
-                            [transport, login_uri, credentials = std::move(credentials), viewer_version]
+                            [transport, login_uri, credentials = std::move(credentials), viewer_version]() mutable
                             {
                                 protocol::LoginService service{transport};
-                                return service.login(
+                                protocol::LoginResult result = service.login(
                                     login_uri,
                                     credentials,
                                     "OpenGenesisLINK Viewer",
                                     viewer_version);
+
+                                std::fill(
+                                    credentials.password.begin(),
+                                    credentials.password.end(),
+                                    '\0');
+                                credentials.password.clear();
+
+                                return result;
                             });
                     }
                 }
@@ -1386,7 +1410,8 @@ int Application::run()
 
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
-                grid_name, grid_status, grid_status_color, login_ui);
+                grid_name, grid_status, grid_status_color, login_ui,
+                active_session.has_value() ? &*active_session : nullptr);
 
             glfwSwapBuffers(window);
         }

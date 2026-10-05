@@ -140,6 +140,10 @@ Vorhanden:
 - Session-Daten für Agent ID, Session ID, Secure Session ID, Circuit Code, Simulator IP/Port, Region X/Y und Seed Capability
 - Inventar-Root, Inventar-Skeleton, Library-Root, Library-Skeleton und Library-Owner werden aus der Login-Antwort übernommen
 - Buddy-Liste inklusive Rechtewerten wird aus der Login-Antwort übernommen
+- Gesten-Grunddaten (`item_id` / `asset_id`) werden übernommen
+- Initial-Outfit-Basisdaten werden übernommen
+- Login-Flags werden übernommen
+- globale OpenSim-Textur-IDs für Cloud/Sun/Moon werden übernommen
 - Fehler-/Reason-/Message-Auswertung
 - echte Benutzername-/Passwort-Eingabe im Viewer
 - Passwortmaskierung
@@ -147,7 +151,9 @@ Vorhanden:
 - asynchroner Login, damit die UI nicht blockiert
 - Login-Status READY / CONNECTING / CONNECTED / ERROR in der Oberfläche
 - nach erfolgreichem Login zeigt die Oberfläche den angemeldeten Avatar und eine aktive OpenSim-Session
-- Unit-Test für Request, Hash, Erfolgsantwort, Fehlerantwort, Bootstrapdaten und Transportvertrag
+- Session-Diagnose zeigt Simulator-IP/-Port sowie Anzahl von Inventarordnern, Buddies und Gesten
+- das Passwort wird beim Start des Login-Workers sofort aus dem UI-Zustand entfernt und nach dem Request im Worker überschrieben/geleert
+- Unit-Test für Request, Hash, Erfolgsantwort, Fehlerantwort, Bootstrap-/Appearance-Daten und Transportvertrag
 
 Teststand:
 - 5/5 lokale Tests grün
@@ -156,10 +162,11 @@ Teststand:
 
 ## Nächster technischer Schritt
 
-Nach Sicherung dieses lokalen Phase-1-Blocks:
+Phase 2 ist technisch implementiert und benötigt jetzt noch den manuellen Echttest mit einem vorhandenen NexVerse-Benutzerkonto.
 
-1. lokalen Stand weiter stabilisieren,
-2. später als zusammenhängenden Block nach GitHub synchronisieren,
-3. danach gemäß `projectplan.md` Phase 2 beginnen: OpenSim Login.
+Nach erfolgreichem Echttest:
+1. Session-Daten im Viewer prüfen,
+2. Phase 2 als abgeschlossen markieren,
+3. anschließend gemäß `projectplan.md` Phase 3 beginnen: LLUDP-Transport und Circuit-Aufbau zum vom Login gelieferten Simulator.
 
-Phase 2 darf Credentials niemals loggen oder als Kommandozeilenparameter übernehmen.
+Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
