@@ -8,6 +8,8 @@
 
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/version.hpp"
+#include "nexverse/net/http_transport.hpp"
+#include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 
@@ -17,7 +19,12 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <chrono>
+#include <exception>
+#include <future>
+#include <memory>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -56,7 +63,9 @@ void status_row(UiRenderer& renderer, float x, float y, std::string_view label, 
     renderer.text(x + 205.0f - value_width, y, 13.0f, value, state);
 }
 
-void render_world_preview(UiRenderer& renderer, float x, float y, float width, float height)
+void render_world_preview(
+    UiRenderer& renderer, float x, float y, float width, float height,
+    std::string_view grid_status, Color grid_status_color)
 {
     renderer.rect(x, y, width, height, theme::surface_glass, 18.0f);
 
@@ -148,15 +157,17 @@ void render_world_preview(UiRenderer& renderer, float x, float y, float width, f
 
     status_row(renderer, status_x + 18.0f, status_y + 52.0f, "Desktop shell", "READY", theme::success);
     status_row(renderer, status_x + 18.0f, status_y + 80.0f, "Renderer", "READY", theme::success);
-    status_row(renderer, status_x + 18.0f, status_y + 108.0f, "OpenSim protocol", "NEXT", theme::warning);
+    status_row(renderer, status_x + 18.0f, status_y + 108.0f, "Grid discovery", grid_status, grid_status_color);
     status_row(renderer, status_x + 18.0f, status_y + 136.0f, "World stream", "PENDING", theme::text_muted);
 
     renderer.rect(x + 24.0f, y + height - 58.0f, width - 48.0f, 38.0f, Color{0.025f, 0.043f, 0.073f, 0.92f}, 10.0f);
     renderer.text(x + 40.0f, y + height - 49.0f, 13.0f,
-                  "Phase 0 preview - no OpenSim connection is attempted yet.", theme::text_muted);
+                  "Phase 1 - live GridInfo discovery active; login follows in Phase 2.", theme::text_muted);
 }
 
-void render_shell(UiRenderer& renderer, int width, int height, double mouse_x, double mouse_y)
+void render_shell(
+    UiRenderer& renderer, int width, int height, double mouse_x, double mouse_y,
+    std::string_view grid_name, std::string_view grid_status, Color grid_status_color)
 {
     const float w = static_cast<float>(width);
     const float h = static_cast<float>(height);
@@ -199,13 +210,13 @@ void render_shell(UiRenderer& renderer, int width, int height, double mouse_x, d
     renderer.text(margin + 28.0f, content_y + 30.0f, 13.0f, "NEXVERSE ACCESS", theme::cyan);
     renderer.text(margin + 28.0f, content_y + 58.0f, 28.0f, "Willkommen im NexVerse", theme::text);
     renderer.text(margin + 28.0f, content_y + 102.0f, 14.0f,
-                  "Native OpenSim Viewer - Phase 0", theme::text_muted);
+                  "Native OpenSim Viewer - Phase 1", theme::text_muted);
 
     const float field_x = margin + 28.0f;
     const float field_width = left_width - 56.0f;
     float field_y = content_y + 154.0f;
 
-    field(renderer, field_x, field_y, field_width, "GRID / SERVER URL", "https://...");
+    field(renderer, field_x, field_y, field_width, "NEXVERSE GRID", grid_name);
     field_y += 90.0f;
     field(renderer, field_x, field_y, field_width, "BENUTZERNAME", "Avatar Name");
     field_y += 90.0f;
@@ -225,10 +236,12 @@ void render_shell(UiRenderer& renderer, int width, int height, double mouse_x, d
     renderer.text(field_x, button_y + 72.0f, 12.0f,
                   "Login wird in Phase 2 aktiviert.", theme::text_muted);
 
-    render_world_preview(renderer, preview_x, content_y, preview_width, content_height);
+    render_world_preview(
+        renderer, preview_x, content_y, preview_width, content_height,
+        grid_status, grid_status_color);
 
     renderer.text(34.0f, h - 26.0f, 11.0f,
-                  "NexVerse Viewer | MPL 2.0 | Phase 0 native desktop foundation", theme::text_muted);
+                  "OpenGenesisLINK Viewer | NexVerse | MPL 2.0 | Phase 1 Grid Discovery", theme::text_muted);
 }
 
 void glfw_error_callback(int error, const char* description)
@@ -263,7 +276,7 @@ int Application::run()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(1440, 900, "NexVerse Viewer", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1440, 900, "OpenGenesisLINK Viewer", nullptr, nullptr);
     if (window == nullptr)
     {
         core::error("Viewer window creation failed");
@@ -286,6 +299,20 @@ int Application::run()
     int window_width = 0;
     int window_height = 0;
     glfwGetWindowSize(window, &window_width, &window_height);
+
+    auto transport = std::make_shared<net::CurlHttpTransport>();
+    auto discovery_future = std::async(
+        std::launch::async,
+        [transport]
+        {
+            protocol::GridDiscoveryService service{transport};
+            return service.refresh();
+        });
+
+    std::string grid_name{protocol::nexverse_grid_host};
+    std::string grid_status = "CHECKING";
+    Color grid_status_color = theme::cyan;
+    bool discovery_applied = false;
 
     {
         ui::UiRenderer renderer;
@@ -310,6 +337,55 @@ int Application::run()
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
         {
             glfwPollEvents();
+
+            if (!discovery_applied &&
+                discovery_future.valid() &&
+                discovery_future.wait_for(std::chrono::milliseconds{0}) == std::future_status::ready)
+            {
+                discovery_applied = true;
+                try
+                {
+                    auto result = discovery_future.get();
+                    if (result.success)
+                    {
+                        if (!result.info.grid_name().empty())
+                        {
+                            grid_name = std::string{result.info.grid_name()};
+                        }
+                        else if (!result.info.grid_nick().empty())
+                        {
+                            grid_name = std::string{result.info.grid_nick()};
+                        }
+
+                        if (result.source == protocol::GridInfoSource::live)
+                        {
+                            grid_status = "LIVE";
+                            grid_status_color = theme::success;
+                        }
+                        else
+                        {
+                            grid_status = "CACHE";
+                            grid_status_color = theme::warning;
+                        }
+
+                        core::info(
+                            std::string{"Active OpenSim login URI: "} +
+                            std::string{result.info.login_uri()});
+                    }
+                    else
+                    {
+                        grid_status = "ERROR";
+                        grid_status_color = theme::magenta;
+                        core::warning(result.message);
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    grid_status = "ERROR";
+                    grid_status_color = theme::magenta;
+                    core::error(std::string{"Grid discovery worker failed: "} + error.what());
+                }
+            }
 
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             {
@@ -339,13 +415,15 @@ int Application::run()
             double mouse_y = 0.0;
             glfwGetCursorPos(window, &mouse_x, &mouse_y);
 
-            render_shell(renderer, window_width, window_height, mouse_x, mouse_y);
+            render_shell(
+                renderer, window_width, window_height, mouse_x, mouse_y,
+                grid_name, grid_status, grid_status_color);
 
             glfwSwapBuffers(window);
         }
     }
 
-    core::info("NexVerse Viewer shutdown");
+    core::info("OpenGenesisLINK Viewer shutdown");
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

@@ -15,6 +15,6 @@ std::string_view version() noexcept
 
 std::string_view product_name() noexcept
 {
-    return "NexVerse Viewer";
+    return "OpenGenesisLINK Viewer";
 }
 }
