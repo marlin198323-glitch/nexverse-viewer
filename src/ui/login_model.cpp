@@ -95,8 +95,9 @@ const std::string& LoginModel::start_region() const noexcept
 std::string LoginModel::masked_password() const
 {
     std::string masked;
-    for (const unsigned char byte : password_)
+    for (const char raw_byte : password_)
     {
+        const auto byte = static_cast<unsigned char>(raw_byte);
         if ((byte & 0xC0U) != 0x80U)
         {
             masked.push_back('*');
