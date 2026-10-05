@@ -385,6 +385,44 @@ int main()
         return 16;
     }
 
+    std::vector<std::uint8_t> appearance_payload;
+    const auto appearance_id =
+        uuid_to_bytes("77777777-7777-7777-7777-777777777777");
+    appearance_payload.insert(
+        appearance_payload.end(),
+        appearance_id->begin(),
+        appearance_id->end());
+    appearance_payload.push_back(1U);
+    appearance_payload.push_back(3U);
+    appearance_payload.push_back(0U);
+    appearance_payload.insert(
+        appearance_payload.end(),
+        {0xAAU,0xBBU,0xCCU});
+    appearance_payload.push_back(3U);
+    appearance_payload.insert(
+        appearance_payload.end(),
+        {10U,20U,30U});
+    appearance_payload.push_back(1U);
+    appearance_payload.push_back(2U);
+    append_u32_vec(appearance_payload, 123U);
+    append_u32_vec(appearance_payload, 456U);
+
+    const auto appearance =
+        decode_avatar_appearance(appearance_payload);
+    if (!appearance.has_value() ||
+        appearance->avatar_id != "77777777-7777-7777-7777-777777777777" ||
+        !appearance->trial ||
+        appearance->texture_entry.size() != 3U ||
+        appearance->visual_params.size() != 3U ||
+        appearance->appearance_data.size() != 1U ||
+        appearance->appearance_data[0].appearance_version != 2U ||
+        appearance->appearance_data[0].cof_version != 123U ||
+        appearance->appearance_data[0].flags != 456U)
+    {
+        std::cerr << "AvatarAppearance decode failed\n";
+        return 17;
+    }
+
     std::vector<std::uint8_t> incoming_payload;
     incoming_payload.push_back(3U);
     incoming_payload.insert(incoming_payload.end(), {'J','a','m'});

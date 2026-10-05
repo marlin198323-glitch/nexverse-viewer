@@ -1923,13 +1923,37 @@ int Application::run()
             }
         });
 
-    const auto count_avatar_packet =
-        [&avatar_packets](const protocol::DecodedPacket&)
+    packet_dispatcher.register_handler(
+        protocol::msg_avatar_appearance,
+        [&avatar_packets, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
         {
-            avatar_packets.fetch_add(1U, std::memory_order_relaxed);
-        };
+            const auto appearance =
+                protocol::decode_avatar_appearance(packet.payload);
+            if (!appearance.has_value())
+            {
+                return;
+            }
 
-    packet_dispatcher.register_handler(protocol::msg_avatar_appearance, count_avatar_packet);
+            avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+
+            std::scoped_lock lock{world_mutex};
+            world::AvatarState avatar;
+            avatar.id = appearance->avatar_id;
+
+            if (const auto existing =
+                    world_model.avatars().find(appearance->avatar_id);
+                existing != world_model.avatars().end())
+            {
+                avatar = existing->second;
+            }
+
+            avatar.trial_appearance = appearance->trial;
+            avatar.texture_entry = appearance->texture_entry;
+            avatar.visual_params = appearance->visual_params;
+            avatar.appearance_data = appearance->appearance_data;
+            world_model.upsert_avatar(std::move(avatar));
+        });
 
     packet_dispatcher.register_handler(
         protocol::msg_agent_data_update,

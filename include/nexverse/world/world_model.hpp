@@ -56,6 +56,10 @@ struct AvatarState
     Vec3 position;
     Quaternion rotation;
     std::uint32_t local_id = 0U;
+    bool trial_appearance = false;
+    std::vector<std::uint8_t> texture_entry;
+    std::vector<std::uint8_t> visual_params;
+    std::vector<protocol::AvatarAppearanceData> appearance_data;
 };
 
 struct ObjectState

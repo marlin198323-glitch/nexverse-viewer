@@ -40,11 +40,11 @@ int main()
         return 3;
     }
 
-    world.upsert_avatar({
-        "avatar-1",
-        "Test Avatar",
-        {130.0f, 128.0f, 25.0f},
-        {}});
+    AvatarState avatar;
+    avatar.id = "avatar-1";
+    avatar.name = "Test Avatar";
+    avatar.position = {130.0f, 128.0f, 25.0f};
+    world.upsert_avatar(std::move(avatar));
     world.upsert_object({
         42U,
         "object-uuid",

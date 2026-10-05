@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.4`.
+Aktuelle Viewer-Version: `0.2.0-alpha.5`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -346,8 +346,11 @@ Aktuell:
 - zusätzliche Diagnosen: `WorldModel compressed object stream validated` und `WorldModel cached object stream validated`
 - `AgentDataUpdate` wird typisiert dekodiert und übernimmt Vorname, Nachname, Gruppentitel, aktive Gruppen-ID, Gruppenrechte und Gruppenname in einen getrennten `AgentProfileState`
 - Session-/Bewegungszustand und Profil-/Gruppendaten bleiben im WorldModel bewusst getrennt
-- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.4`
-- kompletter Debug-Build nach Phase-5-AgentData-Block: 13/13 Tests grün
+- `AvatarAppearance` wird typisiert dekodiert und speichert Trial-Flag, TextureEntry, Visual-Parameter sowie Appearance-/COF-Versionen im Avatar-Zustand
+- vorhandene Position/Rotation/LocalID bleiben bei Appearance-Updates erhalten
+- Renderer-/Materialinterpretation erfolgt bewusst erst in späteren Phasen
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.5`
+- kompletter Debug-Build nach Phase-5-Appearance-Block: 13/13 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

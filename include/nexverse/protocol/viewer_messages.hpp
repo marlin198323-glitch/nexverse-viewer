@@ -217,6 +217,22 @@ struct AgentDataUpdateMessage
     std::string group_name;
 };
 
+struct AvatarAppearanceData
+{
+    std::uint8_t appearance_version = 0U;
+    std::uint32_t cof_version = 0U;
+    std::uint32_t flags = 0U;
+};
+
+struct AvatarAppearanceMessage
+{
+    std::string avatar_id;
+    bool trial = false;
+    std::vector<std::uint8_t> texture_entry;
+    std::vector<std::uint8_t> visual_params;
+    std::vector<AvatarAppearanceData> appearance_data;
+};
+
 struct IncomingLocalChat
 {
     std::string from_name;
@@ -281,6 +297,9 @@ decode_improved_terse_object_update(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<AgentDataUpdateMessage> decode_agent_data_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<IncomingLocalChat> decode_chat_from_simulator(

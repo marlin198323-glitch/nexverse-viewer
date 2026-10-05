@@ -778,6 +778,85 @@ std::optional<AgentDataUpdateMessage> decode_agent_data_update(
     return message;
 }
 
+std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 16U + 1U + 2U + 1U + 1U)
+    {
+        return std::nullopt;
+    }
+
+    AvatarAppearanceMessage message;
+    std::size_t offset = 0U;
+
+    message.avatar_id = uuid_from_bytes(payload, offset);
+    if (message.avatar_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    message.trial = payload[offset++] != 0U;
+
+    if (offset + 2U > payload.size())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t texture_size = read_le_u16(payload, offset);
+    offset += 2U;
+    if (offset + texture_size > payload.size())
+    {
+        return std::nullopt;
+    }
+
+    message.texture_entry.assign(
+        payload.begin() + static_cast<std::ptrdiff_t>(offset),
+        payload.begin() + static_cast<std::ptrdiff_t>(offset + texture_size));
+    offset += texture_size;
+
+    if (offset >= payload.size())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t visual_count = payload[offset++];
+    if (offset + visual_count > payload.size())
+    {
+        return std::nullopt;
+    }
+
+    message.visual_params.assign(
+        payload.begin() + static_cast<std::ptrdiff_t>(offset),
+        payload.begin() + static_cast<std::ptrdiff_t>(offset + visual_count));
+    offset += visual_count;
+
+    if (offset >= payload.size())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t appearance_count = payload[offset++];
+    if (offset + appearance_count * 9U != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    message.appearance_data.reserve(appearance_count);
+    for (std::size_t index = 0U; index < appearance_count; ++index)
+    {
+        AvatarAppearanceData data;
+        data.appearance_version = payload[offset++];
+        data.cof_version = read_le_u32(payload, offset);
+        offset += 4U;
+        data.flags = read_le_u32(payload, offset);
+        offset += 4U;
+        message.appearance_data.push_back(data);
+    }
+
+    return message;
+}
+
 std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload)
 {
