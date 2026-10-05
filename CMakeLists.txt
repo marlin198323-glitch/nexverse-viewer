@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(NEXVERSE_BUILD_TESTS "Build OpenGenesisLINK Viewer tests" ON)
 option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
-find_package(CURL CONFIG REQUIRED)
+find_package(CURL REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -127,12 +127,22 @@ nexverse_enable_warnings(nexverse-protocol)
 nexverse_enable_warnings(nexverse-ui)
 
 add_executable(nexverse-viewer apps/viewer/main.cpp)
+set_target_properties(nexverse-viewer PROPERTIES
+    OUTPUT_NAME "opengenesislink-viewer"
+)
 target_link_libraries(nexverse-viewer PRIVATE NexVerse::UI)
 nexverse_enable_warnings(nexverse-viewer)
 
 install(TARGETS nexverse-viewer
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if(UNIX AND NOT APPLE)
+    install(
+        FILES packaging/linux/opengenesislink-viewer.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+endif()
 
 include(CTest)
 if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
