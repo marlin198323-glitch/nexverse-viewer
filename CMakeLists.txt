@@ -14,6 +14,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(NEXVERSE_BUILD_TESTS "Build OpenGenesisLINK Viewer tests" ON)
 option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
+find_package(CURL CONFIG REQUIRED)
+find_package(tinyxml2 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
@@ -34,6 +36,38 @@ target_compile_definitions(nexverse-core PUBLIC
     NEXVERSE_VERSION="${NEXVERSE_VERSION_LABEL}"
 )
 
+add_library(nexverse-net
+    src/net/curl_http_transport.cpp
+)
+add_library(NexVerse::Net ALIAS nexverse-net)
+
+target_include_directories(nexverse-net PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(nexverse-net PUBLIC
+    NexVerse::Core
+    CURL::libcurl
+)
+
+add_library(nexverse-protocol
+    src/protocol/grid_info.cpp
+    src/protocol/grid_discovery.cpp
+)
+add_library(NexVerse::Protocol ALIAS nexverse-protocol)
+
+target_include_directories(nexverse-protocol PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(nexverse-protocol PUBLIC
+    NexVerse::Core
+    NexVerse::Net
+    tinyxml2::tinyxml2
+)
+
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
     src/ui/login_model.cpp
@@ -49,6 +83,7 @@ target_include_directories(nexverse-ui PUBLIC
 
 target_link_libraries(nexverse-ui PUBLIC
     NexVerse::Core
+    NexVerse::Protocol
     OpenGL::GL
     glfw
     glad::glad
@@ -82,6 +117,8 @@ function(nexverse_enable_warnings target)
 endfunction()
 
 nexverse_enable_warnings(nexverse-core)
+nexverse_enable_warnings(nexverse-net)
+nexverse_enable_warnings(nexverse-protocol)
 nexverse_enable_warnings(nexverse-ui)
 
 add_executable(nexverse-viewer apps/viewer/main.cpp)
@@ -103,6 +140,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-login-model-tests PRIVATE NexVerse::UI)
     nexverse_enable_warnings(nexverse-login-model-tests)
     add_test(NAME nexverse-login-model-tests COMMAND nexverse-login-model-tests)
+
+    add_executable(nexverse-grid-info-tests tests/grid_info_tests.cpp)
+    target_link_libraries(nexverse-grid-info-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-grid-info-tests)
+    add_test(NAME nexverse-grid-info-tests COMMAND nexverse-grid-info-tests)
+
+    add_executable(nexverse-grid-discovery-tests tests/grid_discovery_tests.cpp)
+    target_link_libraries(nexverse-grid-discovery-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-grid-discovery-tests)
+    add_test(NAME nexverse-grid-discovery-tests COMMAND nexverse-grid-discovery-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()
