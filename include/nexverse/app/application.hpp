@@ -1,0 +1,19 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#pragma once
+
+namespace nexverse::app
+{
+class Application
+{
+public:
+    int run();
+
+private:
+    void render_frame(int width, int height, double mouse_x, double mouse_y);
+};
+}
