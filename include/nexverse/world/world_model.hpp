@@ -84,6 +84,7 @@ struct ParcelState
 
 struct EnvironmentState
 {
+    std::uint32_t revision = 0U;
     bool available = false;
 };
 

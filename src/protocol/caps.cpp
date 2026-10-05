@@ -248,13 +248,32 @@ CapabilityDiscoveryResult CapabilityService::discover(
 SimulatorFeaturesResult CapabilityService::fetch_simulator_features(
     std::string_view capability_uri) const
 {
+    const auto result = fetch_llsd(capability_uri);
+    if (!result.success)
+    {
+        return {false, {}, result.message};
+    }
+    if (!result.value.is_map())
+    {
+        return {false, {}, "SimulatorFeatures response is not an LLSD map"};
+    }
+
+    return {
+        true,
+        result.value,
+        "SimulatorFeatures loaded"};
+}
+
+LlsdCapabilityResult CapabilityService::fetch_llsd(
+    std::string_view capability_uri) const
+{
     if (transport_ == nullptr)
     {
         return {false, {}, "HTTP transport unavailable"};
     }
     if (!is_valid_http_uri(capability_uri))
     {
-        return {false, {}, "SimulatorFeatures URI is invalid"};
+        return {false, {}, "Capability URI is invalid"};
     }
 
     constexpr auto connect_timeout = std::chrono::seconds{8};
@@ -272,7 +291,7 @@ SimulatorFeaturesResult CapabilityService::fetch_simulator_features(
             false,
             {},
             response.error.empty()
-                ? "SimulatorFeatures request failed"
+                ? "Capability request failed"
                 : response.error};
     }
 
@@ -281,15 +300,11 @@ SimulatorFeaturesResult CapabilityService::fetch_simulator_features(
     {
         return {false, {}, parsed.error};
     }
-    if (!parsed.value->is_map())
-    {
-        return {false, {}, "SimulatorFeatures response is not an LLSD map"};
-    }
 
     return {
         true,
         std::move(*parsed.value),
-        "SimulatorFeatures loaded"};
+        "LLSD capability loaded"};
 }
 
 EventQueueBatch CapabilityService::poll_event_queue(

@@ -2157,7 +2157,9 @@ int Application::run()
                                  &caps_stop,
                                  &caps_mutex,
                                  &caps_state,
-                                 &caps_event_dispatcher]()
+                                 &caps_event_dispatcher,
+                                 &world_model,
+                                 &world_mutex]()
                                 {
                                     protocol::CapabilityService service{transport};
 
@@ -2186,6 +2188,7 @@ int Application::run()
 
                                     std::string event_queue_uri;
                                     std::string simulator_features_uri;
+                                    std::string environment_settings_uri;
                                     std::string simulator_features_message;
 
                                     {
@@ -2208,6 +2211,13 @@ int Application::run()
                                         found != discovery.capabilities.end())
                                     {
                                         event_queue_uri = found->second;
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("EnvironmentSettings");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        environment_settings_uri = found->second;
                                     }
 
                                     if (!simulator_features_uri.empty())
@@ -2243,6 +2253,37 @@ int Application::run()
                                     else
                                     {
                                         core::warning("CAPS SimulatorFeatures endpoint not advertised");
+                                    }
+
+                                    if (!environment_settings_uri.empty())
+                                    {
+                                        const auto environment =
+                                            service.fetch_llsd(environment_settings_uri);
+                                        if (environment.success)
+                                        {
+                                            {
+                                                std::scoped_lock lock{world_mutex};
+                                                world::EnvironmentState state =
+                                                    world_model.environment();
+                                                ++state.revision;
+                                                state.available = true;
+                                                world_model.set_environment(
+                                                    std::move(state));
+                                            }
+                                            core::info(
+                                                "CAPS EnvironmentSettings loaded successfully");
+                                        }
+                                        else
+                                        {
+                                            core::warning(
+                                                "CAPS EnvironmentSettings request failed: " +
+                                                environment.message);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        core::warning(
+                                            "CAPS EnvironmentSettings endpoint not advertised");
                                     }
 
                                     if (event_queue_uri.empty())

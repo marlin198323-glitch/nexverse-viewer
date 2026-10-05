@@ -49,6 +49,13 @@ struct SimulatorFeaturesResult
     std::string message;
 };
 
+struct LlsdCapabilityResult
+{
+    bool success = false;
+    LlsdValue value;
+    std::string message;
+};
+
 [[nodiscard]] std::vector<std::string> default_seed_capabilities();
 [[nodiscard]] std::string build_seed_capability_request(
     const std::vector<std::string>& capabilities);
@@ -71,6 +78,9 @@ public:
         const std::vector<std::string>& requested = default_seed_capabilities()) const;
 
     [[nodiscard]] SimulatorFeaturesResult fetch_simulator_features(
+        std::string_view capability_uri) const;
+
+    [[nodiscard]] LlsdCapabilityResult fetch_llsd(
         std::string_view capability_uri) const;
 
     [[nodiscard]] EventQueueBatch poll_event_queue(

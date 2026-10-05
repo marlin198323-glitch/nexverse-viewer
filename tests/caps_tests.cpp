@@ -158,6 +158,27 @@ int main()
         std::string{queue_response},
         {}};
 
+    transport->get_response = {
+        200,
+        "<llsd><array><map><key>sky</key><string>legacy</string></map></array></llsd>",
+        {}};
+
+    const auto generic_llsd = service.fetch_llsd(
+        "https://caps.example.test/environment");
+
+    if (!generic_llsd.success ||
+        !generic_llsd.value.is_array() ||
+        generic_llsd.value.array_value.size() != 1U)
+    {
+        std::cerr << "Generic LLSD capability request failed\n";
+        return 7;
+    }
+
+    transport->post_response = {
+        200,
+        std::string{queue_response},
+        {}};
+
     const auto polled = service.poll_event_queue(
         "https://caps.example.test/event",
         123,
@@ -168,7 +189,7 @@ int main()
         transport->last_url != "https://caps.example.test/event")
     {
         std::cerr << "EventQueue transport failed\n";
-        return 7;
+        return 8;
     }
 
     std::cout << "CAPS discovery and EventQueue tests passed\n";
