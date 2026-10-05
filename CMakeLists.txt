@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.25)
 
+# Some autotools-based vcpkg ports on Unix do not reliably handle an
+# installation prefix containing spaces. Keep the vcpkg installation tree
+# outside the source/build directory so paths such as "OGL Viewer" remain
+# supported.
+if(UNIX AND DEFINED ENV{HOME} AND NOT DEFINED VCPKG_INSTALLED_DIR)
+    set(
+        VCPKG_INSTALLED_DIR
+        "$ENV{HOME}/.cache/nexverse-viewer/vcpkg_installed"
+        CACHE PATH
+        "External vcpkg install tree for NexVerse Viewer"
+    )
+endif()
+
 project(NexVerseViewer VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
