@@ -2,6 +2,8 @@
   "name": "nexverse-viewer",
   "version-string": "0.1.0-alpha.1",
   "dependencies": [
+    "curl",
+    "tinyxml2",
     "glfw3",
     {
       "name": "glad",
