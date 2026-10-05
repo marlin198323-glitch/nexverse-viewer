@@ -106,14 +106,69 @@ std::string LoginModel::masked_password() const
     return masked;
 }
 
+void LoginModel::set_grid_discovery(
+    GridDiscoveryState state,
+    std::string display_name,
+    std::string message)
+{
+    grid_discovery_state_ = state;
+
+    if (!display_name.empty())
+    {
+        grid_display_name_ = std::move(display_name);
+    }
+
+    grid_status_message_ = std::move(message);
+    notice_ = grid_status_message_;
+}
+
+GridDiscoveryState LoginModel::grid_discovery_state() const noexcept
+{
+    return grid_discovery_state_;
+}
+
+bool LoginModel::grid_ready() const noexcept
+{
+    return grid_discovery_state_ == GridDiscoveryState::live ||
+           grid_discovery_state_ == GridDiscoveryState::cache;
+}
+
+std::string_view LoginModel::grid_display_name() const noexcept
+{
+    return grid_display_name_;
+}
+
+std::string_view LoginModel::grid_status_label() const noexcept
+{
+    switch (grid_discovery_state_)
+    {
+        case GridDiscoveryState::checking: return "CHECKING";
+        case GridDiscoveryState::live: return "LIVE";
+        case GridDiscoveryState::cache: return "CACHE";
+        case GridDiscoveryState::failed: return "ERROR";
+    }
+    return "ERROR";
+}
+
+std::string_view LoginModel::grid_status_message() const noexcept
+{
+    return grid_status_message_;
+}
+
 bool LoginModel::submit_enabled() const noexcept
 {
-    return !username_.empty() && !password_.empty();
+    return grid_ready() && !username_.empty() && !password_.empty();
 }
 
 bool LoginModel::attempt_submit()
 {
-    if (!submit_enabled())
+    if (!grid_ready())
+    {
+        notice_ = "Keine gueltige NexVerse GridInfo verfuegbar.";
+        return false;
+    }
+
+    if (username_.empty() || password_.empty())
     {
         notice_ = "Bitte Benutzername und Passwort eingeben.";
         return false;
