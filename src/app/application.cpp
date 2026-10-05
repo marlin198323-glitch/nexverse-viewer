@@ -11,7 +11,7 @@
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -275,20 +275,13 @@ int Application::run()
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    glewExperimental = GL_TRUE;
-    const GLenum glew_status = glewInit();
-    if (glew_status != GLEW_OK)
+    if (gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) == 0)
     {
-        const auto* message = glewGetErrorString(glew_status);
-        core::error(
-            std::string{"GLEW initialization failed: "} +
-            reinterpret_cast<const char*>(message));
+        core::error("GLAD OpenGL loader initialization failed");
         glfwDestroyWindow(window);
         glfwTerminate();
         return 12;
     }
-
-    glGetError();
 
     int window_width = 0;
     int window_height = 0;
