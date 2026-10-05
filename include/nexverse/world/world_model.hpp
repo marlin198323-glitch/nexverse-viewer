@@ -32,6 +32,13 @@ struct RegionState
     std::string simulator_ip;
     std::uint16_t simulator_port = 0U;
     std::string seed_capability;
+    std::string region_id;
+    std::uint32_t region_flags = 0U;
+    std::uint64_t region_flags_extended = 0U;
+    std::uint64_t region_protocols = 0U;
+    std::uint8_t sim_access = 0U;
+    float water_height = 0.0f;
+    std::string channel_version;
     std::uint32_t size_x = 256U;
     std::uint32_t size_y = 256U;
     std::uint32_t generation = 0U;
@@ -115,6 +122,13 @@ struct RegionUpdate
     std::string simulator_ip;
     std::uint16_t simulator_port = 0U;
     std::string seed_capability;
+    std::string region_id;
+    std::uint32_t region_flags = 0U;
+    std::uint64_t region_flags_extended = 0U;
+    std::uint64_t region_protocols = 0U;
+    std::uint8_t sim_access = 0U;
+    float water_height = 0.0f;
+    std::string channel_version;
     std::uint32_t size_x = 256U;
     std::uint32_t size_y = 256U;
     bool connected = false;

@@ -423,6 +423,116 @@ int main()
         return 17;
     }
 
+    auto append_u64_vec = [](std::vector<std::uint8_t>& out, std::uint64_t value)
+    {
+        for (unsigned int i = 0U; i < 8U; ++i)
+        {
+            out.push_back(static_cast<std::uint8_t>(
+                (value >> (i * 8U)) & 0xFFU));
+        }
+    };
+
+    std::vector<std::uint8_t> handshake_payload;
+    append_u32_vec(handshake_payload, 0x12345678U);
+    handshake_payload.push_back(13U);
+    handshake_payload.push_back(8U);
+    handshake_payload.insert(
+        handshake_payload.end(),
+        {'N','e','x','V','e','r','s','e'});
+
+    const auto handshake_owner =
+        uuid_to_bytes("99999999-9999-9999-9999-999999999999");
+    handshake_payload.insert(
+        handshake_payload.end(),
+        handshake_owner->begin(),
+        handshake_owner->end());
+    handshake_payload.push_back(1U);
+    append_f32_vec(handshake_payload, 21.5f);
+    append_f32_vec(handshake_payload, 1.0f);
+    handshake_payload.insert(handshake_payload.end(), 16U, 0U);
+    handshake_payload.insert(handshake_payload.end(), 128U, 0U);
+    for (int i = 0; i < 8; ++i)
+    {
+        append_f32_vec(handshake_payload, 0.0f);
+    }
+
+    const auto handshake_region =
+        uuid_to_bytes("aaaaaaaa-9999-8888-7777-bbbbbbbbbbbb");
+    handshake_payload.insert(
+        handshake_payload.end(),
+        handshake_region->begin(),
+        handshake_region->end());
+    append_u32_vec(handshake_payload, 7U);
+    append_u32_vec(handshake_payload, 8U);
+    handshake_payload.push_back(0U);
+    handshake_payload.push_back(0U);
+    handshake_payload.push_back(0U);
+    handshake_payload.push_back(1U);
+    append_u64_vec(handshake_payload, 0x1122334455667788ULL);
+    append_u64_vec(handshake_payload, 0x8877665544332211ULL);
+
+    const auto handshake = decode_region_handshake(handshake_payload);
+    if (!handshake.has_value() ||
+        handshake->region_flags != 0x12345678U ||
+        handshake->sim_access != 13U ||
+        handshake->sim_name != "NexVerse" ||
+        handshake->water_height != 21.5f ||
+        !handshake->estate_manager ||
+        handshake->region_id != "aaaaaaaa-9999-8888-7777-bbbbbbbbbbbb" ||
+        handshake->region_flags_extended != 0x1122334455667788ULL ||
+        handshake->region_protocols != 0x8877665544332211ULL)
+    {
+        std::cerr << "RegionHandshake decode failed\n";
+        return 20;
+    }
+
+    std::vector<std::uint8_t> movement_payload;
+    const auto movement_agent =
+        uuid_to_bytes("11111111-2222-3333-4444-555555555555");
+    const auto movement_session =
+        uuid_to_bytes("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    movement_payload.insert(
+        movement_payload.end(),
+        movement_agent->begin(),
+        movement_agent->end());
+    movement_payload.insert(
+        movement_payload.end(),
+        movement_session->begin(),
+        movement_session->end());
+    append_f32_vec(movement_payload, 128.0f);
+    append_f32_vec(movement_payload, 129.0f);
+    append_f32_vec(movement_payload, 30.0f);
+    append_f32_vec(movement_payload, 1.0f);
+    append_f32_vec(movement_payload, 0.0f);
+    append_f32_vec(movement_payload, 0.0f);
+    append_u64_vec(movement_payload, 0x0000010000000200ULL);
+    append_u32_vec(movement_payload, 123456U);
+    const std::string channel = "OpenSim 0.9";
+    movement_payload.push_back(
+        static_cast<std::uint8_t>(channel.size() & 0xFFU));
+    movement_payload.push_back(
+        static_cast<std::uint8_t>((channel.size() >> 8U) & 0xFFU));
+    movement_payload.insert(
+        movement_payload.end(),
+        channel.begin(),
+        channel.end());
+
+    const auto movement =
+        decode_agent_movement_complete(movement_payload);
+    if (!movement.has_value() ||
+        movement->agent_id != "11111111-2222-3333-4444-555555555555" ||
+        movement->session_id != "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" ||
+        movement->position.x != 128.0f ||
+        movement->position.y != 129.0f ||
+        movement->position.z != 30.0f ||
+        movement->region_handle != 0x0000010000000200ULL ||
+        movement->timestamp != 123456U ||
+        movement->channel_version != "OpenSim 0.9")
+    {
+        std::cerr << "AgentMovementComplete decode failed\n";
+        return 21;
+    }
+
     std::vector<std::uint8_t> parcel_payload;
     append_u32_vec(parcel_payload, 0U);
     append_u32_vec(parcel_payload, 1U);

@@ -34,6 +34,13 @@ void WorldModel::apply_region(const RegionUpdate& update)
     region_.simulator_ip = update.simulator_ip;
     region_.simulator_port = update.simulator_port;
     region_.seed_capability = update.seed_capability;
+    region_.region_id = update.region_id;
+    region_.region_flags = update.region_flags;
+    region_.region_flags_extended = update.region_flags_extended;
+    region_.region_protocols = update.region_protocols;
+    region_.sim_access = update.sim_access;
+    region_.water_height = update.water_height;
+    region_.channel_version = update.channel_version;
     region_.size_x = update.size_x;
     region_.size_y = update.size_y;
     region_.connected = update.connected;

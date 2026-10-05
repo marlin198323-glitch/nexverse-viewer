@@ -1621,6 +1621,13 @@ int Application::run()
                 teleport->simulator.simulator_ip,
                 teleport->simulator.simulator_port,
                 teleport->simulator.seed_capability,
+                {},
+                0U,
+                0U,
+                0U,
+                0U,
+                0.0f,
+                {},
                 teleport->simulator.region_size_x,
                 teleport->simulator.region_size_y,
                 false});
@@ -1654,6 +1661,13 @@ int Application::run()
                 crossed->simulator.simulator_ip,
                 crossed->simulator.simulator_port,
                 crossed->simulator.seed_capability,
+                {},
+                0U,
+                0U,
+                0U,
+                0U,
+                0.0f,
+                {},
                 crossed->simulator.region_size_x,
                 crossed->simulator.region_size_y,
                 false});
@@ -1667,6 +1681,8 @@ int Application::run()
         });
 
     std::atomic_uint32_t local_chat_received{0U};
+    std::atomic_bool region_handshake_world_logged{false};
+    std::atomic_bool movement_complete_world_logged{false};
     std::atomic_uint32_t terrain_packets{0U};
     std::atomic_bool terrain_live_logged{false};
     std::atomic_bool parcel_live_logged{false};
@@ -1679,6 +1695,98 @@ int Application::run()
     std::atomic_bool cached_object_live_logged{false};
     std::atomic_bool terse_object_live_logged{false};
     std::atomic_uint32_t other_packets{0U};
+
+    packet_dispatcher.register_handler(
+        protocol::msg_region_handshake,
+        [&region_handshake_world_logged, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto handshake =
+                protocol::decode_region_handshake(packet.payload);
+            if (!handshake.has_value())
+            {
+                return;
+            }
+
+            std::scoped_lock lock{world_mutex};
+            const world::RegionState region = world_model.region();
+            world_model.apply_region({
+                region.handle,
+                handshake->sim_name.empty() ? region.name : handshake->sim_name,
+                region.agent_position,
+                region.simulator_ip,
+                region.simulator_port,
+                region.seed_capability,
+                handshake->region_id,
+                handshake->region_flags,
+                handshake->region_flags_extended,
+                handshake->region_protocols,
+                handshake->sim_access,
+                handshake->water_height,
+                region.channel_version,
+                region.size_x,
+                region.size_y,
+                region.connected});
+
+            if (!region_handshake_world_logged.exchange(true))
+            {
+                core::info("WorldModel RegionHandshake metadata validated");
+            }
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_agent_movement_complete,
+        [&movement_complete_world_logged, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto movement =
+                protocol::decode_agent_movement_complete(packet.payload);
+            if (!movement.has_value())
+            {
+                return;
+            }
+
+            std::scoped_lock lock{world_mutex};
+            const world::AgentState agent = world_model.agent();
+            const world::RegionState region = world_model.region();
+
+            if (movement->agent_id != agent.agent_id ||
+                movement->session_id != agent.session_id ||
+                movement->region_handle != region.handle)
+            {
+                return;
+            }
+
+            world_model.apply_agent({
+                agent.agent_id,
+                agent.session_id,
+                movement->position,
+                agent.rotation,
+                agent.present});
+
+            world_model.apply_region({
+                region.handle,
+                region.name,
+                movement->position,
+                region.simulator_ip,
+                region.simulator_port,
+                region.seed_capability,
+                region.region_id,
+                region.region_flags,
+                region.region_flags_extended,
+                region.region_protocols,
+                region.sim_access,
+                region.water_height,
+                movement->channel_version,
+                region.size_x,
+                region.size_y,
+                region.connected});
+
+            if (!movement_complete_world_logged.exchange(true))
+            {
+                core::info("WorldModel AgentMovementComplete validated");
+            }
+        });
 
     packet_dispatcher.register_handler(
         protocol::msg_chat_from_simulator,
@@ -2264,6 +2372,13 @@ int Application::run()
                                 active_session->simulator_ip,
                                 active_session->simulator_port,
                                 active_session->seed_capability,
+                                {},
+                                0U,
+                                0U,
+                                0U,
+                                0U,
+                                0.0f,
+                                {},
                                 256U,
                                 256U,
                                 false});
@@ -2691,6 +2806,13 @@ int Application::run()
                     region_snapshot.simulator_ip,
                     region_snapshot.simulator_port,
                     region_snapshot.seed_capability,
+                    region_snapshot.region_id,
+                    region_snapshot.region_flags,
+                    region_snapshot.region_flags_extended,
+                    region_snapshot.region_protocols,
+                    region_snapshot.sim_access,
+                    region_snapshot.water_height,
+                    region_snapshot.channel_version,
                     region_snapshot.size_x,
                     region_snapshot.size_y,
                     region_circuit_active});

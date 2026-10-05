@@ -731,6 +731,158 @@ decode_improved_terse_object_update(
     return message;
 }
 
+std::optional<RegionHandshakeMessage> decode_region_handshake(
+    std::span<const std::uint8_t> payload)
+{
+    std::size_t offset = 0U;
+    auto need = [&](std::size_t amount)
+    {
+        return offset + amount <= payload.size();
+    };
+
+    if (!need(5U))
+    {
+        return std::nullopt;
+    }
+
+    RegionHandshakeMessage message;
+    message.region_flags = read_le_u32(payload, offset);
+    offset += 4U;
+    message.sim_access = payload[offset++];
+
+    if (!read_variable1(payload, offset, message.sim_name) ||
+        !need(16U + 1U + 4U + 4U + 16U + 128U + 32U + 16U + 8U))
+    {
+        return std::nullopt;
+    }
+
+    message.sim_owner = uuid_from_bytes(payload, offset);
+    if (message.sim_owner.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    message.estate_manager = payload[offset++] != 0U;
+    message.water_height = read_f32(payload, offset);
+    offset += 4U;
+    message.billable_factor = read_f32(payload, offset);
+    offset += 4U;
+
+    if (!std::isfinite(message.water_height) ||
+        !std::isfinite(message.billable_factor))
+    {
+        return std::nullopt;
+    }
+
+    offset += 16U;  // CacheID
+    offset += 128U; // TerrainBase0..3 + TerrainDetail0..3
+    offset += 32U;  // Terrain start heights + height ranges
+
+    message.region_id = uuid_from_bytes(payload, offset);
+    if (message.region_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    offset += 8U; // CPUClassID + CPURatio
+
+    std::string ignored;
+    if (!read_variable1(payload, offset, ignored) ||
+        !read_variable1(payload, offset, ignored) ||
+        !read_variable1(payload, offset, ignored) ||
+        offset >= payload.size())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t extended_count = payload[offset++];
+    if (offset + extended_count * 16U != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    for (std::size_t index = 0U; index < extended_count; ++index)
+    {
+        const std::uint64_t flags = read_le_u64(payload, offset);
+        offset += 8U;
+        const std::uint64_t protocols = read_le_u64(payload, offset);
+        offset += 8U;
+
+        if (index == 0U)
+        {
+            message.region_flags_extended = flags;
+            message.region_protocols = protocols;
+        }
+    }
+
+    return message;
+}
+
+std::optional<AgentMovementCompleteMessage>
+decode_agent_movement_complete(
+    std::span<const std::uint8_t> payload)
+{
+    constexpr std::size_t fixed_size =
+        16U + 16U + 12U + 12U + 8U + 4U + 2U;
+    if (payload.size() < fixed_size)
+    {
+        return std::nullopt;
+    }
+
+    AgentMovementCompleteMessage message;
+    std::size_t offset = 0U;
+
+    message.agent_id = uuid_from_bytes(payload, offset);
+    if (message.agent_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    message.session_id = uuid_from_bytes(payload, offset);
+    if (message.session_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    message.position.x = read_f32(payload, offset);
+    message.position.y = read_f32(payload, offset + 4U);
+    message.position.z = read_f32(payload, offset + 8U);
+    offset += 12U;
+
+    message.look_at.x = read_f32(payload, offset);
+    message.look_at.y = read_f32(payload, offset + 4U);
+    message.look_at.z = read_f32(payload, offset + 8U);
+    offset += 12U;
+
+    if (!std::isfinite(message.position.x) ||
+        !std::isfinite(message.position.y) ||
+        !std::isfinite(message.position.z) ||
+        !std::isfinite(message.look_at.x) ||
+        !std::isfinite(message.look_at.y) ||
+        !std::isfinite(message.look_at.z))
+    {
+        return std::nullopt;
+    }
+
+    message.region_handle = read_le_u64(payload, offset);
+    offset += 8U;
+    message.timestamp = read_le_u32(payload, offset);
+    offset += 4U;
+
+    if (message.region_handle == 0U ||
+        !read_variable2(payload, offset, message.channel_version) ||
+        offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    return message;
+}
+
 std::optional<ParcelPropertiesMessage> decode_parcel_properties(
     std::span<const std::uint8_t> payload)
 {

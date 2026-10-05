@@ -206,6 +206,31 @@ struct ImprovedTerseObjectUpdateMessage
     std::vector<TerseObjectUpdate> updates;
 };
 
+struct RegionHandshakeMessage
+{
+    std::uint32_t region_flags = 0U;
+    std::uint8_t sim_access = 0U;
+    std::string sim_name;
+    std::string sim_owner;
+    bool estate_manager = false;
+    float water_height = 0.0f;
+    float billable_factor = 0.0f;
+    std::string region_id;
+    std::uint64_t region_flags_extended = 0U;
+    std::uint64_t region_protocols = 0U;
+};
+
+struct AgentMovementCompleteMessage
+{
+    std::string agent_id;
+    std::string session_id;
+    Vec3 position;
+    Vec3 look_at;
+    std::uint64_t region_handle = 0U;
+    std::uint32_t timestamp = 0U;
+    std::string channel_version;
+};
+
 struct ParcelPropertiesMessage
 {
     std::uint32_t local_id = 0U;
@@ -307,6 +332,13 @@ decode_object_update_compressed(
 
 [[nodiscard]] std::optional<ImprovedTerseObjectUpdateMessage>
 decode_improved_terse_object_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<RegionHandshakeMessage> decode_region_handshake(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<AgentMovementCompleteMessage>
+decode_agent_movement_complete(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<ParcelPropertiesMessage> decode_parcel_properties(

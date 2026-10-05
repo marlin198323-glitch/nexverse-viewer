@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.9`.
+Aktuelle Viewer-Version: `0.2.0-alpha.10`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -370,8 +370,14 @@ Aktuell:
 - Region `generation` wird bei jedem World-Wechsel erhöht
 - alter LLUDP-Circuit darf eine neue Region nicht mehr fälschlich als verbunden markieren; Simulator-IP/Port müssen zum Login-Circuit passen
 - neuer `nexverse-caps-world-events-tests` Test
-- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.9`
-- kompletter Debug-Build nach Phase-5-EventQueue-/Transition-Block: 15/15 Tests grün
+- `RegionHandshake` Low 148 wird vollständig bounds-geprüft dekodiert
+- WorldModel übernimmt autoritativ SimName, Region UUID, RegionFlags, ExtendedFlags, RegionProtocols, SimAccess und Wasserhöhe
+- `AgentMovementComplete` Low 250 wird typisiert dekodiert
+- Agent-/Session-ID und RegionHandle müssen zum aktuellen WorldModel passen, bevor Position übernommen wird
+- Agentposition und Region-Agentposition werden aus `AgentMovementComplete` synchronisiert; ChannelVersion wird in RegionState gespeichert
+- Diagnosen: `WorldModel RegionHandshake metadata validated` und `WorldModel AgentMovementComplete validated`
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.10`
+- kompletter Debug-Build nach Phase-5-Region-Metadata-Block: 15/15 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
