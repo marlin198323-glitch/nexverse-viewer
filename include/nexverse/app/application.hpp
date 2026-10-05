@@ -12,8 +12,5 @@ class Application
 {
 public:
     int run();
-
-private:
-    void render_frame(int width, int height, double mouse_x, double mouse_y);
 };
 }
