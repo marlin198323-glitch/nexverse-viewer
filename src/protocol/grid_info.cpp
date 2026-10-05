@@ -114,6 +114,14 @@ GridInfoParseResult parse_grid_info_xml(std::string_view xml)
             "GridInfo XML does not contain a non-empty <login> value"};
     }
 
+    if (!info.login_uri().starts_with("http://") &&
+        !info.login_uri().starts_with("https://"))
+    {
+        return GridInfoParseResult{
+            std::nullopt,
+            "GridInfo <login> must use http:// or https://"};
+    }
+
     GridInfoDocument parsed;
     parsed.info = std::move(info);
     parsed.raw_xml.assign(xml.data(), xml.size());
