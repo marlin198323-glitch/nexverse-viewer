@@ -63,6 +63,22 @@ int main()
         return 4;
     }
 
+    int fallback_calls = 0;
+    dispatcher.set_fallback_handler(
+        [&](const DecodedPacket& packet)
+        {
+            if (packet.header.message == unknown.header.message)
+            {
+                ++fallback_calls;
+            }
+        });
+
+    if (!dispatcher.dispatch(unknown) || fallback_calls != 1)
+    {
+        std::cerr << "Dispatcher fallback failed\n";
+        return 5;
+    }
+
     dispatcher.clear_handler(msg_start_ping_check);
     if (dispatcher.has_handler(msg_start_ping_check) ||
         dispatcher.handler_count() != 1U)

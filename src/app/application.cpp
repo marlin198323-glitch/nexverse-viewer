@@ -80,6 +80,14 @@ enum class LoginField
     password
 };
 
+struct SimulationLoadStats
+{
+    std::uint32_t terrain_packets = 0U;
+    std::uint32_t object_packets = 0U;
+    std::uint32_t avatar_packets = 0U;
+    std::uint32_t other_packets = 0U;
+};
+
 struct LoginUiState
 {
     LoginField focused = LoginField::username;
@@ -641,6 +649,7 @@ void render_shell(
     const LoginUiState& login,
     const nexverse::protocol::LoginSession* session,
     const nexverse::protocol::CircuitStatus& circuit,
+    const SimulationLoadStats& load_stats,
     bool simulation_ready,
     unsigned int welcome_texture)
 {
@@ -772,7 +781,7 @@ void render_shell(
         }
 
         const float panel_w = std::min(760.0f * scale, w - 80.0f * scale);
-        const float panel_h = login.authenticated ? 250.0f * scale : 230.0f * scale;
+        const float panel_h = login.authenticated ? 286.0f * scale : 230.0f * scale;
         const float panel_x = (w - panel_w) * 0.5f;
         const float panel_y = top_h + std::max(44.0f * scale, (h - top_h - bottom_h - panel_h) * 0.5f);
 
@@ -834,6 +843,22 @@ void render_shell(
             login.authenticated
                 ? (circuit.state == nexverse::protocol::CircuitState::active ? theme::cyan : circuit_state_color(circuit.state))
                 : theme::text_muted);
+
+        if (login.authenticated)
+        {
+            const std::string load_line =
+                "Terrain " + std::to_string(load_stats.terrain_packets) +
+                "  |  Objekte " + std::to_string(load_stats.object_packets) +
+                "  |  Avatar " + std::to_string(load_stats.avatar_packets) +
+                "  |  Sonstige " + std::to_string(load_stats.other_packets);
+
+            renderer.text(
+                panel_x + 28.0f * scale,
+                panel_y + 222.0f * scale,
+                10.0f * scale,
+                load_line,
+                theme::text_muted);
+        }
 
         const float bottom_y = h - bottom_h;
         renderer.rect(
@@ -1519,7 +1544,12 @@ int Application::run()
     protocol::OutboundCommandQueue outbound_queue{512U};
     bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
+
     std::atomic_uint32_t local_chat_received{0U};
+    std::atomic_uint32_t terrain_packets{0U};
+    std::atomic_uint32_t object_packets{0U};
+    std::atomic_uint32_t avatar_packets{0U};
+    std::atomic_uint32_t other_packets{0U};
 
     packet_dispatcher.register_handler(
         protocol::msg_chat_from_simulator,
@@ -1529,6 +1559,41 @@ int Application::run()
             {
                 local_chat_received.fetch_add(1U, std::memory_order_relaxed);
             }
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_layer_data,
+        [&terrain_packets](const protocol::DecodedPacket&)
+        {
+            terrain_packets.fetch_add(1U, std::memory_order_relaxed);
+        });
+
+    const auto count_object_packet =
+        [&object_packets](const protocol::DecodedPacket&)
+        {
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+        };
+
+    packet_dispatcher.register_handler(protocol::msg_object_update, count_object_packet);
+    packet_dispatcher.register_handler(protocol::msg_object_update_compressed, count_object_packet);
+    packet_dispatcher.register_handler(protocol::msg_object_update_cached, count_object_packet);
+    packet_dispatcher.register_handler(protocol::msg_improved_terse_object_update, count_object_packet);
+    packet_dispatcher.register_handler(protocol::msg_kill_object, count_object_packet);
+
+    const auto count_avatar_packet =
+        [&avatar_packets](const protocol::DecodedPacket&)
+        {
+            avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+        };
+
+    packet_dispatcher.register_handler(protocol::msg_coarse_location_update, count_avatar_packet);
+    packet_dispatcher.register_handler(protocol::msg_avatar_appearance, count_avatar_packet);
+    packet_dispatcher.register_handler(protocol::msg_agent_data_update, count_avatar_packet);
+
+    packet_dispatcher.set_fallback_handler(
+        [&other_packets](const protocol::DecodedPacket&)
+        {
+            other_packets.fetch_add(1U, std::memory_order_relaxed);
         });
 
     auto last_agent_update = std::chrono::steady_clock::now();
@@ -1935,11 +2000,18 @@ int Application::run()
                 circuit_snapshot = circuit_status;
             }
 
+            const SimulationLoadStats load_stats{
+                terrain_packets.load(std::memory_order_relaxed),
+                object_packets.load(std::memory_order_relaxed),
+                avatar_packets.load(std::memory_order_relaxed),
+                other_packets.load(std::memory_order_relaxed)};
+
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
                 active_session.has_value() ? &*active_session : nullptr,
                 circuit_snapshot,
+                load_stats,
                 simulation_ready,
                 welcome_texture);
 

@@ -32,6 +32,7 @@ public:
 
     void register_handler(MessageId id, Handler handler);
     void clear_handler(MessageId id);
+    void set_fallback_handler(Handler handler);
 
     [[nodiscard]] bool dispatch(const DecodedPacket& packet) const;
     [[nodiscard]] bool has_handler(MessageId id) const;
@@ -39,5 +40,6 @@ public:
 
 private:
     std::map<MessageId, Handler, MessageIdLess> handlers_;
+    Handler fallback_handler_;
 };
 }

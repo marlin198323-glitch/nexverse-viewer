@@ -242,12 +242,22 @@ UI-Zustandslogik aktualisiert:
 - Navigation, In-World-Dock, rechte Welt-/Freunde-/Region-Panels und Bewegungsinput bleiben gesperrt, bis ein zukünftiger WorldModel-/Renderer-Status `simulation_ready` liefert
 - `UDP LIVE` allein schaltet die Viewer-Navigation nicht mehr frei
 
-Noch offen für Phase 3:
-- echter NexVerse-Bewegungstest mit den neuen `AgentUpdate`-Paketen, sobald die Simulation sichtbar geladen wird
-- Chat-Eingabefeld an die vorhandene Local-Chat-Outbound-Nachricht anbinden
-- Teleport-UI an `TeleportLocationRequest` anbinden
-- weitere Message-Template-Abdeckung für Avatar-, Region- und Object-Updates
-- WorldModel-Anbindung auf Basis dieser Dispatch-Schicht
+Phase 3 ist abgeschlossen.
+
+Abschlussstand:
+- echter NexVerse-LLUDP-Circuit erfolgreich bestätigt
+- UDP, Sequenzen, ACK, Resend, Reliable, Throttling, MTU, Timeout und Reconnect vorhanden
+- PacketDispatcher mit Fallback vorhanden
+- typisierte Outbound-Nachrichten für AgentUpdate, Local Chat und Teleport vorhanden
+- zentrale eingehende Weltpakete sind im Message-Template registriert: LayerData, ObjectUpdate, ObjectUpdateCompressed, ObjectUpdateCached, ImprovedTerseObjectUpdate, KillObject, CoarseLocationUpdate, AvatarAppearance und AgentDataUpdate
+- Ladebildschirm zählt Terrain-, Objekt-, Avatar- und sonstige Pakete, ohne die In-World-UI vorzeitig freizuschalten
+- 9/9 lokale Tests grün
+
+Nicht mehr Phase 3, sondern spätere Phasen:
+- CAPS/EventQueue/SimulatorFeatures → Phase 4
+- WorldModel-Dekodierung und Weltzustände → Phase 5
+- sichtbare Region/Terrain/Avatar/Objekte → Renderer-/World-Phasen
+- Chat-/Teleport-/Movement-UI bleibt bis `simulation_ready` gesperrt
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
 

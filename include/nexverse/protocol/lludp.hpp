@@ -46,10 +46,19 @@ struct MessageTemplateEntry
 
 inline constexpr MessageId msg_start_ping_check{MessageFrequency::high, 1U};
 inline constexpr MessageId msg_complete_ping_check{MessageFrequency::high, 2U};
+inline constexpr MessageId msg_layer_data{MessageFrequency::high, 11U};
+inline constexpr MessageId msg_object_update{MessageFrequency::high, 12U};
+inline constexpr MessageId msg_object_update_compressed{MessageFrequency::high, 13U};
+inline constexpr MessageId msg_object_update_cached{MessageFrequency::high, 14U};
+inline constexpr MessageId msg_improved_terse_object_update{MessageFrequency::high, 15U};
+inline constexpr MessageId msg_kill_object{MessageFrequency::high, 16U};
+inline constexpr MessageId msg_coarse_location_update{MessageFrequency::medium, 6U};
 inline constexpr MessageId msg_use_circuit_code{MessageFrequency::low, 3U};
 inline constexpr MessageId msg_region_handshake{MessageFrequency::low, 148U};
 inline constexpr MessageId msg_region_handshake_reply{MessageFrequency::low, 149U};
+inline constexpr MessageId msg_avatar_appearance{MessageFrequency::low, 158U};
 inline constexpr MessageId msg_complete_agent_movement{MessageFrequency::low, 249U};
+inline constexpr MessageId msg_agent_data_update{MessageFrequency::low, 387U};
 inline constexpr MessageId msg_agent_movement_complete{MessageFrequency::low, 250U};
 inline constexpr MessageId msg_packet_ack{MessageFrequency::fixed, 0xFFFFFFFBU};
 

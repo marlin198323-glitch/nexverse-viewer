@@ -23,12 +23,23 @@ void PacketDispatcher::clear_handler(MessageId id)
     handlers_.erase(id);
 }
 
+void PacketDispatcher::set_fallback_handler(Handler handler)
+{
+    fallback_handler_ = std::move(handler);
+}
+
 bool PacketDispatcher::dispatch(const DecodedPacket& packet) const
 {
     const auto found = handlers_.find(packet.header.message);
     if (found == handlers_.end())
     {
-        return false;
+        if (!fallback_handler_)
+        {
+            return false;
+        }
+
+        fallback_handler_(packet);
+        return true;
     }
 
     found->second(packet);

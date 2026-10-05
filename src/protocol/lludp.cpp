@@ -159,14 +159,23 @@ bool PacketThrottle::consume(
 
 std::optional<MessageTemplateEntry> known_message_template(MessageId id)
 {
-    constexpr std::array<MessageTemplateEntry, 8> entries{
+    constexpr std::array<MessageTemplateEntry, 17> entries{
         MessageTemplateEntry{msg_start_ping_check, "StartPingCheck", false},
         MessageTemplateEntry{msg_complete_ping_check, "CompletePingCheck", false},
+        MessageTemplateEntry{msg_layer_data, "LayerData", false},
+        MessageTemplateEntry{msg_object_update, "ObjectUpdate", false},
+        MessageTemplateEntry{msg_object_update_compressed, "ObjectUpdateCompressed", false},
+        MessageTemplateEntry{msg_object_update_cached, "ObjectUpdateCached", false},
+        MessageTemplateEntry{msg_improved_terse_object_update, "ImprovedTerseObjectUpdate", false},
+        MessageTemplateEntry{msg_kill_object, "KillObject", false},
+        MessageTemplateEntry{msg_coarse_location_update, "CoarseLocationUpdate", false},
         MessageTemplateEntry{msg_use_circuit_code, "UseCircuitCode", true},
         MessageTemplateEntry{msg_region_handshake, "RegionHandshake", true},
         MessageTemplateEntry{msg_region_handshake_reply, "RegionHandshakeReply", true},
+        MessageTemplateEntry{msg_avatar_appearance, "AvatarAppearance", false},
         MessageTemplateEntry{msg_complete_agent_movement, "CompleteAgentMovement", true},
         MessageTemplateEntry{msg_agent_movement_complete, "AgentMovementComplete", false},
+        MessageTemplateEntry{msg_agent_data_update, "AgentDataUpdate", false},
         MessageTemplateEntry{msg_packet_ack, "PacketAck", false}
     };
 

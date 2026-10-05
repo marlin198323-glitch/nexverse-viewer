@@ -957,7 +957,7 @@ Simulator: ...
 
 ---
 
-## Phase 3 – LLUDP Transport 🚧 in Arbeit seit 05.10.2026 · NexVerse Circuit-Echttest erfolgreich
+## Phase 3 – LLUDP Transport ✅ abgeschlossen 05.10.2026 · NexVerse Circuit-Echttest erfolgreich
 
 Ziel: Stabile Echtzeitverbindung zum Simulator.
 
