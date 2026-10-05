@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iterator>
 #include <system_error>
+#include <utility>
 
 namespace
 {
@@ -30,6 +31,35 @@ std::filesystem::path home_directory()
     }
 #endif
     return std::filesystem::current_path();
+}
+
+std::optional<nexverse::protocol::GridInfoDocument> read_grid_info_file(
+    const std::filesystem::path& path)
+{
+    std::error_code size_error;
+    const auto size = std::filesystem::file_size(path, size_error);
+    if (size_error || size > nexverse::protocol::max_grid_info_bytes)
+    {
+        return std::nullopt;
+    }
+
+    std::ifstream input{path, std::ios::binary};
+    if (!input)
+    {
+        return std::nullopt;
+    }
+
+    std::string xml{
+        std::istreambuf_iterator<char>{input},
+        std::istreambuf_iterator<char>{}};
+
+    auto parsed = nexverse::protocol::parse_grid_info_xml(xml);
+    if (!parsed.ok())
+    {
+        return std::nullopt;
+    }
+
+    return std::move(parsed.document);
 }
 }
 
@@ -136,7 +166,7 @@ GridDiscoveryResult GridDiscoveryService::refresh()
                 core::info("NexVerse GridInfo unchanged");
             }
 
-            GridDiscoveryResult result{
+            return GridDiscoveryResult{
                 true,
                 std::move(live.info),
                 GridInfoSource::live,
@@ -144,8 +174,6 @@ GridDiscoveryResult GridDiscoveryService::refresh()
                 cache_saved
                     ? "Current GridInfo loaded from NexVerse"
                     : "Current GridInfo loaded; local cache could not be updated"};
-
-            return result;
         }
 
         core::warning(parsed.error);
@@ -202,31 +230,21 @@ std::string_view GridDiscoveryService::endpoint() const noexcept
 
 std::optional<GridInfoDocument> GridDiscoveryService::load_cache() const
 {
-    std::error_code size_error;
-    const auto size = std::filesystem::file_size(cache_path_, size_error);
-    if (size_error || size > max_grid_info_bytes)
+    if (auto primary = read_grid_info_file(cache_path_); primary.has_value())
     {
-        return std::nullopt;
+        return primary;
     }
 
-    std::ifstream input{cache_path_, std::ios::binary};
-    if (!input)
+    std::filesystem::path backup = cache_path_;
+    backup += ".bak";
+
+    if (auto recovered = read_grid_info_file(backup); recovered.has_value())
     {
-        return std::nullopt;
+        core::warning("Primary GridInfo cache unavailable; recovered backup cache");
+        return recovered;
     }
 
-    std::string xml{
-        std::istreambuf_iterator<char>{input},
-        std::istreambuf_iterator<char>{}};
-
-    GridInfoParseResult parsed = parse_grid_info_xml(xml);
-    if (!parsed.ok())
-    {
-        core::warning("Ignoring invalid cached GridInfo");
-        return std::nullopt;
-    }
-
-    return std::move(parsed.document);
+    return std::nullopt;
 }
 
 bool GridDiscoveryService::save_cache(std::string_view xml) const
@@ -266,6 +284,7 @@ bool GridDiscoveryService::save_cache(std::string_view xml) const
         }
     }
 
+    error.clear();
     std::filesystem::rename(temporary, cache_path_, error);
     if (!error)
     {
@@ -273,16 +292,55 @@ bool GridDiscoveryService::save_cache(std::string_view xml) const
     }
 
     error.clear();
-    std::filesystem::remove(cache_path_, error);
-    error.clear();
-    std::filesystem::rename(temporary, cache_path_, error);
-
-    if (error)
+    if (!std::filesystem::exists(cache_path_, error) || error)
     {
-        core::warning("Could not replace GridInfo cache file");
         std::filesystem::remove(temporary, error);
+        core::warning("Could not install GridInfo cache file");
         return false;
     }
 
-    return true;
+    std::filesystem::path backup = cache_path_;
+    backup += ".bak";
+
+    error.clear();
+    std::filesystem::remove(backup, error);
+
+    error.clear();
+    std::filesystem::rename(cache_path_, backup, error);
+    if (error)
+    {
+        std::filesystem::remove(temporary, error);
+        core::warning("Could not preserve previous GridInfo cache");
+        return false;
+    }
+
+    error.clear();
+    std::filesystem::rename(temporary, cache_path_, error);
+    if (!error)
+    {
+        std::error_code cleanup_error;
+        std::filesystem::remove(backup, cleanup_error);
+        return true;
+    }
+
+    const std::error_code install_error = error;
+
+    std::error_code restore_error;
+    std::filesystem::rename(backup, cache_path_, restore_error);
+
+    std::error_code cleanup_error;
+    std::filesystem::remove(temporary, cleanup_error);
+
+    if (restore_error)
+    {
+        core::error("GridInfo cache replacement failed and backup restoration also failed");
+    }
+    else
+    {
+        core::warning("GridInfo cache replacement failed; previous cache restored");
+    }
+
+    static_cast<void>(install_error);
+    return false;
+}
 }
