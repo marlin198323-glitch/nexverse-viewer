@@ -1,0 +1,9 @@
+{
+  "name": "nexverse-viewer",
+  "version-string": "0.1.0-alpha.1",
+  "dependencies": [
+    "glfw3",
+    "glew",
+    "freetype"
+  ]
+}
