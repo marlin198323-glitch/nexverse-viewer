@@ -731,6 +731,97 @@ decode_improved_terse_object_update(
     return message;
 }
 
+std::optional<ParcelPropertiesMessage> decode_parcel_properties(
+    std::span<const std::uint8_t> payload)
+{
+    std::size_t offset = 0U;
+    auto need = [&](std::size_t amount)
+    {
+        return offset + amount <= payload.size();
+    };
+
+    if (!need(4U + 4U + 1U + 12U + 4U + 16U + 1U + 16U + 24U + 2U))
+    {
+        return std::nullopt;
+    }
+
+    offset += 4U; // request result
+    offset += 4U; // sequence id
+    offset += 1U; // snap selection
+    offset += 12U; // self/other/public count
+
+    const std::int32_t local_id =
+        static_cast<std::int32_t>(read_le_u32(payload, offset));
+    offset += 4U;
+    if (local_id <= 0)
+    {
+        return std::nullopt;
+    }
+
+    ParcelPropertiesMessage parcel;
+    parcel.local_id = static_cast<std::uint32_t>(local_id);
+    parcel.owner_id = uuid_from_bytes(payload, offset);
+    if (parcel.owner_id.empty())
+    {
+        return std::nullopt;
+    }
+    offset += 16U;
+
+    offset += 1U; // is group owned
+    offset += 16U; // auction/claim/rent
+    offset += 24U; // AABB min/max
+
+    if (!skip_variable2(payload, offset) || !need(4U + 1U + 32U + 4U + 4U + 4U + 4U))
+    {
+        return std::nullopt;
+    }
+
+    parcel.area = static_cast<std::int32_t>(read_le_u32(payload, offset));
+    offset += 4U;
+    offset += 1U; // status
+    offset += 32U; // prim counters
+    offset += 4U; // prim bonus
+    offset += 4U; // other clean time
+    parcel.parcel_flags = read_le_u32(payload, offset);
+    offset += 4U;
+    parcel.sale_price =
+        static_cast<std::int32_t>(read_le_u32(payload, offset));
+    offset += 4U;
+
+    if (!read_variable1(payload, offset, parcel.name) ||
+        !read_variable1(payload, offset, parcel.description) ||
+        !read_variable1(payload, offset, parcel.music_url) ||
+        !read_variable1(payload, offset, parcel.media_url))
+    {
+        return std::nullopt;
+    }
+
+    if (!need(16U + 1U + 16U + 4U + 4U + 1U + 16U + 16U + 12U + 12U + 1U + 5U))
+    {
+        return std::nullopt;
+    }
+
+    offset += 16U; // media id
+    offset += 1U; // media autoscale
+    offset += 16U; // group id
+    offset += 4U; // pass price
+    offset += 4U; // pass hours
+    offset += 1U; // category
+    offset += 16U; // auth buyer
+    offset += 16U; // snapshot
+    offset += 12U; // user location
+    offset += 12U; // user look at
+    offset += 1U; // landing type
+    offset += 5U; // region/age booleans
+
+    if (offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    return parcel;
+}
+
 std::optional<AgentDataUpdateMessage> decode_agent_data_update(
     std::span<const std::uint8_t> payload)
 {

@@ -80,6 +80,14 @@ struct ParcelState
 {
     std::uint32_t local_id = 0U;
     std::string name;
+    std::string description;
+    std::string owner_id;
+    std::int32_t area = 0;
+    std::uint32_t parcel_flags = 0U;
+    std::int32_t sale_price = 0;
+    std::string music_url;
+    std::string media_url;
+    bool available = false;
 };
 
 struct EnvironmentState

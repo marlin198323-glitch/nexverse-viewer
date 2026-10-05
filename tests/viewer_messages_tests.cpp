@@ -423,6 +423,90 @@ int main()
         return 17;
     }
 
+    std::vector<std::uint8_t> parcel_payload;
+    append_u32_vec(parcel_payload, 0U);
+    append_u32_vec(parcel_payload, 1U);
+    parcel_payload.push_back(0U);
+    append_u32_vec(parcel_payload, 0U);
+    append_u32_vec(parcel_payload, 0U);
+    append_u32_vec(parcel_payload, 0U);
+    append_u32_vec(parcel_payload, 99U);
+
+    const auto parcel_owner =
+        uuid_to_bytes("88888888-8888-8888-8888-888888888888");
+    parcel_payload.insert(
+        parcel_payload.end(),
+        parcel_owner->begin(),
+        parcel_owner->end());
+
+    parcel_payload.push_back(0U);
+    for (int i = 0; i < 4; ++i)
+    {
+        append_u32_vec(parcel_payload, 0U);
+    }
+    parcel_payload.insert(parcel_payload.end(), 24U, 0U);
+    parcel_payload.push_back(0U);
+    parcel_payload.push_back(0U);
+
+    append_u32_vec(parcel_payload, 4096U);
+    parcel_payload.push_back(1U);
+    for (int i = 0; i < 8; ++i)
+    {
+        append_u32_vec(parcel_payload, 0U);
+    }
+    append_f32_vec(parcel_payload, 1.0f);
+    append_u32_vec(parcel_payload, 0U);
+    append_u32_vec(parcel_payload, 0x12U);
+    append_u32_vec(parcel_payload, 500U);
+
+    auto append_var1 = [&](std::string_view value)
+    {
+        parcel_payload.push_back(static_cast<std::uint8_t>(value.size()));
+        parcel_payload.insert(
+            parcel_payload.end(),
+            value.begin(),
+            value.end());
+    };
+
+    append_var1("Nex Parcel");
+    append_var1("Parcel Description");
+    append_var1("https://music.example/");
+    append_var1("https://media.example/");
+
+    parcel_payload.insert(parcel_payload.end(), 16U, 0U);
+    parcel_payload.push_back(0U);
+    parcel_payload.insert(parcel_payload.end(), 16U, 0U);
+    append_u32_vec(parcel_payload, 0U);
+    append_f32_vec(parcel_payload, 0.0f);
+    parcel_payload.push_back(0U);
+    parcel_payload.insert(parcel_payload.end(), 16U, 0U);
+    parcel_payload.insert(parcel_payload.end(), 16U, 0U);
+    parcel_payload.insert(parcel_payload.end(), 12U, 0U);
+    parcel_payload.insert(parcel_payload.end(), 12U, 0U);
+    parcel_payload.push_back(0U);
+    parcel_payload.insert(parcel_payload.end(), 5U, 0U);
+
+    const auto parcel = decode_parcel_properties(parcel_payload);
+    if (!parcel.has_value() ||
+        parcel->local_id != 99U ||
+        parcel->area != 4096 ||
+        parcel->parcel_flags != 0x12U ||
+        parcel->sale_price != 500 ||
+        parcel->name != "Nex Parcel" ||
+        parcel->description != "Parcel Description")
+    {
+        std::cerr << "ParcelProperties decode failed\n";
+        return 18;
+    }
+
+    std::vector<std::uint8_t> invalid_parcel = parcel_payload;
+    invalid_parcel.pop_back();
+    if (decode_parcel_properties(invalid_parcel).has_value())
+    {
+        std::cerr << "Invalid ParcelProperties unexpectedly accepted\n";
+        return 19;
+    }
+
     std::vector<std::uint8_t> incoming_payload;
     incoming_payload.push_back(3U);
     incoming_payload.insert(incoming_payload.end(), {'J','a','m'});

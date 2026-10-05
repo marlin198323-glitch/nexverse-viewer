@@ -1583,6 +1583,7 @@ int Application::run()
     std::atomic_uint32_t local_chat_received{0U};
     std::atomic_uint32_t terrain_packets{0U};
     std::atomic_bool terrain_live_logged{false};
+    std::atomic_bool parcel_live_logged{false};
     bool world_ready_logged = false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
@@ -1629,6 +1630,37 @@ int Application::run()
             ++terrain.revision;
             terrain.available = true;
             world_model.set_terrain(std::move(terrain));
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_parcel_properties,
+        [&parcel_live_logged, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto parcel =
+                protocol::decode_parcel_properties(packet.payload);
+            if (!parcel.has_value())
+            {
+                return;
+            }
+
+            if (!parcel_live_logged.exchange(true))
+            {
+                core::info("WorldModel parcel stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            world_model.set_parcel({
+                parcel->local_id,
+                parcel->name,
+                parcel->description,
+                parcel->owner_id,
+                parcel->area,
+                parcel->parcel_flags,
+                parcel->sale_price,
+                parcel->music_url,
+                parcel->media_url,
+                true});
         });
 
     packet_dispatcher.register_handler(

@@ -159,7 +159,7 @@ bool PacketThrottle::consume(
 
 std::optional<MessageTemplateEntry> known_message_template(MessageId id)
 {
-    constexpr std::array<MessageTemplateEntry, 17> entries{
+    constexpr std::array<MessageTemplateEntry, 18> entries{
         MessageTemplateEntry{msg_start_ping_check, "StartPingCheck", false},
         MessageTemplateEntry{msg_complete_ping_check, "CompletePingCheck", false},
         MessageTemplateEntry{msg_layer_data, "LayerData", false},
@@ -168,6 +168,7 @@ std::optional<MessageTemplateEntry> known_message_template(MessageId id)
         MessageTemplateEntry{msg_object_update_cached, "ObjectUpdateCached", false},
         MessageTemplateEntry{msg_improved_terse_object_update, "ImprovedTerseObjectUpdate", false},
         MessageTemplateEntry{msg_kill_object, "KillObject", false},
+        MessageTemplateEntry{msg_parcel_properties, "ParcelProperties", false},
         MessageTemplateEntry{msg_coarse_location_update, "CoarseLocationUpdate", false},
         MessageTemplateEntry{msg_use_circuit_code, "UseCircuitCode", true},
         MessageTemplateEntry{msg_region_handshake, "RegionHandshake", true},

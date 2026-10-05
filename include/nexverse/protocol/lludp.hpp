@@ -52,6 +52,7 @@ inline constexpr MessageId msg_object_update_compressed{MessageFrequency::high, 
 inline constexpr MessageId msg_object_update_cached{MessageFrequency::high, 14U};
 inline constexpr MessageId msg_improved_terse_object_update{MessageFrequency::high, 15U};
 inline constexpr MessageId msg_kill_object{MessageFrequency::high, 16U};
+inline constexpr MessageId msg_parcel_properties{MessageFrequency::high, 23U};
 inline constexpr MessageId msg_coarse_location_update{MessageFrequency::medium, 6U};
 inline constexpr MessageId msg_use_circuit_code{MessageFrequency::low, 3U};
 inline constexpr MessageId msg_region_handshake{MessageFrequency::low, 148U};

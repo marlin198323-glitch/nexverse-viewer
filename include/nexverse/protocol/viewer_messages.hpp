@@ -206,6 +206,19 @@ struct ImprovedTerseObjectUpdateMessage
     std::vector<TerseObjectUpdate> updates;
 };
 
+struct ParcelPropertiesMessage
+{
+    std::uint32_t local_id = 0U;
+    std::string owner_id;
+    std::int32_t area = 0;
+    std::uint32_t parcel_flags = 0U;
+    std::int32_t sale_price = 0;
+    std::string name;
+    std::string description;
+    std::string music_url;
+    std::string media_url;
+};
+
 struct AgentDataUpdateMessage
 {
     std::string agent_id;
@@ -294,6 +307,9 @@ decode_object_update_compressed(
 
 [[nodiscard]] std::optional<ImprovedTerseObjectUpdateMessage>
 decode_improved_terse_object_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<ParcelPropertiesMessage> decode_parcel_properties(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<AgentDataUpdateMessage> decode_agent_data_update(
