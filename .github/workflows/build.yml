@@ -50,6 +50,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enable MSVC x64 toolchain
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Bootstrap vcpkg
         shell: pwsh
         run: |
