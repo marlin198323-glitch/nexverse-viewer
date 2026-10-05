@@ -162,11 +162,15 @@ Teststand:
 
 ## Nächster technischer Schritt
 
-Phase 2 ist technisch implementiert und benötigt jetzt noch den manuellen Echttest mit einem vorhandenen NexVerse-Benutzerkonto.
+Phase 2 ist abgeschlossen. Der echte Login gegen NexVerse wurde am 05.10.2026 erfolgreich bestätigt.
 
-Nach erfolgreichem Echttest:
-1. Session-Daten im Viewer prüfen,
-2. Phase 2 als abgeschlossen markieren,
-3. anschließend gemäß `projectplan.md` Phase 3 beginnen: LLUDP-Transport und Circuit-Aufbau zum vom Login gelieferten Simulator.
+Bestätigt:
+- Login-Status `CONNECTED`
+- aktive OpenSim-Session
+- Simulator-Ziel aus der echten Login-Antwort wurde übernommen
+- Inventar-/Buddy-/Gesten-Bootstrapdaten wurden übernommen
+- Viewer bleibt fest an die NexVerse-GridInfo gebunden
+
+Nächster Schritt gemäß `projectplan.md`: Phase 3 – LLUDP-Transport und Circuit-Aufbau zum vom Login gelieferten Simulator.
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.

@@ -370,7 +370,8 @@ void render_world_preview(
     float height,
     float scale,
     std::string_view grid_status,
-    Color grid_status_color)
+    Color grid_status_color,
+    const nexverse::protocol::LoginSession* session)
 {
     renderer.rect(
         x, y, width, height,
@@ -426,7 +427,9 @@ void render_world_preview(
         x + 22.0f * scale,
         y + 54.0f * scale,
         9.0f * scale,
-        "Die echte Region ersetzt diese Vorschau nach erfolgreichem Login.",
+        session != nullptr
+            ? "Login erfolgreich. LLUDP-Weltverbindung folgt in Phase 3."
+            : "Die echte Region ersetzt diese Vorschau nach erfolgreichem Login.",
         theme::text_muted);
 
     const float horizon = y + header_height + scene_height * 0.66f;
@@ -565,7 +568,9 @@ void render_world_preview(
         x + 20.0f * scale,
         y + height - footer_height + 29.0f * scale,
         12.0f * scale,
-        "Noch nicht verbunden - Login folgt in Phase 2",
+        session != nullptr
+            ? "Login erfolgreich - bereit fuer LLUDP / Phase 3"
+            : "Noch nicht verbunden - Anmeldung erforderlich",
         theme::text);
 
     renderer.rect(
@@ -580,8 +585,8 @@ void render_world_preview(
         x + width - 124.0f * scale,
         y + height - footer_height + 20.0f * scale,
         10.0f * scale,
-        "VORSCHAU",
-        theme::cyan);
+        session != nullptr ? "SESSION" : "VORSCHAU",
+        session != nullptr ? theme::success : theme::cyan);
 }
 
 void render_shell(
@@ -779,7 +784,8 @@ void render_shell(
         content_h,
         scale,
         grid_status,
-        grid_status_color);
+        grid_status_color,
+        session);
 
     renderer.rect(
         right_x,

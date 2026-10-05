@@ -214,7 +214,7 @@ Status: compatible
 
 ---
 
-## Phase 2 – OpenSim Login
+## Phase 2 – OpenSim Login ✅ abgeschlossen 05.10.2026
 
 Ziel: Ein Benutzer kann sich authentifizieren.
 
