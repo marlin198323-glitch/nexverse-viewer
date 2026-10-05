@@ -76,6 +76,9 @@ add_library(nexverse-protocol
     src/protocol/packet_dispatcher.cpp
     src/protocol/viewer_messages.cpp
     src/protocol/outbound_queue.cpp
+    src/protocol/llsd.cpp
+    src/protocol/caps.cpp
+    src/protocol/caps_event_dispatcher.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -192,6 +195,21 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-outbound-queue-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-outbound-queue-tests)
     add_test(NAME nexverse-outbound-queue-tests COMMAND nexverse-outbound-queue-tests)
+
+    add_executable(nexverse-llsd-tests tests/llsd_tests.cpp)
+    target_link_libraries(nexverse-llsd-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-llsd-tests)
+    add_test(NAME nexverse-llsd-tests COMMAND nexverse-llsd-tests)
+
+    add_executable(nexverse-caps-tests tests/caps_tests.cpp)
+    target_link_libraries(nexverse-caps-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-caps-tests)
+    add_test(NAME nexverse-caps-tests COMMAND nexverse-caps-tests)
+
+    add_executable(nexverse-caps-event-dispatcher-tests tests/caps_event_dispatcher_tests.cpp)
+    target_link_libraries(nexverse-caps-event-dispatcher-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-caps-event-dispatcher-tests)
+    add_test(NAME nexverse-caps-event-dispatcher-tests COMMAND nexverse-caps-event-dispatcher-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

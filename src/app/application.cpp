@@ -9,6 +9,8 @@
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/version.hpp"
 #include "nexverse/net/http_transport.hpp"
+#include "nexverse/protocol/caps.hpp"
+#include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
@@ -86,6 +88,15 @@ struct SimulationLoadStats
     std::uint32_t object_packets = 0U;
     std::uint32_t avatar_packets = 0U;
     std::uint32_t other_packets = 0U;
+};
+
+struct CapsRuntimeState
+{
+    std::string status = "WAITING";
+    std::uint32_t capability_count = 0U;
+    std::uint32_t event_count = 0U;
+    bool simulator_features_loaded = false;
+    bool event_queue_available = false;
 };
 
 struct LoginUiState
@@ -650,6 +661,7 @@ void render_shell(
     const nexverse::protocol::LoginSession* session,
     const nexverse::protocol::CircuitStatus& circuit,
     const SimulationLoadStats& load_stats,
+    const CapsRuntimeState& caps,
     bool simulation_ready,
     unsigned int welcome_texture)
 {
@@ -858,6 +870,19 @@ void render_shell(
                 10.0f * scale,
                 load_line,
                 theme::text_muted);
+
+            const std::string caps_line =
+                "CAPS " + caps.status +
+                "  |  Endpunkte " + std::to_string(caps.capability_count) +
+                "  |  Features " + (caps.simulator_features_loaded ? "OK" : "-") +
+                "  |  Events " + std::to_string(caps.event_count);
+
+            renderer.text(
+                panel_x + 28.0f * scale,
+                panel_y + 246.0f * scale,
+                9.5f * scale,
+                caps_line,
+                caps.status == "ERROR" ? theme::magenta : theme::text_muted);
         }
 
         const float bottom_y = h - bottom_h;
@@ -1544,6 +1569,13 @@ int Application::run()
     protocol::OutboundCommandQueue outbound_queue{512U};
     bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
+    protocol::CapsEventDispatcher caps_event_dispatcher;
+
+    caps_event_dispatcher.set_fallback_handler(
+        [](const protocol::EventQueueEvent&)
+        {
+            // Phase 5 installs concrete world-state handlers.
+        });
 
     std::atomic_uint32_t local_chat_received{0U};
     std::atomic_uint32_t terrain_packets{0U};
@@ -1603,6 +1635,12 @@ int Application::run()
     std::mutex circuit_mutex;
     protocol::CircuitStatus circuit_status;
     bool circuit_started = false;
+
+    std::atomic_bool caps_stop{false};
+    std::future<void> caps_future;
+    std::mutex caps_mutex;
+    CapsRuntimeState caps_state;
+    bool caps_started = false;
 
     {
         ui::UiRenderer renderer;
@@ -1713,6 +1751,153 @@ int Application::run()
                             : result.message;
                         login_ui.password.clear();
                         core::info("OpenSim login succeeded; simulator session established");
+
+                        if (!caps_started &&
+                            active_session.has_value() &&
+                            !active_session->seed_capability.empty())
+                        {
+                            caps_started = true;
+                            const std::string seed_capability =
+                                active_session->seed_capability;
+
+                            caps_future = std::async(
+                                std::launch::async,
+                                [transport,
+                                 seed_capability,
+                                 &caps_stop,
+                                 &caps_mutex,
+                                 &caps_state,
+                                 &caps_event_dispatcher]()
+                                {
+                                    protocol::CapabilityService service{transport};
+
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.status = "DISCOVERY";
+                                    }
+
+                                    protocol::CapabilityDiscoveryResult discovery =
+                                        service.discover(seed_capability);
+
+                                    if (!discovery.success)
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.status = "ERROR";
+                                        return;
+                                    }
+
+                                    std::string event_queue_uri;
+                                    std::string simulator_features_uri;
+
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.capability_count =
+                                            static_cast<std::uint32_t>(
+                                                discovery.capabilities.size());
+                                        caps_state.status = "CAPS READY";
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("SimulatorFeatures");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        simulator_features_uri = found->second;
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("EventQueueGet");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        event_queue_uri = found->second;
+                                    }
+
+                                    if (!simulator_features_uri.empty())
+                                    {
+                                        const auto features =
+                                            service.fetch_simulator_features(
+                                                simulator_features_uri);
+
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.simulator_features_loaded =
+                                            features.success;
+                                        if (!features.success)
+                                        {
+                                            caps_state.status = "CAPS PARTIAL";
+                                        }
+                                    }
+
+                                    if (event_queue_uri.empty())
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.event_queue_available = false;
+                                        if (caps_state.status != "ERROR")
+                                        {
+                                            caps_state.status = "CAPS READY";
+                                        }
+                                        return;
+                                    }
+
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        caps_state.event_queue_available = true;
+                                        caps_state.status = "EVENTQUEUE";
+                                    }
+
+                                    std::optional<std::int32_t> acknowledgement;
+                                    std::uint32_t failures = 0U;
+
+                                    while (!caps_stop.load())
+                                    {
+                                        const auto batch = service.poll_event_queue(
+                                            event_queue_uri,
+                                            acknowledgement,
+                                            false);
+
+                                        if (caps_stop.load())
+                                        {
+                                            break;
+                                        }
+
+                                        if (batch.success)
+                                        {
+                                            acknowledgement = batch.id;
+                                            failures = 0U;
+
+                                            {
+                                                std::scoped_lock lock{caps_mutex};
+                                                caps_state.event_count +=
+                                                    static_cast<std::uint32_t>(
+                                                        batch.events.size());
+                                                caps_state.status = "CAPS LIVE";
+                                            }
+
+                                            for (const auto& event : batch.events)
+                                            {
+                                                (void)caps_event_dispatcher.dispatch(event);
+                                            }
+                                            continue;
+                                        }
+
+                                        ++failures;
+                                        {
+                                            std::scoped_lock lock{caps_mutex};
+                                            caps_state.status =
+                                                failures >= 5U
+                                                    ? "ERROR"
+                                                    : "CAPS RETRY";
+                                        }
+
+                                        std::this_thread::sleep_for(
+                                            std::chrono::seconds{
+                                                std::min<std::uint32_t>(
+                                                    failures,
+                                                    5U)});
+                                    }
+                                });
+
+                            core::info(
+                                "CAPS discovery started from login seed capability");
+                        }
 
                         if (!circuit_started && active_session.has_value())
                         {
@@ -2006,12 +2191,19 @@ int Application::run()
                 avatar_packets.load(std::memory_order_relaxed),
                 other_packets.load(std::memory_order_relaxed)};
 
+            CapsRuntimeState caps_snapshot;
+            {
+                std::scoped_lock lock{caps_mutex};
+                caps_snapshot = caps_state;
+            }
+
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
                 active_session.has_value() ? &*active_session : nullptr,
                 circuit_snapshot,
                 load_stats,
+                caps_snapshot,
                 simulation_ready,
                 welcome_texture);
 
@@ -2022,9 +2214,15 @@ int Application::run()
     }
 
     circuit_stop.store(true);
+    caps_stop.store(true);
+
     if (circuit_future.valid())
     {
         circuit_future.wait();
+    }
+    if (caps_future.valid())
+    {
+        caps_future.wait();
     }
 
     glfwSetWindowUserPointer(window, nullptr);

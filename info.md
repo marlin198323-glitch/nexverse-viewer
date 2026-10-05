@@ -253,6 +253,34 @@ Abschlussstand:
 - Ladebildschirm zählt Terrain-, Objekt-, Avatar- und sonstige Pakete, ohne die In-World-UI vorzeitig freizuschalten
 - 9/9 lokale Tests grün
 
+## Phase 4 – CAPS / HTTP Capabilities
+
+Phase 4 ist lokal in Arbeit.
+
+Bereits implementiert:
+- generisches LLSD-Datenmodell
+- LLSD XML Serialize/Parse
+- LLSD Binary Serialize/Parse
+- Größen- und Nesting-Limits
+- Seed-Capability-Request als `application/llsd+xml`
+- Capability-Discovery aus der Login-`seed_capability`
+- nur validierte HTTP/HTTPS Capability-URLs werden übernommen
+- Standard-Capability-Liste für EventQueue, SimulatorFeatures, Assets, Mesh, Inventory, Appearance und weitere Viewer-Bereiche
+- `SimulatorFeatures` Abruf und LLSD-Auswertung
+- EventQueue-Long-Poll mit `ack`/`done`
+- EventQueue-Batch-Parser
+- eigener `CapsEventDispatcher` mit typisierten Message-Namen und Fallback
+- automatischer CAPS-Worker startet nach erfolgreichem Login
+- Capability-URLs werden nicht geloggt
+- Ladebildschirm zeigt CAPS-Status, Endpoint-Anzahl, SimulatorFeatures-Status und Eventanzahl
+- 12/12 lokale Tests grün
+
+Noch offen für Phase 4:
+- echter NexVerse-Seed-Capability-Echttest
+- echten `SimulatorFeatures`-Abruf bestätigen
+- echte EventQueue gegen NexVerse bestätigen
+- danach Phase 4 als abgeschlossen markieren
+
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
 - WorldModel-Dekodierung und Weltzustände → Phase 5

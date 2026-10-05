@@ -982,7 +982,7 @@ Dieser Layer darf noch keinerlei Renderer enthalten.
 
 ---
 
-## Phase 4 – CAPS / HTTP Capabilities
+## Phase 4 – CAPS / HTTP Capabilities 🚧 in Arbeit seit 05.10.2026
 
 Ziel: Der Viewer verwendet die vom Simulator bereitgestellten Capability-Endpunkte.
 
