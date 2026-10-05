@@ -8,6 +8,9 @@
 
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/version.hpp"
+#include "nexverse/net/http_transport.hpp"
+#include "nexverse/protocol/grid_discovery.hpp"
+#include "nexverse/protocol/grid_info.hpp"
 #include "nexverse/ui/login_model.hpp"
 #include "nexverse/ui/login_screen.hpp"
 #include "nexverse/ui/theme.hpp"
@@ -16,7 +19,13 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <chrono>
+#include <exception>
+#include <future>
+#include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -112,6 +121,21 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         context->model->attempt_submit();
     }
 }
+
+std::string grid_display_name(const nexverse::protocol::GridInfo& info)
+{
+    if (!info.grid_name().empty())
+    {
+        return std::string{info.grid_name()};
+    }
+
+    if (!info.grid_nick().empty())
+    {
+        return std::string{info.grid_nick()};
+    }
+
+    return std::string{nexverse::protocol::nexverse_grid_host};
+}
 }
 
 namespace nexverse::app
@@ -171,6 +195,18 @@ int Application::run()
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
+    auto transport = std::make_shared<net::CurlHttpTransport>();
+    auto discovery_future = std::async(
+        std::launch::async,
+        [transport]
+        {
+            protocol::GridDiscoveryService service{transport};
+            return service.refresh();
+        });
+
+    std::optional<protocol::GridInfo> active_grid_info;
+    bool discovery_applied = false;
+
     {
         ui::UiRenderer renderer;
         if (!renderer.initialize(window_width, window_height))
@@ -195,6 +231,58 @@ int Application::run()
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
         {
             glfwPollEvents();
+
+            if (!discovery_applied &&
+                discovery_future.valid() &&
+                discovery_future.wait_for(std::chrono::milliseconds{0}) == std::future_status::ready)
+            {
+                discovery_applied = true;
+
+                try
+                {
+                    protocol::GridDiscoveryResult result = discovery_future.get();
+
+                    if (result.success)
+                    {
+                        active_grid_info = std::move(result.info);
+                        const std::string display_name = grid_display_name(*active_grid_info);
+
+                        const ui::GridDiscoveryState state =
+                            result.source == protocol::GridInfoSource::live
+                                ? ui::GridDiscoveryState::live
+                                : ui::GridDiscoveryState::cache;
+
+                        login_model.set_grid_discovery(
+                            state,
+                            display_name,
+                            std::move(result.message));
+
+                        core::info(
+                            std::string{"Active OpenSim login URI: "} +
+                            std::string{active_grid_info->login_uri()});
+                    }
+                    else
+                    {
+                        login_model.set_grid_discovery(
+                            ui::GridDiscoveryState::failed,
+                            std::string{protocol::nexverse_grid_host},
+                            result.message.empty()
+                                ? "NexVerse GridInfo konnte nicht geladen werden."
+                                : std::move(result.message));
+                    }
+                }
+                catch (const std::exception& exception)
+                {
+                    core::error(
+                        std::string{"Grid discovery worker failed: "} +
+                        exception.what());
+
+                    login_model.set_grid_discovery(
+                        ui::GridDiscoveryState::failed,
+                        std::string{protocol::nexverse_grid_host},
+                        "NexVerse GridInfo konnte nicht geladen werden.");
+                }
+            }
 
             int framebuffer_width = 0;
             int framebuffer_height = 0;
