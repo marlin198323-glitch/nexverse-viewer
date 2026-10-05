@@ -1,18 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
 
-# Some autotools-based vcpkg ports on Unix do not reliably handle an
-# installation prefix containing spaces. Keep the vcpkg installation tree
-# outside the source/build directory so paths such as "OGL Viewer" remain
-# supported.
-if(UNIX AND DEFINED ENV{HOME} AND NOT DEFINED VCPKG_INSTALLED_DIR)
-    set(
-        VCPKG_INSTALLED_DIR
-        "$ENV{HOME}/.cache/nexverse-viewer/vcpkg_installed"
-        CACHE PATH
-        "External vcpkg install tree for NexVerse Viewer"
-    )
-endif()
-
 project(NexVerseViewer VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
@@ -24,7 +11,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(NEXVERSE_BUILD_TESTS "Build NexVerse Viewer tests" ON)
+option(NEXVERSE_BUILD_TESTS "Build OpenGenesisLINK Viewer tests" ON)
 option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 find_package(OpenGL REQUIRED)
@@ -49,6 +36,8 @@ target_compile_definitions(nexverse-core PUBLIC
 
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
+    src/ui/login_model.cpp
+    src/ui/login_screen.cpp
     src/app/application.cpp
 )
 add_library(NexVerse::UI ALIAS nexverse-ui)
@@ -108,7 +97,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_executable(nexverse-core-tests tests/core_tests.cpp)
     target_link_libraries(nexverse-core-tests PRIVATE NexVerse::Core)
     nexverse_enable_warnings(nexverse-core-tests)
-
     add_test(NAME nexverse-core-tests COMMAND nexverse-core-tests)
+
+    add_executable(nexverse-login-model-tests tests/login_model_tests.cpp)
+    target_link_libraries(nexverse-login-model-tests PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-login-model-tests)
+    add_test(NAME nexverse-login-model-tests COMMAND nexverse-login-model-tests)
+
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()
