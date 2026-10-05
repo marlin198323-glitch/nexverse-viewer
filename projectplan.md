@@ -1,14 +1,14 @@
-# NexVerse Viewer – Projektplan
+# OpenGenesisLINK Viewer für NexVerse – Projektplan
 
 Stand: 05.10.2026  
 Repository: `marlin198323-glitch/nexverse-viewer`  
-Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0.
+Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0. Produktname: OpenGenesisLINK Viewer; primäre Zielplattform/Grid: NexVerse.
 
 ---
 
 ## 1. Zielbild
 
-Der NexVerse Viewer wird kein Firestorm-Fork. Er wird als eigenständiger Viewer neu entwickelt und kommuniziert direkt mit OpenSimulator über das OpenSim/Linden-Viewer-Protokoll.
+Der OpenGenesisLINK Viewer für NexVerse wird kein Firestorm-Fork. Er wird als eigenständiger Viewer neu entwickelt und kommuniziert direkt mit OpenSimulator über das OpenSim/Linden-Viewer-Protokoll.
 
 Die Architektur wird strikt getrennt:
 
@@ -110,7 +110,7 @@ Ziel: Der Viewer erkennt einen OpenSimulator-Gridserver und verwendet beim Start
 
 ### Verbindlicher NexVerse Discovery-Endpunkt
 
-Für NexVerse ist die feste Grid-Adresse:
+Für den Einsatz des OpenGenesisLINK Viewers in NexVerse ist die feste Grid-Adresse:
 
 ```text
 hg.stadt-nexverse.de
