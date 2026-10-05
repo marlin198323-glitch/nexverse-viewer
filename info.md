@@ -1,3 +1,5 @@
+[Reading 212 lines from start (total: 212 lines, 0 remaining)]
+
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
 
 > `projectplan.md` ist für Architektur, Reihenfolge und Projektumfang immer maßgebend.
@@ -210,3 +212,12 @@ Noch offen für Phase 3:
 - Phase 3 erst nach erfolgreichem NexVerse-Echttest als abgeschlossen markieren
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
+
+[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
+## Verbindliche Funktionsbaseline
+
+Ab 05.10.2026 gilt Firestorm funktional als Mindestmaßstab für die üblichen Viewer-Kernfunktionen. OpenGenesisLINK bleibt technisch und gestalterisch eine eigenständige Implementierung.
+
+Verbindlich eingeplant sind unter anderem Bewegung/Flug/Sitzen/Teleport, Kamera/Mouselook, Local Chat/IM/Gruppen, Freunde/Profile/Radar, Inventar, Attachments/Outfits/Gesten/AO, Karte/Minimap/Landmarks, Bauen/Object Edit, Parcel/Land, Media/Music/Voice, Environment sowie Diagnose-/Preferences-Funktionen.
+
+Spezielle Firestorm-Erweiterungen wie RLV/RLVa oder sehr spezielle Firestorm-Power-User-Werkzeuge sind nicht automatisch Teil der Mindestbaseline und werden nur bei Bedarf ergänzt.

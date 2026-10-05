@@ -1,3 +1,5 @@
+[Reading 947 lines from start (total: 947 lines, 0 remaining)]
+
 # NexVerse Viewer – Projektplan
 
 Stand: 05.10.2026  
@@ -64,6 +66,213 @@ Technische Basis:
 8. Externe Daten werden validiert und mit Größenlimits verarbeitet.
 9. Passwörter werden niemals als Kommandozeilenargumente oder in Logs gespeichert.
 10. Neue Module erhalten Tests, bevor die nächste große Schicht darauf aufgebaut wird.
+
+---
+
+## 2.1 Firestorm-Funktionsbaseline – verbindlicher Mindestumfang
+
+OpenGenesisLINK Viewer bleibt eine eigenständige Neuimplementierung und wird kein Firestorm-Fork. Funktional soll der Viewer für den normalen NexVerse-Betrieb jedoch mindestens die üblichen Kernfunktionen eines modernen Firestorm/OpenSim-Viewers abdecken.
+
+Diese Liste ist verbindliche Produktanforderung und wird phasenweise umgesetzt.
+
+### Anmeldung, Grid und Session
+- fester NexVerse-Gridzugang
+- GridInfo-Discovery bei jedem Start
+- Login mit Avatarname und Passwort
+- Startposition: letzte Position, Zuhause und definierte Region/Position
+- Session-Aufbau und Reconnect
+- Logout
+- mehrere Simulator-/Regionswechsel innerhalb einer Session
+
+### Avatar und Bewegung
+- Gehen
+- Rennen
+- Springen
+- Fliegen
+- Landen
+- Sitzen / Aufstehen
+- Teleport
+- Autopilot / Zielbewegung soweit vom OpenSim-Protokoll unterstützt
+- Mouselook
+- Kamera frei bewegen
+- Zoom / Orbit / Fokus
+- Gesten
+- Animationen
+- Animation Override / AO-Grundfunktion
+- Attachments
+- Wearables / Outfit-Basis
+- Avatar Appearance aktualisieren
+
+### Welt und Regionen
+- Region laden
+- Nachbarregionen
+- Regionswechsel
+- Terrain
+- Wasser
+- Sky / Environment
+- Tageszeit
+- Wind-/Cloud-Basisdaten soweit vom Simulator geliefert
+- Objekte / Prims
+- Sculpt-/Mesh-Objekte
+- Texturen und Materialien
+- Lichtquellen
+- Partikel
+- Sitzplätze
+- Physics-/Collision-relevante Zustände soweit für den Viewer erforderlich
+- Parcel-/Land-Daten
+- Estate-/Region-Basisinformationen
+
+### Kommunikation
+- Local Chat
+- Whisper / Say / Shout
+- Instant Messages
+- Gruppenchat
+- Conference Chat soweit OpenSim unterstützt
+- Chat-Verlauf lokal
+- Tippstatus
+- Busy / Away
+- Freundschaftsanfragen
+- Freundesliste
+- Online-/Offline-Status
+- Blockieren / Muten
+- Gruppen
+- Gruppenmitgliedschaften
+- Gruppenrollen und Notices soweit vom Grid unterstützt
+- Voice als separates Modul
+- Streaming Audio / Parcel Music
+- Parcel Media / Web Media
+
+### Inventar
+- kompletter Inventarbaum
+- Ordner
+- Items
+- Assets laden
+- Copy / Move / Rename / Delete
+- Trash
+- Lost & Found
+- Rezzen aus Inventar
+- Take / Take Copy
+- Give Inventory
+- Attach / Detach
+- Wear / Remove
+- Outfits
+- Gestures
+- Landmarks
+- Notecards
+- Scripts
+- Textures
+- Sounds
+- Animations
+- Objects
+- Mesh / Asset-Unterstützung entsprechend OpenSim
+- Inventory Offers und Accept/Decline
+
+### Karte, Orte und Navigation
+- World Map
+- Mini Map / Radar
+- eigene Position
+- Avatarpositionen soweit freigegeben
+- Regionen
+- Landmarks
+- Favoriten
+- Home
+- Teleport History
+- Location Bar
+- Koordinaten
+- SLurl-/hop-/OpenSim-URI-Verarbeitung soweit für NexVerse relevant
+
+### Freunde, Profile und soziale Funktionen
+- Profil anzeigen
+- Profilbild
+- About / Picks soweit verfügbar
+- Freunde hinzufügen / entfernen
+- Rechte für Freunde
+- Nearby Avatars / Radar
+- Gruppenprofil
+- Gruppenbeitritt / Austritt
+- Notices
+- Mute-/Block-Liste
+
+### Bauen und Bearbeiten
+- Prims erstellen
+- Position / Rotation / Scale
+- Link / Unlink
+- Duplicate
+- Delete
+- Take / Return soweit berechtigt
+- Texture / Color
+- Transparency
+- Glow
+- Full Bright
+- Materialparameter soweit OpenSim unterstützt
+- Flexible / Light / Physics-Eigenschaften soweit unterstützt
+- Object Contents
+- Permissions
+- Verkaufspreis / Verkaufseinstellungen
+- Script- und Notecard-Inhalte öffnen/bearbeiten
+- Object Inspect / Creator / Owner
+- Land Build-/Rez-Rechte beachten
+
+### Grundstücke und Land
+- Parcelinformationen
+- Eigentümer
+- Area
+- Traffic soweit geliefert
+- Access / Ban
+- Media
+- Music
+- Landing Point
+- Set Home soweit erlaubt
+- About Land
+- Buy Land / Abandon / Divide / Join nur sofern vom NexVerse-Grid erlaubt und serverseitig unterstützt
+
+### Suche und Entdecken
+- Personen
+- Gruppen
+- Orte
+- Regionen
+- Events
+- Land
+- Marketplace-Anbindung nur über eine dafür vorgesehene NexVerse-/Web-Schnittstelle
+
+### UI-Standardfunktionen
+- Toolbar
+- konfigurierbare Panels
+- Notifications
+- Dialoge
+- Preferences
+- Audio-Lautstärken
+- Voice-Steuerung
+- Kamera-Steuerung
+- Grafikoptionen
+- Netzwerk-/Cacheoptionen
+- Tastaturbelegung
+- Mausbelegung
+- Vollbild / Fenster
+- mehrere Auflösungen
+- HiDPI
+- Dark Theme / NexVerse Branding
+- lokalisierbare UI
+- Screenshot-Funktion
+
+### Diagnose und Sicherheit
+- Netzwerkstatus
+- Ping / Packet Loss
+- FPS
+- Simulatorstatus
+- Circuit-/CAPS-Status
+- sichere Credential-Behandlung
+- keine Passwörter in Logs
+- Asset-/Netzwerkgrößenlimits
+- Timeouts
+- Reconnect
+- Crash-/Fehlerdiagnose ohne sensible Daten
+
+### Nicht automatisch Teil der Mindestbaseline
+
+Spezielle Firestorm-Power-User-Erweiterungen wie RLV/RLVa, sehr spezielle Phototools, Firestorm-spezifische Debug-Optionen oder proprietäre Service-Integrationen werden nicht automatisch übernommen. Solche Funktionen kommen nur hinzu, wenn sie für NexVerse ausdrücklich benötigt werden.
+
+Die UI muss nicht wie Firestorm aussehen. Maßgeblich bleibt das definierte OpenGenesisLINK-/NexVerse-Zieldesign. Firestorm dient hier ausschließlich als funktionaler Referenzumfang.
 
 ---
 
@@ -945,3 +1154,5 @@ Die nächsten Arbeitsschritte sind:
 10. Danach Phase 1: OpenSim `get_grid_info`.
 
 Erst wenn Phase 0 auf allen Zielplattformen reproduzierbar baut, beginnt die eigentliche OpenSim-Protokollentwicklung.
+
+[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
