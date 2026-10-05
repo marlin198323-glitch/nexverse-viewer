@@ -67,12 +67,20 @@ int main()
         return 6;
     }
 
+    const auto invalid_scheme = parse_grid_info_xml(
+        "<gridinfo><login>ftp://example.invalid/</login></gridinfo>");
+    if (invalid_scheme.ok())
+    {
+        std::cerr << "Non-HTTP login URI must be rejected\n";
+        return 7;
+    }
+
     const std::string oversized(max_grid_info_bytes + 1U, 'x');
     const auto too_large = parse_grid_info_xml(oversized);
     if (too_large.ok())
     {
         std::cerr << "Oversized GridInfo payload must be rejected\n";
-        return 7;
+        return 8;
     }
 
     std::cout << "GridInfo parser tests passed\n";
