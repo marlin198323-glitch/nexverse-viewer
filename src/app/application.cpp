@@ -46,14 +46,6 @@ Color with_alpha(Color color, float alpha)
     return color;
 }
 
-void field(UiRenderer& renderer, float x, float y, float width, std::string_view label, std::string_view value)
-{
-    renderer.text(x, y, 13.0f, label, theme::text_muted);
-    renderer.rect(x, y + 28.0f, width, 48.0f, theme::surface_soft, 10.0f);
-    renderer.rect(x, y + 75.0f, width, 1.0f, with_alpha(theme::cyan, 0.28f), 0.0f);
-    renderer.text(x + 16.0f, y + 37.0f, 16.0f, value, theme::text);
-}
-
 void status_row(UiRenderer& renderer, float x, float y, std::string_view label, std::string_view value, Color state)
 {
     renderer.rect(x, y + 6.0f, 8.0f, 8.0f, state, 4.0f);
@@ -63,185 +55,729 @@ void status_row(UiRenderer& renderer, float x, float y, std::string_view label, 
     renderer.text(x + 205.0f - value_width, y, 13.0f, value, state);
 }
 
-void render_world_preview(
-    UiRenderer& renderer, float x, float y, float width, float height,
-    std::string_view grid_status, Color grid_status_color)
+void nav_item(
+    UiRenderer& renderer,
+    float x,
+    float y,
+    float width,
+    float scale,
+    std::string_view title,
+    std::string_view subtitle,
+    bool active)
 {
-    renderer.rect(x, y, width, height, theme::surface_glass, 18.0f);
+    const Color background = active
+        ? Color{0.045f, 0.115f, 0.205f, 0.96f}
+        : Color{0.026f, 0.045f, 0.078f, 0.76f};
 
-    const std::array<Color, 6> sky{
-        Color{0.045f, 0.060f, 0.125f, 1.0f},
-        Color{0.055f, 0.075f, 0.160f, 1.0f},
-        Color{0.075f, 0.095f, 0.200f, 1.0f},
-        Color{0.100f, 0.100f, 0.220f, 1.0f},
-        Color{0.120f, 0.085f, 0.210f, 1.0f},
-        Color{0.115f, 0.065f, 0.170f, 1.0f}
+    renderer.rect(x, y, width, 56.0f * scale, background, 10.0f * scale);
+    if (active)
+    {
+        renderer.rect(x, y + 5.0f * scale, 3.0f * scale, 46.0f * scale, theme::cyan, 1.5f * scale);
+    }
+
+    renderer.rect(
+        x + 12.0f * scale,
+        y + 13.0f * scale,
+        30.0f * scale,
+        30.0f * scale,
+        active ? with_alpha(theme::cyan, 0.22f) : with_alpha(theme::blue, 0.13f),
+        15.0f * scale);
+
+    renderer.text(
+        x + 54.0f * scale,
+        y + 8.0f * scale,
+        13.0f * scale,
+        title,
+        active ? theme::text : Color{0.80f, 0.86f, 0.94f, 1.0f});
+
+    renderer.text(
+        x + 54.0f * scale,
+        y + 29.0f * scale,
+        9.5f * scale,
+        subtitle,
+        theme::text_muted);
+}
+
+void status_chip(
+    UiRenderer& renderer,
+    float x,
+    float y,
+    float width,
+    float scale,
+    std::string_view label,
+    std::string_view value,
+    Color state)
+{
+    renderer.rect(
+        x, y, width, 48.0f * scale,
+        Color{0.027f, 0.050f, 0.085f, 0.92f},
+        12.0f * scale);
+
+    renderer.rect(
+        x + 12.0f * scale,
+        y + 18.0f * scale,
+        8.0f * scale,
+        8.0f * scale,
+        state,
+        4.0f * scale);
+
+    renderer.text(
+        x + 28.0f * scale,
+        y + 8.0f * scale,
+        9.0f * scale,
+        label,
+        theme::text_muted);
+
+    renderer.text(
+        x + 28.0f * scale,
+        y + 24.0f * scale,
+        11.5f * scale,
+        value,
+        theme::text);
+}
+
+void render_world_preview(
+    UiRenderer& renderer,
+    float x,
+    float y,
+    float width,
+    float height,
+    float scale,
+    std::string_view grid_status,
+    Color grid_status_color)
+{
+    renderer.rect(
+        x, y, width, height,
+        Color{0.025f, 0.045f, 0.085f, 1.0f},
+        14.0f * scale);
+
+    const std::array<Color, 7> sky{
+        Color{0.030f, 0.055f, 0.105f, 1.0f},
+        Color{0.036f, 0.075f, 0.135f, 1.0f},
+        Color{0.045f, 0.095f, 0.160f, 1.0f},
+        Color{0.052f, 0.110f, 0.180f, 1.0f},
+        Color{0.065f, 0.105f, 0.185f, 1.0f},
+        Color{0.075f, 0.085f, 0.165f, 1.0f},
+        Color{0.064f, 0.070f, 0.140f, 1.0f}
     };
 
-    const float band_height = (height - 128.0f) / static_cast<float>(sky.size());
+    const float header_height = 66.0f * scale;
+    const float footer_height = 62.0f * scale;
+    const float scene_height = std::max(160.0f * scale, height - header_height - footer_height);
+    const float band_height = scene_height / static_cast<float>(sky.size());
+
     for (std::size_t i = 0; i < sky.size(); ++i)
     {
         renderer.rect(
             x + 1.0f,
-            y + 70.0f + static_cast<float>(i) * band_height,
+            y + header_height + static_cast<float>(i) * band_height,
             width - 2.0f,
             band_height + 1.0f,
             sky[i],
             0.0f);
     }
 
-    renderer.text(x + 28.0f, y + 20.0f, 14.0f, "NEXVERSE WORLD PREVIEW", theme::text_muted);
-    renderer.text(x + 28.0f, y + 43.0f, 22.0f, "A native OpenSim world is coming online.", theme::text);
+    renderer.rect(
+        x + 1.0f, y + 1.0f, width - 2.0f, header_height,
+        Color{0.020f, 0.038f, 0.070f, 0.98f},
+        14.0f * scale);
 
-    const float horizon = y + height * 0.67f;
+    renderer.text(
+        x + 22.0f * scale,
+        y + 13.0f * scale,
+        10.0f * scale,
+        "WELT-VORSCHAU",
+        theme::cyan);
 
-    renderer.rect(x + width * 0.67f, y + 112.0f, 94.0f, 94.0f, with_alpha(theme::magenta, 0.20f), 47.0f);
-    renderer.rect(x + width * 0.70f, y + 132.0f, 54.0f, 54.0f, with_alpha(theme::cyan, 0.32f), 27.0f);
+    renderer.text(
+        x + 22.0f * scale,
+        y + 32.0f * scale,
+        15.0f * scale,
+        "NexVerse verbindet sich mit der OpenSim-Welt",
+        theme::text);
 
-    const std::array<float, 12> building_widths{48, 70, 42, 92, 56, 66, 38, 82, 52, 74, 45, 62};
-    float city_x = x + 40.0f;
+    const float horizon = y + header_height + scene_height * 0.66f;
+
+    renderer.rect(
+        x + width * 0.68f,
+        y + header_height + 38.0f * scale,
+        86.0f * scale,
+        86.0f * scale,
+        with_alpha(theme::violet, 0.16f),
+        43.0f * scale);
+
+    renderer.rect(
+        x + width * 0.72f,
+        y + header_height + 58.0f * scale,
+        52.0f * scale,
+        52.0f * scale,
+        with_alpha(theme::cyan, 0.30f),
+        26.0f * scale);
+
+    const std::array<float, 11> building_widths{42, 56, 34, 72, 50, 62, 38, 68, 45, 58, 40};
+    float city_x = x + 34.0f * scale;
 
     for (std::size_t i = 0; i < building_widths.size(); ++i)
     {
-        const float building_width = building_widths[i];
-        const float max_height = 190.0f;
+        const float building_width = building_widths[i] * scale;
         const float building_height =
-            72.0f + std::fmod(static_cast<float>((i + 3U) * 47U), max_height);
+            (68.0f + std::fmod(static_cast<float>((i + 4U) * 41U), 155.0f)) * scale;
 
-        if (city_x + building_width > x + width - 30.0f)
+        if (city_x + building_width > x + width - 28.0f * scale)
         {
             break;
         }
 
-        const Color building{
-            0.035f + static_cast<float>(i % 3U) * 0.012f,
-            0.050f,
-            0.095f + static_cast<float>(i % 4U) * 0.018f,
-            0.96f
-        };
+        renderer.rect(
+            city_x,
+            horizon - building_height,
+            building_width,
+            building_height,
+            Color{
+                0.025f + static_cast<float>(i % 3U) * 0.008f,
+                0.040f,
+                0.082f + static_cast<float>(i % 4U) * 0.014f,
+                0.98f},
+            3.0f * scale);
 
-        renderer.rect(city_x, horizon - building_height, building_width, building_height, building, 3.0f);
-        renderer.rect(city_x + 7.0f, horizon - building_height + 16.0f, building_width - 14.0f, 2.0f,
-                      with_alpha((i % 2U == 0U) ? theme::cyan : theme::violet, 0.66f), 1.0f);
+        renderer.rect(
+            city_x + 6.0f * scale,
+            horizon - building_height + 14.0f * scale,
+            building_width - 12.0f * scale,
+            2.0f * scale,
+            with_alpha((i % 2U == 0U) ? theme::cyan : theme::violet, 0.72f),
+            1.0f * scale);
 
-        const int windows = std::max(1, static_cast<int>((building_width - 16.0f) / 14.0f));
-        for (int w = 0; w < windows; ++w)
-        {
-            renderer.rect(
-                city_x + 8.0f + static_cast<float>(w) * 14.0f,
-                horizon - building_height + 38.0f,
-                5.0f,
-                12.0f,
-                with_alpha(theme::cyan, 0.20f),
-                1.0f);
-        }
-
-        city_x += building_width + 11.0f;
+        city_x += building_width + 9.0f * scale;
     }
 
-    renderer.rect(x + 1.0f, horizon, width - 2.0f, height - (horizon - y), Color{0.018f, 0.033f, 0.060f, 1.0f}, 0.0f);
-    renderer.rect(x + 1.0f, horizon, width - 2.0f, 2.0f, with_alpha(theme::cyan, 0.48f), 1.0f);
+    renderer.rect(
+        x + 1.0f,
+        horizon,
+        width - 2.0f,
+        y + header_height + scene_height - horizon,
+        Color{0.012f, 0.026f, 0.050f, 1.0f},
+        0.0f);
 
-    for (int i = 0; i < 8; ++i)
-    {
-        const float py = horizon + 28.0f + static_cast<float>(i) * 28.0f;
-        renderer.rect(x + 32.0f, py, width - 64.0f, 1.0f, with_alpha(theme::cyan, 0.055f), 0.0f);
-    }
+    renderer.rect(
+        x + 1.0f,
+        horizon,
+        width - 2.0f,
+        2.0f * scale,
+        with_alpha(theme::cyan, 0.55f),
+        0.0f);
 
-    const float status_width = 245.0f;
-    const float status_x = x + width - status_width - 24.0f;
-    const float status_y = y + 92.0f;
+    const float badge_width = 174.0f * scale;
+    renderer.rect(
+        x + width - badge_width - 18.0f * scale,
+        y + header_height + 18.0f * scale,
+        badge_width,
+        76.0f * scale,
+        Color{0.016f, 0.032f, 0.060f, 0.90f},
+        12.0f * scale);
 
-    renderer.rect(status_x, status_y, status_width, 188.0f, Color{0.025f, 0.045f, 0.080f, 0.88f}, 14.0f);
-    renderer.text(status_x + 18.0f, status_y + 16.0f, 13.0f, "SYSTEM STATUS", theme::text_muted);
+    renderer.text(
+        x + width - badge_width,
+        y + header_height + 31.0f * scale,
+        9.0f * scale,
+        "GRID DISCOVERY",
+        theme::text_muted);
 
-    status_row(renderer, status_x + 18.0f, status_y + 52.0f, "Desktop shell", "READY", theme::success);
-    status_row(renderer, status_x + 18.0f, status_y + 80.0f, "Renderer", "READY", theme::success);
-    status_row(renderer, status_x + 18.0f, status_y + 108.0f, "Grid discovery", grid_status, grid_status_color);
-    status_row(renderer, status_x + 18.0f, status_y + 136.0f, "World stream", "PENDING", theme::text_muted);
+    renderer.text(
+        x + width - badge_width,
+        y + header_height + 51.0f * scale,
+        13.0f * scale,
+        grid_status,
+        grid_status_color);
 
-    renderer.rect(x + 24.0f, y + height - 58.0f, width - 48.0f, 38.0f, Color{0.025f, 0.043f, 0.073f, 0.92f}, 10.0f);
-    renderer.text(x + 40.0f, y + height - 49.0f, 13.0f,
-                  "Phase 1 - live GridInfo discovery active; login follows in Phase 2.", theme::text_muted);
+    renderer.rect(
+        x + 1.0f,
+        y + height - footer_height - 1.0f,
+        width - 2.0f,
+        footer_height,
+        Color{0.016f, 0.030f, 0.055f, 0.98f},
+        0.0f);
+
+    renderer.text(
+        x + 20.0f * scale,
+        y + height - footer_height + 10.0f * scale,
+        9.5f * scale,
+        "WORLD STREAM",
+        theme::text_muted);
+
+    renderer.text(
+        x + 20.0f * scale,
+        y + height - footer_height + 29.0f * scale,
+        12.0f * scale,
+        "Noch nicht verbunden - Login folgt in Phase 2",
+        theme::text);
+
+    renderer.rect(
+        x + width - 146.0f * scale,
+        y + height - footer_height + 13.0f * scale,
+        124.0f * scale,
+        34.0f * scale,
+        with_alpha(theme::blue, 0.15f),
+        9.0f * scale);
+
+    renderer.text(
+        x + width - 124.0f * scale,
+        y + height - footer_height + 20.0f * scale,
+        10.0f * scale,
+        "VORSCHAU",
+        theme::cyan);
 }
 
 void render_shell(
-    UiRenderer& renderer, int width, int height, double mouse_x, double mouse_y,
-    std::string_view grid_name, std::string_view grid_status, Color grid_status_color)
+    UiRenderer& renderer,
+    int width,
+    int height,
+    double mouse_x,
+    double mouse_y,
+    std::string_view grid_name,
+    std::string_view grid_status,
+    Color grid_status_color)
 {
-    const float w = static_cast<float>(width);
-    const float h = static_cast<float>(height);
+    const float w = static_cast<float>(std::max(width, 1));
+    const float h = static_cast<float>(std::max(height, 1));
+    const float scale = std::clamp(
+        std::min(w / 1536.0f, h / 960.0f),
+        0.72f,
+        1.55f);
 
     renderer.resize(width, height);
-    renderer.rect(0.0f, 0.0f, w, h, theme::background, 0.0f);
+    renderer.rect(0.0f, 0.0f, w, h, Color{0.008f, 0.018f, 0.035f, 1.0f}, 0.0f);
 
-    for (float gx = 0.0f; gx < w; gx += 64.0f)
-    {
-        renderer.rect(gx, 0.0f, 1.0f, h, with_alpha(theme::cyan, 0.025f), 0.0f);
-    }
+    const float top_h = 76.0f * scale;
+    const float left_w = 244.0f * scale;
+    const float right_w = 320.0f * scale;
+    const float bottom_h = 94.0f * scale;
+    const float gap = 10.0f * scale;
 
-    for (float gy = 0.0f; gy < h; gy += 64.0f)
-    {
-        renderer.rect(0.0f, gy, w, 1.0f, with_alpha(theme::blue, 0.025f), 0.0f);
-    }
+    renderer.rect(
+        0.0f, 0.0f, w, top_h,
+        Color{0.012f, 0.030f, 0.058f, 0.99f},
+        0.0f);
+    renderer.rect(
+        0.0f, top_h - 1.0f, w, 1.0f,
+        with_alpha(theme::cyan, 0.24f),
+        0.0f);
 
-    renderer.rect(0.0f, 0.0f, w, 76.0f, Color{0.025f, 0.038f, 0.072f, 0.96f}, 0.0f);
-    renderer.rect(0.0f, 75.0f, w, 1.0f, with_alpha(theme::cyan, 0.22f), 0.0f);
+    renderer.rect(
+        20.0f * scale,
+        13.0f * scale,
+        46.0f * scale,
+        46.0f * scale,
+        Color{0.025f, 0.120f, 0.235f, 1.0f},
+        12.0f * scale);
+    renderer.rect(
+        27.0f * scale,
+        20.0f * scale,
+        32.0f * scale,
+        32.0f * scale,
+        with_alpha(theme::cyan, 0.24f),
+        9.0f * scale);
 
-    renderer.text(34.0f, 16.0f, 27.0f, "NEXVERSE", theme::text);
-    renderer.text(185.0f, 23.0f, 12.0f, "VIEWER", theme::cyan);
+    renderer.text(
+        78.0f * scale,
+        14.0f * scale,
+        22.0f * scale,
+        "OpenGenesisLINK",
+        theme::text);
+    renderer.text(
+        79.0f * scale,
+        43.0f * scale,
+        8.5f * scale,
+        "VIEWER FOR NEXVERSE",
+        theme::cyan);
 
-    const std::string version =
-        std::string{nexverse::core::version()} + "  |  C++23";
-    const float version_width = renderer.text_width(12.0f, version);
-    renderer.text(w - version_width - 34.0f, 25.0f, 12.0f, version, theme::text_muted);
+    const float location_x = 330.0f * scale;
+    const float location_w = 350.0f * scale;
+    renderer.rect(
+        location_x,
+        12.0f * scale,
+        location_w,
+        50.0f * scale,
+        Color{0.026f, 0.052f, 0.090f, 0.95f},
+        12.0f * scale);
+    renderer.text(
+        location_x + 18.0f * scale,
+        18.0f * scale,
+        10.0f * scale,
+        "NEXVERSE GRID",
+        theme::text_muted);
+    renderer.text(
+        location_x + 18.0f * scale,
+        36.0f * scale,
+        13.0f * scale,
+        grid_name,
+        theme::text);
 
-    const float margin = 34.0f;
-    const float content_y = 108.0f;
-    const float content_height = std::max(580.0f, h - 150.0f);
-    const float left_width = std::clamp(w * 0.30f, 350.0f, 430.0f);
-    const float gap = 24.0f;
-    const float preview_x = margin + left_width + gap;
-    const float preview_width = std::max(520.0f, w - preview_x - margin);
+    const float chip_w = 122.0f * scale;
+    const float chip_gap = 8.0f * scale;
+    const float chips_total = chip_w * 3.0f + chip_gap * 2.0f;
+    const float chip_start = std::max(location_x + location_w + 16.0f * scale, w - chips_total - 26.0f * scale);
 
-    renderer.rect(margin, content_y, left_width, content_height, theme::surface, 18.0f);
-    renderer.rect(margin, content_y, 4.0f, content_height, with_alpha(theme::cyan, 0.72f), 2.0f);
+    status_chip(renderer, chip_start, 14.0f * scale, chip_w, scale, "GRID", grid_status, grid_status_color);
+    status_chip(renderer, chip_start + chip_w + chip_gap, 14.0f * scale, chip_w, scale, "PROTOCOL", "PHASE 1", theme::warning);
+    status_chip(renderer, chip_start + (chip_w + chip_gap) * 2.0f, 14.0f * scale, chip_w, scale, "WORLD", "OFFLINE", theme::text_muted);
 
-    renderer.text(margin + 28.0f, content_y + 30.0f, 13.0f, "NEXVERSE ACCESS", theme::cyan);
-    renderer.text(margin + 28.0f, content_y + 58.0f, 28.0f, "Willkommen im NexVerse", theme::text);
-    renderer.text(margin + 28.0f, content_y + 102.0f, 14.0f,
-                  "Native OpenSim Viewer - Phase 1", theme::text_muted);
+    const float content_y = top_h + gap;
+    const float content_h = std::max(380.0f * scale, h - top_h - bottom_h - gap * 2.0f);
 
-    const float field_x = margin + 28.0f;
-    const float field_width = left_width - 56.0f;
-    float field_y = content_y + 154.0f;
+    renderer.rect(
+        0.0f, content_y, left_w, content_h,
+        Color{0.011f, 0.025f, 0.048f, 0.98f},
+        0.0f);
 
-    field(renderer, field_x, field_y, field_width, "NEXVERSE GRID", grid_name);
-    field_y += 90.0f;
-    field(renderer, field_x, field_y, field_width, "BENUTZERNAME", "Avatar Name");
-    field_y += 90.0f;
-    field(renderer, field_x, field_y, field_width, "PASSWORT", "********");
-    field_y += 90.0f;
-    field(renderer, field_x, field_y, field_width, "STARTREGION", "Home");
+    renderer.text(
+        18.0f * scale,
+        content_y + 16.0f * scale,
+        9.0f * scale,
+        "NAVIGATION",
+        theme::text_muted);
 
-    const float button_y = field_y + 93.0f;
-    const bool hover = point_inside(mouse_x, mouse_y, field_x, button_y, field_width, 52.0f);
-    const Color button_color = hover ? Color{0.100f, 0.720f, 0.940f, 1.0f} : theme::blue;
+    const float nav_x = 8.0f * scale;
+    const float nav_w = left_w - 16.0f * scale;
+    float nav_y = content_y + 40.0f * scale;
 
-    renderer.rect(field_x, button_y, field_width, 52.0f, button_color, 12.0f);
-    const std::string_view button_text = "WELT BETRETEN";
-    const float button_text_width = renderer.text_width(15.0f, button_text);
-    renderer.text(field_x + (field_width - button_text_width) * 0.5f, button_y + 8.0f, 15.0f, button_text, theme::text);
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Start", "NexVerse Zugang", true);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Welt", "Regionen erkunden", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Orte", "Favoriten und Ziele", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Freunde", "Kontakte und Nähe", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Gruppen", "Communities", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Events", "Veranstaltungen", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Inventar", "Objekte und Assets", false);
+    nav_y += 62.0f * scale;
+    nav_item(renderer, nav_x, nav_y, nav_w, scale, "Marketplace", "NexVerse entdecken", false);
 
-    renderer.text(field_x, button_y + 72.0f, 12.0f,
-                  "Login wird in Phase 2 aktiviert.", theme::text_muted);
+    const float profile_h = 86.0f * scale;
+    const float profile_y = content_y + content_h - profile_h - 12.0f * scale;
+    renderer.rect(
+        10.0f * scale,
+        profile_y,
+        left_w - 20.0f * scale,
+        profile_h,
+        Color{0.020f, 0.050f, 0.086f, 0.94f},
+        12.0f * scale);
+    renderer.rect(
+        22.0f * scale,
+        profile_y + 16.0f * scale,
+        46.0f * scale,
+        46.0f * scale,
+        with_alpha(theme::blue, 0.18f),
+        23.0f * scale);
+    renderer.text(
+        80.0f * scale,
+        profile_y + 17.0f * scale,
+        12.5f * scale,
+        "Nicht angemeldet",
+        theme::text);
+    renderer.text(
+        80.0f * scale,
+        profile_y + 40.0f * scale,
+        9.5f * scale,
+        "OpenSim Login folgt in Phase 2",
+        theme::text_muted);
+
+    const float center_x = left_w + gap;
+    const float center_w = std::max(
+        420.0f * scale,
+        w - left_w - right_w - gap * 3.0f);
+    const float right_x = center_x + center_w + gap;
 
     render_world_preview(
-        renderer, preview_x, content_y, preview_width, content_height,
-        grid_status, grid_status_color);
+        renderer,
+        center_x,
+        content_y,
+        center_w,
+        content_h,
+        scale,
+        grid_status,
+        grid_status_color);
 
-    renderer.text(34.0f, h - 26.0f, 11.0f,
-                  "OpenGenesisLINK Viewer | NexVerse | MPL 2.0 | Phase 1 Grid Discovery", theme::text_muted);
+    renderer.rect(
+        right_x,
+        content_y,
+        right_w,
+        content_h,
+        Color{0.011f, 0.025f, 0.048f, 0.98f},
+        0.0f);
+
+    renderer.rect(
+        right_x + 10.0f * scale,
+        content_y + 10.0f * scale,
+        right_w - 20.0f * scale,
+        42.0f * scale,
+        Color{0.020f, 0.050f, 0.086f, 0.94f},
+        10.0f * scale);
+    renderer.text(
+        right_x + 24.0f * scale,
+        content_y + 21.0f * scale,
+        11.0f * scale,
+        "GRID",
+        theme::cyan);
+    renderer.text(
+        right_x + 104.0f * scale,
+        content_y + 21.0f * scale,
+        11.0f * scale,
+        "REGION",
+        theme::text_muted);
+    renderer.text(
+        right_x + 190.0f * scale,
+        content_y + 21.0f * scale,
+        11.0f * scale,
+        "ORTE",
+        theme::text_muted);
+
+    float panel_y = content_y + 64.0f * scale;
+    renderer.rect(
+        right_x + 10.0f * scale,
+        panel_y,
+        right_w - 20.0f * scale,
+        172.0f * scale,
+        Color{0.018f, 0.040f, 0.072f, 0.94f},
+        12.0f * scale);
+
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 18.0f * scale,
+        13.0f * scale,
+        "NexVerse Verbindung",
+        theme::text);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 45.0f * scale,
+        9.0f * scale,
+        "Grid",
+        theme::text_muted);
+    renderer.text(
+        right_x + 96.0f * scale,
+        panel_y + 45.0f * scale,
+        10.5f * scale,
+        grid_name,
+        theme::text);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 70.0f * scale,
+        9.0f * scale,
+        "Discovery",
+        theme::text_muted);
+    renderer.text(
+        right_x + 96.0f * scale,
+        panel_y + 70.0f * scale,
+        10.5f * scale,
+        grid_status,
+        grid_status_color);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 95.0f * scale,
+        9.0f * scale,
+        "Login",
+        theme::text_muted);
+    renderer.text(
+        right_x + 96.0f * scale,
+        panel_y + 95.0f * scale,
+        10.5f * scale,
+        "Phase 2",
+        theme::warning);
+
+    renderer.rect(
+        right_x + 24.0f * scale,
+        panel_y + 126.0f * scale,
+        right_w - 48.0f * scale,
+        32.0f * scale,
+        with_alpha(theme::blue, 0.17f),
+        9.0f * scale);
+    renderer.text(
+        right_x + 38.0f * scale,
+        panel_y + 133.0f * scale,
+        10.0f * scale,
+        "Server-Konfiguration live geladen",
+        theme::cyan);
+
+    panel_y += 184.0f * scale;
+    renderer.rect(
+        right_x + 10.0f * scale,
+        panel_y,
+        right_w - 20.0f * scale,
+        132.0f * scale,
+        Color{0.018f, 0.040f, 0.072f, 0.94f},
+        12.0f * scale);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 17.0f * scale,
+        13.0f * scale,
+        "In der Nähe",
+        theme::text);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 46.0f * scale,
+        10.0f * scale,
+        "Noch keine Weltverbindung",
+        theme::text_muted);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 68.0f * scale,
+        9.0f * scale,
+        "Avatare und Regionen werden",
+        theme::text_muted);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 85.0f * scale,
+        9.0f * scale,
+        "nach dem Login live geladen.",
+        theme::text_muted);
+
+    panel_y += 144.0f * scale;
+    renderer.rect(
+        right_x + 10.0f * scale,
+        panel_y,
+        right_w - 20.0f * scale,
+        124.0f * scale,
+        Color{0.018f, 0.040f, 0.072f, 0.94f},
+        12.0f * scale);
+    renderer.text(
+        right_x + 24.0f * scale,
+        panel_y + 17.0f * scale,
+        13.0f * scale,
+        "Systemstatus",
+        theme::text);
+    status_row(
+        renderer,
+        right_x + 24.0f * scale,
+        panel_y + 49.0f * scale,
+        "Renderer",
+        "READY",
+        theme::success);
+    status_row(
+        renderer,
+        right_x + 24.0f * scale,
+        panel_y + 77.0f * scale,
+        "Grid",
+        grid_status,
+        grid_status_color);
+
+    const float bottom_y = h - bottom_h;
+    renderer.rect(
+        0.0f,
+        bottom_y,
+        w,
+        bottom_h,
+        Color{0.010f, 0.026f, 0.050f, 0.99f},
+        0.0f);
+    renderer.rect(
+        0.0f,
+        bottom_y,
+        w,
+        1.0f,
+        with_alpha(theme::cyan, 0.20f),
+        0.0f);
+
+    const float login_x = left_w + 20.0f * scale;
+    const float login_y = bottom_y + 16.0f * scale;
+    const float field_w = 176.0f * scale;
+    const float field_h = 42.0f * scale;
+
+    renderer.text(
+        login_x,
+        bottom_y + 7.0f * scale,
+        8.5f * scale,
+        "ANMELDUNG",
+        theme::text_muted);
+
+    renderer.rect(
+        login_x,
+        login_y,
+        field_w,
+        field_h,
+        Color{0.024f, 0.052f, 0.090f, 0.96f},
+        9.0f * scale);
+    renderer.text(
+        login_x + 12.0f * scale,
+        login_y + 11.0f * scale,
+        10.5f * scale,
+        "Avatar Name",
+        theme::text_muted);
+
+    renderer.rect(
+        login_x + field_w + 8.0f * scale,
+        login_y,
+        field_w,
+        field_h,
+        Color{0.024f, 0.052f, 0.090f, 0.96f},
+        9.0f * scale);
+    renderer.text(
+        login_x + field_w + 20.0f * scale,
+        login_y + 11.0f * scale,
+        10.5f * scale,
+        "Passwort",
+        theme::text_muted);
+
+    const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
+    const float button_w = 156.0f * scale;
+    const bool hover = point_inside(
+        mouse_x,
+        mouse_y,
+        button_x,
+        login_y,
+        button_w,
+        field_h);
+
+    renderer.rect(
+        button_x,
+        login_y,
+        button_w,
+        field_h,
+        hover ? Color{0.080f, 0.690f, 0.960f, 1.0f} : theme::blue,
+        9.0f * scale);
+    renderer.text(
+        button_x + 28.0f * scale,
+        login_y + 11.0f * scale,
+        10.5f * scale,
+        "WELT BETRETEN",
+        theme::text);
+
+    const float dock_x = button_x + button_w + 20.0f * scale;
+    const std::array<std::string_view, 6> dock{
+        "Chat", "Sprechen", "Bewegen", "Teleport", "Inventar", "Bauen"};
+
+    float dx = dock_x;
+    for (const auto label : dock)
+    {
+        const float item_w = 74.0f * scale;
+        renderer.rect(
+            dx,
+            login_y,
+            item_w,
+            field_h,
+            Color{0.018f, 0.042f, 0.074f, 0.90f},
+            9.0f * scale);
+        const float text_w = renderer.text_width(9.5f * scale, label);
+        renderer.text(
+            dx + (item_w - text_w) * 0.5f,
+            login_y + 12.0f * scale,
+            9.5f * scale,
+            label,
+            theme::text_muted);
+        dx += item_w + 6.0f * scale;
+    }
+
+    const std::string version =
+        std::string{"v"} + std::string{nexverse::core::version()};
+    const float version_w = renderer.text_width(9.0f * scale, version);
+    renderer.text(
+        w - version_w - 18.0f * scale,
+        bottom_y + bottom_h - 20.0f * scale,
+        9.0f * scale,
+        version,
+        theme::text_muted);
 }
 
 void glfw_error_callback(int error, const char* description)

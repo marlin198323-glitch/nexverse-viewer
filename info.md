@@ -102,6 +102,25 @@ nexverse-viewer-version         PASSED
 - Desktop-/Installer-Icon ist weiterhin offen.
 - Optionaler weiterer URI-Parser-Feinschliff kann später erfolgen, falls reale OpenSim-Grids Sonderfälle liefern.
 
+## UI-Zielbild / Designstand
+
+Am 05.10.2026 wurde die Phase-1-Oberfläche lokal in Richtung des verbindlichen NexVerse-Zielbilds umgebaut.
+
+Neue Struktur:
+- OpenGenesisLINK Branding in der Topbar
+- NexVerse Grid/Status in der Kopfzeile
+- linke Navigation mit Start, Welt, Orte, Freunde, Gruppen, Events, Inventar und Marketplace
+- große zentrale World-Preview-Fläche
+- rechte Kontextleiste für Grid, Region, Orte, Nähe und Systemstatus
+- untere Anmelde-/Aktionsleiste
+- vorbereitetes Dock für Chat, Sprechen, Bewegen, Teleport, Inventar und Bauen
+- responsive Skalierung für unterschiedliche Fenstergrößen
+- keine simulierten Online-Avatare oder Regionen vor echter Serververbindung
+
+Die UI orientiert sich am bereitgestellten NexVerse-Konzeptbild, bleibt aber technisch an den real implementierten Phasen ausgerichtet.
+
+Das bereitgestellte OpenGenesisLINK-Anwendungsicon ist die verbindliche Branding-Quelle für Linux, Windows und macOS. Die plattformspezifische Binär-/Bundle-Einbindung bleibt als Packaging-Schritt offen.
+
 ## Nächster technischer Schritt
 
 Nach Sicherung dieses lokalen Phase-1-Blocks:
