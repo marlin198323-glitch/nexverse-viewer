@@ -237,3 +237,4 @@ int Application::run()
     glfwTerminate();
     return 0;
 }
+}
