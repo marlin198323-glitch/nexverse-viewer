@@ -14,7 +14,7 @@ int main()
     const std::string_view product = nexverse::core::product_name();
     const std::string_view version = nexverse::core::version();
 
-    if (product != "NexVerse Viewer")
+    if (product != "OpenGenesisLINK Viewer")
     {
         std::cerr << "Unexpected product name: " << product << '\n';
         return 1;
