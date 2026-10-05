@@ -199,6 +199,7 @@ bool CircuitConnection::handle_packet(
 CircuitStatus CircuitConnection::run(
     std::atomic_bool& stop_requested,
     StatusCallback on_status,
+    PacketCallback on_packet,
     std::chrono::seconds startup_timeout)
 {
     CircuitStatus status;
@@ -328,6 +329,11 @@ CircuitStatus CircuitConnection::run(
         {
             notify();
             return status;
+        }
+
+        if (on_packet)
+        {
+            on_packet(*decoded.packet);
         }
 
         notify();

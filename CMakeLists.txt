@@ -68,6 +68,7 @@ add_library(nexverse-protocol
     src/protocol/login.cpp
     src/protocol/lludp.cpp
     src/protocol/circuit.cpp
+    src/protocol/packet_dispatcher.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -164,6 +165,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-lludp-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-lludp-tests)
     add_test(NAME nexverse-lludp-tests COMMAND nexverse-lludp-tests)
+
+    add_executable(nexverse-packet-dispatcher-tests tests/packet_dispatcher_tests.cpp)
+    target_link_libraries(nexverse-packet-dispatcher-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-packet-dispatcher-tests)
+    add_test(NAME nexverse-packet-dispatcher-tests COMMAND nexverse-packet-dispatcher-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

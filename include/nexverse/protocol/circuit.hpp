@@ -43,10 +43,12 @@ public:
     explicit CircuitConnection(LoginSession session);
 
     using StatusCallback = std::function<void(const CircuitStatus&)>;
+    using PacketCallback = std::function<void(const DecodedPacket&)>;
 
     [[nodiscard]] CircuitStatus run(
         std::atomic_bool& stop_requested,
         StatusCallback on_status = {},
+        PacketCallback on_packet = {},
         std::chrono::seconds startup_timeout = std::chrono::seconds{15});
 
 private:

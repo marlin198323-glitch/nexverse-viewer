@@ -205,11 +205,23 @@ Bereits implementiert:
 - Statuswechsel werden gezielt geloggt, damit Circuit-Fehler im Echttest lokalisierbar sind
 - 6/6 lokale Tests grün
 
+Echttest am 05.10.2026 erfolgreich bestätigt:
+- `SOCKET` – UDP-Socket zum echten NexVerse-Simulator geöffnet
+- `CIRCUIT` – `UseCircuitCode` gesendet
+- `MOVEMENT` – `UseCircuitCode` bestätigt und `CompleteAgentMovement` gesendet
+- `REGION` – `RegionHandshake` empfangen und `RegionHandshakeReply` gesendet
+- `UDP LIVE` – `AgentMovementComplete` empfangen; Circuit aktiv
+- sauberer Shutdown bestätigt
+
+Zusätzlich vorhanden:
+- generischer `PacketDispatcher` mit registrierbaren Handlern
+- jedes dekodierte Circuit-Paket kann nach der Transportbehandlung über einen Packet-Callback an spätere WorldModel-/Chat-/Movement-/Object-Module weitergereicht werden
+- 7/7 lokale Tests grün
+
 Noch offen für Phase 3:
-- echter NexVerse-Circuit-Echttest nach Login
 - Message-Template-Abdeckung über die Startpakete hinaus erweitern
-- vollständige Receive-/Dispatch-Schicht für weitere Simulatorpakete
-- Phase 3 erst nach erfolgreichem NexVerse-Echttest als abgeschlossen markieren
+- konkrete Dispatch-Handler für Movement, Chat, Teleport, Avatare, Regionen und Objekte
+- WorldModel-Anbindung auf Basis dieser Dispatch-Schicht
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
 
