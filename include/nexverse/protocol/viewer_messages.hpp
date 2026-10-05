@@ -118,6 +118,64 @@ struct LayerDataMessage
     }
 };
 
+struct CoarseAvatarLocation
+{
+    std::string agent_id;
+    Vec3 position;
+};
+
+struct CoarseLocationUpdate
+{
+    std::int16_t you_index = -1;
+    std::int16_t prey_index = -1;
+    std::vector<CoarseAvatarLocation> avatars;
+};
+
+struct KillObjectMessage
+{
+    std::vector<std::uint32_t> local_ids;
+};
+
+inline constexpr std::uint8_t pcode_prim = 9U;
+inline constexpr std::uint8_t pcode_avatar = 47U;
+
+struct ObjectUpdateEntry
+{
+    std::uint32_t local_id = 0U;
+    std::string id;
+    std::uint8_t pcode = 0U;
+    std::uint32_t parent_id = 0U;
+    Vec3 position;
+    Quaternion rotation;
+
+    [[nodiscard]] bool is_avatar() const noexcept
+    {
+        return pcode == pcode_avatar;
+    }
+};
+
+struct ObjectUpdateMessage
+{
+    std::uint64_t region_handle = 0U;
+    std::uint16_t time_dilation = 0U;
+    std::vector<ObjectUpdateEntry> objects;
+};
+
+struct TerseObjectUpdate
+{
+    std::uint32_t local_id = 0U;
+    bool avatar = false;
+    Vec3 position;
+    Quaternion rotation;
+};
+
+struct ImprovedTerseObjectUpdateMessage
+{
+    std::uint64_t region_handle = 0U;
+    std::uint16_t time_dilation = 0U;
+    std::vector<TerseObjectUpdate> updates;
+};
+
 struct IncomingLocalChat
 {
     std::string from_name;
@@ -159,6 +217,19 @@ struct TeleportFailureEvent
     const LocalChatMessage& chat);
 
 [[nodiscard]] std::optional<LayerDataMessage> decode_layer_data(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<CoarseLocationUpdate> decode_coarse_location_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<KillObjectMessage> decode_kill_object(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<ObjectUpdateMessage> decode_object_update(
+    std::span<const std::uint8_t> payload);
+
+[[nodiscard]] std::optional<ImprovedTerseObjectUpdateMessage>
+decode_improved_terse_object_update(
     std::span<const std::uint8_t> payload);
 
 [[nodiscard]] std::optional<IncomingLocalChat> decode_chat_from_simulator(

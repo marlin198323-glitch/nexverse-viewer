@@ -45,6 +45,7 @@ struct AvatarState
     std::string name;
     Vec3 position;
     Quaternion rotation;
+    std::uint32_t local_id = 0U;
 };
 
 struct ObjectState

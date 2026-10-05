@@ -6,6 +6,7 @@
 
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstring>
 #include <limits>
 
@@ -77,6 +78,11 @@ std::uint16_t read_le_u16(std::span<const std::uint8_t> bytes, std::size_t offse
         (static_cast<std::uint16_t>(bytes[offset + 1U]) << 8U));
 }
 
+std::int16_t read_le_i16(std::span<const std::uint8_t> bytes, std::size_t offset)
+{
+    return static_cast<std::int16_t>(read_le_u16(bytes, offset));
+}
+
 std::uint32_t read_le_u32(std::span<const std::uint8_t> bytes, std::size_t offset)
 {
     return
@@ -84,6 +90,27 @@ std::uint32_t read_le_u32(std::span<const std::uint8_t> bytes, std::size_t offse
         (static_cast<std::uint32_t>(bytes[offset + 1U]) << 8U) |
         (static_cast<std::uint32_t>(bytes[offset + 2U]) << 16U) |
         (static_cast<std::uint32_t>(bytes[offset + 3U]) << 24U);
+}
+
+std::uint64_t read_le_u64(std::span<const std::uint8_t> bytes, std::size_t offset)
+{
+    std::uint64_t value = 0U;
+    for (unsigned int shift = 0U; shift < 64U; shift += 8U)
+    {
+        value |= static_cast<std::uint64_t>(bytes[offset++]) << shift;
+    }
+    return value;
+}
+
+float unpack_u16_float(
+    std::span<const std::uint8_t> bytes,
+    std::size_t offset,
+    float lower,
+    float upper)
+{
+    const float normalized =
+        static_cast<float>(read_le_u16(bytes, offset)) / 65535.0f;
+    return lower + normalized * (upper - lower);
 }
 
 float read_f32(std::span<const std::uint8_t> bytes, std::size_t offset)
@@ -137,6 +164,86 @@ bool read_variable2(
         count);
     offset += count;
     return true;
+}
+
+bool skip_variable1(std::span<const std::uint8_t> bytes, std::size_t& offset)
+{
+    if (offset >= bytes.size()) return false;
+    const std::size_t count = bytes[offset++];
+    if (offset + count > bytes.size()) return false;
+    offset += count;
+    return true;
+}
+
+bool skip_variable2(std::span<const std::uint8_t> bytes, std::size_t& offset)
+{
+    if (offset + 2U > bytes.size()) return false;
+    const std::size_t count = read_le_u16(bytes, offset);
+    offset += 2U;
+    if (offset + count > bytes.size()) return false;
+    offset += count;
+    return true;
+}
+
+bool decode_object_transform(
+    std::span<const std::uint8_t> data,
+    nexverse::protocol::Vec3& position,
+    nexverse::protocol::Quaternion& rotation)
+{
+    std::size_t offset = 0U;
+    if (data.size() == 76U || data.size() == 48U)
+    {
+        offset = 16U;
+    }
+
+    if (data.size() == 60U || data.size() == 76U)
+    {
+        position.x = read_f32(data, offset);
+        position.y = read_f32(data, offset + 4U);
+        position.z = read_f32(data, offset + 8U);
+        offset += 36U;
+        rotation.x = read_f32(data, offset);
+        rotation.y = read_f32(data, offset + 4U);
+        rotation.z = read_f32(data, offset + 8U);
+        const float ww = std::max(
+            0.0f,
+            1.0f - rotation.x * rotation.x -
+            rotation.y * rotation.y -
+            rotation.z * rotation.z);
+        rotation.w = std::sqrt(ww);
+        return true;
+    }
+
+    if (data.size() == 32U || data.size() == 48U)
+    {
+        position.x = unpack_u16_float(data, offset, -128.0f, 384.0f);
+        position.y = unpack_u16_float(data, offset + 2U, -128.0f, 384.0f);
+        position.z = unpack_u16_float(data, offset + 4U, -256.0f, 768.0f);
+        offset += 18U;
+        rotation.x = unpack_u16_float(data, offset, -1.0f, 1.0f);
+        rotation.y = unpack_u16_float(data, offset + 2U, -1.0f, 1.0f);
+        rotation.z = unpack_u16_float(data, offset + 4U, -1.0f, 1.0f);
+        rotation.w = unpack_u16_float(data, offset + 6U, -1.0f, 1.0f);
+        return true;
+    }
+
+    if (data.size() == 16U)
+    {
+        auto byte_float = [](std::uint8_t value, float low, float high)
+        {
+            return low + (static_cast<float>(value) / 255.0f) * (high - low);
+        };
+        position.x = byte_float(data[0U], -256.0f, 256.0f);
+        position.y = byte_float(data[1U], -256.0f, 256.0f);
+        position.z = byte_float(data[2U], -256.0f, 256.0f);
+        rotation.x = byte_float(data[9U], -1.0f, 1.0f);
+        rotation.y = byte_float(data[10U], -1.0f, 1.0f);
+        rotation.z = byte_float(data[11U], -1.0f, 1.0f);
+        rotation.w = byte_float(data[12U], -1.0f, 1.0f);
+        return true;
+    }
+
+    return false;
 }
 }
 
@@ -214,6 +321,299 @@ std::optional<LayerDataMessage> decode_layer_data(
     message.data.assign(
         payload.begin() + 3,
         payload.end());
+    return message;
+}
+
+std::optional<CoarseLocationUpdate> decode_coarse_location_update(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 6U)
+    {
+        return std::nullopt;
+    }
+
+    std::size_t offset = 0U;
+    const std::size_t location_count = payload[offset++];
+    if (offset + location_count * 3U + 5U > payload.size())
+    {
+        return std::nullopt;
+    }
+
+    std::vector<Vec3> locations;
+    locations.reserve(location_count);
+    for (std::size_t index = 0U; index < location_count; ++index)
+    {
+        Vec3 position;
+        position.x = static_cast<float>(payload[offset++]);
+        position.y = static_cast<float>(payload[offset++]);
+        position.z = static_cast<float>(payload[offset++]) * 4.0f;
+        locations.push_back(position);
+    }
+
+    CoarseLocationUpdate update;
+    update.you_index = read_le_i16(payload, offset);
+    offset += 2U;
+    update.prey_index = read_le_i16(payload, offset);
+    offset += 2U;
+
+    if (offset >= payload.size())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t agent_count = payload[offset++];
+    if (agent_count != location_count ||
+        offset + agent_count * 16U != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    update.avatars.reserve(agent_count);
+    for (std::size_t index = 0U; index < agent_count; ++index)
+    {
+        CoarseAvatarLocation avatar;
+        avatar.agent_id = uuid_from_bytes(payload, offset);
+        if (avatar.agent_id.empty())
+        {
+            return std::nullopt;
+        }
+        offset += 16U;
+        avatar.position = locations[index];
+        update.avatars.push_back(std::move(avatar));
+    }
+
+    return update;
+}
+
+std::optional<KillObjectMessage> decode_kill_object(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.empty())
+    {
+        return std::nullopt;
+    }
+
+    const std::size_t count = payload[0U];
+    if (count == 0U || 1U + count * 4U != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    KillObjectMessage message;
+    message.local_ids.reserve(count);
+    std::size_t offset = 1U;
+    for (std::size_t index = 0U; index < count; ++index)
+    {
+        message.local_ids.push_back(read_le_u32(payload, offset));
+        offset += 4U;
+    }
+    return message;
+}
+
+std::optional<ObjectUpdateMessage> decode_object_update(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 11U)
+    {
+        return std::nullopt;
+    }
+
+    ObjectUpdateMessage message;
+    std::size_t offset = 0U;
+    message.region_handle = read_le_u64(payload, offset);
+    offset += 8U;
+    message.time_dilation = read_le_u16(payload, offset);
+    offset += 2U;
+
+    const std::size_t count = payload[offset++];
+    message.objects.reserve(count);
+
+    for (std::size_t index = 0U; index < count; ++index)
+    {
+        auto need = [&](std::size_t amount)
+        {
+            return offset + amount <= payload.size();
+        };
+
+        if (!need(4U + 1U + 16U + 4U + 3U + 12U))
+        {
+            return std::nullopt;
+        }
+
+        ObjectUpdateEntry object;
+        object.local_id = read_le_u32(payload, offset);
+        offset += 4U;
+        offset += 1U; // state
+        object.id = uuid_from_bytes(payload, offset);
+        offset += 16U;
+        offset += 4U; // CRC
+        object.pcode = payload[offset++];
+        offset += 2U; // material + click action
+        offset += 12U; // scale
+
+        if (offset >= payload.size())
+        {
+            return std::nullopt;
+        }
+
+        const std::size_t object_data_size = payload[offset++];
+        if (!need(object_data_size))
+        {
+            return std::nullopt;
+        }
+        const auto object_data = payload.subspan(offset, object_data_size);
+        offset += object_data_size;
+
+        if (!decode_object_transform(
+                object_data,
+                object.position,
+                object.rotation))
+        {
+            return std::nullopt;
+        }
+
+        if (!need(8U))
+        {
+            return std::nullopt;
+        }
+        object.parent_id = read_le_u32(payload, offset);
+        offset += 4U;
+        offset += 4U; // update flags
+
+        if (!need(23U))
+        {
+            return std::nullopt;
+        }
+        offset += 23U; // path/profile shape fields
+
+        if (!skip_variable2(payload, offset) ||
+            !skip_variable1(payload, offset) ||
+            !skip_variable2(payload, offset) ||
+            !skip_variable2(payload, offset) ||
+            !skip_variable1(payload, offset))
+        {
+            return std::nullopt;
+        }
+
+        if (!need(4U))
+        {
+            return std::nullopt;
+        }
+        offset += 4U; // text color
+
+        if (!skip_variable1(payload, offset) ||
+            !skip_variable1(payload, offset) ||
+            !skip_variable1(payload, offset))
+        {
+            return std::nullopt;
+        }
+
+        if (!need(66U))
+        {
+            return std::nullopt;
+        }
+        offset += 66U;
+
+        if (object.local_id == 0U || object.id.empty())
+        {
+            return std::nullopt;
+        }
+
+        message.objects.push_back(std::move(object));
+    }
+
+    if (offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
+    return message;
+}
+
+std::optional<ImprovedTerseObjectUpdateMessage>
+decode_improved_terse_object_update(
+    std::span<const std::uint8_t> payload)
+{
+    if (payload.size() < 11U)
+    {
+        return std::nullopt;
+    }
+
+    ImprovedTerseObjectUpdateMessage message;
+    std::size_t offset = 0U;
+    message.region_handle = read_le_u64(payload, offset);
+    offset += 8U;
+    message.time_dilation = read_le_u16(payload, offset);
+    offset += 2U;
+
+    const std::size_t count = payload[offset++];
+    message.updates.reserve(count);
+
+    for (std::size_t index = 0U; index < count; ++index)
+    {
+        if (offset >= payload.size())
+        {
+            return std::nullopt;
+        }
+
+        const std::size_t data_size = payload[offset++];
+        if (data_size != 44U && data_size != 60U)
+        {
+            return std::nullopt;
+        }
+        if (offset + data_size + 2U > payload.size())
+        {
+            return std::nullopt;
+        }
+
+        const std::span<const std::uint8_t> data =
+            payload.subspan(offset, data_size);
+        offset += data_size;
+
+        TerseObjectUpdate update;
+        update.local_id = read_le_u32(data, 0U);
+        update.avatar = data[5U] != 0U;
+
+        if ((update.avatar && data_size != 60U) ||
+            (!update.avatar && data_size != 44U))
+        {
+            return std::nullopt;
+        }
+
+        std::size_t data_offset = update.avatar ? 22U : 6U;
+        update.position.x = read_f32(data, data_offset);
+        update.position.y = read_f32(data, data_offset + 4U);
+        update.position.z = read_f32(data, data_offset + 8U);
+        data_offset += 12U;
+
+        data_offset += 6U; // velocity
+        data_offset += 6U; // acceleration
+
+        update.rotation.x =
+            unpack_u16_float(data, data_offset, -1.0f, 1.0f);
+        update.rotation.y =
+            unpack_u16_float(data, data_offset + 2U, -1.0f, 1.0f);
+        update.rotation.z =
+            unpack_u16_float(data, data_offset + 4U, -1.0f, 1.0f);
+        update.rotation.w =
+            unpack_u16_float(data, data_offset + 6U, -1.0f, 1.0f);
+
+        const std::size_t texture_size = read_le_u16(payload, offset);
+        offset += 2U;
+        if (offset + texture_size > payload.size())
+        {
+            return std::nullopt;
+        }
+        offset += texture_size;
+
+        message.updates.push_back(update);
+    }
+
+    if (offset != payload.size())
+    {
+        return std::nullopt;
+    }
+
     return message;
 }
 

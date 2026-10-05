@@ -1586,6 +1586,9 @@ int Application::run()
     bool world_ready_logged = false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
+    std::atomic_bool coarse_avatar_live_logged{false};
+    std::atomic_bool full_object_live_logged{false};
+    std::atomic_bool terse_object_live_logged{false};
     std::atomic_uint32_t other_packets{0U};
 
     packet_dispatcher.register_handler(
@@ -1632,11 +1635,215 @@ int Application::run()
             object_packets.fetch_add(1U, std::memory_order_relaxed);
         };
 
-    packet_dispatcher.register_handler(protocol::msg_object_update, count_object_packet);
+    packet_dispatcher.register_handler(
+        protocol::msg_object_update,
+        [&object_packets,
+         &avatar_packets,
+         &full_object_live_logged,
+         &world_model,
+         &world_mutex](const protocol::DecodedPacket& packet)
+        {
+            const auto update = protocol::decode_object_update(packet.payload);
+            if (!update.has_value())
+            {
+                return;
+            }
+
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+            if (!full_object_live_logged.exchange(true))
+            {
+                core::info("WorldModel full object stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            const std::string self_id = world_model.agent().agent_id;
+
+            for (const auto& entry : update->objects)
+            {
+                if (entry.is_avatar())
+                {
+                    avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+
+                    if (entry.id == self_id)
+                    {
+                        const world::AgentState current = world_model.agent();
+                        world_model.apply_agent({
+                            current.agent_id,
+                            current.session_id,
+                            entry.position,
+                            entry.rotation,
+                            current.present});
+                        continue;
+                    }
+
+                    world::AvatarState avatar;
+                    avatar.id = entry.id;
+                    avatar.position = entry.position;
+                    avatar.rotation = entry.rotation;
+                    avatar.local_id = entry.local_id;
+
+                    if (const auto existing = world_model.avatars().find(entry.id);
+                        existing != world_model.avatars().end())
+                    {
+                        avatar.name = existing->second.name;
+                    }
+
+                    world_model.upsert_avatar(std::move(avatar));
+                    continue;
+                }
+
+                world_model.upsert_object({
+                    entry.local_id,
+                    entry.id,
+                    entry.position,
+                    entry.rotation});
+            }
+        });
+
     packet_dispatcher.register_handler(protocol::msg_object_update_compressed, count_object_packet);
     packet_dispatcher.register_handler(protocol::msg_object_update_cached, count_object_packet);
-    packet_dispatcher.register_handler(protocol::msg_improved_terse_object_update, count_object_packet);
-    packet_dispatcher.register_handler(protocol::msg_kill_object, count_object_packet);
+
+    packet_dispatcher.register_handler(
+        protocol::msg_improved_terse_object_update,
+        [&object_packets,
+         &terse_object_live_logged,
+         &world_model,
+         &world_mutex](const protocol::DecodedPacket& packet)
+        {
+            const auto terse =
+                protocol::decode_improved_terse_object_update(packet.payload);
+            if (!terse.has_value())
+            {
+                return;
+            }
+
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+            if (!terse_object_live_logged.exchange(true))
+            {
+                core::info("WorldModel terse object stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            for (const auto& update : terse->updates)
+            {
+                if (update.avatar)
+                {
+                    for (const auto& [id, existing] : world_model.avatars())
+                    {
+                        if (existing.local_id != update.local_id)
+                        {
+                            continue;
+                        }
+
+                        world::AvatarState avatar = existing;
+                        avatar.position = update.position;
+                        avatar.rotation = update.rotation;
+                        world_model.upsert_avatar(std::move(avatar));
+                        break;
+                    }
+                    continue;
+                }
+
+                world::ObjectState object;
+                object.local_id = update.local_id;
+                object.position = update.position;
+                object.rotation = update.rotation;
+
+                if (const auto existing = world_model.objects().find(update.local_id);
+                    existing != world_model.objects().end())
+                {
+                    object.id = existing->second.id;
+                }
+
+                world_model.upsert_object(std::move(object));
+            }
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_kill_object,
+        [&object_packets, &world_model, &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto kill = protocol::decode_kill_object(packet.payload);
+            if (!kill.has_value())
+            {
+                return;
+            }
+
+            object_packets.fetch_add(1U, std::memory_order_relaxed);
+
+            std::scoped_lock lock{world_mutex};
+            for (const std::uint32_t local_id : kill->local_ids)
+            {
+                world_model.remove_object(local_id);
+            }
+        });
+
+    packet_dispatcher.register_handler(
+        protocol::msg_coarse_location_update,
+        [&avatar_packets,
+         &coarse_avatar_live_logged,
+         &world_model,
+         &world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto coarse =
+                protocol::decode_coarse_location_update(packet.payload);
+            if (!coarse.has_value())
+            {
+                return;
+            }
+
+            avatar_packets.fetch_add(1U, std::memory_order_relaxed);
+            if (!coarse_avatar_live_logged.exchange(true))
+            {
+                core::info("WorldModel coarse avatar stream validated");
+            }
+
+            std::scoped_lock lock{world_mutex};
+            const std::string self_id = world_model.agent().agent_id;
+            std::vector<std::string> seen;
+            seen.reserve(coarse->avatars.size());
+
+            for (const auto& coarse_avatar : coarse->avatars)
+            {
+                if (coarse_avatar.agent_id == self_id)
+                {
+                    continue;
+                }
+
+                seen.push_back(coarse_avatar.agent_id);
+
+                world::AvatarState avatar;
+                avatar.id = coarse_avatar.agent_id;
+                avatar.position = coarse_avatar.position;
+
+                if (const auto existing =
+                        world_model.avatars().find(coarse_avatar.agent_id);
+                    existing != world_model.avatars().end())
+                {
+                    avatar.name = existing->second.name;
+                    avatar.rotation = existing->second.rotation;
+                }
+
+                world_model.upsert_avatar(std::move(avatar));
+            }
+
+            std::vector<std::string> stale;
+            for (const auto& [id, avatar] : world_model.avatars())
+            {
+                (void)avatar;
+                if (std::find(seen.begin(), seen.end(), id) == seen.end())
+                {
+                    stale.push_back(id);
+                }
+            }
+
+            for (const auto& id : stale)
+            {
+                world_model.remove_avatar(id);
+            }
+        });
 
     const auto count_avatar_packet =
         [&avatar_packets](const protocol::DecodedPacket&)
@@ -1644,7 +1851,6 @@ int Application::run()
             avatar_packets.fetch_add(1U, std::memory_order_relaxed);
         };
 
-    packet_dispatcher.register_handler(protocol::msg_coarse_location_update, count_avatar_packet);
     packet_dispatcher.register_handler(protocol::msg_avatar_appearance, count_avatar_packet);
     packet_dispatcher.register_handler(protocol::msg_agent_data_update, count_avatar_packet);
 

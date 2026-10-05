@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.1`.
+Aktuelle Viewer-Version: `0.2.0-alpha.2`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -335,8 +335,14 @@ Aktuell:
 - gültiges Terrain erhöht eine Terrain-Revision im WorldModel
 - persistente Diagnose meldet einmalig `WorldModel terrain stream validated`
 - erster Ready-Übergang meldet `WorldModel READY; simulation UI may unlock`
-- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.1`
-- kompletter Debug-Build nach Phase-5-Terrainblock: 13/13 Tests grün
+- `CoarseLocationUpdate` wird typisiert dekodiert und aktualisiert den Avatar-Snapshot im WorldModel
+- `KillObject` wird typisiert dekodiert und entfernt lokale Objekt-IDs aus dem WorldModel
+- `ImprovedTerseObjectUpdate` aktualisiert Position/Rotation von bekannten Avataren und Objekten
+- `ObjectUpdate` wird bounds-geprüft dekodiert; UUID, LocalID, PCode, ParentID, Position und Rotation werden übernommen
+- eigener Agent erhält seine echte Position/Rotation aus seinem Avatar-`ObjectUpdate`
+- Diagnose meldet erste echte Streams: `WorldModel coarse avatar stream validated`, `WorldModel full object stream validated`, `WorldModel terse object stream validated`
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.2`
+- kompletter Debug-Build nach Phase-5-Objekt-/Avatarblock: 13/13 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

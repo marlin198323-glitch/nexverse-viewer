@@ -1,5 +1,6 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 
+#include <bit>
 #include <cstdint>
 #include <iostream>
 
@@ -77,7 +78,222 @@ int main()
     if (decode_layer_data(invalid_layer).has_value())
     {
         std::cerr << "Invalid LayerData unexpectedly accepted\n";
-        return 4;
+        return 5;
+    }
+
+    const auto coarse_agent_a =
+        uuid_to_bytes("11111111-1111-1111-1111-111111111111");
+    const auto coarse_agent_b =
+        uuid_to_bytes("22222222-2222-2222-2222-222222222222");
+
+    std::vector<std::uint8_t> coarse_payload{
+        2U,
+        10U, 20U, 5U,
+        30U, 40U, 7U,
+        0U, 0U,
+        0xFFU, 0xFFU,
+        2U};
+    coarse_payload.insert(
+        coarse_payload.end(),
+        coarse_agent_a->begin(),
+        coarse_agent_a->end());
+    coarse_payload.insert(
+        coarse_payload.end(),
+        coarse_agent_b->begin(),
+        coarse_agent_b->end());
+
+    const auto coarse = decode_coarse_location_update(coarse_payload);
+    if (!coarse.has_value() ||
+        coarse->avatars.size() != 2U ||
+        coarse->you_index != 0 ||
+        coarse->prey_index != -1 ||
+        coarse->avatars[0].position.x != 10.0f ||
+        coarse->avatars[0].position.y != 20.0f ||
+        coarse->avatars[0].position.z != 20.0f ||
+        coarse->avatars[1].position.z != 28.0f)
+    {
+        std::cerr << "CoarseLocationUpdate decode failed\n";
+        return 6;
+    }
+
+    std::vector<std::uint8_t> invalid_coarse = coarse_payload;
+    invalid_coarse.pop_back();
+    if (decode_coarse_location_update(invalid_coarse).has_value())
+    {
+        std::cerr << "Invalid CoarseLocationUpdate unexpectedly accepted\n";
+        return 7;
+    }
+
+    std::vector<std::uint8_t> kill_payload{
+        2U,
+        0x2AU, 0x00U, 0x00U, 0x00U,
+        0x78U, 0x56U, 0x34U, 0x12U};
+
+    const auto kill = decode_kill_object(kill_payload);
+    if (!kill.has_value() ||
+        kill->local_ids.size() != 2U ||
+        kill->local_ids[0] != 42U ||
+        kill->local_ids[1] != 0x12345678U)
+    {
+        std::cerr << "KillObject decode failed\n";
+        return 8;
+    }
+
+    std::vector<std::uint8_t> invalid_kill = kill_payload;
+    invalid_kill.pop_back();
+    if (decode_kill_object(invalid_kill).has_value())
+    {
+        std::cerr << "Invalid KillObject unexpectedly accepted\n";
+        return 9;
+    }
+
+    std::vector<std::uint8_t> terse_payload{
+        0x88U, 0x77U, 0x66U, 0x55U, 0x44U, 0x33U, 0x22U, 0x11U,
+        0x34U, 0x12U,
+        1U,
+        44U};
+
+    std::vector<std::uint8_t> terse_data(44U, 0U);
+    terse_data[0] = 0x2AU;
+    terse_data[4] = 3U;
+    terse_data[5] = 0U;
+
+    auto put_u32 = [&](std::vector<std::uint8_t>& target, std::size_t offset, std::uint32_t value)
+    {
+        target[offset] = static_cast<std::uint8_t>(value & 0xFFU);
+        target[offset + 1U] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
+        target[offset + 2U] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
+        target[offset + 3U] = static_cast<std::uint8_t>((value >> 24U) & 0xFFU);
+    };
+    auto put_f32 = [&](std::vector<std::uint8_t>& target, std::size_t offset, float value)
+    {
+        put_u32(target, offset, std::bit_cast<std::uint32_t>(value));
+    };
+
+    put_f32(terse_data, 6U, 10.0f);
+    put_f32(terse_data, 10U, 20.0f);
+    put_f32(terse_data, 14U, 30.0f);
+
+    terse_payload.insert(
+        terse_payload.end(),
+        terse_data.begin(),
+        terse_data.end());
+    terse_payload.push_back(0U);
+    terse_payload.push_back(0U);
+
+    const auto terse = decode_improved_terse_object_update(terse_payload);
+    if (!terse.has_value() ||
+        terse->region_handle != 0x1122334455667788ULL ||
+        terse->time_dilation != 0x1234U ||
+        terse->updates.size() != 1U ||
+        terse->updates[0].local_id != 42U ||
+        terse->updates[0].avatar ||
+        terse->updates[0].position.x != 10.0f ||
+        terse->updates[0].position.y != 20.0f ||
+        terse->updates[0].position.z != 30.0f)
+    {
+        std::cerr << "ImprovedTerseObjectUpdate decode failed\n";
+        return 10;
+    }
+
+    std::vector<std::uint8_t> invalid_terse = terse_payload;
+    invalid_terse.pop_back();
+    if (decode_improved_terse_object_update(invalid_terse).has_value())
+    {
+        std::cerr << "Invalid ImprovedTerseObjectUpdate unexpectedly accepted\n";
+        return 11;
+    }
+
+    auto append_u32_vec = [](std::vector<std::uint8_t>& out, std::uint32_t value)
+    {
+        out.push_back(static_cast<std::uint8_t>(value & 0xFFU));
+        out.push_back(static_cast<std::uint8_t>((value >> 8U) & 0xFFU));
+        out.push_back(static_cast<std::uint8_t>((value >> 16U) & 0xFFU));
+        out.push_back(static_cast<std::uint8_t>((value >> 24U) & 0xFFU));
+    };
+    auto append_f32_vec = [&](std::vector<std::uint8_t>& out, float value)
+    {
+        append_u32_vec(out, std::bit_cast<std::uint32_t>(value));
+    };
+
+    std::vector<std::uint8_t> full_update_payload{
+        0x88U, 0x77U, 0x66U, 0x55U, 0x44U, 0x33U, 0x22U, 0x11U,
+        0x34U, 0x12U,
+        1U};
+
+    append_u32_vec(full_update_payload, 42U);
+    full_update_payload.push_back(0U);
+
+    const auto full_object_id =
+        uuid_to_bytes("33333333-3333-3333-3333-333333333333");
+    full_update_payload.insert(
+        full_update_payload.end(),
+        full_object_id->begin(),
+        full_object_id->end());
+
+    append_u32_vec(full_update_payload, 0U);
+    full_update_payload.push_back(pcode_prim);
+    full_update_payload.push_back(3U);
+    full_update_payload.push_back(0U);
+    append_f32_vec(full_update_payload, 1.0f);
+    append_f32_vec(full_update_payload, 1.0f);
+    append_f32_vec(full_update_payload, 1.0f);
+
+    std::vector<std::uint8_t> full_object_data(60U, 0U);
+    put_f32(full_object_data, 0U, 101.0f);
+    put_f32(full_object_data, 4U, 102.0f);
+    put_f32(full_object_data, 8U, 25.0f);
+    put_f32(full_object_data, 36U, 0.0f);
+    put_f32(full_object_data, 40U, 0.0f);
+    put_f32(full_object_data, 44U, 0.0f);
+
+    full_update_payload.push_back(60U);
+    full_update_payload.insert(
+        full_update_payload.end(),
+        full_object_data.begin(),
+        full_object_data.end());
+
+    append_u32_vec(full_update_payload, 0U);
+    append_u32_vec(full_update_payload, 0U);
+    full_update_payload.insert(full_update_payload.end(), 23U, 0U);
+    full_update_payload.insert(full_update_payload.end(), {0U, 0U});
+    full_update_payload.push_back(0U);
+    full_update_payload.insert(full_update_payload.end(), {0U, 0U});
+    full_update_payload.insert(full_update_payload.end(), {0U, 0U});
+    full_update_payload.push_back(0U);
+    full_update_payload.insert(full_update_payload.end(), 4U, 0U);
+    full_update_payload.push_back(0U);
+    full_update_payload.push_back(0U);
+    full_update_payload.push_back(0U);
+    full_update_payload.insert(full_update_payload.end(), 16U, 0U);
+    full_update_payload.insert(full_update_payload.end(), 16U, 0U);
+    full_update_payload.insert(full_update_payload.end(), 4U, 0U);
+    full_update_payload.push_back(0U);
+    full_update_payload.insert(full_update_payload.end(), 4U, 0U);
+    full_update_payload.push_back(0U);
+    full_update_payload.insert(full_update_payload.end(), 12U, 0U);
+    full_update_payload.insert(full_update_payload.end(), 12U, 0U);
+
+    const auto full_update = decode_object_update(full_update_payload);
+    if (!full_update.has_value() ||
+        full_update->objects.size() != 1U ||
+        full_update->objects[0].local_id != 42U ||
+        full_update->objects[0].id != "33333333-3333-3333-3333-333333333333" ||
+        full_update->objects[0].is_avatar() ||
+        full_update->objects[0].position.x != 101.0f ||
+        full_update->objects[0].position.y != 102.0f ||
+        full_update->objects[0].position.z != 25.0f)
+    {
+        std::cerr << "ObjectUpdate decode failed\n";
+        return 12;
+    }
+
+    std::vector<std::uint8_t> invalid_full_update = full_update_payload;
+    invalid_full_update.pop_back();
+    if (decode_object_update(invalid_full_update).has_value())
+    {
+        std::cerr << "Invalid ObjectUpdate unexpectedly accepted\n";
+        return 13;
     }
 
     std::vector<std::uint8_t> incoming_payload;
