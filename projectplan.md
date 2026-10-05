@@ -249,7 +249,7 @@ Simulator: ...
 
 ---
 
-## Phase 3 – LLUDP Transport
+## Phase 3 – LLUDP Transport 🚧 in Arbeit seit 05.10.2026
 
 Ziel: Stabile Echtzeitverbindung zum Simulator.
 

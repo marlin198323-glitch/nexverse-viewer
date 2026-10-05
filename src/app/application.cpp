@@ -9,6 +9,7 @@
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/version.hpp"
 #include "nexverse/net/http_transport.hpp"
+#include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
 #include "nexverse/ui/theme.hpp"
@@ -24,8 +25,10 @@
 #include <exception>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace
@@ -33,6 +36,38 @@ namespace
 using nexverse::ui::Color;
 using nexverse::ui::UiRenderer;
 namespace theme = nexverse::ui::theme;
+
+std::string_view circuit_state_label(nexverse::protocol::CircuitState state)
+{
+    using nexverse::protocol::CircuitState;
+    switch (state)
+    {
+        case CircuitState::disconnected: return "OFFLINE";
+        case CircuitState::opening_socket: return "SOCKET";
+        case CircuitState::awaiting_use_circuit_ack: return "CIRCUIT";
+        case CircuitState::awaiting_movement_ack: return "MOVEMENT";
+        case CircuitState::active: return "UDP LIVE";
+        case CircuitState::failed: return "UDP ERROR";
+    }
+    return "UNKNOWN";
+}
+
+Color circuit_state_color(nexverse::protocol::CircuitState state)
+{
+    using nexverse::protocol::CircuitState;
+    switch (state)
+    {
+        case CircuitState::active: return theme::success;
+        case CircuitState::failed: return theme::magenta;
+        case CircuitState::opening_socket:
+        case CircuitState::awaiting_use_circuit_ack:
+        case CircuitState::awaiting_movement_ack:
+            return theme::cyan;
+        case CircuitState::disconnected:
+            return theme::text_muted;
+    }
+    return theme::text_muted;
+}
 
 enum class LoginField
 {
@@ -599,7 +634,8 @@ void render_shell(
     std::string_view grid_status,
     Color grid_status_color,
     const LoginUiState& login,
-    const nexverse::protocol::LoginSession* session)
+    const nexverse::protocol::LoginSession* session,
+    const nexverse::protocol::CircuitStatus& circuit)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -698,8 +734,8 @@ void render_shell(
         chip_w,
         scale,
         "WORLD",
-        session != nullptr ? "SESSION" : "OFFLINE",
-        session != nullptr ? theme::success : theme::text_muted);
+        circuit_state_label(circuit.state),
+        circuit_state_color(circuit.state));
 
     const float content_y = top_h + gap;
     const float content_h = std::max(380.0f * scale, h - top_h - bottom_h - gap * 2.0f);
@@ -931,7 +967,7 @@ void render_shell(
         right_x + 10.0f * scale,
         panel_y,
         right_w - 20.0f * scale,
-        136.0f * scale,
+        166.0f * scale,
         Color{0.018f, 0.040f, 0.072f, 0.94f},
         12.0f * scale);
     renderer.text(
@@ -954,6 +990,13 @@ void render_shell(
         "Grid",
         grid_status,
         grid_status_color);
+    status_row(
+        renderer,
+        right_x + 24.0f * scale,
+        panel_y + 105.0f * scale,
+        "LLUDP",
+        circuit_state_label(circuit.state),
+        circuit_state_color(circuit.state));
 
     const float bottom_y = h - bottom_h;
     renderer.rect(
@@ -1207,6 +1250,12 @@ int Application::run()
     std::future<protocol::LoginResult> login_future;
     std::optional<protocol::LoginSession> active_session;
 
+    std::atomic_bool circuit_stop{false};
+    std::future<protocol::CircuitStatus> circuit_future;
+    std::mutex circuit_mutex;
+    protocol::CircuitStatus circuit_status;
+    bool circuit_started = false;
+
     {
         ui::UiRenderer renderer;
         if (!renderer.initialize(window_width, window_height))
@@ -1305,6 +1354,56 @@ int Application::run()
                             : result.message;
                         login_ui.password.clear();
                         core::info("OpenSim login succeeded; simulator session established");
+
+                        if (!circuit_started && active_session.has_value())
+                        {
+                            circuit_started = true;
+                            protocol::LoginSession circuit_session = *active_session;
+
+                            circuit_future = std::async(
+                                std::launch::async,
+                                [circuit_session = std::move(circuit_session),
+                                 &circuit_stop,
+                                 &circuit_mutex,
+                                 &circuit_status]() mutable
+                                {
+                                    protocol::CircuitStatus final_status;
+                                    constexpr int max_attempts = 3;
+
+                                    for (int attempt = 1;
+                                         attempt <= max_attempts && !circuit_stop.load();
+                                         ++attempt)
+                                    {
+                                        protocol::CircuitConnection connection{circuit_session};
+                                        final_status = connection.run(
+                                            circuit_stop,
+                                            [&circuit_mutex, &circuit_status](
+                                                const protocol::CircuitStatus& update)
+                                            {
+                                                std::scoped_lock lock{circuit_mutex};
+                                                circuit_status = update;
+                                            });
+
+                                        if (circuit_stop.load() ||
+                                            final_status.state != protocol::CircuitState::failed)
+                                        {
+                                            break;
+                                        }
+
+                                        if (attempt < max_attempts)
+                                        {
+                                            {
+                                                std::scoped_lock lock{circuit_mutex};
+                                                circuit_status.message =
+                                                    "LLUDP reconnect scheduled";
+                                            }
+                                            std::this_thread::sleep_for(std::chrono::seconds{1});
+                                        }
+                                    }
+
+                                    return final_status;
+                                });
+                        }
                     }
                     else
                     {
@@ -1414,13 +1513,26 @@ int Application::run()
             double mouse_y = 0.0;
             glfwGetCursorPos(window, &mouse_x, &mouse_y);
 
+            protocol::CircuitStatus circuit_snapshot;
+            {
+                std::scoped_lock lock{circuit_mutex};
+                circuit_snapshot = circuit_status;
+            }
+
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
-                active_session.has_value() ? &*active_session : nullptr);
+                active_session.has_value() ? &*active_session : nullptr,
+                circuit_snapshot);
 
             glfwSwapBuffers(window);
         }
+    }
+
+    circuit_stop.store(true);
+    if (circuit_future.valid())
+    {
+        circuit_future.wait();
     }
 
     glfwSetWindowUserPointer(window, nullptr);

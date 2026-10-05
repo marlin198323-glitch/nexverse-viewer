@@ -53,6 +53,7 @@ target_compile_definitions(nexverse-core PUBLIC
 
 add_library(nexverse-net
     src/net/curl_http_transport.cpp
+    src/net/udp_socket.cpp
 )
 add_library(NexVerse::Net ALIAS nexverse-net)
 target_include_directories(nexverse-net PUBLIC
@@ -65,6 +66,8 @@ add_library(nexverse-protocol
     src/protocol/grid_info.cpp
     src/protocol/grid_discovery.cpp
     src/protocol/login.cpp
+    src/protocol/lludp.cpp
+    src/protocol/circuit.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -156,6 +159,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-login-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-login-tests)
     add_test(NAME nexverse-login-tests COMMAND nexverse-login-tests)
+
+    add_executable(nexverse-lludp-tests tests/lludp_tests.cpp)
+    target_link_libraries(nexverse-lludp-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-lludp-tests)
+    add_test(NAME nexverse-lludp-tests COMMAND nexverse-lludp-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

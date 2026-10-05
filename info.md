@@ -171,6 +171,39 @@ Bestätigt:
 - Inventar-/Buddy-/Gesten-Bootstrapdaten wurden übernommen
 - Viewer bleibt fest an die NexVerse-GridInfo gebunden
 
-Nächster Schritt gemäß `projectplan.md`: Phase 3 – LLUDP-Transport und Circuit-Aufbau zum vom Login gelieferten Simulator.
+## Phase 3 – LLUDP Transport
+
+Phase 3 ist lokal in Arbeit.
+
+Bereits implementiert:
+- plattformübergreifender UDP-Socket für Linux/Windows/macOS
+- LLUDP Header mit Flags, Big-Endian-Sequenznummer und Extra-Header-Länge
+- High/Medium/Low/Fixed Message-ID-Encoding
+- kleine Message-Template-Registry für StartPingCheck, CompletePingCheck, UseCircuitCode, CompleteAgentMovement und PacketAck
+- UUID-Wire-Encoding
+- UseCircuitCode Encoder
+- CompleteAgentMovement Encoder
+- PacketAck Encoder/Decoder
+- appended ACKs in Little-Endian entsprechend LLUDP
+- Zerocode-Decoder
+- Reliable-Tracking mit Sequenznummern
+- Resend mit Resent-Flag
+- Retry-Limit
+- generisches Byte-Throttling
+- MTU 1400 / Payload-Richtwert 1200
+- Circuit-State-Machine
+- UseCircuitCode wird vor CompleteAgentMovement bestätigt
+- StartPingCheck wird mit CompletePingCheck beantwortet
+- eingehende Reliable-Pakete werden bestätigt
+- 30-Sekunden-Inaktivitäts-Timeout
+- begrenzter Reconnect im Viewer
+- LLUDP-Status wird live in der Oberfläche angezeigt
+- 6/6 lokale Tests grün
+
+Noch offen für Phase 3:
+- echter NexVerse-Circuit-Echttest nach Login
+- Message-Template-Abdeckung über die Startpakete hinaus erweitern
+- vollständige Receive-/Dispatch-Schicht für weitere Simulatorpakete
+- Phase 3 erst nach erfolgreichem NexVerse-Echttest als abgeschlossen markieren
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
