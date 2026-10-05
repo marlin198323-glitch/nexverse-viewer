@@ -19,6 +19,7 @@
 namespace
 {
 using nexverse::ui::Color;
+using nexverse::ui::GridDiscoveryState;
 using nexverse::ui::LoginField;
 using nexverse::ui::LoginModel;
 using nexverse::ui::UiRenderer;
