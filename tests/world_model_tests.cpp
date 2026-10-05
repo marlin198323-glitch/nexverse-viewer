@@ -81,6 +81,23 @@ int main()
         return 4;
     }
 
+    const WorldSnapshot stable_snapshot = world.snapshot();
+    world.remove_object(42U);
+
+    if (!stable_snapshot.ready ||
+        stable_snapshot.objects.size() != 1U ||
+        !world.objects().empty())
+    {
+        std::cerr << "WorldSnapshot isolation failed\n";
+        return 5;
+    }
+
+    world.upsert_object({
+        42U,
+        "object-uuid",
+        {132.0f, 128.0f, 25.0f},
+        {}});
+
     world.set_parcel({
         9U,
         "Parcel",
@@ -126,14 +143,14 @@ int main()
         world.agent().present)
     {
         std::cerr << "WorldModel region transition invalidation failed\n";
-        return 5;
+        return 6;
     }
 
     world.reset();
     if (world.ready() || world.region().connected || world.agent().present)
     {
         std::cerr << "WorldModel reset failed\n";
-        return 6;
+        return 7;
     }
 
     std::cout << "WorldModel foundation tests passed\n";

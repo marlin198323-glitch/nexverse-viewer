@@ -173,6 +173,22 @@ const std::map<std::uint32_t, ObjectState>& WorldModel::objects() const noexcept
     return objects_;
 }
 
+WorldSnapshot WorldModel::snapshot() const
+{
+    WorldSnapshot value;
+    value.grid = grid_;
+    value.region = region_;
+    value.agent = agent_;
+    value.agent_profile = agent_profile_;
+    value.avatars = avatars_;
+    value.objects = objects_;
+    value.terrain = terrain_;
+    value.parcel = parcel_;
+    value.environment = environment_;
+    value.ready = ready();
+    return value;
+}
+
 bool WorldModel::ready() const noexcept
 {
     return region_.connected &&

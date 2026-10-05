@@ -143,6 +143,20 @@ struct AgentUpdate
     bool present = false;
 };
 
+struct WorldSnapshot
+{
+    GridState grid;
+    RegionState region;
+    AgentState agent;
+    AgentProfileState agent_profile;
+    std::map<std::string, AvatarState, std::less<>> avatars;
+    std::map<std::uint32_t, ObjectState> objects;
+    TerrainState terrain;
+    ParcelState parcel;
+    EnvironmentState environment;
+    bool ready = false;
+};
+
 class WorldModel
 {
 public:
@@ -171,6 +185,7 @@ public:
     [[nodiscard]] const EnvironmentState& environment() const noexcept;
     [[nodiscard]] const std::map<std::string, AvatarState, std::less<>>& avatars() const noexcept;
     [[nodiscard]] const std::map<std::uint32_t, ObjectState>& objects() const noexcept;
+    [[nodiscard]] WorldSnapshot snapshot() const;
 
     [[nodiscard]] bool ready() const noexcept;
 

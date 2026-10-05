@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.10`.
+Aktuelle Viewer-Version: `0.2.0-alpha.11`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -376,8 +376,17 @@ Aktuell:
 - Agent-/Session-ID und RegionHandle müssen zum aktuellen WorldModel passen, bevor Position übernommen wird
 - Agentposition und Region-Agentposition werden aus `AgentMovementComplete` synchronisiert; ChannelVersion wird in RegionState gespeichert
 - Diagnosen: `WorldModel RegionHandshake metadata validated` und `WorldModel AgentMovementComplete validated`
-- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.10`
-- kompletter Debug-Build nach Phase-5-Region-Metadata-Block: 15/15 Tests grün
+- spatial LLUDP-Updates werden nur noch für die aktuell verbundene Region akzeptiert
+- ObjectUpdate/Compressed/Cached/Terse müssen zusätzlich mit ihrem RegionHandle zum WorldModel passen
+- Terrain, Parcel, KillObject, CoarseLocation und AvatarAppearance werden während einer nicht verbundenen Regionstransition verworfen
+- `WorldSnapshot` liefert eine immutable Kopie von Grid, Region, Agent, Profil, Avataren, Objekten, Terrain, Parcel und Environment
+- Snapshot bleibt nach späteren WorldModel-Mutationen stabil und bildet die Übergabegrenze für Renderer/UI
+- Phase-5-Codebasis ist damit strukturell vollständig; finaler NexVerse-Echttest für den aktuellen Abschlussstand steht noch aus
+- Teilabnahme im echten NexVerse mit `0.2.0-alpha.7` bereits erfolgreich: Login, LLUDP `UDP LIVE`, CAPS/SimulatorFeatures, EnvironmentSettings, Full/Cached/Terse Object Streams, Terrain-Stream, Coarse-Avatar-Stream, EventQueue und `WorldModel READY`
+- seit dieser Teilabnahme hinzugekommen und deshalb mit `0.2.0-alpha.11` noch real zu bestätigen: echte Terrain-Höhendekodierung, Parcel-State, RegionHandshake-/AgentMovementComplete-Metadaten, Region-Transition-Gates und READY-Snapshot-Zusammenfassung
+- READY-Abnahmelog enthält Terrain-Patchanzahl, Objekt-/Avataranzahl sowie Parcel-/Environment-Status ohne Capability-URLs oder Credentials
+- aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.11`
+- kompletter Debug-Build nach Phase-5-Abschlussblock: 15/15 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

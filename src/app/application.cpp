@@ -1823,6 +1823,12 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected)
+            {
+                return;
+            }
+
             terrain_packets.fetch_add(1U, std::memory_order_relaxed);
 
             if (!terrain_live_logged.exchange(true))
@@ -1830,7 +1836,6 @@ int Application::run()
                 core::info("WorldModel terrain stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             for (const auto& patch : terrain.patches)
             {
                 world_model.apply_terrain_patch(patch);
@@ -1849,12 +1854,17 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected)
+            {
+                return;
+            }
+
             if (!parcel_live_logged.exchange(true))
             {
                 core::info("WorldModel parcel stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             world_model.set_parcel({
                 parcel->local_id,
                 parcel->name,
@@ -1882,13 +1892,19 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected ||
+                update->region_handle != world_model.region().handle)
+            {
+                return;
+            }
+
             object_packets.fetch_add(1U, std::memory_order_relaxed);
             if (!full_object_live_logged.exchange(true))
             {
                 core::info("WorldModel full object stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             const std::string self_id = world_model.agent().agent_id;
 
             for (const auto& entry : update->objects)
@@ -1948,13 +1964,19 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected ||
+                update->region_handle != world_model.region().handle)
+            {
+                return;
+            }
+
             object_packets.fetch_add(1U, std::memory_order_relaxed);
             if (!compressed_object_live_logged.exchange(true))
             {
                 core::info("WorldModel compressed object stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             const std::string self_id = world_model.agent().agent_id;
 
             for (const auto& entry : update->objects)
@@ -2001,12 +2023,22 @@ int Application::run()
 
     packet_dispatcher.register_handler(
         protocol::msg_object_update_cached,
-        [&object_packets, &cached_object_live_logged](
+        [&object_packets,
+         &cached_object_live_logged,
+         &world_model,
+         &world_mutex](
             const protocol::DecodedPacket& packet)
         {
             const auto cached =
                 protocol::decode_object_update_cached(packet.payload);
             if (!cached.has_value())
+            {
+                return;
+            }
+
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected ||
+                cached->region_handle != world_model.region().handle)
             {
                 return;
             }
@@ -2032,13 +2064,19 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected ||
+                terse->region_handle != world_model.region().handle)
+            {
+                return;
+            }
+
             object_packets.fetch_add(1U, std::memory_order_relaxed);
             if (!terse_object_live_logged.exchange(true))
             {
                 core::info("WorldModel terse object stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             for (const auto& update : terse->updates)
             {
                 if (update.avatar)
@@ -2085,9 +2123,14 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected)
+            {
+                return;
+            }
+
             object_packets.fetch_add(1U, std::memory_order_relaxed);
 
-            std::scoped_lock lock{world_mutex};
             for (const std::uint32_t local_id : kill->local_ids)
             {
                 world_model.remove_object(local_id);
@@ -2109,13 +2152,18 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected)
+            {
+                return;
+            }
+
             avatar_packets.fetch_add(1U, std::memory_order_relaxed);
             if (!coarse_avatar_live_logged.exchange(true))
             {
                 core::info("WorldModel coarse avatar stream validated");
             }
 
-            std::scoped_lock lock{world_mutex};
             const std::string self_id = world_model.agent().agent_id;
             std::vector<std::string> seen;
             seen.reserve(coarse->avatars.size());
@@ -2172,9 +2220,14 @@ int Application::run()
                 return;
             }
 
+            std::scoped_lock lock{world_mutex};
+            if (!world_model.region().connected)
+            {
+                return;
+            }
+
             avatar_packets.fetch_add(1U, std::memory_order_relaxed);
 
-            std::scoped_lock lock{world_mutex};
             world::AvatarState avatar;
             avatar.id = appearance->avatar_id;
 
@@ -2839,7 +2892,22 @@ int Application::run()
             else if (!world_ready_logged)
             {
                 world_ready_logged = true;
-                core::info("WorldModel READY; simulation UI may unlock");
+
+                world::WorldSnapshot snapshot;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    snapshot = world_model.snapshot();
+                }
+
+                core::info(
+                    "WorldModel READY; simulation UI may unlock; terrain_patches=" +
+                    std::to_string(snapshot.terrain.valid_patch_count) +
+                    "; objects=" + std::to_string(snapshot.objects.size()) +
+                    "; avatars=" + std::to_string(snapshot.avatars.size()) +
+                    "; parcel=" +
+                    std::string{snapshot.parcel.available ? "OK" : "-"} +
+                    "; environment=" +
+                    std::string{snapshot.environment.available ? "OK" : "-"});
             }
 
             const auto now = std::chrono::steady_clock::now();
