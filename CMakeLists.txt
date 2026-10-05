@@ -16,7 +16,7 @@ option(NEXVERSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
-find_package(GLEW REQUIRED)
+find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 
 add_library(nexverse-core
@@ -49,7 +49,7 @@ target_link_libraries(nexverse-ui PUBLIC
     NexVerse::Core
     OpenGL::GL
     glfw
-    GLEW::GLEW
+    glad::glad
     Freetype::Freetype
 )
 
