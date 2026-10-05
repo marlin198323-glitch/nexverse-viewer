@@ -3,7 +3,12 @@
   "version-string": "0.1.0-alpha.1",
   "dependencies": [
     "glfw3",
-    "glew",
+    {
+      "name": "glad",
+      "features": [
+        "gl-api-33"
+      ]
+    },
     "freetype"
   ]
 }
