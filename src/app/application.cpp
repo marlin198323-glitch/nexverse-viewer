@@ -77,23 +77,23 @@ void nav_item(
 
     renderer.rect(
         x + 12.0f * scale,
-        y + 13.0f * scale,
-        30.0f * scale,
-        30.0f * scale,
+        y + 14.0f * scale,
+        34.0f * scale,
+        34.0f * scale,
         active ? with_alpha(theme::cyan, 0.22f) : with_alpha(theme::blue, 0.13f),
-        15.0f * scale);
+        17.0f * scale);
 
     renderer.text(
-        x + 54.0f * scale,
-        y + 8.0f * scale,
-        13.0f * scale,
+        x + 58.0f * scale,
+        y + 9.0f * scale,
+        14.0f * scale,
         title,
         active ? theme::text : Color{0.80f, 0.86f, 0.94f, 1.0f});
 
     renderer.text(
-        x + 54.0f * scale,
-        y + 29.0f * scale,
-        9.5f * scale,
+        x + 58.0f * scale,
+        y + 34.0f * scale,
+        10.0f * scale,
         subtitle,
         theme::text_muted);
 }
@@ -123,15 +123,15 @@ void status_chip(
 
     renderer.text(
         x + 28.0f * scale,
-        y + 8.0f * scale,
-        9.0f * scale,
+        y + 7.0f * scale,
+        9.5f * scale,
         label,
         theme::text_muted);
 
     renderer.text(
         x + 28.0f * scale,
-        y + 24.0f * scale,
-        11.5f * scale,
+        y + 25.0f * scale,
+        12.5f * scale,
         value,
         theme::text);
 }
@@ -192,9 +192,16 @@ void render_world_preview(
     renderer.text(
         x + 22.0f * scale,
         y + 32.0f * scale,
-        15.0f * scale,
+        16.0f * scale,
         "NexVerse verbindet sich mit der OpenSim-Welt",
         theme::text);
+
+    renderer.text(
+        x + 22.0f * scale,
+        y + 54.0f * scale,
+        9.0f * scale,
+        "Die echte Region ersetzt diese Vorschau nach erfolgreichem Login.",
+        theme::text_muted);
 
     const float horizon = y + header_height + scene_height * 0.66f;
 
@@ -259,6 +266,29 @@ void render_world_preview(
         Color{0.012f, 0.026f, 0.050f, 1.0f},
         0.0f);
 
+    for (int i = 0; i < 5; ++i)
+    {
+        const float px = x + (120.0f + static_cast<float>(i) * 150.0f) * scale;
+        const float pw = 92.0f * scale;
+        if (px + pw > x + width - 30.0f * scale) break;
+
+        renderer.rect(
+            px,
+            horizon + 30.0f * scale,
+            pw,
+            8.0f * scale,
+            with_alpha(theme::cyan, 0.10f + static_cast<float>(i % 2) * 0.06f),
+            4.0f * scale);
+
+        renderer.rect(
+            px + 18.0f * scale,
+            horizon + 54.0f * scale,
+            56.0f * scale,
+            3.0f * scale,
+            with_alpha(theme::violet, 0.22f),
+            1.5f * scale);
+    }
+
     renderer.rect(
         x + 1.0f,
         horizon,
@@ -315,7 +345,7 @@ void render_world_preview(
     renderer.rect(
         x + width - 146.0f * scale,
         y + height - footer_height + 13.0f * scale,
-        124.0f * scale,
+        136.0f * scale,
         34.0f * scale,
         with_alpha(theme::blue, 0.15f),
         9.0f * scale);
@@ -348,10 +378,10 @@ void render_shell(
     renderer.resize(width, height);
     renderer.rect(0.0f, 0.0f, w, h, Color{0.008f, 0.018f, 0.035f, 1.0f}, 0.0f);
 
-    const float top_h = 76.0f * scale;
-    const float left_w = 244.0f * scale;
-    const float right_w = 320.0f * scale;
-    const float bottom_h = 94.0f * scale;
+    const float top_h = 86.0f * scale;
+    const float left_w = 252.0f * scale;
+    const float right_w = 354.0f * scale;
+    const float bottom_h = 106.0f * scale;
     const float gap = 10.0f * scale;
 
     renderer.rect(
@@ -364,40 +394,40 @@ void render_shell(
         0.0f);
 
     renderer.rect(
-        20.0f * scale,
-        13.0f * scale,
-        46.0f * scale,
-        46.0f * scale,
+        18.0f * scale,
+        14.0f * scale,
+        56.0f * scale,
+        56.0f * scale,
         Color{0.025f, 0.120f, 0.235f, 1.0f},
-        12.0f * scale);
+        14.0f * scale);
     renderer.rect(
         27.0f * scale,
-        20.0f * scale,
-        32.0f * scale,
-        32.0f * scale,
+        23.0f * scale,
+        38.0f * scale,
+        38.0f * scale,
         with_alpha(theme::cyan, 0.24f),
         9.0f * scale);
 
     renderer.text(
-        78.0f * scale,
-        14.0f * scale,
-        22.0f * scale,
+        88.0f * scale,
+        15.0f * scale,
+        24.0f * scale,
         "OpenGenesisLINK",
         theme::text);
     renderer.text(
-        79.0f * scale,
-        43.0f * scale,
-        8.5f * scale,
+        89.0f * scale,
+        48.0f * scale,
+        9.0f * scale,
         "VIEWER FOR NEXVERSE",
         theme::cyan);
 
-    const float location_x = 330.0f * scale;
-    const float location_w = 350.0f * scale;
+    const float location_x = 346.0f * scale;
+    const float location_w = 360.0f * scale;
     renderer.rect(
         location_x,
-        12.0f * scale,
+        14.0f * scale,
         location_w,
-        50.0f * scale,
+        54.0f * scale,
         Color{0.026f, 0.052f, 0.090f, 0.95f},
         12.0f * scale);
     renderer.text(
@@ -442,19 +472,19 @@ void render_shell(
     float nav_y = content_y + 40.0f * scale;
 
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Start", "NexVerse Zugang", true);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Welt", "Regionen erkunden", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Orte", "Favoriten und Ziele", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Freunde", "Kontakte und Nähe", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Gruppen", "Communities", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Events", "Veranstaltungen", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Inventar", "Objekte und Assets", false);
-    nav_y += 62.0f * scale;
+    nav_y += 68.0f * scale;
     nav_item(renderer, nav_x, nav_y, nav_w, scale, "Marketplace", "NexVerse entdecken", false);
 
     const float profile_h = 86.0f * scale;
@@ -465,23 +495,23 @@ void render_shell(
         left_w - 20.0f * scale,
         profile_h,
         Color{0.020f, 0.050f, 0.086f, 0.94f},
-        12.0f * scale);
+        14.0f * scale);
     renderer.rect(
         22.0f * scale,
         profile_y + 16.0f * scale,
-        46.0f * scale,
-        46.0f * scale,
+        52.0f * scale,
+        52.0f * scale,
         with_alpha(theme::blue, 0.18f),
-        23.0f * scale);
+        26.0f * scale);
     renderer.text(
-        80.0f * scale,
-        profile_y + 17.0f * scale,
-        12.5f * scale,
+        86.0f * scale,
+        profile_y + 16.0f * scale,
+        13.5f * scale,
         "Nicht angemeldet",
         theme::text);
     renderer.text(
-        80.0f * scale,
-        profile_y + 40.0f * scale,
+        86.0f * scale,
+        profile_y + 43.0f * scale,
         9.5f * scale,
         "OpenSim Login folgt in Phase 2",
         theme::text_muted);
@@ -514,25 +544,25 @@ void render_shell(
         right_x + 10.0f * scale,
         content_y + 10.0f * scale,
         right_w - 20.0f * scale,
-        42.0f * scale,
+        46.0f * scale,
         Color{0.020f, 0.050f, 0.086f, 0.94f},
         10.0f * scale);
     renderer.text(
         right_x + 24.0f * scale,
-        content_y + 21.0f * scale,
-        11.0f * scale,
+        content_y + 23.0f * scale,
+        11.5f * scale,
         "GRID",
         theme::cyan);
     renderer.text(
         right_x + 104.0f * scale,
-        content_y + 21.0f * scale,
-        11.0f * scale,
+        content_y + 23.0f * scale,
+        11.5f * scale,
         "REGION",
         theme::text_muted);
     renderer.text(
         right_x + 190.0f * scale,
-        content_y + 21.0f * scale,
-        11.0f * scale,
+        content_y + 23.0f * scale,
+        11.5f * scale,
         "ORTE",
         theme::text_muted);
 
@@ -541,14 +571,14 @@ void render_shell(
         right_x + 10.0f * scale,
         panel_y,
         right_w - 20.0f * scale,
-        172.0f * scale,
+        184.0f * scale,
         Color{0.018f, 0.040f, 0.072f, 0.94f},
         12.0f * scale);
 
     renderer.text(
         right_x + 24.0f * scale,
-        panel_y + 18.0f * scale,
-        13.0f * scale,
+        panel_y + 19.0f * scale,
+        14.0f * scale,
         "NexVerse Verbindung",
         theme::text);
     renderer.text(
@@ -590,9 +620,9 @@ void render_shell(
 
     renderer.rect(
         right_x + 24.0f * scale,
-        panel_y + 126.0f * scale,
+        panel_y + 136.0f * scale,
         right_w - 48.0f * scale,
-        32.0f * scale,
+        34.0f * scale,
         with_alpha(theme::blue, 0.17f),
         9.0f * scale);
     renderer.text(
@@ -602,12 +632,12 @@ void render_shell(
         "Server-Konfiguration live geladen",
         theme::cyan);
 
-    panel_y += 184.0f * scale;
+    panel_y += 196.0f * scale;
     renderer.rect(
         right_x + 10.0f * scale,
         panel_y,
         right_w - 20.0f * scale,
-        132.0f * scale,
+        144.0f * scale,
         Color{0.018f, 0.040f, 0.072f, 0.94f},
         12.0f * scale);
     renderer.text(
@@ -635,12 +665,12 @@ void render_shell(
         "nach dem Login live geladen.",
         theme::text_muted);
 
-    panel_y += 144.0f * scale;
+    panel_y += 156.0f * scale;
     renderer.rect(
         right_x + 10.0f * scale,
         panel_y,
         right_w - 20.0f * scale,
-        124.0f * scale,
+        136.0f * scale,
         Color{0.018f, 0.040f, 0.072f, 0.94f},
         12.0f * scale);
     renderer.text(
@@ -681,9 +711,9 @@ void render_shell(
         0.0f);
 
     const float login_x = left_w + 20.0f * scale;
-    const float login_y = bottom_y + 16.0f * scale;
-    const float field_w = 176.0f * scale;
-    const float field_h = 42.0f * scale;
+    const float login_y = bottom_y + 20.0f * scale;
+    const float field_w = 184.0f * scale;
+    const float field_h = 48.0f * scale;
 
     renderer.text(
         login_x,
@@ -698,11 +728,11 @@ void render_shell(
         field_w,
         field_h,
         Color{0.024f, 0.052f, 0.090f, 0.96f},
-        9.0f * scale);
+        11.0f * scale);
     renderer.text(
-        login_x + 12.0f * scale,
-        login_y + 11.0f * scale,
-        10.5f * scale,
+        login_x + 14.0f * scale,
+        login_y + 14.0f * scale,
+        11.0f * scale,
         "Avatar Name",
         theme::text_muted);
 
@@ -712,16 +742,16 @@ void render_shell(
         field_w,
         field_h,
         Color{0.024f, 0.052f, 0.090f, 0.96f},
-        9.0f * scale);
+        11.0f * scale);
     renderer.text(
-        login_x + field_w + 20.0f * scale,
-        login_y + 11.0f * scale,
-        10.5f * scale,
+        login_x + field_w + 22.0f * scale,
+        login_y + 14.0f * scale,
+        11.0f * scale,
         "Passwort",
         theme::text_muted);
 
     const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
-    const float button_w = 156.0f * scale;
+    const float button_w = 164.0f * scale;
     const bool hover = point_inside(
         mouse_x,
         mouse_y,
@@ -736,11 +766,11 @@ void render_shell(
         button_w,
         field_h,
         hover ? Color{0.080f, 0.690f, 0.960f, 1.0f} : theme::blue,
-        9.0f * scale);
+        11.0f * scale);
     renderer.text(
-        button_x + 28.0f * scale,
-        login_y + 11.0f * scale,
-        10.5f * scale,
+        button_x + 29.0f * scale,
+        login_y + 14.0f * scale,
+        11.0f * scale,
         "WELT BETRETEN",
         theme::text);
 
@@ -751,18 +781,18 @@ void render_shell(
     float dx = dock_x;
     for (const auto label : dock)
     {
-        const float item_w = 74.0f * scale;
+        const float item_w = 80.0f * scale;
         renderer.rect(
             dx,
             login_y,
             item_w,
             field_h,
             Color{0.018f, 0.042f, 0.074f, 0.90f},
-            9.0f * scale);
+            11.0f * scale);
         const float text_w = renderer.text_width(9.5f * scale, label);
         renderer.text(
             dx + (item_w - text_w) * 0.5f,
-            login_y + 12.0f * scale,
+            login_y + 15.0f * scale,
             9.5f * scale,
             label,
             theme::text_muted);
