@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.11`.
+Aktuelle Viewer-Version: `0.2.0-alpha.12`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -387,6 +387,16 @@ Aktuell:
 - READY-Abnahmelog: `terrain_patches=40; objects=49; avatars=0; parcel=-; environment=OK`; `parcel=-` bedeutet nur, dass in diesem Lauf keine `ParcelProperties`-Nachricht vom Simulator eingetroffen ist – Decoder und Parcel-State bleiben implementiert
 - aktuelle Binärversion bestätigt: `OpenGenesisLINK Viewer 0.2.0-alpha.11`
 - kompletter Debug-Build nach Phase-5-Abschlussblock: 15/15 Tests grün
+
+Phase 6 gestartet:
+- bestehende GLFW-Fenster-, Tastatur-, Maus-, Resize- und VSync-Grundlage bestätigt
+- Frame-Time und geglättete FPS werden im Hauptloop gemessen
+- kleines In-World-Debug-Overlay zeigt FPS und Framezeit
+- AgentUpdate-Kamera verwendet keine fest codierten Achsen mehr
+- Kameraachsen werden aus dem aktuellen Agent-Quaternion des WorldModel abgeleitet
+- Kamerazentrum folgt der autoritativen Agentposition
+- aktueller Phase-6-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.12`
+- kompletter Debug-Build: 15/15 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

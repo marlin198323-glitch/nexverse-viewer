@@ -101,6 +101,60 @@ struct CapsRuntimeState
     bool event_queue_available = false;
 };
 
+struct FrameMetrics
+{
+    double frame_time_ms = 0.0;
+    double fps = 0.0;
+};
+
+struct CameraState
+{
+    nexverse::protocol::Vec3 center{128.0f, 128.0f, 30.0f};
+    nexverse::protocol::Vec3 at{1.0f, 0.0f, 0.0f};
+    nexverse::protocol::Vec3 left{0.0f, 1.0f, 0.0f};
+    nexverse::protocol::Vec3 up{0.0f, 0.0f, 1.0f};
+    float far_clip = 256.0f;
+};
+
+nexverse::protocol::Vec3 rotate_vector(
+    const nexverse::protocol::Quaternion& q,
+    nexverse::protocol::Vec3 v)
+{
+    const float xx = q.x * q.x;
+    const float yy = q.y * q.y;
+    const float zz = q.z * q.z;
+    const float xy = q.x * q.y;
+    const float xz = q.x * q.z;
+    const float yz = q.y * q.z;
+    const float wx = q.w * q.x;
+    const float wy = q.w * q.y;
+    const float wz = q.w * q.z;
+
+    return {
+        (1.0f - 2.0f * (yy + zz)) * v.x +
+            2.0f * (xy - wz) * v.y +
+            2.0f * (xz + wy) * v.z,
+        2.0f * (xy + wz) * v.x +
+            (1.0f - 2.0f * (xx + zz)) * v.y +
+            2.0f * (yz - wx) * v.z,
+        2.0f * (xz - wy) * v.x +
+            2.0f * (yz + wx) * v.y +
+            (1.0f - 2.0f * (xx + yy)) * v.z};
+}
+
+CameraState camera_from_agent(const nexverse::world::AgentState& agent)
+{
+    CameraState camera;
+    camera.center = {
+        agent.position.x,
+        agent.position.y,
+        agent.position.z + 1.7f};
+    camera.at = rotate_vector(agent.rotation, {1.0f, 0.0f, 0.0f});
+    camera.left = rotate_vector(agent.rotation, {0.0f, 1.0f, 0.0f});
+    camera.up = rotate_vector(agent.rotation, {0.0f, 0.0f, 1.0f});
+    return camera;
+}
+
 struct LoginUiState
 {
     LoginField focused = LoginField::username;
@@ -664,6 +718,7 @@ void render_shell(
     const nexverse::protocol::CircuitStatus& circuit,
     const SimulationLoadStats& load_stats,
     const CapsRuntimeState& caps,
+    const FrameMetrics& frame_metrics,
     bool simulation_ready,
     unsigned int welcome_texture)
 {
@@ -1485,6 +1540,34 @@ void render_shell(
         9.0f * scale,
         version,
         theme::text_muted);
+
+    if (simulation_ready)
+    {
+        const std::string debug_line =
+            "FPS " + std::to_string(static_cast<int>(std::round(frame_metrics.fps))) +
+            "  |  Frame " +
+            std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
+            " ms";
+
+        const float debug_w =
+            renderer.text_width(9.5f * scale, debug_line) + 24.0f * scale;
+        const float debug_x = w - debug_w - 18.0f * scale;
+        const float debug_y = top_h + 12.0f * scale;
+
+        renderer.rect(
+            debug_x,
+            debug_y,
+            debug_w,
+            34.0f * scale,
+            Color{0.010f, 0.025f, 0.045f, 0.88f},
+            8.0f * scale);
+        renderer.text(
+            debug_x + 12.0f * scale,
+            debug_y + 9.0f * scale,
+            9.5f * scale,
+            debug_line,
+            theme::cyan);
+    }
 }
 
 void glfw_error_callback(int error, const char* description)
@@ -2324,9 +2407,34 @@ int Application::run()
             core::info(std::string{"GPU: "} + gl_renderer);
         }
 
+        FrameMetrics frame_metrics;
+        auto previous_frame = std::chrono::steady_clock::now();
+
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
         {
             glfwPollEvents();
+
+            const auto frame_now = std::chrono::steady_clock::now();
+            const double raw_frame_ms =
+                std::chrono::duration<double, std::milli>(
+                    frame_now - previous_frame).count();
+            previous_frame = frame_now;
+
+            if (raw_frame_ms > 0.0 && raw_frame_ms < 1000.0)
+            {
+                if (frame_metrics.frame_time_ms <= 0.0)
+                {
+                    frame_metrics.frame_time_ms = raw_frame_ms;
+                }
+                else
+                {
+                    frame_metrics.frame_time_ms =
+                        frame_metrics.frame_time_ms * 0.90 +
+                        raw_frame_ms * 0.10;
+                }
+                frame_metrics.fps =
+                    1000.0 / frame_metrics.frame_time_ms;
+            }
 
             if (!discovery_applied &&
                 discovery_future.valid() &&
@@ -2946,12 +3054,20 @@ int Application::run()
                                 protocol::control_fast_up;
                 }
 
+                world::AgentState agent_for_camera;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    agent_for_camera = world_model.agent();
+                }
+                const CameraState camera =
+                    camera_from_agent(agent_for_camera);
+
                 update.control_flags = controls;
-                update.camera_center = {128.0f, 128.0f, 30.0f};
-                update.camera_at_axis = {1.0f, 0.0f, 0.0f};
-                update.camera_left_axis = {0.0f, 1.0f, 0.0f};
-                update.camera_up_axis = {0.0f, 0.0f, 1.0f};
-                update.far_clip = 256.0f;
+                update.camera_center = camera.center;
+                update.camera_at_axis = camera.at;
+                update.camera_left_axis = camera.left;
+                update.camera_up_axis = camera.up;
+                update.far_clip = camera.far_clip;
 
                 (void)outbound_queue.push(std::move(update));
                 last_agent_update = now;
@@ -3052,6 +3168,7 @@ int Application::run()
                 circuit_snapshot,
                 load_stats,
                 caps_snapshot,
+                frame_metrics,
                 simulation_ready,
                 welcome_texture);
 
