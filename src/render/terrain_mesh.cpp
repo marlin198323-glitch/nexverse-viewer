@@ -121,7 +121,8 @@ nexverse::render::TerrainVertex make_vertex(
         z,
         color[0],
         color[1],
-        color[2]};
+        color[2],
+        t};
 }
 }
 

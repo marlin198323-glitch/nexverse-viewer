@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.20`.
+Aktuelle Viewer-Version: `0.2.0-alpha.21`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -468,6 +468,17 @@ Phase 7 gestartet:
 - RegionHandshake- und Terrain-Mesh-Regressionsfälle auf die neuen Materialdaten erweitert
 - aktueller Phase-7-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.20`
 - kompletter Debug-Build nach Terrainmaterial-Metadatenblock: 16/16 Tests grün
+- `0.2.0-alpha.21`: neues eigenständiges `NexVerse::Assets`-Modul
+- OpenSim-`GetTexture` wird mit `texture_id=<UUID>&format=png` verwendet; Capability-URL bleibt intern und wird nicht geloggt
+- PNG-Texturen werden mit libpng bounds-geprüft in RGBA8 dekodiert
+- Downloadlimit 32 MiB und maximale Texturgröße 4096x4096 verhindern unkontrollierte Assetgrößen
+- neuer `nexverse-texture-loader-tests` Test mit echtem Binär-PNG und Mock-HTTP-Transport
+- Terrain-Detailtexturen werden pro Region/Materialrevision asynchron geladen, ohne EventQueue oder Rendering zu blockieren
+- Renderer übernimmt vier Terrain-Detailtexturen auf die GPU und mischt sie anhand des echten OpenSim-Materialfaktors
+- fehlende Einzeltexturen erhalten sichere 1x1-Fallbackfarben; ohne echte Assets bleibt der bisherige Terrain-Farbmodus aktiv
+- Regionswechsel/Materialrevision verhindern, dass verspätete Texturergebnisse in eine neue Region übernommen werden
+- aktueller sichtbarer Phase-7-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.21`
+- kompletter Debug-Build nach GetTexture-/PNG-/GPU-Terraintexturblock: 17/17 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

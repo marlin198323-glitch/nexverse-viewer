@@ -197,30 +197,77 @@ constexpr const char* vertex_shader_source = R"GLSL(
 #version 330 core
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aColor;
+layout (location = 2) in float aMaterial;
 
 uniform mat4 uMvp;
 
 out vec3 vColor;
+out vec2 vWorldXY;
+out float vMaterial;
 
 void main()
 {
     gl_Position = uMvp * vec4(aPosition, 1.0);
     vColor = aColor;
+    vWorldXY = aPosition.xy;
+    vMaterial = aMaterial;
 }
 )GLSL";
 
 constexpr const char* fragment_shader_source = R"GLSL(
 #version 330 core
 in vec3 vColor;
+in vec2 vWorldXY;
+in float vMaterial;
 out vec4 FragColor;
 
 uniform float uAlpha;
+uniform bool uUseTerrainTextures;
+uniform sampler2D uTerrain0;
+uniform sampler2D uTerrain1;
+uniform sampler2D uTerrain2;
+uniform sampler2D uTerrain3;
+
+vec3 terrainTextureColor(vec2 uv, float material)
+{
+    float t = clamp(material, 0.0, 1.0);
+    if (t < 0.333333)
+    {
+        float local = t / 0.333333;
+        return mix(
+            texture(uTerrain0, uv).rgb,
+            texture(uTerrain1, uv).rgb,
+            local);
+    }
+    if (t < 0.666667)
+    {
+        float local = (t - 0.333333) / 0.333334;
+        return mix(
+            texture(uTerrain1, uv).rgb,
+            texture(uTerrain2, uv).rgb,
+            local);
+    }
+
+    float local = (t - 0.666667) / 0.333333;
+    return mix(
+        texture(uTerrain2, uv).rgb,
+        texture(uTerrain3, uv).rgb,
+        local);
+}
 
 void main()
 {
+    vec3 base = vColor;
+    if (uUseTerrainTextures)
+    {
+        vec2 uv = vWorldXY / 12.0;
+        vec3 textureColor = terrainTextureColor(uv, vMaterial);
+        base = mix(textureColor, vColor, 0.12);
+    }
+
     vec3 horizon = vec3(0.40, 0.56, 0.78);
     float fog = smoothstep(0.90, 1.0, gl_FragCoord.z);
-    vec3 color = mix(vColor, horizon, fog * 0.55);
+    vec3 color = mix(base, horizon, fog * 0.55);
     FragColor = vec4(color, uAlpha);
 }
 )GLSL";
@@ -597,6 +644,15 @@ public:
             static_cast<GLsizei>(sizeof(TerrainVertex)),
             reinterpret_cast<void*>(offsetof(TerrainVertex, r)));
 
+        glEnableVertexAttribArray(2U);
+        glVertexAttribPointer(
+            2U,
+            1,
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(sizeof(TerrainVertex)),
+            reinterpret_cast<void*>(offsetof(TerrainVertex, material)));
+
         glBindVertexArray(0U);
         terrain_index_count_ =
             static_cast<std::uint32_t>(mesh.indices.size());
@@ -662,6 +718,110 @@ public:
             std::to_string(terrain_index_count_ / 3U));
     }
 
+    void set_terrain_textures(
+        const RenderTerrainTextures& textures) override
+    {
+        if (textures.generation == texture_generation_ &&
+            textures.material_revision == texture_material_revision_)
+        {
+            return;
+        }
+
+        texture_generation_ = textures.generation;
+        texture_material_revision_ = textures.material_revision;
+        terrain_textures_ready_ = false;
+
+        static constexpr std::array<std::array<std::uint8_t, 4>, 4>
+            fallback_colors{{
+                {{90U, 78U, 52U, 255U}},
+                {{52U, 126U, 58U, 255U}},
+                {{104U, 96U, 68U, 255U}},
+                {{164U, 164U, 170U, 255U}}
+            }};
+
+        if (terrain_textures_[0] == 0U)
+        {
+            glGenTextures(
+                static_cast<GLsizei>(terrain_textures_.size()),
+                terrain_textures_.data());
+        }
+
+        bool any_real = false;
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        for (std::size_t index = 0U;
+             index < terrain_textures_.size();
+             ++index)
+        {
+            glActiveTexture(
+                static_cast<GLenum>(GL_TEXTURE0 + index));
+            glBindTexture(
+                GL_TEXTURE_2D,
+                terrain_textures_[index]);
+
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_WRAP_S,
+                GL_REPEAT);
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_WRAP_T,
+                GL_REPEAT);
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MIN_FILTER,
+                GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(
+                GL_TEXTURE_2D,
+                GL_TEXTURE_MAG_FILTER,
+                GL_LINEAR);
+
+            const auto& image = textures.detail[index];
+            if (image.valid())
+            {
+                glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGBA8,
+                    static_cast<GLsizei>(image.width),
+                    static_cast<GLsizei>(image.height),
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    image.pixels.data());
+                any_real = true;
+            }
+            else
+            {
+                const auto& fallback =
+                    fallback_colors[index];
+                glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGBA8,
+                    1,
+                    1,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    fallback.data());
+            }
+
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0U);
+        glActiveTexture(GL_TEXTURE0);
+
+        terrain_textures_ready_ = any_real;
+
+        if (terrain_textures_ready_)
+        {
+            core::info(
+                "OGLRender terrain texture set uploaded");
+        }
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
@@ -709,6 +869,9 @@ public:
         glUniform1f(
             glGetUniformLocation(program_, "uAlpha"),
             1.0f);
+        glUniform1i(
+            glGetUniformLocation(program_, "uUseTerrainTextures"),
+            GL_FALSE);
 
         if (terrain_index_count_ > 0U && terrain_vao_ != 0U)
         {
@@ -719,6 +882,42 @@ public:
                 GL_FALSE,
                 mvp.value.data());
 
+            const bool use_textures =
+                terrain_textures_ready_ &&
+                texture_generation_ == terrain_generation_ &&
+                texture_material_revision_ == terrain_material_revision_;
+
+            if (use_textures)
+            {
+                static constexpr std::array<const char*, 4> sampler_names{
+                    "uTerrain0",
+                    "uTerrain1",
+                    "uTerrain2",
+                    "uTerrain3"};
+
+                for (std::size_t index = 0U;
+                     index < terrain_textures_.size();
+                     ++index)
+                {
+                    glActiveTexture(
+                        static_cast<GLenum>(GL_TEXTURE0 + index));
+                    glBindTexture(
+                        GL_TEXTURE_2D,
+                        terrain_textures_[index]);
+                    glUniform1i(
+                        glGetUniformLocation(
+                            program_,
+                            sampler_names[index]),
+                        static_cast<GLint>(index));
+                }
+
+                glUniform1i(
+                    glGetUniformLocation(
+                        program_,
+                        "uUseTerrainTextures"),
+                    GL_TRUE);
+            }
+
             glBindVertexArray(terrain_vao_);
             glDrawElements(
                 GL_TRIANGLES,
@@ -728,6 +927,13 @@ public:
 
             diagnostics_.draw_calls += 1U;
             diagnostics_.triangles += terrain_index_count_ / 3U;
+
+            glUniform1i(
+                glGetUniformLocation(
+                    program_,
+                    "uUseTerrainTextures"),
+                GL_FALSE);
+            glActiveTexture(GL_TEXTURE0);
 
             if (water_vao_ != 0U)
             {
@@ -809,6 +1015,14 @@ public:
 
     void shutdown() override
     {
+        if (terrain_textures_[0] != 0U)
+        {
+            glDeleteTextures(
+                static_cast<GLsizei>(terrain_textures_.size()),
+                terrain_textures_.data());
+            terrain_textures_.fill(0U);
+        }
+
         if (terrain_ebo_ != 0U)
         {
             glDeleteBuffers(1, &terrain_ebo_);
@@ -922,6 +1136,11 @@ private:
     std::uint32_t terrain_generation_ = 0U;
     std::uint32_t terrain_revision_ = 0U;
     std::uint32_t terrain_material_revision_ = 0U;
+
+    std::array<GLuint, 4> terrain_textures_{};
+    std::uint32_t texture_generation_ = 0U;
+    std::uint32_t texture_material_revision_ = 0U;
+    bool terrain_textures_ready_ = false;
 
     GLuint water_vao_ = 0U;
     GLuint water_vbo_ = 0U;

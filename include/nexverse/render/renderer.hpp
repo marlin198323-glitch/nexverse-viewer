@@ -45,6 +45,29 @@ struct RenderTerrain
     std::vector<std::uint8_t> valid_patches;
 };
 
+struct RenderImageRgba8
+{
+    std::uint32_t width = 0U;
+    std::uint32_t height = 0U;
+    std::vector<std::uint8_t> pixels;
+
+    [[nodiscard]] bool valid() const noexcept
+    {
+        return width > 0U &&
+               height > 0U &&
+               pixels.size() ==
+                   static_cast<std::size_t>(width) *
+                   static_cast<std::size_t>(height) * 4U;
+    }
+};
+
+struct RenderTerrainTextures
+{
+    std::uint32_t generation = 0U;
+    std::uint32_t material_revision = 0U;
+    std::array<RenderImageRgba8, 4> detail;
+};
+
 struct RenderDiagnostics
 {
     std::string backend;
@@ -64,6 +87,8 @@ public:
     virtual void resize(int width, int height) = 0;
     virtual void set_camera(const RenderCamera& camera) = 0;
     virtual void set_terrain(const RenderTerrain& terrain) = 0;
+    virtual void set_terrain_textures(
+        const RenderTerrainTextures& textures) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;

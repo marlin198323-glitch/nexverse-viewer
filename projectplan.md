@@ -1076,6 +1076,10 @@ Funktionen:
 
 - Terrain-Daten empfangen
 - Terrain Mesh
+- OpenSim-Terrainmaterial-Metadaten aus RegionHandshake
+- echte Terrain-Detailtexturen über die entdeckte GetTexture-Capability laden
+- serverseitige PNG-Konvertierung verwenden, solange kein JPEG2000-Decoder im Viewer benötigt wird
+- Terraintexturen asynchron laden und mit sicherem Farb-Fallback darstellen
 - Wasser
 - Region-Grenzen
 - Umgebung

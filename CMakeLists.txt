@@ -35,6 +35,7 @@ find_package(OpenGL REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(PNG REQUIRED)
 
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
@@ -67,6 +68,20 @@ target_include_directories(nexverse-net PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
+
+add_library(nexverse-assets
+    src/assets/texture_loader.cpp
+)
+add_library(NexVerse::Assets ALIAS nexverse-assets)
+target_include_directories(nexverse-assets PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(nexverse-assets PUBLIC
+    NexVerse::Core
+    NexVerse::Net
+    PNG::PNG
+)
 
 add_library(nexverse-protocol
     src/protocol/grid_info.cpp
@@ -134,6 +149,7 @@ target_link_libraries(nexverse-ui PUBLIC
     NexVerse::Protocol
     NexVerse::World
     NexVerse::Render
+    NexVerse::Assets
     OpenGL::GL
     glfw
     glad::glad
@@ -174,6 +190,7 @@ endfunction()
 
 nexverse_enable_warnings(nexverse-core)
 nexverse_enable_warnings(nexverse-net)
+nexverse_enable_warnings(nexverse-assets)
 nexverse_enable_warnings(nexverse-protocol)
 nexverse_enable_warnings(nexverse-world)
 nexverse_enable_warnings(nexverse-render)
@@ -254,6 +271,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-terrain-codec-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-terrain-codec-tests)
     add_test(NAME nexverse-terrain-codec-tests COMMAND nexverse-terrain-codec-tests)
+
+    add_executable(nexverse-texture-loader-tests tests/texture_loader_tests.cpp)
+    target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-loader-tests)
+    add_test(NAME nexverse-texture-loader-tests COMMAND nexverse-texture-loader-tests)
 
     add_executable(nexverse-caps-world-events-tests tests/caps_world_events_tests.cpp)
     target_link_libraries(nexverse-caps-world-events-tests PRIVATE NexVerse::Protocol)

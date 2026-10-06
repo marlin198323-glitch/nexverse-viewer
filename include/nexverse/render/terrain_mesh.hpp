@@ -19,6 +19,7 @@ struct TerrainVertex
     float r = 0.0f;
     float g = 0.0f;
     float b = 0.0f;
+    float material = 0.0f;
 };
 
 struct TerrainMesh

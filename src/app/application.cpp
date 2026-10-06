@@ -6,6 +6,7 @@
 
 #include "nexverse/app/application.hpp"
 
+#include "nexverse/assets/texture_loader.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -3107,7 +3108,17 @@ int Application::run()
     std::future<void> caps_future;
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
+    std::string get_texture_capability_uri;
     bool caps_started = false;
+
+    using TerrainTextureResults =
+        std::array<assets::TextureAssetResult, 4>;
+    std::future<TerrainTextureResults> terrain_texture_future;
+    bool terrain_texture_loading = false;
+    std::uint32_t terrain_texture_request_generation =
+        std::numeric_limits<std::uint32_t>::max();
+    std::uint32_t terrain_texture_request_material_revision =
+        std::numeric_limits<std::uint32_t>::max();
 
     {
         auto world_renderer = render::create_legacy_opengl_renderer();
@@ -3317,6 +3328,7 @@ int Application::run()
                                  &caps_stop,
                                  &caps_mutex,
                                  &caps_state,
+                                 &get_texture_capability_uri,
                                  &caps_event_dispatcher,
                                  &world_model,
                                  &world_mutex]()
@@ -3349,6 +3361,7 @@ int Application::run()
                                     std::string event_queue_uri;
                                     std::string simulator_features_uri;
                                     std::string environment_settings_uri;
+                                    std::string get_texture_uri;
                                     std::string simulator_features_message;
 
                                     {
@@ -3378,6 +3391,16 @@ int Application::run()
                                         found != discovery.capabilities.end())
                                     {
                                         environment_settings_uri = found->second;
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("GetTexture");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        get_texture_uri = found->second;
+                                        std::scoped_lock lock{caps_mutex};
+                                        get_texture_capability_uri =
+                                            get_texture_uri;
                                     }
 
                                     if (!simulator_features_uri.empty())
@@ -3888,6 +3911,10 @@ int Application::run()
             world::AgentState render_agent;
             render::RenderTerrain terrain_update;
             bool terrain_changed = false;
+            bool terrain_materials_available = false;
+            std::uint32_t texture_generation_current = 0U;
+            std::uint32_t texture_material_revision_current = 0U;
+            std::array<std::string, 4> terrain_detail_ids;
 
             {
                 std::scoped_lock lock{world_mutex};
@@ -3897,6 +3924,15 @@ int Application::run()
                     world_model.region();
                 const world::TerrainState& terrain =
                     world_model.terrain();
+
+                terrain_materials_available =
+                    terrain.materials.available;
+                texture_generation_current =
+                    region.generation;
+                texture_material_revision_current =
+                    terrain.materials.revision;
+                terrain_detail_ids =
+                    terrain.materials.detail_ids;
 
                 if (region.generation != rendered_terrain_generation ||
                     terrain.revision != rendered_terrain_revision ||
@@ -3937,6 +3973,115 @@ int Application::run()
             if (terrain_changed)
             {
                 world_renderer->set_terrain(terrain_update);
+            }
+
+            std::string texture_capability;
+            {
+                std::scoped_lock lock{caps_mutex};
+                texture_capability = get_texture_capability_uri;
+            }
+
+            if (!terrain_texture_loading &&
+                terrain_materials_available &&
+                !texture_capability.empty() &&
+                (terrain_texture_request_generation !=
+                     texture_generation_current ||
+                 terrain_texture_request_material_revision !=
+                     texture_material_revision_current))
+            {
+                terrain_texture_request_generation =
+                    texture_generation_current;
+                terrain_texture_request_material_revision =
+                    texture_material_revision_current;
+                terrain_texture_loading = true;
+
+                const auto ids = terrain_detail_ids;
+                const std::string capability = texture_capability;
+
+                terrain_texture_future = std::async(
+                    std::launch::async,
+                    [transport, capability, ids]()
+                    {
+                        TerrainTextureResults results;
+                        assets::TextureAssetLoader loader{transport};
+
+                        for (std::size_t index = 0U;
+                             index < ids.size();
+                             ++index)
+                        {
+                            if (ids[index].empty() ||
+                                ids[index] ==
+                                    "00000000-0000-0000-0000-000000000000")
+                            {
+                                continue;
+                            }
+
+                            results[index] =
+                                loader.fetch_png(
+                                    capability,
+                                    ids[index]);
+                        }
+
+                        return results;
+                    });
+            }
+
+            if (terrain_texture_loading &&
+                terrain_texture_future.valid() &&
+                terrain_texture_future.wait_for(
+                    std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                TerrainTextureResults results =
+                    terrain_texture_future.get();
+                terrain_texture_loading = false;
+
+                if (texture_generation_current ==
+                        terrain_texture_request_generation &&
+                    texture_material_revision_current ==
+                        terrain_texture_request_material_revision)
+                {
+                    render::RenderTerrainTextures textures;
+                    textures.generation =
+                        terrain_texture_request_generation;
+                    textures.material_revision =
+                        terrain_texture_request_material_revision;
+
+                    std::size_t loaded_count = 0U;
+                    for (std::size_t index = 0U;
+                         index < results.size();
+                         ++index)
+                    {
+                        if (!results[index].success ||
+                            !results[index].image.valid())
+                        {
+                            continue;
+                        }
+
+                        textures.detail[index].width =
+                            results[index].image.width;
+                        textures.detail[index].height =
+                            results[index].image.height;
+                        textures.detail[index].pixels =
+                            std::move(
+                                results[index].image.pixels);
+                        ++loaded_count;
+                    }
+
+                    if (loaded_count > 0U)
+                    {
+                        world_renderer->set_terrain_textures(
+                            textures);
+                        core::info(
+                            "Terrain texture assets loaded; count=" +
+                            std::to_string(loaded_count));
+                    }
+                    else
+                    {
+                        core::warning(
+                            "Terrain texture assets unavailable; color fallback remains active");
+                    }
+                }
             }
 
             if (simulation_ready)
