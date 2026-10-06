@@ -414,7 +414,7 @@ Phase 6 gestartet:
 - System-RAM-Metriken werden im Core-Test auf plausible Werte geprüft
 - damit sind alle im Projektplan definierten Phase-6-Funktionen implementiert
 - aktueller Phase-6-Abschlussstand: `OpenGenesisLINK Viewer 0.2.0-alpha.14`
-- visueller NexVerse-Echttest des Fensters/3D-Würfels/Debug-Overlays steht noch aus
+- visueller NexVerse-Echttest am 06.10.2026 erfolgreich: 3D-Würfel sichtbar, Renderer-Kamera aktiv, Debug-Overlay mit FPS/Frame/RAM/VRAM/Draw/Triangles sichtbar
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
