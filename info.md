@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.16`.
+Aktuelle Viewer-Version: `0.2.0-alpha.17`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -437,6 +437,14 @@ Phase 7 gestartet:
 - stattdessen gibt es nur ein schmales transparentes World-HUD mit Titel/Grid, Session, Aktionen und Diagnose
 - aktueller UI-/Fullscreen-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.16`
 - kompletter Debug-Build nach Fullscreen-/Loading-/World-HUD-Block: 16/16 Tests grün
+- `0.2.0-alpha.17`: Schriftfehler im In-World-Fullscreen behoben; UI-Renderer aktiviert Blending für jeden Shape-/Image-/Text-Pass selbst
+- Ursache der Blockschrift war vom World-Renderer deaktiviertes `GL_BLEND`, nicht fehlende Fontdaten
+- In-World-HUD wieder auf die ursprüngliche NexVerse-Designsprache zurückgeführt: Branding-Leiste oben, kompakte Navigation links, Statuskarten rechts, Aktionsleiste unten
+- 3D-Welt bleibt Hauptfläche; Seitenelemente sind transparent und bewusst kompakter als das ursprüngliche Dashboard
+- Firestorm dient ausschließlich als technische Referenz für Viewer-Verhalten, DPI/Scaling, Loading, Kamera und OpenSim-Funktionalität
+- Firestorm-Skin/Style/XUI wird nicht übernommen; NexVerse-Design und Farben bleiben verbindlich
+- aktueller UI-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.17`
+- kompletter Debug-Build nach Schrift-/NexVerse-HUD-Fix: 16/16 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

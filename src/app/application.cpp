@@ -859,86 +859,252 @@ void render_world_hud(
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
 
-    // Scale from vertical resolution so 21:9 / 32:9 keep the 3D world wide.
-    const float scale = std::clamp(h / 1080.0f, 0.72f, 1.55f);
-    const float top_h = 46.0f * scale;
-    const float bottom_h = 48.0f * scale;
+    // Vertical scaling keeps the world viewport wide on 21:9 and 32:9.
+    const float scale = std::clamp(h / 1080.0f, 0.74f, 1.50f);
+    const float top_h = 66.0f * scale;
+    const float bottom_h = 58.0f * scale;
+    const float left_w = 190.0f * scale;
+    const float right_w = 268.0f * scale;
+    const float margin = 12.0f * scale;
 
     renderer.resize(width, height);
 
+    // NexVerse top branding bar.
     renderer.rect(
         0.0f, 0.0f, w, top_h,
-        Color{0.005f, 0.012f, 0.022f, 0.84f},
+        Color{0.006f, 0.015f, 0.028f, 0.93f},
         0.0f);
     renderer.rect(
-        0.0f, top_h - 1.0f, w, 1.0f,
-        with_alpha(theme::cyan, 0.35f),
+        0.0f, top_h - 1.0f * scale, w, 1.0f * scale,
+        with_alpha(theme::cyan, 0.55f),
         0.0f);
 
-    renderer.text(
-        18.0f * scale,
+    renderer.rect(
+        14.0f * scale,
         12.0f * scale,
-        15.0f * scale,
+        42.0f * scale,
+        42.0f * scale,
+        Color{0.025f, 0.120f, 0.205f, 0.96f},
+        10.0f * scale);
+    renderer.rect(
+        22.0f * scale,
+        20.0f * scale,
+        26.0f * scale,
+        26.0f * scale,
+        with_alpha(theme::cyan, 0.52f),
+        6.0f * scale);
+
+    renderer.text(
+        70.0f * scale,
+        13.0f * scale,
+        17.0f * scale,
         "OpenGenesisLINK",
         theme::text);
     renderer.text(
-        182.0f * scale,
-        15.0f * scale,
-        10.0f * scale,
-        grid_name,
+        70.0f * scale,
+        40.0f * scale,
+        8.5f * scale,
+        "VIEWER FOR NEXVERSE",
         theme::cyan);
 
-    const std::string session_label =
-        login.username.empty()
-            ? "NexVerse"
-            : login.username;
-    const float session_w =
-        renderer.text_width(10.0f * scale, session_label);
+    const float grid_card_x = 280.0f * scale;
+    const float grid_card_w = 270.0f * scale;
+    renderer.rect(
+        grid_card_x,
+        11.0f * scale,
+        grid_card_w,
+        44.0f * scale,
+        Color{0.020f, 0.040f, 0.068f, 0.82f},
+        9.0f * scale);
     renderer.text(
-        w - session_w - 22.0f * scale,
-        15.0f * scale,
-        10.0f * scale,
-        session_label,
+        grid_card_x + 14.0f * scale,
+        18.0f * scale,
+        8.0f * scale,
+        "NEXVERSE GRID",
+        theme::text_muted);
+    renderer.text(
+        grid_card_x + 14.0f * scale,
+        35.0f * scale,
+        10.5f * scale,
+        grid_name,
         theme::text);
 
-    renderer.rect(
-        0.0f, h - bottom_h, w, bottom_h,
-        Color{0.005f, 0.012f, 0.022f, 0.78f},
-        0.0f);
-    renderer.rect(
-        0.0f, h - bottom_h, w, 1.0f,
-        with_alpha(theme::cyan, 0.28f),
-        0.0f);
+    const bool udp_live =
+        circuit.state == nexverse::protocol::CircuitState::active;
+    const Color live_color = udp_live ? theme::success : theme::warning;
 
-    const std::array<std::string_view, 7> actions{
-        "Chat", "Sprechen", "Bewegen", "Teleport", "Inventar", "Bauen", "Karte"
-    };
-    float action_x = 18.0f * scale;
-    for (const auto action : actions)
+    const float chip_w = 96.0f * scale;
+    const float chip_gap = 8.0f * scale;
+    float chip_x = w - margin - chip_w;
+    status_chip(
+        renderer,
+        chip_x,
+        10.0f * scale,
+        chip_w,
+        scale,
+        "WORLD",
+        udp_live ? "UDP LIVE" : "WAIT",
+        live_color);
+    chip_x -= chip_w + chip_gap;
+    status_chip(
+        renderer,
+        chip_x,
+        10.0f * scale,
+        chip_w,
+        scale,
+        "LOGIN",
+        "CONNECTED",
+        theme::success);
+    chip_x -= chip_w + chip_gap;
+    status_chip(
+        renderer,
+        chip_x,
+        10.0f * scale,
+        chip_w,
+        scale,
+        "GRID",
+        "LIVE",
+        theme::success);
+
+    // Compact NexVerse navigation rail. It preserves the original visual
+    // language without hiding the world viewport.
+    const float rail_y = top_h + margin;
+    const float rail_h = h - top_h - bottom_h - margin * 2.0f;
+    renderer.rect(
+        margin,
+        rail_y,
+        left_w,
+        rail_h,
+        Color{0.006f, 0.015f, 0.028f, 0.78f},
+        10.0f * scale);
+
+    renderer.text(
+        margin + 12.0f * scale,
+        rail_y + 12.0f * scale,
+        8.0f * scale,
+        "NAVIGATION",
+        theme::text_muted);
+
+    const std::array<std::pair<std::string_view, std::string_view>, 7> navigation{{
+        {"Welt", "Region und Umgebung"},
+        {"Orte", "Favoriten und Ziele"},
+        {"Freunde", "Kontakte und Naehe"},
+        {"Gruppen", "Communities"},
+        {"Events", "Veranstaltungen"},
+        {"Inventar", "Objekte und Assets"},
+        {"Marketplace", "NexVerse entdecken"}
+    }};
+
+    float nav_y = rail_y + 34.0f * scale;
+    for (std::size_t index = 0U; index < navigation.size(); ++index)
     {
-        const float action_w =
-            renderer.text_width(9.0f * scale, action) + 28.0f * scale;
-        renderer.rect(
-            action_x,
-            h - bottom_h + 9.0f * scale,
-            action_w,
-            30.0f * scale,
-            Color{0.020f, 0.040f, 0.066f, 0.84f},
-            7.0f * scale);
-        renderer.text(
-            action_x + 14.0f * scale,
-            h - bottom_h + 17.0f * scale,
-            9.0f * scale,
-            action,
-            theme::text_muted);
-        action_x += action_w + 7.0f * scale;
+        nav_item(
+            renderer,
+            margin + 6.0f * scale,
+            nav_y,
+            left_w - 12.0f * scale,
+            scale * 0.84f,
+            navigation[index].first,
+            navigation[index].second,
+            index == 0U);
+        nav_y += 50.0f * scale;
     }
+
+    const std::string session_name =
+        login.username.empty() ? "NexVerse" : login.username;
+    renderer.rect(
+        margin + 6.0f * scale,
+        rail_y + rail_h - 68.0f * scale,
+        left_w - 12.0f * scale,
+        56.0f * scale,
+        Color{0.020f, 0.040f, 0.068f, 0.88f},
+        9.0f * scale);
+    renderer.rect(
+        margin + 16.0f * scale,
+        rail_y + rail_h - 55.0f * scale,
+        30.0f * scale,
+        30.0f * scale,
+        with_alpha(theme::blue, 0.30f),
+        15.0f * scale);
+    renderer.text(
+        margin + 56.0f * scale,
+        rail_y + rail_h - 54.0f * scale,
+        10.5f * scale,
+        session_name,
+        theme::text);
+    renderer.text(
+        margin + 56.0f * scale,
+        rail_y + rail_h - 34.0f * scale,
+        8.5f * scale,
+        "OpenSim Session aktiv",
+        theme::success);
+
+    // Right status cards, matching the original NexVerse dashboard style.
+    const float right_x = w - right_w - margin;
+    renderer.rect(
+        right_x,
+        rail_y,
+        right_w,
+        rail_h,
+        Color{0.006f, 0.015f, 0.028f, 0.74f},
+        10.0f * scale);
+
+    const float card_x = right_x + 10.0f * scale;
+    const float card_w = right_w - 20.0f * scale;
+
+    renderer.rect(
+        card_x,
+        rail_y + 10.0f * scale,
+        card_w,
+        134.0f * scale,
+        Color{0.018f, 0.036f, 0.062f, 0.90f},
+        9.0f * scale);
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 23.0f * scale,
+        12.0f * scale,
+        "NexVerse Verbindung",
+        theme::text);
+    status_row(
+        renderer,
+        card_x + 14.0f * scale,
+        rail_y + 52.0f * scale,
+        "Grid",
+        "LIVE",
+        theme::success);
+    status_row(
+        renderer,
+        card_x + 14.0f * scale,
+        rail_y + 76.0f * scale,
+        "Login",
+        "CONNECTED",
+        theme::success);
+    status_row(
+        renderer,
+        card_x + 14.0f * scale,
+        rail_y + 100.0f * scale,
+        "LLUDP",
+        udp_live ? "LIVE" : "WAIT",
+        live_color);
+
+    renderer.rect(
+        card_x,
+        rail_y + 154.0f * scale,
+        card_w,
+        104.0f * scale,
+        Color{0.018f, 0.036f, 0.062f, 0.88f},
+        9.0f * scale);
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 168.0f * scale,
+        11.0f * scale,
+        "Systemstatus",
+        theme::text);
 
     const auto to_mib = [](std::uint64_t bytes)
     {
         return bytes / (1024U * 1024U);
     };
-
     const std::uint64_t ram_used =
         memory_metrics.total_bytes >= memory_metrics.available_bytes
             ? memory_metrics.total_bytes - memory_metrics.available_bytes
@@ -947,50 +1113,97 @@ void render_world_hud(
     std::string vram = "n/a";
     if (render_diagnostics.vram_total_bytes > 0U)
     {
-        const auto used =
+        const std::uint64_t used =
             render_diagnostics.vram_total_bytes -
             std::min(
                 render_diagnostics.vram_total_bytes,
                 render_diagnostics.vram_available_bytes);
-        vram =
-            std::to_string(to_mib(used)) + "/" +
-            std::to_string(to_mib(render_diagnostics.vram_total_bytes)) +
-            " MiB";
+        vram = std::to_string(to_mib(used)) + " MiB";
     }
+
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 194.0f * scale,
+        8.5f * scale,
+        "Renderer  READY",
+        theme::success);
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 214.0f * scale,
+        8.5f * scale,
+        "RAM  " + std::to_string(to_mib(ram_used)) + " MiB",
+        theme::text_muted);
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 234.0f * scale,
+        8.5f * scale,
+        "VRAM  " + vram,
+        theme::text_muted);
 
     const std::string debug_line =
         "FPS " + std::to_string(static_cast<int>(std::round(frame_metrics.fps))) +
-        " | " + std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
+        " | Frame " +
+        std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
         " ms | Draw " + std::to_string(render_diagnostics.draw_calls) +
-        " | Tri " + std::to_string(render_diagnostics.triangles) +
-        " | RAM " + std::to_string(to_mib(ram_used)) + " MiB" +
-        " | VRAM " + vram;
+        " | Tri " + std::to_string(render_diagnostics.triangles);
 
-    const float debug_w =
-        renderer.text_width(8.5f * scale, debug_line) + 20.0f * scale;
     renderer.rect(
-        w - debug_w - 14.0f * scale,
-        top_h + 10.0f * scale,
-        debug_w,
-        28.0f * scale,
-        Color{0.005f, 0.012f, 0.022f, 0.70f},
-        7.0f * scale);
+        card_x,
+        rail_y + rail_h - 58.0f * scale,
+        card_w,
+        44.0f * scale,
+        Color{0.018f, 0.036f, 0.062f, 0.88f},
+        9.0f * scale);
     renderer.text(
-        w - debug_w - 4.0f * scale,
-        top_h + 18.0f * scale,
-        8.5f * scale,
+        card_x + 12.0f * scale,
+        rail_y + rail_h - 44.0f * scale,
+        8.3f * scale,
         debug_line,
         theme::cyan);
 
+    // Bottom action bar, visually aligned with the original NexVerse UI.
     renderer.rect(
-        16.0f * scale,
-        top_h + 12.0f * scale,
-        10.0f * scale,
-        10.0f * scale,
-        circuit.state == nexverse::protocol::CircuitState::active
-            ? theme::success
-            : theme::warning,
-        5.0f * scale);
+        0.0f,
+        h - bottom_h,
+        w,
+        bottom_h,
+        Color{0.006f, 0.015f, 0.028f, 0.91f},
+        0.0f);
+    renderer.rect(
+        0.0f,
+        h - bottom_h,
+        w,
+        1.0f * scale,
+        with_alpha(theme::cyan, 0.45f),
+        0.0f);
+
+    const std::array<std::string_view, 7> actions{
+        "Chat", "Sprechen", "Bewegen", "Teleport", "Inventar", "Bauen", "Karte"
+    };
+
+    float action_x = left_w + margin * 2.0f;
+    for (const auto action : actions)
+    {
+        const float action_w =
+            std::max(
+                72.0f * scale,
+                renderer.text_width(9.0f * scale, action) + 28.0f * scale);
+
+        renderer.rect(
+            action_x,
+            h - bottom_h + 11.0f * scale,
+            action_w,
+            34.0f * scale,
+            Color{0.020f, 0.045f, 0.080f, 0.90f},
+            8.0f * scale);
+        renderer.text(
+            action_x + 14.0f * scale,
+            h - bottom_h + 20.0f * scale,
+            9.0f * scale,
+            action,
+            theme::text_muted);
+        action_x += action_w + 8.0f * scale;
+    }
 }
 
 void render_shell(

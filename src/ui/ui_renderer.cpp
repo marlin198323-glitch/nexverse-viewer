@@ -450,6 +450,9 @@ bool UiRenderer::initialize_text()
 
 void UiRenderer::rect(float x, float y, float width, float height, Color color, float radius)
 {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     const std::array<float, 24> vertices{
         x,         y,          0.0f, 0.0f,
         x,         y + height, 0.0f, 1.0f,
@@ -482,6 +485,9 @@ void UiRenderer::text(float x, float y, float pixel_size, std::string_view value
     {
         return;
     }
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     const float scale = pixel_size / 48.0f;
     float cursor = x;
@@ -627,6 +633,9 @@ void UiRenderer::image(
     {
         return;
     }
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     const std::array<float, 24> vertices{
         x,         y,          0.0f, 0.0f,

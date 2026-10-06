@@ -1087,6 +1087,10 @@ Funktionen:
 - vollständige Navigation/HUD erst bei `WorldModel READY`
 - In-World ist die 3D-Welt die Hauptansicht; Dashboard-Flächen dürfen sie nicht verdecken
 - In-World-UI nur als kompakte transparente HUD-/Toolbar-Overlays
+- die visuelle Designsprache bleibt verbindlich NexVerse/OpenGenesisLINK: Schwarz/Dunkelblau, Cyan/Blau sowie Violett/Magenta
+- bestehendes NexVerse-Branding, Kartenstil, Statuschips, Navigation und Toolbar-Stil bleiben maßgebend
+- Firestorm darf nur als technische Funktionsreferenz verwendet werden; Firestorm-Skin/XUI/Design darf nicht übernommen werden
+- UI-Skalierung muss den eigenen NexVerse-Stil auf 16:9, 21:9 und 32:9 erhalten
 
 ---
 
