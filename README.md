@@ -6,7 +6,7 @@ It is not a Firestorm fork. The project is designed around a strict separation b
 
 ## Current status
 
-Version: `0.2.0-alpha.17`
+Version: `0.2.0-alpha.18`
 
 Phase 5 (WorldModel) is complete and was accepted against the live NexVerse grid on 2026-10-06.
 

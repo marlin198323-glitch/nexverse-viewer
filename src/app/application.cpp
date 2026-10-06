@@ -173,6 +173,11 @@ struct LoginUiState
 struct InputContext
 {
     LoginUiState* login = nullptr;
+    bool exclusive_fullscreen = false;
+    int windowed_x = 100;
+    int windowed_y = 100;
+    int windowed_width = 1440;
+    int windowed_height = 900;
 };
 
 std::string masked_password(std::string_view password)
@@ -254,9 +259,56 @@ void character_callback(GLFWwindow* window, unsigned int codepoint)
 void key_callback(GLFWwindow* window, int key, int, int action, int)
 {
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+        return;
+    }
+
+    if (key == GLFW_KEY_F11 && action == GLFW_PRESS && context != nullptr)
+    {
+        if (!context->exclusive_fullscreen)
+        {
+            glfwGetWindowPos(
+                window,
+                &context->windowed_x,
+                &context->windowed_y);
+            glfwGetWindowSize(
+                window,
+                &context->windowed_width,
+                &context->windowed_height);
+
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode =
+                monitor != nullptr ? glfwGetVideoMode(monitor) : nullptr;
+
+            if (monitor != nullptr && mode != nullptr)
+            {
+                glfwSetWindowMonitor(
+                    window,
+                    monitor,
+                    0,
+                    0,
+                    mode->width,
+                    mode->height,
+                    mode->refreshRate);
+                context->exclusive_fullscreen = true;
+            }
+        }
+        else
+        {
+            glfwSetWindowMonitor(
+                window,
+                nullptr,
+                context->windowed_x,
+                context->windowed_y,
+                std::max(context->windowed_width, 1100),
+                std::max(context->windowed_height, 700),
+                GLFW_DONT_CARE);
+            glfwMaximizeWindow(window);
+            context->exclusive_fullscreen = false;
+        }
         return;
     }
 
@@ -2190,42 +2242,52 @@ int Application::run()
             : nullptr;
 
     const int initial_width =
-        primary_mode != nullptr ? primary_mode->width : 1440;
+        primary_mode != nullptr
+            ? std::max(1280, primary_mode->width * 3 / 4)
+            : 1440;
     const int initial_height =
-        primary_mode != nullptr ? primary_mode->height : 900;
+        primary_mode != nullptr
+            ? std::max(800, primary_mode->height * 3 / 4)
+            : 900;
 
-    if (primary_mode != nullptr)
-    {
-        glfwWindowHint(GLFW_REFRESH_RATE, primary_mode->refreshRate);
-    }
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
     GLFWwindow* window = glfwCreateWindow(
         initial_width,
         initial_height,
         "OpenGenesisLINK Viewer",
-        primary_mode != nullptr ? primary_monitor : nullptr,
+        nullptr,
         nullptr);
 
     if (window == nullptr)
     {
-        core::error("Viewer fullscreen window creation failed");
+        core::error("Viewer window creation failed");
         glfwTerminate();
         return 11;
     }
 
+    glfwSetWindowSizeLimits(
+        window,
+        1100,
+        700,
+        GLFW_DONT_CARE,
+        GLFW_DONT_CARE);
+    glfwMaximizeWindow(window);
+
     if (primary_mode != nullptr)
     {
         core::info(
-            "Viewer fullscreen enabled; resolution=" +
+            "Viewer maximized window enabled; desktop=" +
             std::to_string(primary_mode->width) + "x" +
             std::to_string(primary_mode->height) +
-            "@" + std::to_string(primary_mode->refreshRate));
+            "; F11 toggles exclusive fullscreen");
     }
     else
     {
-        core::warning(
-            "Primary monitor mode unavailable; viewer started windowed fallback");
-        glfwMaximizeWindow(window);
+        core::info(
+            "Viewer started maximized; F11 toggles fullscreen when available");
     }
 
     glfwMakeContextCurrent(window);

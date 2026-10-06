@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.17`.
+Aktuelle Viewer-Version: `0.2.0-alpha.18`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -445,6 +445,12 @@ Phase 7 gestartet:
 - Firestorm-Skin/Style/XUI wird nicht übernommen; NexVerse-Design und Farben bleiben verbindlich
 - aktueller UI-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.17`
 - kompletter Debug-Build nach Schrift-/NexVerse-HUD-Fix: 16/16 Tests grün
+- `0.2.0-alpha.18`: Viewer startet nicht mehr im exklusiven Monitor-Fullscreen, sondern als normales dekoriertes Fenster und wird direkt maximiert
+- native Fenstersteuerung bleibt verfügbar: Minimieren, Maximieren/Wiederherstellen und Schließen
+- `F11` schaltet optional in echten exklusiven Fullscreen und mit erneutem `F11` zurück in den maximierten Fenstermodus
+- Fenster bleibt resizable und behält die Widescreen-/Ultrawide-Skalierung
+- aktueller Fenster-/UI-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.18`
+- kompletter Debug-Build nach Window-Mode-/F11-Block: 16/16 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
