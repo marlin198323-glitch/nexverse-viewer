@@ -6,6 +6,7 @@
 
 #include "nexverse/protocol/lludp.hpp"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -215,6 +216,10 @@ struct RegionHandshakeMessage
     bool estate_manager = false;
     float water_height = 0.0f;
     float billable_factor = 0.0f;
+    std::array<std::string, 4> terrain_base;
+    std::array<std::string, 4> terrain_detail;
+    std::array<float, 4> terrain_start_height{};
+    std::array<float, 4> terrain_height_range{};
     std::string region_id;
     std::uint64_t region_flags_extended = 0U;
     std::uint64_t region_protocols = 0U;

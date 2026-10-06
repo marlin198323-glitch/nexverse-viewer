@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -31,5 +32,7 @@ struct TerrainMesh
     std::span<const std::uint8_t> valid_patches,
     std::uint32_t width,
     std::uint32_t height,
-    std::uint32_t patch_size);
+    std::uint32_t patch_size,
+    const std::array<float, 4>& start_heights,
+    const std::array<float, 4>& height_ranges);
 }

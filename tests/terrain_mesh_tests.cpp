@@ -1,5 +1,6 @@
 #include "nexverse/render/terrain_mesh.hpp"
 
+#include <array>
 #include <cstdint>
 #include <iostream>
 #include <vector>
@@ -24,13 +25,19 @@ int main()
     }
 
     std::vector<std::uint8_t> valid{1U, 0U};
+    const std::array<float, 4> start_heights{
+        18.0f, 19.0f, 20.0f, 21.0f};
+    const std::array<float, 4> height_ranges{
+        8.0f, 9.0f, 10.0f, 11.0f};
 
     const auto partial = nexverse::render::build_terrain_mesh(
         heights,
         valid,
         width,
         height,
-        patch_size);
+        patch_size,
+        start_heights,
+        height_ranges);
 
     if (partial.vertices.size() !=
             static_cast<std::size_t>(width) * height ||
@@ -50,7 +57,9 @@ int main()
         valid,
         width,
         height,
-        patch_size);
+        patch_size,
+        start_heights,
+        height_ranges);
 
     if (complete.indices.size() <= partial.indices.size())
     {
@@ -73,6 +82,14 @@ int main()
     {
         std::cerr << "Partial terrain unexpectedly covered full region\n";
         return 4;
+    }
+
+    const auto& low = complete.vertices.front();
+    const auto& high = complete.vertices.back();
+    if (low.r == high.r && low.g == high.g && low.b == high.b)
+    {
+        std::cerr << "Terrain material blending did not react to height metadata\n";
+        return 5;
     }
 
     std::cout << "Terrain mesh tests passed\n";

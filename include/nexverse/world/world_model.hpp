@@ -85,6 +85,16 @@ struct ObjectState
     Quaternion rotation;
 };
 
+struct TerrainMaterials
+{
+    std::uint32_t revision = 0U;
+    bool available = false;
+    std::array<std::string, 4> base_ids;
+    std::array<std::string, 4> detail_ids;
+    std::array<float, 4> start_heights{};
+    std::array<float, 4> height_ranges{};
+};
+
 struct TerrainState
 {
     std::uint32_t revision = 0U;
@@ -92,6 +102,7 @@ struct TerrainState
     std::array<float, 256U * 256U> heights{};
     std::array<bool, 16U * 16U> valid_patches{};
     std::uint16_t valid_patch_count = 0U;
+    TerrainMaterials materials;
 };
 
 struct ParcelState
@@ -172,6 +183,7 @@ public:
     void upsert_object(ObjectState object);
     void remove_object(std::uint32_t local_id);
     void set_terrain(TerrainState terrain);
+    void set_terrain_materials(TerrainMaterials materials);
     void apply_terrain_patch(const protocol::TerrainPatch& patch);
     void set_parcel(ParcelState parcel);
     void set_environment(EnvironmentState environment);

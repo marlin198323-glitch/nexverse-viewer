@@ -6,8 +6,8 @@
 #include "nexverse/render/terrain_mesh.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
-#include <limits>
 
 namespace
 {
@@ -39,6 +39,7 @@ bool sample_valid(
         (width + patch_size - 1U) / patch_size;
     const std::uint32_t patch_x = x / patch_size;
     const std::uint32_t patch_y = y / patch_size;
+
     return patch_valid(
         valid_patches,
         patch_x,
@@ -46,44 +47,81 @@ bool sample_valid(
         patches_x);
 }
 
+float bilinear(
+    const std::array<float, 4>& values,
+    float u,
+    float v)
+{
+    const float bottom =
+        values[0] + (values[2] - values[0]) * u;
+    const float top =
+        values[1] + (values[3] - values[1]) * u;
+    return bottom + (top - bottom) * v;
+}
+
+std::array<float, 3> mix_color(
+    const std::array<float, 3>& a,
+    const std::array<float, 3>& b,
+    float amount)
+{
+    return {
+        a[0] + (b[0] - a[0]) * amount,
+        a[1] + (b[1] - a[1]) * amount,
+        a[2] + (b[2] - a[2]) * amount};
+}
+
 nexverse::render::TerrainVertex make_vertex(
     float x,
     float y,
     float z,
-    float min_height,
-    float max_height)
+    std::uint32_t width,
+    std::uint32_t height,
+    const std::array<float, 4>& start_heights,
+    const std::array<float, 4>& height_ranges)
 {
-    const float span = std::max(max_height - min_height, 0.001f);
-    const float t = std::clamp((z - min_height) / span, 0.0f, 1.0f);
+    const float u =
+        width > 1U ? x / static_cast<float>(width - 1U) : 0.0f;
+    const float v =
+        height > 1U ? y / static_cast<float>(height - 1U) : 0.0f;
 
-    nexverse::render::TerrainVertex vertex;
-    vertex.x = x;
-    vertex.y = y;
-    vertex.z = z;
+    const float start = bilinear(start_heights, u, v);
+    const float range =
+        std::max(0.001f, bilinear(height_ranges, u, v));
+    const float t =
+        std::clamp((z - start) / range, 0.0f, 1.0f);
 
-    if (t < 0.35f)
+    constexpr std::array<float, 3> layer0{0.33f, 0.28f, 0.18f};
+    constexpr std::array<float, 3> layer1{0.17f, 0.43f, 0.18f};
+    constexpr std::array<float, 3> layer2{0.38f, 0.36f, 0.24f};
+    constexpr std::array<float, 3> layer3{0.62f, 0.62f, 0.64f};
+
+    std::array<float, 3> color{};
+    if (t < 0.333333f)
     {
-        const float local = t / 0.35f;
-        vertex.r = 0.08f + local * 0.06f;
-        vertex.g = 0.28f + local * 0.22f;
-        vertex.b = 0.12f + local * 0.06f;
+        color = mix_color(layer0, layer1, t / 0.333333f);
     }
-    else if (t < 0.78f)
+    else if (t < 0.666667f)
     {
-        const float local = (t - 0.35f) / 0.43f;
-        vertex.r = 0.14f + local * 0.28f;
-        vertex.g = 0.50f - local * 0.18f;
-        vertex.b = 0.18f + local * 0.06f;
+        color = mix_color(
+            layer1,
+            layer2,
+            (t - 0.333333f) / 0.333334f);
     }
     else
     {
-        const float local = (t - 0.78f) / 0.22f;
-        vertex.r = 0.42f + local * 0.38f;
-        vertex.g = 0.32f + local * 0.48f;
-        vertex.b = 0.24f + local * 0.56f;
+        color = mix_color(
+            layer2,
+            layer3,
+            (t - 0.666667f) / 0.333333f);
     }
 
-    return vertex;
+    return {
+        x,
+        y,
+        z,
+        color[0],
+        color[1],
+        color[2]};
 }
 }
 
@@ -94,7 +132,9 @@ TerrainMesh build_terrain_mesh(
     std::span<const std::uint8_t> valid_patches,
     std::uint32_t width,
     std::uint32_t height,
-    std::uint32_t patch_size)
+    std::uint32_t patch_size,
+    const std::array<float, 4>& start_heights,
+    const std::array<float, 4>& height_ranges)
 {
     TerrainMesh mesh;
 
@@ -107,15 +147,12 @@ TerrainMesh build_terrain_mesh(
         return mesh;
     }
 
-    float min_height = std::numeric_limits<float>::max();
-    float max_height = std::numeric_limits<float>::lowest();
     bool any_valid = false;
-
-    for (std::uint32_t y = 0U; y < height; ++y)
+    for (std::uint32_t y = 0U; y < height && !any_valid; ++y)
     {
         for (std::uint32_t x = 0U; x < width; ++x)
         {
-            if (!sample_valid(
+            if (sample_valid(
                     valid_patches,
                     x,
                     y,
@@ -123,14 +160,9 @@ TerrainMesh build_terrain_mesh(
                     height,
                     patch_size))
             {
-                continue;
+                any_valid = true;
+                break;
             }
-
-            const float z =
-                heights[static_cast<std::size_t>(y) * width + x];
-            min_height = std::min(min_height, z);
-            max_height = std::max(max_height, z);
-            any_valid = true;
         }
     }
 
@@ -148,12 +180,15 @@ TerrainMesh build_terrain_mesh(
         {
             const std::size_t slot =
                 static_cast<std::size_t>(y) * width + x;
+
             mesh.vertices[slot] = make_vertex(
                 static_cast<float>(x),
                 static_cast<float>(y),
                 heights[slot],
-                min_height,
-                max_height);
+                width,
+                height,
+                start_heights,
+                height_ranges);
         }
     }
 

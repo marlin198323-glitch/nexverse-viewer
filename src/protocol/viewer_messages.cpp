@@ -776,8 +776,47 @@ std::optional<RegionHandshakeMessage> decode_region_handshake(
     }
 
     offset += 16U;  // CacheID
-    offset += 128U; // TerrainBase0..3 + TerrainDetail0..3
-    offset += 32U;  // Terrain start heights + height ranges
+
+    for (std::size_t index = 0U; index < 4U; ++index)
+    {
+        message.terrain_base[index] = uuid_from_bytes(payload, offset);
+        if (message.terrain_base[index].empty())
+        {
+            return std::nullopt;
+        }
+        offset += 16U;
+    }
+
+    for (std::size_t index = 0U; index < 4U; ++index)
+    {
+        message.terrain_detail[index] = uuid_from_bytes(payload, offset);
+        if (message.terrain_detail[index].empty())
+        {
+            return std::nullopt;
+        }
+        offset += 16U;
+    }
+
+    for (std::size_t index = 0U; index < 4U; ++index)
+    {
+        message.terrain_start_height[index] = read_f32(payload, offset);
+        offset += 4U;
+    }
+
+    for (std::size_t index = 0U; index < 4U; ++index)
+    {
+        message.terrain_height_range[index] = read_f32(payload, offset);
+        offset += 4U;
+    }
+
+    for (std::size_t index = 0U; index < 4U; ++index)
+    {
+        if (!std::isfinite(message.terrain_start_height[index]) ||
+            !std::isfinite(message.terrain_height_range[index]))
+        {
+            return std::nullopt;
+        }
+    }
 
     message.region_id = uuid_from_bytes(payload, offset);
     if (message.region_id.empty())

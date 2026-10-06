@@ -530,13 +530,15 @@ public:
     void set_terrain(const RenderTerrain& terrain) override
     {
         if (terrain.generation == terrain_generation_ &&
-            terrain.revision == terrain_revision_)
+            terrain.revision == terrain_revision_ &&
+            terrain.material_revision == terrain_material_revision_)
         {
             return;
         }
 
         terrain_generation_ = terrain.generation;
         terrain_revision_ = terrain.revision;
+        terrain_material_revision_ = terrain.material_revision;
         terrain_index_count_ = 0U;
 
         const TerrainMesh mesh = build_terrain_mesh(
@@ -544,7 +546,9 @@ public:
             terrain.valid_patches,
             terrain.width,
             terrain.height,
-            terrain.patch_size);
+            terrain.patch_size,
+            terrain.terrain_start_height,
+            terrain.terrain_height_range);
 
         if (mesh.vertices.empty() || mesh.indices.empty())
         {
@@ -917,6 +921,7 @@ private:
     std::uint32_t terrain_index_count_ = 0U;
     std::uint32_t terrain_generation_ = 0U;
     std::uint32_t terrain_revision_ = 0U;
+    std::uint32_t terrain_material_revision_ = 0U;
 
     GLuint water_vao_ = 0U;
     GLuint water_vbo_ = 0U;

@@ -450,11 +450,35 @@ int main()
     append_f32_vec(handshake_payload, 21.5f);
     append_f32_vec(handshake_payload, 1.0f);
     handshake_payload.insert(handshake_payload.end(), 16U, 0U);
-    handshake_payload.insert(handshake_payload.end(), 128U, 0U);
-    for (int i = 0; i < 8; ++i)
+
+    const std::array<std::string_view, 8> terrain_ids{
+        "10000000-0000-0000-0000-000000000001",
+        "10000000-0000-0000-0000-000000000002",
+        "10000000-0000-0000-0000-000000000003",
+        "10000000-0000-0000-0000-000000000004",
+        "20000000-0000-0000-0000-000000000001",
+        "20000000-0000-0000-0000-000000000002",
+        "20000000-0000-0000-0000-000000000003",
+        "20000000-0000-0000-0000-000000000004"
+    };
+
+    for (const auto id : terrain_ids)
     {
-        append_f32_vec(handshake_payload, 0.0f);
+        const auto bytes = uuid_to_bytes(id);
+        handshake_payload.insert(
+            handshake_payload.end(),
+            bytes->begin(),
+            bytes->end());
     }
+
+    append_f32_vec(handshake_payload, 18.0f);
+    append_f32_vec(handshake_payload, 19.0f);
+    append_f32_vec(handshake_payload, 20.0f);
+    append_f32_vec(handshake_payload, 21.0f);
+    append_f32_vec(handshake_payload, 8.0f);
+    append_f32_vec(handshake_payload, 9.0f);
+    append_f32_vec(handshake_payload, 10.0f);
+    append_f32_vec(handshake_payload, 11.0f);
 
     const auto handshake_region =
         uuid_to_bytes("aaaaaaaa-9999-8888-7777-bbbbbbbbbbbb");
@@ -478,6 +502,12 @@ int main()
         handshake->sim_name != "NexVerse" ||
         handshake->water_height != 21.5f ||
         !handshake->estate_manager ||
+        handshake->terrain_base[0] !=
+            "10000000-0000-0000-0000-000000000001" ||
+        handshake->terrain_detail[3] !=
+            "20000000-0000-0000-0000-000000000004" ||
+        handshake->terrain_start_height[2] != 20.0f ||
+        handshake->terrain_height_range[3] != 11.0f ||
         handshake->region_id != "aaaaaaaa-9999-8888-7777-bbbbbbbbbbbb" ||
         handshake->region_flags_extended != 0x1122334455667788ULL ||
         handshake->region_protocols != 0x8877665544332211ULL)

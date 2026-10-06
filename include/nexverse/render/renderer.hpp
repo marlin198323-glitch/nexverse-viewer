@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -37,6 +38,9 @@ struct RenderTerrain
     std::uint32_t height = 256U;
     std::uint32_t patch_size = 16U;
     float water_height = 20.0f;
+    std::uint32_t material_revision = 0U;
+    std::array<float, 4> terrain_start_height{};
+    std::array<float, 4> terrain_height_range{};
     std::vector<float> heights;
     std::vector<std::uint8_t> valid_patches;
 };

@@ -110,6 +110,28 @@ void WorldModel::set_terrain(TerrainState terrain)
     terrain_ = std::move(terrain);
 }
 
+void WorldModel::set_terrain_materials(TerrainMaterials materials)
+{
+    const std::uint32_t next_revision =
+        terrain_.materials.revision + 1U;
+
+    materials.revision = next_revision;
+
+    bool has_material = false;
+    for (const auto& id : materials.detail_ids)
+    {
+        if (!id.empty() &&
+            id != "00000000-0000-0000-0000-000000000000")
+        {
+            has_material = true;
+            break;
+        }
+    }
+
+    materials.available = has_material;
+    terrain_.materials = std::move(materials);
+}
+
 void WorldModel::apply_terrain_patch(const protocol::TerrainPatch& patch)
 {
     if (patch.x >= 16U || patch.y >= 16U)

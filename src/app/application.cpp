@@ -2537,6 +2537,13 @@ int Application::run()
                 region.size_y,
                 region.connected});
 
+            world::TerrainMaterials materials;
+            materials.base_ids = handshake->terrain_base;
+            materials.detail_ids = handshake->terrain_detail;
+            materials.start_heights = handshake->terrain_start_height;
+            materials.height_ranges = handshake->terrain_height_range;
+            world_model.set_terrain_materials(std::move(materials));
+
             if (!region_handshake_world_logged.exchange(true))
             {
                 core::info("WorldModel RegionHandshake metadata validated");
@@ -3148,6 +3155,8 @@ int Application::run()
         std::uint32_t rendered_terrain_generation =
             std::numeric_limits<std::uint32_t>::max();
         std::uint32_t rendered_terrain_revision =
+            std::numeric_limits<std::uint32_t>::max();
+        std::uint32_t rendered_material_revision =
             std::numeric_limits<std::uint32_t>::max();
         auto previous_frame = std::chrono::steady_clock::now();
 
@@ -3890,10 +3899,12 @@ int Application::run()
                     world_model.terrain();
 
                 if (region.generation != rendered_terrain_generation ||
-                    terrain.revision != rendered_terrain_revision)
+                    terrain.revision != rendered_terrain_revision ||
+                    terrain.materials.revision != rendered_material_revision)
                 {
                     rendered_terrain_generation = region.generation;
                     rendered_terrain_revision = terrain.revision;
+                    rendered_material_revision = terrain.materials.revision;
 
                     terrain_update.generation = region.generation;
                     terrain_update.revision = terrain.revision;
@@ -3901,6 +3912,12 @@ int Application::run()
                     terrain_update.height = 256U;
                     terrain_update.patch_size = 16U;
                     terrain_update.water_height = region.water_height;
+                    terrain_update.material_revision =
+                        terrain.materials.revision;
+                    terrain_update.terrain_start_height =
+                        terrain.materials.start_heights;
+                    terrain_update.terrain_height_range =
+                        terrain.materials.height_ranges;
                     terrain_update.heights.assign(
                         terrain.heights.begin(),
                         terrain.heights.end());
