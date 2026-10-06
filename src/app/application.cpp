@@ -707,6 +707,292 @@ void render_world_preview(
         session != nullptr ? theme::success : theme::cyan);
 }
 
+void render_loading_screen(
+    UiRenderer& renderer,
+    int width,
+    int height,
+    std::string_view grid_name,
+    const nexverse::protocol::CircuitStatus& circuit,
+    const SimulationLoadStats& load_stats,
+    const CapsRuntimeState& caps,
+    unsigned int welcome_texture)
+{
+    const float w = static_cast<float>(std::max(width, 1));
+    const float h = static_cast<float>(std::max(height, 1));
+    const float scale = std::clamp(
+        std::min(w / 1920.0f, h / 1080.0f),
+        0.78f,
+        1.75f);
+
+    renderer.resize(width, height);
+
+    if (welcome_texture != 0U)
+    {
+        renderer.image(welcome_texture, 0.0f, 0.0f, w, h, 1.0f);
+        renderer.rect(
+            0.0f, 0.0f, w, h,
+            Color{0.004f, 0.010f, 0.024f, 0.72f},
+            0.0f);
+    }
+    else
+    {
+        renderer.rect(
+            0.0f, 0.0f, w, h,
+            Color{0.008f, 0.018f, 0.035f, 1.0f},
+            0.0f);
+    }
+
+    const float panel_w = std::min(720.0f * scale, w - 64.0f * scale);
+    const float panel_h = 300.0f * scale;
+    const float panel_x = (w - panel_w) * 0.5f;
+    const float panel_y = (h - panel_h) * 0.5f;
+
+    renderer.rect(
+        panel_x - 2.0f * scale,
+        panel_y - 2.0f * scale,
+        panel_w + 4.0f * scale,
+        panel_h + 4.0f * scale,
+        with_alpha(theme::cyan, 0.18f),
+        18.0f * scale);
+    renderer.rect(
+        panel_x,
+        panel_y,
+        panel_w,
+        panel_h,
+        Color{0.010f, 0.020f, 0.032f, 0.96f},
+        16.0f * scale);
+
+    renderer.text(
+        panel_x + 30.0f * scale,
+        panel_y + 26.0f * scale,
+        19.0f * scale,
+        "OpenGenesisLINK",
+        theme::text);
+    renderer.text(
+        panel_x + 30.0f * scale,
+        panel_y + 58.0f * scale,
+        10.0f * scale,
+        "WELT WIRD GELADEN",
+        theme::cyan);
+
+    renderer.text(
+        panel_x + 30.0f * scale,
+        panel_y + 88.0f * scale,
+        12.0f * scale,
+        std::string{"Willkommen in "} + std::string{grid_name},
+        theme::text_muted);
+
+    const bool udp_ready =
+        circuit.state == nexverse::protocol::CircuitState::active;
+    const bool caps_ready =
+        caps.simulator_features_loaded && caps.event_queue_available;
+    const bool terrain_ready = load_stats.terrain_packets > 0U;
+    const bool object_ready = load_stats.object_packets > 0U;
+
+    const int completed =
+        1 +
+        (udp_ready ? 1 : 0) +
+        (caps_ready ? 1 : 0) +
+        (terrain_ready ? 1 : 0) +
+        (object_ready ? 1 : 0);
+    const float progress =
+        std::clamp(static_cast<float>(completed) / 5.0f, 0.04f, 1.0f);
+
+    const float bar_x = panel_x + 30.0f * scale;
+    const float bar_y = panel_y + 126.0f * scale;
+    const float bar_w = panel_w - 60.0f * scale;
+    const float bar_h = 14.0f * scale;
+
+    renderer.rect(
+        bar_x, bar_y, bar_w, bar_h,
+        Color{0.06f, 0.08f, 0.10f, 1.0f},
+        7.0f * scale);
+    renderer.rect(
+        bar_x, bar_y, bar_w * progress, bar_h,
+        theme::cyan,
+        7.0f * scale);
+
+    const auto step = [&](float y, std::string_view label, bool done)
+    {
+        renderer.rect(
+            panel_x + 32.0f * scale,
+            y + 4.0f * scale,
+            8.0f * scale,
+            8.0f * scale,
+            done ? theme::success : theme::text_muted,
+            4.0f * scale);
+        renderer.text(
+            panel_x + 50.0f * scale,
+            y,
+            10.0f * scale,
+            label,
+            done ? theme::text : theme::text_muted);
+    };
+
+    step(panel_y + 162.0f * scale, "Grid-Verbindung hergestellt", true);
+    step(panel_y + 186.0f * scale, "Simulator / LLUDP verbunden", udp_ready);
+    step(panel_y + 210.0f * scale, "Region-Capabilities geladen", caps_ready);
+    step(panel_y + 234.0f * scale, "Terrain wird geladen", terrain_ready);
+    step(panel_y + 258.0f * scale, "Objekte und Umgebung werden geladen", object_ready);
+
+    const std::string version =
+        std::string{"v"} + std::string{nexverse::core::version()};
+    renderer.text(
+        22.0f * scale,
+        h - 28.0f * scale,
+        9.0f * scale,
+        version,
+        theme::text_muted);
+}
+
+void render_world_hud(
+    UiRenderer& renderer,
+    int width,
+    int height,
+    std::string_view grid_name,
+    const LoginUiState& login,
+    const nexverse::protocol::CircuitStatus& circuit,
+    const FrameMetrics& frame_metrics,
+    const nexverse::render::RenderDiagnostics& render_diagnostics,
+    const nexverse::core::SystemMemoryMetrics& memory_metrics)
+{
+    const float w = static_cast<float>(std::max(width, 1));
+    const float h = static_cast<float>(std::max(height, 1));
+
+    // Scale from vertical resolution so 21:9 / 32:9 keep the 3D world wide.
+    const float scale = std::clamp(h / 1080.0f, 0.72f, 1.55f);
+    const float top_h = 46.0f * scale;
+    const float bottom_h = 48.0f * scale;
+
+    renderer.resize(width, height);
+
+    renderer.rect(
+        0.0f, 0.0f, w, top_h,
+        Color{0.005f, 0.012f, 0.022f, 0.84f},
+        0.0f);
+    renderer.rect(
+        0.0f, top_h - 1.0f, w, 1.0f,
+        with_alpha(theme::cyan, 0.35f),
+        0.0f);
+
+    renderer.text(
+        18.0f * scale,
+        12.0f * scale,
+        15.0f * scale,
+        "OpenGenesisLINK",
+        theme::text);
+    renderer.text(
+        182.0f * scale,
+        15.0f * scale,
+        10.0f * scale,
+        grid_name,
+        theme::cyan);
+
+    const std::string session_label =
+        login.username.empty()
+            ? "NexVerse"
+            : login.username;
+    const float session_w =
+        renderer.text_width(10.0f * scale, session_label);
+    renderer.text(
+        w - session_w - 22.0f * scale,
+        15.0f * scale,
+        10.0f * scale,
+        session_label,
+        theme::text);
+
+    renderer.rect(
+        0.0f, h - bottom_h, w, bottom_h,
+        Color{0.005f, 0.012f, 0.022f, 0.78f},
+        0.0f);
+    renderer.rect(
+        0.0f, h - bottom_h, w, 1.0f,
+        with_alpha(theme::cyan, 0.28f),
+        0.0f);
+
+    const std::array<std::string_view, 7> actions{
+        "Chat", "Sprechen", "Bewegen", "Teleport", "Inventar", "Bauen", "Karte"
+    };
+    float action_x = 18.0f * scale;
+    for (const auto action : actions)
+    {
+        const float action_w =
+            renderer.text_width(9.0f * scale, action) + 28.0f * scale;
+        renderer.rect(
+            action_x,
+            h - bottom_h + 9.0f * scale,
+            action_w,
+            30.0f * scale,
+            Color{0.020f, 0.040f, 0.066f, 0.84f},
+            7.0f * scale);
+        renderer.text(
+            action_x + 14.0f * scale,
+            h - bottom_h + 17.0f * scale,
+            9.0f * scale,
+            action,
+            theme::text_muted);
+        action_x += action_w + 7.0f * scale;
+    }
+
+    const auto to_mib = [](std::uint64_t bytes)
+    {
+        return bytes / (1024U * 1024U);
+    };
+
+    const std::uint64_t ram_used =
+        memory_metrics.total_bytes >= memory_metrics.available_bytes
+            ? memory_metrics.total_bytes - memory_metrics.available_bytes
+            : 0U;
+
+    std::string vram = "n/a";
+    if (render_diagnostics.vram_total_bytes > 0U)
+    {
+        const auto used =
+            render_diagnostics.vram_total_bytes -
+            std::min(
+                render_diagnostics.vram_total_bytes,
+                render_diagnostics.vram_available_bytes);
+        vram =
+            std::to_string(to_mib(used)) + "/" +
+            std::to_string(to_mib(render_diagnostics.vram_total_bytes)) +
+            " MiB";
+    }
+
+    const std::string debug_line =
+        "FPS " + std::to_string(static_cast<int>(std::round(frame_metrics.fps))) +
+        " | " + std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
+        " ms | Draw " + std::to_string(render_diagnostics.draw_calls) +
+        " | Tri " + std::to_string(render_diagnostics.triangles) +
+        " | RAM " + std::to_string(to_mib(ram_used)) + " MiB" +
+        " | VRAM " + vram;
+
+    const float debug_w =
+        renderer.text_width(8.5f * scale, debug_line) + 20.0f * scale;
+    renderer.rect(
+        w - debug_w - 14.0f * scale,
+        top_h + 10.0f * scale,
+        debug_w,
+        28.0f * scale,
+        Color{0.005f, 0.012f, 0.022f, 0.70f},
+        7.0f * scale);
+    renderer.text(
+        w - debug_w - 4.0f * scale,
+        top_h + 18.0f * scale,
+        8.5f * scale,
+        debug_line,
+        theme::cyan);
+
+    renderer.rect(
+        16.0f * scale,
+        top_h + 12.0f * scale,
+        10.0f * scale,
+        10.0f * scale,
+        circuit.state == nexverse::protocol::CircuitState::active
+            ? theme::success
+            : theme::warning,
+        5.0f * scale);
+}
+
 void render_shell(
     UiRenderer& renderer,
     int width,
@@ -743,16 +1029,43 @@ void render_shell(
                 : theme::warning;
 
     renderer.resize(width, height);
-    if (!simulation_ready)
+
+    if (simulation_ready)
     {
-        renderer.rect(
-            0.0f,
-            0.0f,
-            w,
-            h,
-            Color{0.008f, 0.018f, 0.035f, 1.0f},
-            0.0f);
+        render_world_hud(
+            renderer,
+            width,
+            height,
+            grid_name,
+            login,
+            circuit,
+            frame_metrics,
+            render_diagnostics,
+            memory_metrics);
+        return;
     }
+
+    if (login.authenticated)
+    {
+        render_loading_screen(
+            renderer,
+            width,
+            height,
+            grid_name,
+            circuit,
+            load_stats,
+            caps,
+            welcome_texture);
+        return;
+    }
+
+    renderer.rect(
+        0.0f,
+        0.0f,
+        w,
+        h,
+        Color{0.008f, 0.018f, 0.035f, 1.0f},
+        0.0f);
 
     const float top_h = 86.0f * scale;
     const float left_w = 252.0f * scale;
@@ -1652,19 +1965,56 @@ int Application::run()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_FALSE);
 #if defined(__APPLE__)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(1440, 900, "OpenGenesisLINK Viewer", nullptr, nullptr);
+    GLFWmonitor* primary_monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* primary_mode =
+        primary_monitor != nullptr
+            ? glfwGetVideoMode(primary_monitor)
+            : nullptr;
+
+    const int initial_width =
+        primary_mode != nullptr ? primary_mode->width : 1440;
+    const int initial_height =
+        primary_mode != nullptr ? primary_mode->height : 900;
+
+    if (primary_mode != nullptr)
+    {
+        glfwWindowHint(GLFW_REFRESH_RATE, primary_mode->refreshRate);
+    }
+
+    GLFWwindow* window = glfwCreateWindow(
+        initial_width,
+        initial_height,
+        "OpenGenesisLINK Viewer",
+        primary_mode != nullptr ? primary_monitor : nullptr,
+        nullptr);
+
     if (window == nullptr)
     {
-        core::error("Viewer window creation failed");
+        core::error("Viewer fullscreen window creation failed");
         glfwTerminate();
         return 11;
     }
 
-    glfwSetWindowSizeLimits(window, 1100, 700, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    if (primary_mode != nullptr)
+    {
+        core::info(
+            "Viewer fullscreen enabled; resolution=" +
+            std::to_string(primary_mode->width) + "x" +
+            std::to_string(primary_mode->height) +
+            "@" + std::to_string(primary_mode->refreshRate));
+    }
+    else
+    {
+        core::warning(
+            "Primary monitor mode unavailable; viewer started windowed fallback");
+        glfwMaximizeWindow(window);
+    }
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 

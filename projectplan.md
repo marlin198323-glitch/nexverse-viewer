@@ -1080,6 +1080,13 @@ Funktionen:
 - Region-Grenzen
 - Umgebung
 - progressive Nachladung
+- Viewer startet standardmäßig im Fullscreen-Modus des primären Monitors
+- UI muss 16:9, 21:9 und 32:9/Ultrawide ohne breite feste Dashboard-Spalten unterstützen
+- nach erfolgreichem Login folgt ein eigener Ladebildschirm mit Fortschrittsbalken
+- automatischer Zustandswechsel: Login -> Loading -> In-World
+- vollständige Navigation/HUD erst bei `WorldModel READY`
+- In-World ist die 3D-Welt die Hauptansicht; Dashboard-Flächen dürfen sie nicht verdecken
+- In-World-UI nur als kompakte transparente HUD-/Toolbar-Overlays
 
 ---
 
