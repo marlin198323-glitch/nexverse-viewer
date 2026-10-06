@@ -4,6 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
 
 #include <iostream>
@@ -22,9 +23,19 @@ int main()
 
     if (version.empty() || version.front() != '0')
     {
-        std::cerr << "Invalid phase-zero version: " << version << '\n';
+        std::cerr << "Invalid development version: " << version << '\n';
         return 2;
     }
+
+    const auto memory = nexverse::core::system_memory_metrics();
+#if defined(__linux__) || defined(_WIN32)
+    if (memory.total_bytes == 0U ||
+        memory.available_bytes > memory.total_bytes)
+    {
+        std::cerr << "Invalid system memory metrics\n";
+        return 3;
+    }
+#endif
 
     std::cout << product << ' ' << version << " core tests passed\n";
     return 0;

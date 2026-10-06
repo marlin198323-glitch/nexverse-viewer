@@ -3198,6 +3198,27 @@ int Application::run()
             world_renderer->resize(
                 framebuffer_width,
                 framebuffer_height);
+
+            if (simulation_ready)
+            {
+                world::AgentState render_agent;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    render_agent = world_model.agent();
+                }
+
+                const CameraState camera =
+                    camera_from_agent(render_agent);
+                world_renderer->set_camera({
+                    {camera.center.x, camera.center.y, camera.center.z},
+                    {camera.at.x, camera.at.y, camera.at.z},
+                    {camera.left.x, camera.left.y, camera.left.z},
+                    {camera.up.x, camera.up.y, camera.up.z},
+                    60.0f,
+                    0.1f,
+                    camera.far_clip});
+            }
+
             world_renderer->begin_frame();
             if (simulation_ready)
             {

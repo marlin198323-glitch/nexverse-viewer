@@ -9,37 +9,200 @@
 
 #include <glad/glad.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <numbers>
 #include <string>
+#include <string_view>
 
 namespace
 {
+using nexverse::render::RenderCamera;
+using nexverse::render::RenderVec3;
+
 constexpr GLenum gl_gpu_memory_info_total_available_memory_nvx = 0x9048;
 constexpr GLenum gl_gpu_memory_info_current_available_vidmem_nvx = 0x9049;
+
+struct Mat4
+{
+    std::array<float, 16> value{};
+};
+
+float dot(RenderVec3 a, RenderVec3 b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+RenderVec3 cross(RenderVec3 a, RenderVec3 b)
+{
+    return {
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x};
+}
+
+RenderVec3 normalize(RenderVec3 v)
+{
+    const float length = std::sqrt(dot(v, v));
+    if (length <= 0.000001f)
+    {
+        return {};
+    }
+    return {v.x / length, v.y / length, v.z / length};
+}
+
+RenderVec3 add(RenderVec3 a, RenderVec3 b)
+{
+    return {a.x + b.x, a.y + b.y, a.z + b.z};
+}
+
+RenderVec3 scale(RenderVec3 v, float amount)
+{
+    return {v.x * amount, v.y * amount, v.z * amount};
+}
+
+Mat4 identity()
+{
+    Mat4 result;
+    result.value[0] = 1.0f;
+    result.value[5] = 1.0f;
+    result.value[10] = 1.0f;
+    result.value[15] = 1.0f;
+    return result;
+}
+
+Mat4 multiply(const Mat4& a, const Mat4& b)
+{
+    Mat4 result;
+    for (std::size_t column = 0U; column < 4U; ++column)
+    {
+        for (std::size_t row = 0U; row < 4U; ++row)
+        {
+            float sum = 0.0f;
+            for (std::size_t k = 0U; k < 4U; ++k)
+            {
+                sum +=
+                    a.value[k * 4U + row] *
+                    b.value[column * 4U + k];
+            }
+            result.value[column * 4U + row] = sum;
+        }
+    }
+    return result;
+}
+
+Mat4 translation(RenderVec3 position)
+{
+    Mat4 result = identity();
+    result.value[12] = position.x;
+    result.value[13] = position.y;
+    result.value[14] = position.z;
+    return result;
+}
+
+Mat4 rotation_z(float angle)
+{
+    Mat4 result = identity();
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    result.value[0] = c;
+    result.value[1] = s;
+    result.value[4] = -s;
+    result.value[5] = c;
+    return result;
+}
+
+Mat4 rotation_x(float angle)
+{
+    Mat4 result = identity();
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    result.value[5] = c;
+    result.value[6] = s;
+    result.value[9] = -s;
+    result.value[10] = c;
+    return result;
+}
+
+Mat4 perspective(
+    float vertical_fov_degrees,
+    float aspect,
+    float near_clip,
+    float far_clip)
+{
+    const float safe_aspect = std::max(aspect, 0.001f);
+    const float safe_near = std::max(near_clip, 0.001f);
+    const float safe_far = std::max(far_clip, safe_near + 0.001f);
+    const float fov =
+        std::clamp(vertical_fov_degrees, 20.0f, 120.0f) *
+        std::numbers::pi_v<float> / 180.0f;
+    const float f = 1.0f / std::tan(fov * 0.5f);
+
+    Mat4 result;
+    result.value[0] = f / safe_aspect;
+    result.value[5] = f;
+    result.value[10] =
+        (safe_far + safe_near) / (safe_near - safe_far);
+    result.value[11] = -1.0f;
+    result.value[14] =
+        (2.0f * safe_far * safe_near) / (safe_near - safe_far);
+    return result;
+}
+
+Mat4 view_matrix(const RenderCamera& camera)
+{
+    RenderVec3 forward = normalize(camera.forward);
+    RenderVec3 up = normalize(camera.up);
+    if (dot(forward, forward) <= 0.0f)
+    {
+        forward = {1.0f, 0.0f, 0.0f};
+    }
+    if (dot(up, up) <= 0.0f)
+    {
+        up = {0.0f, 0.0f, 1.0f};
+    }
+
+    RenderVec3 right = normalize(cross(forward, up));
+    if (dot(right, right) <= 0.0f)
+    {
+        right = {0.0f, -1.0f, 0.0f};
+    }
+    up = normalize(cross(right, forward));
+
+    Mat4 result = identity();
+    result.value[0] = right.x;
+    result.value[1] = up.x;
+    result.value[2] = -forward.x;
+
+    result.value[4] = right.y;
+    result.value[5] = up.y;
+    result.value[6] = -forward.y;
+
+    result.value[8] = right.z;
+    result.value[9] = up.z;
+    result.value[10] = -forward.z;
+
+    result.value[12] = -dot(right, camera.position);
+    result.value[13] = -dot(up, camera.position);
+    result.value[14] = dot(forward, camera.position);
+    return result;
+}
 
 constexpr const char* vertex_shader_source = R"GLSL(
 #version 330 core
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aColor;
 
-uniform float uAngle;
-uniform float uAspect;
+uniform mat4 uMvp;
 
 out vec3 vColor;
 
 void main()
 {
-    float c = cos(uAngle);
-    float s = sin(uAngle);
-    mat2 rotation = mat2(c, -s, s, c);
-
-    vec2 rotated = rotation * aPosition.xy;
-    rotated.x /= max(uAspect, 0.001);
-
-    gl_Position = vec4(rotated, aPosition.z, 1.0);
+    gl_Position = uMvp * vec4(aPosition, 1.0);
     vColor = aColor;
 }
 )GLSL";
@@ -179,14 +342,29 @@ public:
             return false;
         }
 
-        constexpr std::array<float, 18> vertices{
-             0.00f,  0.38f, 0.0f, 0.05f, 0.85f, 1.00f,
-            -0.38f, -0.32f, 0.0f, 0.65f, 0.15f, 1.00f,
-             0.38f, -0.32f, 0.0f, 1.00f, 0.25f, 0.55f
+        constexpr std::array<float, 48> vertices{
+            -0.75f, -0.75f, -0.75f, 0.05f, 0.85f, 1.00f,
+             0.75f, -0.75f, -0.75f, 0.65f, 0.15f, 1.00f,
+             0.75f,  0.75f, -0.75f, 1.00f, 0.25f, 0.55f,
+            -0.75f,  0.75f, -0.75f, 0.10f, 1.00f, 0.55f,
+            -0.75f, -0.75f,  0.75f, 1.00f, 0.65f, 0.10f,
+             0.75f, -0.75f,  0.75f, 0.20f, 0.55f, 1.00f,
+             0.75f,  0.75f,  0.75f, 1.00f, 0.15f, 0.70f,
+            -0.75f,  0.75f,  0.75f, 0.35f, 0.95f, 1.00f
+        };
+
+        constexpr std::array<std::uint32_t, 36> indices{
+            0U, 1U, 2U, 2U, 3U, 0U,
+            4U, 6U, 5U, 6U, 4U, 7U,
+            0U, 4U, 5U, 5U, 1U, 0U,
+            3U, 2U, 6U, 6U, 7U, 3U,
+            1U, 5U, 6U, 6U, 2U, 1U,
+            0U, 3U, 7U, 7U, 4U, 0U
         };
 
         glGenVertexArrays(1, &vao_);
         glGenBuffers(1, &vbo_);
+        glGenBuffers(1, &ebo_);
 
         glBindVertexArray(vao_);
         glBindBuffer(GL_ARRAY_BUFFER, vbo_);
@@ -194,6 +372,12 @@ public:
             GL_ARRAY_BUFFER,
             static_cast<GLsizeiptr>(sizeof(vertices)),
             vertices.data(),
+            GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(sizeof(indices)),
+            indices.data(),
             GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0U);
@@ -214,8 +398,8 @@ public:
             static_cast<GLsizei>(6U * sizeof(float)),
             reinterpret_cast<void*>(3U * sizeof(float)));
 
-        glBindBuffer(GL_ARRAY_BUFFER, 0U);
         glBindVertexArray(0U);
+        glBindBuffer(GL_ARRAY_BUFFER, 0U);
 
         diagnostics_.backend = "Legacy OpenGL 3.3";
         if (const auto* gpu =
@@ -241,6 +425,25 @@ public:
         height_ = height > 0 ? height : 1;
     }
 
+    void set_camera(const RenderCamera& camera) override
+    {
+        camera_ = camera;
+
+        if (!test_anchor_initialized_)
+        {
+            RenderVec3 forward = normalize(camera_.forward);
+            if (dot(forward, forward) <= 0.0f)
+            {
+                forward = {1.0f, 0.0f, 0.0f};
+            }
+
+            test_anchor_ = add(
+                camera_.position,
+                scale(forward, 6.0f));
+            test_anchor_initialized_ = true;
+        }
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
@@ -254,7 +457,7 @@ public:
 
     void render_test_geometry(double time_seconds) override
     {
-        if (program_ == 0U || vao_ == 0U)
+        if (program_ == 0U || vao_ == 0U || !test_anchor_initialized_)
         {
             return;
         }
@@ -263,19 +466,41 @@ public:
             static_cast<float>(width_) /
             static_cast<float>(height_ > 0 ? height_ : 1);
         const float angle =
-            static_cast<float>(std::fmod(time_seconds * 0.55, 6.283185307179586));
+            static_cast<float>(
+                std::fmod(time_seconds * 0.45, 2.0 * std::numbers::pi));
+
+        const Mat4 projection = perspective(
+            camera_.vertical_fov_degrees,
+            aspect,
+            camera_.near_clip,
+            camera_.far_clip);
+        const Mat4 view = view_matrix(camera_);
+        const Mat4 model = multiply(
+            translation(test_anchor_),
+            multiply(
+                rotation_z(angle),
+                rotation_x(angle * 0.6f)));
+        const Mat4 mvp =
+            multiply(projection, multiply(view, model));
 
         glUseProgram(program_);
-        glUniform1f(glGetUniformLocation(program_, "uAngle"), angle);
-        glUniform1f(glGetUniformLocation(program_, "uAspect"), aspect);
+        glUniformMatrix4fv(
+            glGetUniformLocation(program_, "uMvp"),
+            1,
+            GL_FALSE,
+            mvp.value.data());
 
         glBindVertexArray(vao_);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(
+            GL_TRIANGLES,
+            36,
+            GL_UNSIGNED_INT,
+            nullptr);
         glBindVertexArray(0U);
         glUseProgram(0U);
 
         diagnostics_.draw_calls = 1U;
-        diagnostics_.triangles = 1U;
+        diagnostics_.triangles = 12U;
     }
 
     void end_frame() override
@@ -285,6 +510,11 @@ public:
 
     void shutdown() override
     {
+        if (ebo_ != 0U)
+        {
+            glDeleteBuffers(1, &ebo_);
+            ebo_ = 0U;
+        }
         if (vbo_ != 0U)
         {
             glDeleteBuffers(1, &vbo_);
@@ -341,7 +571,11 @@ private:
     GLuint program_ = 0U;
     GLuint vao_ = 0U;
     GLuint vbo_ = 0U;
+    GLuint ebo_ = 0U;
     bool nvx_memory_info_ = false;
+    bool test_anchor_initialized_ = false;
+    RenderCamera camera_;
+    RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };
 

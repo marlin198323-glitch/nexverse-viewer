@@ -1041,7 +1041,7 @@ Das WorldModel wird ausschließlich durch validierte Protocol-Ereignisse aktuali
 
 ---
 
-## Phase 6 – Fenster, Input und Renderer-Grundlage 🚧 in Arbeit seit 06.10.2026
+## Phase 6 – Fenster, Input und Renderer-Grundlage 🧪 Implementierung vollständig · visueller Echttest ausstehend
 
 Ziel: Erstes echtes Viewer-Fenster.
 
