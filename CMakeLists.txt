@@ -102,6 +102,7 @@ target_link_libraries(nexverse-world PUBLIC NexVerse::Protocol)
 
 add_library(nexverse-render
     src/render/opengl_renderer.cpp
+    src/render/terrain_mesh.cpp
 )
 add_library(NexVerse::Render ALIAS nexverse-render)
 target_include_directories(nexverse-render PUBLIC
@@ -258,6 +259,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-caps-world-events-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-caps-world-events-tests)
     add_test(NAME nexverse-caps-world-events-tests COMMAND nexverse-caps-world-events-tests)
+
+    add_executable(nexverse-terrain-mesh-tests tests/terrain_mesh_tests.cpp)
+    target_link_libraries(nexverse-terrain-mesh-tests PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-terrain-mesh-tests)
+    add_test(NAME nexverse-terrain-mesh-tests COMMAND nexverse-terrain-mesh-tests)
 
     add_test(NAME nexverse-viewer-version COMMAND nexverse-viewer --version)
 endif()

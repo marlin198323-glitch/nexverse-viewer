@@ -33,6 +33,7 @@
 #include <chrono>
 #include <exception>
 #include <future>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -2472,6 +2473,10 @@ int Application::run()
         }
 
         FrameMetrics frame_metrics;
+        std::uint32_t rendered_terrain_generation =
+            std::numeric_limits<std::uint32_t>::max();
+        std::uint32_t rendered_terrain_revision =
+            std::numeric_limits<std::uint32_t>::max();
         auto previous_frame = std::chrono::steady_clock::now();
 
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
@@ -3199,14 +3204,54 @@ int Application::run()
                 framebuffer_width,
                 framebuffer_height);
 
+            world::AgentState render_agent;
+            render::RenderTerrain terrain_update;
+            bool terrain_changed = false;
+
+            {
+                std::scoped_lock lock{world_mutex};
+                render_agent = world_model.agent();
+
+                const world::RegionState& region =
+                    world_model.region();
+                const world::TerrainState& terrain =
+                    world_model.terrain();
+
+                if (region.generation != rendered_terrain_generation ||
+                    terrain.revision != rendered_terrain_revision)
+                {
+                    rendered_terrain_generation = region.generation;
+                    rendered_terrain_revision = terrain.revision;
+
+                    terrain_update.generation = region.generation;
+                    terrain_update.revision = terrain.revision;
+                    terrain_update.width = 256U;
+                    terrain_update.height = 256U;
+                    terrain_update.patch_size = 16U;
+                    terrain_update.water_height = region.water_height;
+                    terrain_update.heights.assign(
+                        terrain.heights.begin(),
+                        terrain.heights.end());
+                    terrain_update.valid_patches.reserve(
+                        terrain.valid_patches.size());
+
+                    for (const bool valid : terrain.valid_patches)
+                    {
+                        terrain_update.valid_patches.push_back(
+                            valid ? 1U : 0U);
+                    }
+
+                    terrain_changed = true;
+                }
+            }
+
+            if (terrain_changed)
+            {
+                world_renderer->set_terrain(terrain_update);
+            }
+
             if (simulation_ready)
             {
-                world::AgentState render_agent;
-                {
-                    std::scoped_lock lock{world_mutex};
-                    render_agent = world_model.agent();
-                }
-
                 const CameraState camera =
                     camera_from_agent(render_agent);
                 world_renderer->set_camera({
@@ -3222,7 +3267,7 @@ int Application::run()
             world_renderer->begin_frame();
             if (simulation_ready)
             {
-                world_renderer->render_test_geometry(glfwGetTime());
+                world_renderer->render_world(glfwGetTime());
             }
             world_renderer->end_frame();
 

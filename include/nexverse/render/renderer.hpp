@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace nexverse::render
 {
@@ -28,6 +29,18 @@ struct RenderCamera
     float far_clip = 256.0f;
 };
 
+struct RenderTerrain
+{
+    std::uint32_t generation = 0U;
+    std::uint32_t revision = 0U;
+    std::uint32_t width = 256U;
+    std::uint32_t height = 256U;
+    std::uint32_t patch_size = 16U;
+    float water_height = 20.0f;
+    std::vector<float> heights;
+    std::vector<std::uint8_t> valid_patches;
+};
+
 struct RenderDiagnostics
 {
     std::string backend;
@@ -46,8 +59,9 @@ public:
     virtual bool initialize(int width, int height) = 0;
     virtual void resize(int width, int height) = 0;
     virtual void set_camera(const RenderCamera& camera) = 0;
+    virtual void set_terrain(const RenderTerrain& terrain) = 0;
     virtual void begin_frame() = 0;
-    virtual void render_test_geometry(double time_seconds) = 0;
+    virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;
     virtual void shutdown() = 0;
 

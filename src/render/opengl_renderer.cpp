@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/terrain_mesh.hpp"
 
 #include "nexverse/core/logger.hpp"
 
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <numbers>
@@ -212,9 +214,11 @@ constexpr const char* fragment_shader_source = R"GLSL(
 in vec3 vColor;
 out vec4 FragColor;
 
+uniform float uAlpha;
+
 void main()
 {
-    FragColor = vec4(vColor, 1.0);
+    FragColor = vec4(vColor, uAlpha);
 }
 )GLSL";
 
@@ -444,6 +448,137 @@ public:
         }
     }
 
+    void set_terrain(const RenderTerrain& terrain) override
+    {
+        if (terrain.generation == terrain_generation_ &&
+            terrain.revision == terrain_revision_)
+        {
+            return;
+        }
+
+        terrain_generation_ = terrain.generation;
+        terrain_revision_ = terrain.revision;
+        terrain_index_count_ = 0U;
+
+        const TerrainMesh mesh = build_terrain_mesh(
+            terrain.heights,
+            terrain.valid_patches,
+            terrain.width,
+            terrain.height,
+            terrain.patch_size);
+
+        if (mesh.vertices.empty() || mesh.indices.empty())
+        {
+            return;
+        }
+
+        if (terrain_vao_ == 0U)
+        {
+            glGenVertexArrays(1, &terrain_vao_);
+            glGenBuffers(1, &terrain_vbo_);
+            glGenBuffers(1, &terrain_ebo_);
+        }
+
+        glBindVertexArray(terrain_vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, terrain_vbo_);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(
+                mesh.vertices.size() * sizeof(TerrainVertex)),
+            mesh.vertices.data(),
+            GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrain_ebo_);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(
+                mesh.indices.size() * sizeof(std::uint32_t)),
+            mesh.indices.data(),
+            GL_DYNAMIC_DRAW);
+
+        glEnableVertexAttribArray(0U);
+        glVertexAttribPointer(
+            0U,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(sizeof(TerrainVertex)),
+            nullptr);
+
+        glEnableVertexAttribArray(1U);
+        glVertexAttribPointer(
+            1U,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(sizeof(TerrainVertex)),
+            reinterpret_cast<void*>(offsetof(TerrainVertex, r)));
+
+        glBindVertexArray(0U);
+        terrain_index_count_ =
+            static_cast<std::uint32_t>(mesh.indices.size());
+
+        if (water_vao_ == 0U)
+        {
+            glGenVertexArrays(1, &water_vao_);
+            glGenBuffers(1, &water_vbo_);
+            glGenBuffers(1, &water_ebo_);
+        }
+
+        const float max_x =
+            static_cast<float>(terrain.width > 0U ? terrain.width - 1U : 0U);
+        const float max_y =
+            static_cast<float>(terrain.height > 0U ? terrain.height - 1U : 0U);
+        const float z = terrain.water_height;
+
+        const std::array<TerrainVertex, 4> water_vertices{{
+            {0.0f, 0.0f, z, 0.05f, 0.38f, 0.68f},
+            {max_x, 0.0f, z, 0.05f, 0.38f, 0.68f},
+            {max_x, max_y, z, 0.08f, 0.48f, 0.78f},
+            {0.0f, max_y, z, 0.08f, 0.48f, 0.78f}
+        }};
+        constexpr std::array<std::uint32_t, 6> water_indices{
+            0U, 1U, 2U, 0U, 2U, 3U
+        };
+
+        glBindVertexArray(water_vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, water_vbo_);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(sizeof(water_vertices)),
+            water_vertices.data(),
+            GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, water_ebo_);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(sizeof(water_indices)),
+            water_indices.data(),
+            GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0U);
+        glVertexAttribPointer(
+            0U,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(sizeof(TerrainVertex)),
+            nullptr);
+        glEnableVertexAttribArray(1U);
+        glVertexAttribPointer(
+            1U,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            static_cast<GLsizei>(sizeof(TerrainVertex)),
+            reinterpret_cast<void*>(offsetof(TerrainVertex, r)));
+
+        glBindVertexArray(0U);
+
+        core::info(
+            "OGLRender terrain mesh updated; triangles=" +
+            std::to_string(terrain_index_count_ / 3U));
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
@@ -455,9 +590,9 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    void render_test_geometry(double time_seconds) override
+    void render_world(double time_seconds) override
     {
-        if (program_ == 0U || vao_ == 0U || !test_anchor_initialized_)
+        if (program_ == 0U)
         {
             return;
         }
@@ -465,9 +600,6 @@ public:
         const float aspect =
             static_cast<float>(width_) /
             static_cast<float>(height_ > 0 ? height_ : 1);
-        const float angle =
-            static_cast<float>(
-                std::fmod(time_seconds * 0.45, 2.0 * std::numbers::pi));
 
         const Mat4 projection = perspective(
             camera_.vertical_fov_degrees,
@@ -475,6 +607,77 @@ public:
             camera_.near_clip,
             camera_.far_clip);
         const Mat4 view = view_matrix(camera_);
+
+        glUseProgram(program_);
+        glUniform1f(
+            glGetUniformLocation(program_, "uAlpha"),
+            1.0f);
+
+        if (terrain_index_count_ > 0U && terrain_vao_ != 0U)
+        {
+            const Mat4 mvp = multiply(projection, view);
+            glUniformMatrix4fv(
+                glGetUniformLocation(program_, "uMvp"),
+                1,
+                GL_FALSE,
+                mvp.value.data());
+
+            glBindVertexArray(terrain_vao_);
+            glDrawElements(
+                GL_TRIANGLES,
+                static_cast<GLsizei>(terrain_index_count_),
+                GL_UNSIGNED_INT,
+                nullptr);
+
+            diagnostics_.draw_calls += 1U;
+            diagnostics_.triangles += terrain_index_count_ / 3U;
+
+            if (water_vao_ != 0U)
+            {
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glDepthMask(GL_FALSE);
+
+                glUniform1f(
+                    glGetUniformLocation(program_, "uAlpha"),
+                    0.32f);
+
+                glBindVertexArray(water_vao_);
+                glDrawElements(
+                    GL_TRIANGLES,
+                    6,
+                    GL_UNSIGNED_INT,
+                    nullptr);
+                diagnostics_.draw_calls += 1U;
+                diagnostics_.triangles += 2U;
+
+                glDepthMask(GL_TRUE);
+                glUniform1f(
+                    glGetUniformLocation(program_, "uAlpha"),
+                    1.0f);
+
+                glLineWidth(2.0f);
+                glDrawArrays(GL_LINE_LOOP, 0, 4);
+                diagnostics_.draw_calls += 1U;
+
+                glDisable(GL_BLEND);
+            }
+
+            glBindVertexArray(0U);
+            glUseProgram(0U);
+            return;
+        }
+
+        if (vao_ == 0U || !test_anchor_initialized_)
+        {
+            glUseProgram(0U);
+            return;
+        }
+
+        const float angle =
+            static_cast<float>(
+                std::fmod(time_seconds * 0.45, 2.0 * std::numbers::pi));
+
         const Mat4 model = multiply(
             translation(test_anchor_),
             multiply(
@@ -483,7 +686,6 @@ public:
         const Mat4 mvp =
             multiply(projection, multiply(view, model));
 
-        glUseProgram(program_);
         glUniformMatrix4fv(
             glGetUniformLocation(program_, "uMvp"),
             1,
@@ -510,6 +712,37 @@ public:
 
     void shutdown() override
     {
+        if (terrain_ebo_ != 0U)
+        {
+            glDeleteBuffers(1, &terrain_ebo_);
+            terrain_ebo_ = 0U;
+        }
+        if (terrain_vbo_ != 0U)
+        {
+            glDeleteBuffers(1, &terrain_vbo_);
+            terrain_vbo_ = 0U;
+        }
+        if (terrain_vao_ != 0U)
+        {
+            glDeleteVertexArrays(1, &terrain_vao_);
+            terrain_vao_ = 0U;
+        }
+        if (water_ebo_ != 0U)
+        {
+            glDeleteBuffers(1, &water_ebo_);
+            water_ebo_ = 0U;
+        }
+        if (water_vbo_ != 0U)
+        {
+            glDeleteBuffers(1, &water_vbo_);
+            water_vbo_ = 0U;
+        }
+        if (water_vao_ != 0U)
+        {
+            glDeleteVertexArrays(1, &water_vao_);
+            water_vao_ = 0U;
+        }
+
         if (ebo_ != 0U)
         {
             glDeleteBuffers(1, &ebo_);
@@ -572,6 +805,18 @@ private:
     GLuint vao_ = 0U;
     GLuint vbo_ = 0U;
     GLuint ebo_ = 0U;
+
+    GLuint terrain_vao_ = 0U;
+    GLuint terrain_vbo_ = 0U;
+    GLuint terrain_ebo_ = 0U;
+    std::uint32_t terrain_index_count_ = 0U;
+    std::uint32_t terrain_generation_ = 0U;
+    std::uint32_t terrain_revision_ = 0U;
+
+    GLuint water_vao_ = 0U;
+    GLuint water_vbo_ = 0U;
+    GLuint water_ebo_ = 0U;
+
     bool nvx_memory_info_ = false;
     bool test_anchor_initialized_ = false;
     RenderCamera camera_;

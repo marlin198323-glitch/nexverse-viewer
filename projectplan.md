@@ -1068,7 +1068,7 @@ Erste Darstellung:
 
 ---
 
-## Phase 7 – Region und Terrain
+## Phase 7 – Region und Terrain 🚧 in Arbeit seit 06.10.2026
 
 Ziel: Eine echte OpenSim-Region darstellen.
 
