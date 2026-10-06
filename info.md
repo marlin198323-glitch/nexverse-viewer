@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.12`.
+Aktuelle Viewer-Version: `0.2.0-alpha.13`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -397,6 +397,16 @@ Phase 6 gestartet:
 - Kamerazentrum folgt der autoritativen Agentposition
 - aktueller Phase-6-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.12`
 - kompletter Debug-Build: 15/15 Tests grün
+- eigenständiges `NexVerse::Render`-Modul mit backend-neutralem `Renderer`-Interface angelegt
+- erstes Legacy-Backend: OpenGL 3.3, getrennt von UI und Protocol
+- Backend übernimmt Viewport/Clear und rendert sichtbare rotierende RGB-Testgeometrie
+- UI malt bei `simulation_ready` nur noch als Overlay über den Welt-Renderer; Login/Ladezustände behalten den NexVerse-Hintergrund
+- Renderer-Diagnose liefert Backend, GPU, Draw Calls und Triangle Count
+- NVIDIA-VRAM wird optional über `GL_NVX_gpu_memory_info` gelesen; bei nicht unterstützten GPUs bleibt VRAM sauber `n/a`
+- System-RAM-Diagnose ergänzt
+- Debug-Overlay zeigt FPS, Framezeit, Draw Calls, Triangles, RAM und VRAM
+- aktueller Phase-6-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.13`
+- kompletter Debug-Build nach Renderer-Interface-/Diagnoseblock: 15/15 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

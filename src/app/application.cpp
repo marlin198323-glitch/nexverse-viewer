@@ -7,6 +7,7 @@
 #include "nexverse/app/application.hpp"
 
 #include "nexverse/core/logger.hpp"
+#include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
@@ -17,6 +18,7 @@
 #include "nexverse/protocol/login.hpp"
 #include "nexverse/protocol/packet_dispatcher.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/world/world_model.hpp"
@@ -719,6 +721,8 @@ void render_shell(
     const SimulationLoadStats& load_stats,
     const CapsRuntimeState& caps,
     const FrameMetrics& frame_metrics,
+    const nexverse::render::RenderDiagnostics& render_diagnostics,
+    const nexverse::core::SystemMemoryMetrics& memory_metrics,
     bool simulation_ready,
     unsigned int welcome_texture)
 {
@@ -738,7 +742,16 @@ void render_shell(
                 : theme::warning;
 
     renderer.resize(width, height);
-    renderer.rect(0.0f, 0.0f, w, h, Color{0.008f, 0.018f, 0.035f, 1.0f}, 0.0f);
+    if (!simulation_ready)
+    {
+        renderer.rect(
+            0.0f,
+            0.0f,
+            w,
+            h,
+            Color{0.008f, 0.018f, 0.035f, 1.0f},
+            0.0f);
+    }
 
     const float top_h = 86.0f * scale;
     const float left_w = 252.0f * scale;
@@ -1547,10 +1560,44 @@ void render_shell(
             "FPS " + std::to_string(static_cast<int>(std::round(frame_metrics.fps))) +
             "  |  Frame " +
             std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
-            " ms";
+            " ms  |  Draw " +
+            std::to_string(render_diagnostics.draw_calls) +
+            "  |  Tri " +
+            std::to_string(render_diagnostics.triangles);
+
+        const auto to_mib = [](std::uint64_t bytes)
+        {
+            return bytes / (1024U * 1024U);
+        };
+
+        const std::uint64_t ram_used =
+            memory_metrics.total_bytes >= memory_metrics.available_bytes
+                ? memory_metrics.total_bytes - memory_metrics.available_bytes
+                : 0U;
+
+        const std::string vram_text =
+            render_diagnostics.vram_total_bytes > 0U
+                ? std::to_string(to_mib(
+                      render_diagnostics.vram_total_bytes -
+                      std::min(
+                          render_diagnostics.vram_total_bytes,
+                          render_diagnostics.vram_available_bytes))) +
+                      "/" +
+                      std::to_string(to_mib(render_diagnostics.vram_total_bytes)) +
+                      " MiB"
+                : "n/a";
+
+        const std::string memory_line =
+            "RAM " + std::to_string(to_mib(ram_used)) +
+            "/" + std::to_string(to_mib(memory_metrics.total_bytes)) +
+            " MiB  |  VRAM " + vram_text +
+            "  |  " + render_diagnostics.backend;
 
         const float debug_w =
-            renderer.text_width(9.5f * scale, debug_line) + 24.0f * scale;
+            std::max(
+                renderer.text_width(9.5f * scale, debug_line),
+                renderer.text_width(9.0f * scale, memory_line)) +
+            24.0f * scale;
         const float debug_x = w - debug_w - 18.0f * scale;
         const float debug_y = top_h + 12.0f * scale;
 
@@ -1558,15 +1605,21 @@ void render_shell(
             debug_x,
             debug_y,
             debug_w,
-            34.0f * scale,
+            52.0f * scale,
             Color{0.010f, 0.025f, 0.045f, 0.88f},
             8.0f * scale);
         renderer.text(
             debug_x + 12.0f * scale,
-            debug_y + 9.0f * scale,
+            debug_y + 7.0f * scale,
             9.5f * scale,
             debug_line,
             theme::cyan);
+        renderer.text(
+            debug_x + 12.0f * scale,
+            debug_y + 27.0f * scale,
+            9.0f * scale,
+            memory_line,
+            theme::text_muted);
     }
 }
 
@@ -2377,12 +2430,23 @@ int Application::run()
     bool caps_started = false;
 
     {
-        ui::UiRenderer renderer;
-        if (!renderer.initialize(window_width, window_height))
+        auto world_renderer = render::create_legacy_opengl_renderer();
+        if (!world_renderer ||
+            !world_renderer->initialize(window_width, window_height))
         {
+            core::error("OGLRender legacy backend initialization failed");
             glfwDestroyWindow(window);
             glfwTerminate();
             return 13;
+        }
+
+        ui::UiRenderer renderer;
+        if (!renderer.initialize(window_width, window_height))
+        {
+            world_renderer->shutdown();
+            glfwDestroyWindow(window);
+            glfwTerminate();
+            return 14;
         }
 
         ui::WelcomePage welcome_page;
@@ -3131,13 +3195,20 @@ int Application::run()
                     welcome_frame.status);
             }
 
-            glViewport(0, 0, framebuffer_width, framebuffer_height);
-            glClearColor(
-                ui::theme::background.r,
-                ui::theme::background.g,
-                ui::theme::background.b,
-                ui::theme::background.a);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            world_renderer->resize(
+                framebuffer_width,
+                framebuffer_height);
+            world_renderer->begin_frame();
+            if (simulation_ready)
+            {
+                world_renderer->render_test_geometry(glfwGetTime());
+            }
+            world_renderer->end_frame();
+
+            const render::RenderDiagnostics render_diagnostics =
+                world_renderer->diagnostics();
+            const core::SystemMemoryMetrics memory_metrics =
+                core::system_memory_metrics();
 
             double mouse_x = 0.0;
             double mouse_y = 0.0;
@@ -3169,6 +3240,8 @@ int Application::run()
                 load_stats,
                 caps_snapshot,
                 frame_metrics,
+                render_diagnostics,
+                memory_metrics,
                 simulation_ready,
                 welcome_texture);
 
@@ -3176,6 +3249,7 @@ int Application::run()
         }
 
         renderer.destroy_texture(welcome_texture);
+        world_renderer->shutdown();
     }
 
     circuit_stop.store(true);

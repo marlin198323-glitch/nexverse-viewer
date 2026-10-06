@@ -43,6 +43,7 @@ endif()
 
 add_library(nexverse-core
     src/core/logger.cpp
+    src/core/system_metrics.cpp
     src/core/version.cpp
 )
 add_library(NexVerse::Core ALIAS nexverse-core)
@@ -99,6 +100,22 @@ target_include_directories(nexverse-world PUBLIC
 )
 target_link_libraries(nexverse-world PUBLIC NexVerse::Protocol)
 
+add_library(nexverse-render
+    src/render/opengl_renderer.cpp
+)
+add_library(NexVerse::Render ALIAS nexverse-render)
+target_include_directories(nexverse-render PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(nexverse-render PUBLIC
+    NexVerse::Core
+    NexVerse::World
+    OpenGL::GL
+    glad::glad
+)
+target_compile_definitions(nexverse-render PUBLIC GLFW_INCLUDE_NONE)
+
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
     src/ui/welcome_page.cpp
@@ -115,6 +132,7 @@ target_link_libraries(nexverse-ui PUBLIC
     NexVerse::Core
     NexVerse::Protocol
     NexVerse::World
+    NexVerse::Render
     OpenGL::GL
     glfw
     glad::glad
@@ -157,6 +175,7 @@ nexverse_enable_warnings(nexverse-core)
 nexverse_enable_warnings(nexverse-net)
 nexverse_enable_warnings(nexverse-protocol)
 nexverse_enable_warnings(nexverse-world)
+nexverse_enable_warnings(nexverse-render)
 nexverse_enable_warnings(nexverse-ui)
 
 add_executable(nexverse-viewer apps/viewer/main.cpp)
