@@ -218,7 +218,66 @@ uniform float uAlpha;
 
 void main()
 {
-    FragColor = vec4(vColor, uAlpha);
+    vec3 horizon = vec3(0.40, 0.56, 0.78);
+    float fog = smoothstep(0.90, 1.0, gl_FragCoord.z);
+    vec3 color = mix(vColor, horizon, fog * 0.55);
+    FragColor = vec4(color, uAlpha);
+}
+)GLSL";
+
+constexpr const char* sky_vertex_shader_source = R"GLSL(
+#version 330 core
+out vec2 vUv;
+
+void main()
+{
+    vec2 p;
+    if (gl_VertexID == 0)
+    {
+        p = vec2(-1.0, -1.0);
+    }
+    else if (gl_VertexID == 1)
+    {
+        p = vec2(3.0, -1.0);
+    }
+    else
+    {
+        p = vec2(-1.0, 3.0);
+    }
+
+    vUv = p * 0.5 + 0.5;
+    gl_Position = vec4(p, 0.0, 1.0);
+}
+)GLSL";
+
+constexpr const char* sky_fragment_shader_source = R"GLSL(
+#version 330 core
+in vec2 vUv;
+out vec4 FragColor;
+
+uniform float uTime;
+
+void main()
+{
+    float y = clamp(vUv.y, 0.0, 1.0);
+
+    vec3 horizon = vec3(0.42, 0.58, 0.82);
+    vec3 zenith = vec3(0.08, 0.18, 0.38);
+    vec3 sky = mix(horizon, zenith, pow(y, 0.72));
+
+    vec2 sunPos = vec2(0.76, 0.72);
+    float sunDist = distance(vUv, sunPos);
+    float sun = 1.0 - smoothstep(0.018, 0.070, sunDist);
+    vec3 sunColor = vec3(1.00, 0.84, 0.55);
+
+    float glow = 1.0 - smoothstep(0.05, 0.24, sunDist);
+    sky += sunColor * sun * 0.85;
+    sky += sunColor * glow * 0.10;
+
+    float subtle = 0.008 * sin(uTime * 0.08);
+    sky += vec3(subtle);
+
+    FragColor = vec4(sky, 1.0);
 }
 )GLSL";
 
@@ -269,16 +328,19 @@ GLuint compile_shader(GLenum type, const char* source)
     return shader;
 }
 
-GLuint create_program()
+GLuint create_program_from(
+    const char* vertex_source,
+    const char* fragment_source)
 {
-    const GLuint vertex = compile_shader(GL_VERTEX_SHADER, vertex_shader_source);
+    const GLuint vertex =
+        compile_shader(GL_VERTEX_SHADER, vertex_source);
     if (vertex == 0U)
     {
         return 0U;
     }
 
     const GLuint fragment =
-        compile_shader(GL_FRAGMENT_SHADER, fragment_shader_source);
+        compile_shader(GL_FRAGMENT_SHADER, fragment_source);
     if (fragment == 0U)
     {
         glDeleteShader(vertex);
@@ -304,6 +366,20 @@ GLuint create_program()
     }
 
     return program;
+}
+
+GLuint create_program()
+{
+    return create_program_from(
+        vertex_shader_source,
+        fragment_shader_source);
+}
+
+GLuint create_sky_program()
+{
+    return create_program_from(
+        sky_vertex_shader_source,
+        sky_fragment_shader_source);
 }
 
 bool has_extension(std::string_view name)
@@ -341,10 +417,13 @@ public:
         height_ = height > 0 ? height : 1;
 
         program_ = create_program();
-        if (program_ == 0U)
+        sky_program_ = create_sky_program();
+        if (program_ == 0U || sky_program_ == 0U)
         {
             return false;
         }
+
+        glGenVertexArrays(1, &sky_vao_);
 
         constexpr std::array<float, 48> vertices{
             -0.75f, -0.75f, -0.75f, 0.05f, 0.85f, 1.00f,
@@ -592,10 +671,24 @@ public:
 
     void render_world(double time_seconds) override
     {
-        if (program_ == 0U)
+        if (program_ == 0U || sky_program_ == 0U)
         {
             return;
         }
+
+        glDisable(GL_DEPTH_TEST);
+        glUseProgram(sky_program_);
+        glUniform1f(
+            glGetUniformLocation(sky_program_, "uTime"),
+            static_cast<float>(time_seconds));
+        glBindVertexArray(sky_vao_);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(0U);
+        glUseProgram(0U);
+        glEnable(GL_DEPTH_TEST);
+
+        diagnostics_.draw_calls += 1U;
+        diagnostics_.triangles += 1U;
 
         const float aspect =
             static_cast<float>(width_) /
@@ -758,6 +851,16 @@ public:
             glDeleteVertexArrays(1, &vao_);
             vao_ = 0U;
         }
+        if (sky_vao_ != 0U)
+        {
+            glDeleteVertexArrays(1, &sky_vao_);
+            sky_vao_ = 0U;
+        }
+        if (sky_program_ != 0U)
+        {
+            glDeleteProgram(sky_program_);
+            sky_program_ = 0U;
+        }
         if (program_ != 0U)
         {
             glDeleteProgram(program_);
@@ -802,6 +905,8 @@ private:
     int width_ = 1;
     int height_ = 1;
     GLuint program_ = 0U;
+    GLuint sky_program_ = 0U;
+    GLuint sky_vao_ = 0U;
     GLuint vao_ = 0U;
     GLuint vbo_ = 0U;
     GLuint ebo_ = 0U;

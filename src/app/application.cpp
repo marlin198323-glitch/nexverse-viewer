@@ -158,6 +158,53 @@ CameraState camera_from_agent(const nexverse::world::AgentState& agent)
     return camera;
 }
 
+CameraState render_camera_from_agent(
+    const nexverse::world::AgentState& agent)
+{
+    CameraState camera;
+
+    const auto forward =
+        rotate_vector(agent.rotation, {1.0f, 0.0f, 0.0f});
+
+    const nexverse::protocol::Vec3 target{
+        agent.position.x,
+        agent.position.y,
+        agent.position.z + 1.45f};
+
+    camera.center = {
+        target.x - forward.x * 8.0f,
+        target.y - forward.y * 8.0f,
+        target.z + 4.2f};
+
+    const nexverse::protocol::Vec3 delta{
+        target.x - camera.center.x,
+        target.y - camera.center.y,
+        target.z - camera.center.z};
+
+    const float length = std::sqrt(
+        delta.x * delta.x +
+        delta.y * delta.y +
+        delta.z * delta.z);
+
+    if (length > 0.0001f)
+    {
+        camera.at = {
+            delta.x / length,
+            delta.y / length,
+            delta.z / length};
+    }
+    else
+    {
+        camera.at = forward;
+    }
+
+    camera.left =
+        rotate_vector(agent.rotation, {0.0f, 1.0f, 0.0f});
+    camera.up = {0.0f, 0.0f, 1.0f};
+    camera.far_clip = 512.0f;
+    return camera;
+}
+
 struct LoginUiState
 {
     LoginField focused = LoginField::username;
@@ -3878,7 +3925,7 @@ int Application::run()
             if (simulation_ready)
             {
                 const CameraState camera =
-                    camera_from_agent(render_agent);
+                    render_camera_from_agent(render_agent);
                 world_renderer->set_camera({
                     {camera.center.x, camera.center.y, camera.center.z},
                     {camera.at.x, camera.at.y, camera.at.z},
