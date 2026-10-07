@@ -556,9 +556,14 @@ std::optional<ObjectUpdateMessage> decode_object_update(
 
         if (!object.texture_entry.empty())
         {
-            object.default_texture =
-                parse_texture_entry_default(
+            object.parsed_texture_entry =
+                parse_texture_entry(
                     object.texture_entry);
+            if (object.parsed_texture_entry.has_value())
+            {
+                object.default_texture =
+                    object.parsed_texture_entry->default_face;
+            }
         }
 
         if (!skip_variable1(payload, offset) ||

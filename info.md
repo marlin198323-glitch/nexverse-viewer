@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.32`.
+Aktuelle Viewer-Version: `0.2.0-alpha.33`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -608,6 +608,17 @@ Phase 7 gestartet:
 - bei fehlgeschlagenem Assetdownload bleibt automatisch das vorhandene Default-Farbmaterial sichtbar
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.32`
 - kompletter Debug-Build nach ObjectTexture-/GetTexture-/GPU-Block: 19/19 Tests grün
+- `0.2.0-alpha.33`: `TextureEntry` wird jetzt vollständig mit Face-Bitmasken dekodiert statt Override-Sektionen nur zu überspringen
+- jede Property-Sektion (Texture UUID, Farbe, Repeat, Offset, Rotation, Material, Media, Glow, Material-/RenderMaterial-UUID) kann gezielt einzelne Faces überschreiben
+- per-Face-Zustände werden erst nach vollständigem Parse aus dem kompletten Default-Face abgeleitet, damit nicht überschriebene Eigenschaften korrekt geerbt werden
+- `TextureEntry::face(index)` liefert transparent Default oder Face-Override
+- Full-`ObjectUpdate` parst TextureEntry einmalig und hält den vollständigen Zustand im WorldModel
+- bestehender `default_texture`-Pfad bleibt API-kompatibel
+- Compressed-/Terse-Updates können den zuletzt bekannten vollständigen Face-Materialzustand weitertragen
+- Face-Bitfield-Lesung ist auf 64 Faces und maximal 10 Varint-Bytes bounds-geprüft
+- Regressionstest prüft getrennte Texture-/Color-/Glow-Overrides auf Face 0/1/2 inklusive korrekter Default-Vererbung
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.33`
+- kompletter Debug-Build nach vollständigem TextureEntry-Face-Parser: 19/19 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

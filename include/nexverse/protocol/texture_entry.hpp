@@ -28,6 +28,27 @@ struct TextureEntryDefaultFace
     std::string render_material_id;
 };
 
+struct TextureEntry
+{
+    TextureEntryDefaultFace default_face;
+    std::array<std::optional<TextureEntryDefaultFace>, 64> face_overrides;
+
+    [[nodiscard]] const TextureEntryDefaultFace& face(
+        std::size_t index) const noexcept
+    {
+        if (index < face_overrides.size() &&
+            face_overrides[index].has_value())
+        {
+            return *face_overrides[index];
+        }
+        return default_face;
+    }
+};
+
+[[nodiscard]] std::optional<TextureEntry>
+parse_texture_entry(
+    std::span<const std::uint8_t> bytes);
+
 [[nodiscard]] std::optional<TextureEntryDefaultFace>
 parse_texture_entry_default(
     std::span<const std::uint8_t> bytes);

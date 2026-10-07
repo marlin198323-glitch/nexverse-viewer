@@ -2830,6 +2830,8 @@ int Application::run()
                 object.scale = entry.scale;
                 object.shape = entry.shape;
                 object.texture_entry = entry.texture_entry;
+                object.parsed_texture_entry =
+                    entry.parsed_texture_entry;
                 object.default_texture = entry.default_texture;
                 world_model.upsert_object(std::move(object));
             }

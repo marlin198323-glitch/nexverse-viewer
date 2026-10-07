@@ -184,6 +184,7 @@ struct ObjectUpdateEntry
     Vec3 scale{1.0f, 1.0f, 1.0f};
     PrimitiveShapeData shape;
     std::vector<std::uint8_t> texture_entry;
+    std::optional<TextureEntry> parsed_texture_entry;
     std::optional<TextureEntryDefaultFace> default_texture;
 
     [[nodiscard]] bool is_avatar() const noexcept

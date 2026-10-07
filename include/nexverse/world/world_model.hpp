@@ -88,6 +88,7 @@ struct ObjectState
     Vec3 scale{1.0f, 1.0f, 1.0f};
     protocol::PrimitiveShapeData shape;
     std::vector<std::uint8_t> texture_entry;
+    std::optional<protocol::TextureEntry> parsed_texture_entry;
     std::optional<protocol::TextureEntryDefaultFace> default_texture;
 };
 
