@@ -1381,6 +1381,7 @@ uniform float uPrimTwistEnd;
 
 out vec3 vColor;
 out vec2 vWorldXY;
+out vec3 vObjectLocal;
 out float vMaterial;
 
 void main()
@@ -1419,6 +1420,7 @@ void main()
     gl_Position = uMvp * vec4(localPosition, 1.0);
     vColor = aColor;
     vWorldXY = localPosition.xy;
+    vObjectLocal = localPosition;
     vMaterial = aMaterial;
 }
 )GLSL";
@@ -1427,6 +1429,7 @@ constexpr const char* fragment_shader_source = R"GLSL(
 #version 330 core
 in vec3 vColor;
 in vec2 vWorldXY;
+in vec3 vObjectLocal;
 in float vMaterial;
 out vec4 FragColor;
 
@@ -1435,11 +1438,47 @@ uniform bool uUseTerrainTextures;
 uniform bool uOverrideColor;
 uniform vec3 uOverrideColorValue;
 uniform float uObjectGlow;
+uniform bool uObjectFullbright;
+uniform bool uUseObjectTexture;
+uniform vec2 uObjectRepeat;
+uniform vec2 uObjectOffset;
+uniform float uObjectRotation;
+uniform sampler2D uObjectTexture;
 uniform vec3 uFogHorizon;
 uniform sampler2D uTerrain0;
 uniform sampler2D uTerrain1;
 uniform sampler2D uTerrain2;
 uniform sampler2D uTerrain3;
+
+vec2 objectProjectedUv()
+{
+    vec3 dx = dFdx(vObjectLocal);
+    vec3 dy = dFdy(vObjectLocal);
+    vec3 normal = abs(normalize(cross(dx, dy)));
+
+    vec2 uv;
+    if (normal.z >= normal.x && normal.z >= normal.y)
+    {
+        uv = vObjectLocal.xy + vec2(0.5);
+    }
+    else if (normal.x >= normal.y)
+    {
+        uv = vObjectLocal.yz + vec2(0.5);
+    }
+    else
+    {
+        uv = vObjectLocal.xz + vec2(0.5);
+    }
+
+    uv *= uObjectRepeat;
+
+    float c = cos(uObjectRotation);
+    float s = sin(uObjectRotation);
+    vec2 centered = uv - vec2(0.5);
+    uv = mat2(c, -s, s, c) * centered + vec2(0.5);
+    uv += uObjectOffset;
+    return uv;
+}
 
 vec3 terrainTextureColor(vec2 uv, float material)
 {
@@ -1471,6 +1510,8 @@ vec3 terrainTextureColor(vec2 uv, float material)
 void main()
 {
     vec3 base = vColor;
+    float alpha = uAlpha;
+
     if (uUseTerrainTextures)
     {
         vec2 uv = vWorldXY / 12.0;
@@ -1481,12 +1522,24 @@ void main()
     if (uOverrideColor)
     {
         base = uOverrideColorValue;
+
+        if (uUseObjectTexture)
+        {
+            vec4 texel = texture(
+                uObjectTexture,
+                objectProjectedUv());
+            base *= texel.rgb;
+            alpha *= texel.a;
+        }
+
         base += vec3(clamp(uObjectGlow, 0.0, 1.0) * 0.35);
     }
 
-    float fog = smoothstep(0.90, 1.0, gl_FragCoord.z);
+    float fog = uObjectFullbright
+        ? 0.0
+        : smoothstep(0.90, 1.0, gl_FragCoord.z);
     vec3 color = mix(base, uFogHorizon, fog * 0.55);
-    FragColor = vec4(color, uAlpha);
+    FragColor = vec4(color, alpha);
 }
 )GLSL";
 
@@ -2053,6 +2106,76 @@ public:
         }
     }
 
+    void set_object_texture(
+        const std::string& texture_id,
+        const RenderImageRgba8& image) override
+    {
+        if (texture_id.empty() || !image.valid())
+        {
+            return;
+        }
+
+        constexpr std::size_t max_object_textures = 512U;
+
+        auto found = object_textures_.find(texture_id);
+        if (found == object_textures_.end() &&
+            object_textures_.size() >= max_object_textures)
+        {
+            return;
+        }
+
+        GLuint texture = 0U;
+        if (found != object_textures_.end())
+        {
+            texture = found->second;
+        }
+        else
+        {
+            glGenTextures(1, &texture);
+            if (texture == 0U)
+            {
+                return;
+            }
+            object_textures_.emplace(texture_id, texture);
+        }
+
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_S,
+            GL_REPEAT);
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_T,
+            GL_REPEAT);
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MIN_FILTER,
+            GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MAG_FILTER,
+            GL_LINEAR);
+
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA8,
+            static_cast<GLsizei>(image.width),
+            static_cast<GLsizei>(image.height),
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            image.pixels.data());
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, 0U);
+        glActiveTexture(GL_TEXTURE0);
+    }
+
     void set_environment(
         const RenderEnvironment& environment) override
     {
@@ -2399,6 +2522,55 @@ public:
                             0.0f,
                             1.0f)
                         : 0.0f);
+                glUniform1i(
+                    glGetUniformLocation(
+                        program_,
+                        "uObjectFullbright"),
+                    object.fullbright ? GL_TRUE : GL_FALSE);
+
+                bool use_object_texture = false;
+                if (has_texture_entry)
+                {
+                    const auto found_texture =
+                        object_textures_.find(object.texture_id);
+                    if (found_texture != object_textures_.end() &&
+                        found_texture->second != 0U)
+                    {
+                        glActiveTexture(GL_TEXTURE4);
+                        glBindTexture(
+                            GL_TEXTURE_2D,
+                            found_texture->second);
+                        glUniform1i(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectTexture"),
+                            4);
+                        glUniform2f(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectRepeat"),
+                            object.repeat_u,
+                            object.repeat_v);
+                        glUniform2f(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectOffset"),
+                            object.offset_u,
+                            object.offset_v);
+                        glUniform1f(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectRotation"),
+                            object.texture_rotation);
+                        use_object_texture = true;
+                    }
+                }
+
+                glUniform1i(
+                    glGetUniformLocation(
+                        program_,
+                        "uUseObjectTexture"),
+                    use_object_texture ? GL_TRUE : GL_FALSE);
                 glUniform1f(
                     glGetUniformLocation(
                         program_,
@@ -2406,7 +2578,8 @@ public:
                     alpha);
 
                 const bool transparent =
-                    alpha < 0.999f;
+                    alpha < 0.999f ||
+                    use_object_texture;
 
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
@@ -2490,6 +2663,13 @@ public:
                     glDepthMask(GL_TRUE);
                     glDisable(GL_BLEND);
                 }
+
+                if (use_object_texture)
+                {
+                    glActiveTexture(GL_TEXTURE4);
+                    glBindTexture(GL_TEXTURE_2D, 0U);
+                    glActiveTexture(GL_TEXTURE0);
+                }
             }
 
             glUniform1f(
@@ -2498,6 +2678,12 @@ public:
             glUniform1f(
                 glGetUniformLocation(program_, "uObjectGlow"),
                 0.0f);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectFullbright"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseObjectTexture"),
+                GL_FALSE);
             glBindVertexArray(0U);
             glUniform1i(
                 glGetUniformLocation(program_, "uUsePrimDeform"),
@@ -2575,6 +2761,16 @@ public:
             destroy_mesh(mesh);
         }
         curved_sweep_mesh_cache_.clear();
+
+        for (auto& [id, texture] : object_textures_)
+        {
+            (void)id;
+            if (texture != 0U)
+            {
+                glDeleteTextures(1, &texture);
+            }
+        }
+        object_textures_.clear();
 
         if (terrain_textures_[0] != 0U)
         {
@@ -2894,6 +3090,7 @@ private:
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
+    std::unordered_map<std::string, GLuint> object_textures_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };

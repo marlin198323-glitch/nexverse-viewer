@@ -41,6 +41,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 namespace
@@ -3213,6 +3214,13 @@ int Application::run()
     std::uint32_t terrain_texture_request_material_revision =
         std::numeric_limits<std::uint32_t>::max();
 
+    std::future<assets::TextureAssetResult> object_texture_future;
+    bool object_texture_loading = false;
+    std::string object_texture_loading_id;
+    std::unordered_set<std::string> object_texture_loaded_ids;
+    std::unordered_set<std::string> object_texture_failed_ids;
+    std::vector<std::string> scene_texture_ids;
+
     {
         auto world_renderer = render::create_legacy_opengl_renderer();
         if (!world_renderer ||
@@ -3268,6 +3276,7 @@ int Application::run()
             std::numeric_limits<std::uint32_t>::max();
         std::uint32_t rendered_object_revision =
             std::numeric_limits<std::uint32_t>::max();
+        constexpr std::size_t max_object_texture_assets = 512U;
         auto previous_frame = std::chrono::steady_clock::now();
         auto next_environment_resample = previous_frame;
 
@@ -4167,6 +4176,7 @@ int Application::run()
             render::RenderTerrain terrain_update;
             render::RenderEnvironment environment_update;
             std::vector<render::RenderSceneObject> scene_object_update;
+            std::vector<std::string> scene_texture_update;
             bool terrain_changed = false;
             bool environment_changed = false;
             bool scene_objects_changed = false;
@@ -4453,6 +4463,14 @@ int Application::run()
                                     0x03U);
                             render_object.glow =
                                 face.glow;
+
+                            if (!face.texture_id.empty() &&
+                                face.texture_id !=
+                                    "00000000-0000-0000-0000-000000000000")
+                            {
+                                scene_texture_update.push_back(
+                                    face.texture_id);
+                            }
                         }
 
                         scene_object_update.push_back(
@@ -4465,6 +4483,18 @@ int Application::run()
 
             if (scene_objects_changed)
             {
+                std::sort(
+                    scene_texture_update.begin(),
+                    scene_texture_update.end());
+                scene_texture_update.erase(
+                    std::unique(
+                        scene_texture_update.begin(),
+                        scene_texture_update.end()),
+                    scene_texture_update.end());
+
+                scene_texture_ids =
+                    std::move(scene_texture_update);
+
                 world_renderer->set_scene_objects(
                     scene_object_update);
             }
@@ -4585,6 +4615,86 @@ int Application::run()
                         core::warning(
                             "Terrain texture assets unavailable; color fallback remains active");
                     }
+                }
+            }
+
+            if (object_texture_loading &&
+                object_texture_future.valid() &&
+                object_texture_future.wait_for(
+                    std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                assets::TextureAssetResult result =
+                    object_texture_future.get();
+                object_texture_loading = false;
+
+                if (result.success &&
+                    result.image.valid() &&
+                    !object_texture_loading_id.empty())
+                {
+                    render::RenderImageRgba8 image;
+                    image.width = result.image.width;
+                    image.height = result.image.height;
+                    image.pixels =
+                        std::move(result.image.pixels);
+
+                    world_renderer->set_object_texture(
+                        object_texture_loading_id,
+                        image);
+                    object_texture_loaded_ids.insert(
+                        object_texture_loading_id);
+
+                    core::info(
+                        "Object texture asset loaded; cached=" +
+                        std::to_string(
+                            object_texture_loaded_ids.size()));
+                }
+                else if (!object_texture_loading_id.empty())
+                {
+                    object_texture_failed_ids.insert(
+                        object_texture_loading_id);
+                    core::warning(
+                        "Object texture asset unavailable; material fallback remains active");
+                }
+
+                object_texture_loading_id.clear();
+            }
+
+            if (!object_texture_loading &&
+                !texture_capability.empty() &&
+                object_texture_loaded_ids.size() <
+                    max_object_texture_assets)
+            {
+                for (const auto& texture_id : scene_texture_ids)
+                {
+                    if (texture_id.empty() ||
+                        texture_id ==
+                            "00000000-0000-0000-0000-000000000000" ||
+                        object_texture_loaded_ids.contains(texture_id) ||
+                        object_texture_failed_ids.contains(texture_id))
+                    {
+                        continue;
+                    }
+
+                    object_texture_loading_id = texture_id;
+                    object_texture_loading = true;
+
+                    const std::string capability =
+                        texture_capability;
+                    const std::string requested_id =
+                        texture_id;
+
+                    object_texture_future = std::async(
+                        std::launch::async,
+                        [transport, capability, requested_id]()
+                        {
+                            assets::TextureAssetLoader loader{
+                                transport};
+                            return loader.fetch_png(
+                                capability,
+                                requested_id);
+                        });
+                    break;
                 }
             }
 

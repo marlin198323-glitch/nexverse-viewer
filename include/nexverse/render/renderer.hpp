@@ -173,6 +173,9 @@ public:
     virtual void set_terrain(const RenderTerrain& terrain) = 0;
     virtual void set_terrain_textures(
         const RenderTerrainTextures& textures) = 0;
+    virtual void set_object_texture(
+        const std::string& texture_id,
+        const RenderImageRgba8& image) = 0;
     virtual void set_environment(
         const RenderEnvironment& environment) = 0;
     virtual void set_scene_objects(

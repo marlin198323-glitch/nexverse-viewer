@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.31`.
+Aktuelle Viewer-Version: `0.2.0-alpha.32`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -594,6 +594,20 @@ Phase 7 gestartet:
 - neuer `nexverse-texture-entry-tests` Binärtest sowie Full-ObjectUpdate-Regression mit echter TextureEntry
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.31`
 - kompletter Debug-Build nach TextureEntry-/Default-Materialblock: 19/19 Tests grün
+- `0.2.0-alpha.32`: echte Default-Face-Objekttexturen werden über die bereits entdeckte OpenSim-`GetTexture`-Capability geladen
+- Objekttextur-Downloads verwenden dieselbe bounds-geprüfte PNG/RGBA8-Assetpipeline wie Terraintexturen
+- aktuelle Scene-Texture-UUIDs werden pro Object-Revision gesammelt, sortiert und dedupliziert
+- Objekttexturen werden seriell im Hintergrund geladen; bereits geladene/fehlgeschlagene UUIDs werden innerhalb der Session nicht erneut angefordert
+- Objekttextur-GPU-Cache ist auf 512 eindeutige Assets begrenzt
+- Renderer bindet Default-Face-Texture, RepeatU/V, OffsetU/V und Rotation pro Objekt
+- TextureEntry-Farbe multipliziert die geladene Textur statt durch Debugfarbe ersetzt zu werden
+- Fullbright deaktiviert den Distanz-Fog für den betreffenden Prim-Drawcall
+- Glow bleibt aktiv und wird nach dem Texture-Multiply addiert
+- PNG-Alpha aktiviert Blending auch dann, wenn das TextureEntry-Farb-Alpha selbst 1.0 ist
+- Textur-GPU-Ressourcen werden beim Renderer-Shutdown freigegeben
+- bei fehlgeschlagenem Assetdownload bleibt automatisch das vorhandene Default-Farbmaterial sichtbar
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.32`
+- kompletter Debug-Build nach ObjectTexture-/GetTexture-/GPU-Block: 19/19 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
