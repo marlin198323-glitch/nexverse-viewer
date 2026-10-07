@@ -70,6 +70,19 @@ void key_callback(GLFWwindow* window, int key, int, int action, int mods)
         return;
     }
 
+    if (key == GLFW_KEY_F11 && action == GLFW_PRESS)
+    {
+        if (glfwGetWindowAttrib(window, GLFW_MAXIMIZED) == GLFW_TRUE)
+        {
+            glfwRestoreWindow(window);
+        }
+        else
+        {
+            glfwMaximizeWindow(window);
+        }
+        return;
+    }
+
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
     {
         context->model->focus_next((mods & GLFW_MOD_SHIFT) != 0);
@@ -158,6 +171,9 @@ int Application::run()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 #if defined(__APPLE__)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
