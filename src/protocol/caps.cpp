@@ -64,7 +64,8 @@ std::vector<std::string> default_seed_capabilities()
         "GetExperienceInfo",
         "AgentPreferences",
         "UpdateAgentLanguage",
-        "EnvironmentSettings"
+        "EnvironmentSettings",
+        "ExtEnvironment"
     };
 }
 

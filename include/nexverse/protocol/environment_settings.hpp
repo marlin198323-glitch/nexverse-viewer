@@ -38,4 +38,7 @@ struct WindLightEnvironment
 
 [[nodiscard]] std::optional<WindLightEnvironment>
 parse_environment_settings(const LlsdValue& value);
+
+[[nodiscard]] std::optional<WindLightEnvironment>
+parse_ext_environment_settings(const LlsdValue& value);
 }

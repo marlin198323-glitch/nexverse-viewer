@@ -3364,6 +3364,7 @@ int Application::run()
                                     std::string event_queue_uri;
                                     std::string simulator_features_uri;
                                     std::string environment_settings_uri;
+                                    std::string ext_environment_uri;
                                     std::string get_texture_uri;
                                     std::string simulator_features_message;
 
@@ -3394,6 +3395,13 @@ int Application::run()
                                         found != discovery.capabilities.end())
                                     {
                                         environment_settings_uri = found->second;
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("ExtEnvironment");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        ext_environment_uri = found->second;
                                     }
 
                                     if (const auto found =
@@ -3441,10 +3449,91 @@ int Application::run()
                                         core::warning("CAPS SimulatorFeatures endpoint not advertised");
                                     }
 
-                                    if (!environment_settings_uri.empty())
+                                    auto apply_environment =
+                                        [&world_model, &world_mutex](
+                                            const protocol::WindLightEnvironment& parsed)
+                                        {
+                                            std::scoped_lock lock{world_mutex};
+                                            world::EnvironmentState state =
+                                                world_model.environment();
+                                            ++state.revision;
+                                            state.available = true;
+                                            state.ambient = parsed.ambient;
+                                            state.blue_density =
+                                                parsed.blue_density;
+                                            state.blue_horizon =
+                                                parsed.blue_horizon;
+                                            state.sunlight_color =
+                                                parsed.sunlight_color;
+                                            state.cloud_color =
+                                                parsed.cloud_color;
+                                            state.water_fog_color =
+                                                parsed.water_fog_color;
+                                            state.haze_density =
+                                                parsed.haze_density;
+                                            state.haze_horizon =
+                                                parsed.haze_horizon;
+                                            state.density_multiplier =
+                                                parsed.density_multiplier;
+                                            state.distance_multiplier =
+                                                parsed.distance_multiplier;
+                                            state.gamma = parsed.gamma;
+                                            state.star_brightness =
+                                                parsed.star_brightness;
+                                            state.sun_angle =
+                                                parsed.sun_angle;
+                                            state.east_angle =
+                                                parsed.east_angle;
+                                            state.cloud_shadow =
+                                                parsed.cloud_shadow;
+                                            state.water_fog_density =
+                                                parsed.water_fog_density;
+                                            state.sky_name =
+                                                parsed.sky_name;
+                                            state.water_normal_map =
+                                                parsed.water_normal_map;
+                                            world_model.set_environment(
+                                                std::move(state));
+                                        };
+
+                                    bool environment_loaded = false;
+
+                                    if (!ext_environment_uri.empty())
                                     {
                                         const auto environment =
-                                            service.fetch_llsd(environment_settings_uri);
+                                            service.fetch_llsd(
+                                                ext_environment_uri);
+                                        if (environment.success)
+                                        {
+                                            const auto parsed =
+                                                protocol::parse_ext_environment_settings(
+                                                    environment.value);
+                                            if (parsed.has_value())
+                                            {
+                                                apply_environment(*parsed);
+                                                environment_loaded = true;
+                                                core::info(
+                                                    "CAPS ExtEnvironment EEP parsed successfully");
+                                            }
+                                            else
+                                            {
+                                                core::warning(
+                                                    "CAPS ExtEnvironment format unsupported; trying legacy EnvironmentSettings");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            core::warning(
+                                                "CAPS ExtEnvironment request failed; trying legacy EnvironmentSettings");
+                                        }
+                                    }
+
+                                    if (!environment_loaded &&
+                                        !environment_settings_uri.empty())
+                                    {
+                                        const auto environment =
+                                            service.fetch_llsd(
+                                                environment_settings_uri);
                                         if (environment.success)
                                         {
                                             const auto parsed =
@@ -3452,51 +3541,8 @@ int Application::run()
                                                     environment.value);
                                             if (parsed.has_value())
                                             {
-                                                {
-                                                    std::scoped_lock lock{world_mutex};
-                                                    world::EnvironmentState state =
-                                                        world_model.environment();
-                                                    ++state.revision;
-                                                    state.available = true;
-                                                    state.ambient =
-                                                        parsed->ambient;
-                                                    state.blue_density =
-                                                        parsed->blue_density;
-                                                    state.blue_horizon =
-                                                        parsed->blue_horizon;
-                                                    state.sunlight_color =
-                                                        parsed->sunlight_color;
-                                                    state.cloud_color =
-                                                        parsed->cloud_color;
-                                                    state.water_fog_color =
-                                                        parsed->water_fog_color;
-                                                    state.haze_density =
-                                                        parsed->haze_density;
-                                                    state.haze_horizon =
-                                                        parsed->haze_horizon;
-                                                    state.density_multiplier =
-                                                        parsed->density_multiplier;
-                                                    state.distance_multiplier =
-                                                        parsed->distance_multiplier;
-                                                    state.gamma =
-                                                        parsed->gamma;
-                                                    state.star_brightness =
-                                                        parsed->star_brightness;
-                                                    state.sun_angle =
-                                                        parsed->sun_angle;
-                                                    state.east_angle =
-                                                        parsed->east_angle;
-                                                    state.cloud_shadow =
-                                                        parsed->cloud_shadow;
-                                                    state.water_fog_density =
-                                                        parsed->water_fog_density;
-                                                    state.sky_name =
-                                                        parsed->sky_name;
-                                                    state.water_normal_map =
-                                                        parsed->water_normal_map;
-                                                    world_model.set_environment(
-                                                        std::move(state));
-                                                }
+                                                apply_environment(*parsed);
+                                                environment_loaded = true;
                                                 core::info(
                                                     "CAPS EnvironmentSettings parsed successfully");
                                             }
@@ -3513,10 +3559,13 @@ int Application::run()
                                                 environment.message);
                                         }
                                     }
-                                    else
+
+                                    if (!environment_loaded &&
+                                        ext_environment_uri.empty() &&
+                                        environment_settings_uri.empty())
                                     {
                                         core::warning(
-                                            "CAPS EnvironmentSettings endpoint not advertised");
+                                            "CAPS environment endpoints not advertised; renderer fallback remains active");
                                     }
 
                                     if (event_queue_uri.empty())
