@@ -554,6 +554,11 @@ layout (location = 1) in vec3 aColor;
 layout (location = 2) in float aMaterial;
 
 uniform mat4 uMvp;
+uniform bool uUsePrimDeform;
+uniform vec2 uPrimTaper;
+uniform vec2 uPrimShear;
+uniform float uPrimTwistBegin;
+uniform float uPrimTwistEnd;
 
 out vec3 vColor;
 out vec2 vWorldXY;
@@ -561,9 +566,34 @@ out float vMaterial;
 
 void main()
 {
-    gl_Position = uMvp * vec4(aPosition, 1.0);
+    vec3 localPosition = aPosition;
+
+    if (uUsePrimDeform)
+    {
+        float pathT = clamp(aPosition.z + 0.5, 0.0, 1.0);
+
+        vec2 taperScale = max(
+            vec2(0.01),
+            vec2(1.0) - uPrimTaper * pathT);
+        localPosition.xy *= taperScale;
+
+        float twist = mix(
+            uPrimTwistBegin,
+            uPrimTwistEnd,
+            pathT);
+        float twistCos = cos(twist);
+        float twistSin = sin(twist);
+        localPosition.xy = mat2(
+            twistCos, -twistSin,
+            twistSin, twistCos) * localPosition.xy;
+
+        localPosition.xy +=
+            uPrimShear * (pathT - 0.5);
+    }
+
+    gl_Position = uMvp * vec4(localPosition, 1.0);
     vColor = aColor;
-    vWorldXY = aPosition.xy;
+    vWorldXY = localPosition.xy;
     vMaterial = aMaterial;
 }
 )GLSL";
@@ -1328,6 +1358,9 @@ public:
             glGetUniformLocation(program_, "uUseTerrainTextures"),
             GL_FALSE);
         glUniform1i(
+            glGetUniformLocation(program_, "uUsePrimDeform"),
+            GL_FALSE);
+        glUniform1i(
             glGetUniformLocation(program_, "uOverrideColor"),
             GL_FALSE);
         glUniform3f(
@@ -1475,6 +1508,24 @@ public:
                     GL_FALSE,
                     mvp.value.data());
 
+                glUniform1i(
+                    glGetUniformLocation(program_, "uUsePrimDeform"),
+                    object.linear_path_deform ? GL_TRUE : GL_FALSE);
+                glUniform2f(
+                    glGetUniformLocation(program_, "uPrimTaper"),
+                    object.taper_x,
+                    object.taper_y);
+                glUniform2f(
+                    glGetUniformLocation(program_, "uPrimShear"),
+                    object.shear_x,
+                    object.shear_y);
+                glUniform1f(
+                    glGetUniformLocation(program_, "uPrimTwistBegin"),
+                    object.twist_begin_radians);
+                glUniform1f(
+                    glGetUniformLocation(program_, "uPrimTwistEnd"),
+                    object.twist_end_radians);
+
                 const bool child = object.parent_id != 0U;
                 glUniform3f(
                     glGetUniformLocation(
@@ -1535,6 +1586,9 @@ public:
             }
 
             glBindVertexArray(0U);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUsePrimDeform"),
+                GL_FALSE);
             glUniform1i(
                 glGetUniformLocation(program_, "uOverrideColor"),
                 GL_FALSE);

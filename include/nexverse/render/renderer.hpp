@@ -44,6 +44,14 @@ struct RenderSceneObject
     RenderVec3 position;
     RenderQuaternion rotation;
     RenderVec3 scale{1.0f, 1.0f, 1.0f};
+
+    bool linear_path_deform = false;
+    float taper_x = 0.0f;
+    float taper_y = 0.0f;
+    float shear_x = 0.0f;
+    float shear_y = 0.0f;
+    float twist_begin_radians = 0.0f;
+    float twist_end_radians = 0.0f;
 };
 
 struct RenderCamera

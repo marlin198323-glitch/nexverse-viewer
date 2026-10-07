@@ -4294,6 +4294,40 @@ int Application::run()
                             object.scale.y,
                             object.scale.z};
 
+                        constexpr std::uint8_t path_straight = 0x10U;
+                        constexpr std::uint8_t path_flexible = 0x80U;
+                        constexpr float pi = 3.14159265358979323846f;
+
+                        render_object.linear_path_deform =
+                            object.shape.path_curve == path_straight ||
+                            object.shape.path_curve == path_flexible;
+
+                        render_object.taper_x =
+                            static_cast<float>(object.shape.path_taper_x) * 0.01f;
+                        render_object.taper_y =
+                            static_cast<float>(object.shape.path_taper_y) * 0.01f;
+
+                        const int shear_x =
+                            object.shape.path_shear_x < 128U
+                                ? static_cast<int>(object.shape.path_shear_x)
+                                : static_cast<int>(object.shape.path_shear_x) - 256;
+                        const int shear_y =
+                            object.shape.path_shear_y < 128U
+                                ? static_cast<int>(object.shape.path_shear_y)
+                                : static_cast<int>(object.shape.path_shear_y) - 256;
+
+                        render_object.shear_x =
+                            static_cast<float>(shear_x) * 0.01f;
+                        render_object.shear_y =
+                            static_cast<float>(shear_y) * 0.01f;
+
+                        render_object.twist_begin_radians =
+                            static_cast<float>(object.shape.path_twist_begin) *
+                            pi * 0.01f;
+                        render_object.twist_end_radians =
+                            static_cast<float>(object.shape.path_twist) *
+                            pi * 0.01f;
+
                         scene_object_update.push_back(
                             std::move(render_object));
                     }
