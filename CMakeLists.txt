@@ -97,6 +97,7 @@ add_library(nexverse-protocol
     src/protocol/caps.cpp
     src/protocol/caps_event_dispatcher.cpp
     src/protocol/caps_world_events.cpp
+    src/protocol/environment_settings.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
@@ -271,6 +272,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-terrain-codec-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-terrain-codec-tests)
     add_test(NAME nexverse-terrain-codec-tests COMMAND nexverse-terrain-codec-tests)
+
+    add_executable(nexverse-environment-settings-tests tests/environment_settings_tests.cpp)
+    target_link_libraries(nexverse-environment-settings-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-environment-settings-tests)
+    add_test(NAME nexverse-environment-settings-tests COMMAND nexverse-environment-settings-tests)
 
     add_executable(nexverse-texture-loader-tests tests/texture_loader_tests.cpp)
     target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)

@@ -15,6 +15,7 @@
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/caps_world_events.hpp"
 #include "nexverse/protocol/circuit.hpp"
+#include "nexverse/protocol/environment_settings.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
 #include "nexverse/protocol/packet_dispatcher.hpp"
@@ -3169,6 +3170,8 @@ int Application::run()
             std::numeric_limits<std::uint32_t>::max();
         std::uint32_t rendered_material_revision =
             std::numeric_limits<std::uint32_t>::max();
+        std::uint32_t rendered_environment_revision =
+            std::numeric_limits<std::uint32_t>::max();
         auto previous_frame = std::chrono::steady_clock::now();
 
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
@@ -3444,17 +3447,64 @@ int Application::run()
                                             service.fetch_llsd(environment_settings_uri);
                                         if (environment.success)
                                         {
+                                            const auto parsed =
+                                                protocol::parse_environment_settings(
+                                                    environment.value);
+                                            if (parsed.has_value())
                                             {
-                                                std::scoped_lock lock{world_mutex};
-                                                world::EnvironmentState state =
-                                                    world_model.environment();
-                                                ++state.revision;
-                                                state.available = true;
-                                                world_model.set_environment(
-                                                    std::move(state));
+                                                {
+                                                    std::scoped_lock lock{world_mutex};
+                                                    world::EnvironmentState state =
+                                                        world_model.environment();
+                                                    ++state.revision;
+                                                    state.available = true;
+                                                    state.ambient =
+                                                        parsed->ambient;
+                                                    state.blue_density =
+                                                        parsed->blue_density;
+                                                    state.blue_horizon =
+                                                        parsed->blue_horizon;
+                                                    state.sunlight_color =
+                                                        parsed->sunlight_color;
+                                                    state.cloud_color =
+                                                        parsed->cloud_color;
+                                                    state.water_fog_color =
+                                                        parsed->water_fog_color;
+                                                    state.haze_density =
+                                                        parsed->haze_density;
+                                                    state.haze_horizon =
+                                                        parsed->haze_horizon;
+                                                    state.density_multiplier =
+                                                        parsed->density_multiplier;
+                                                    state.distance_multiplier =
+                                                        parsed->distance_multiplier;
+                                                    state.gamma =
+                                                        parsed->gamma;
+                                                    state.star_brightness =
+                                                        parsed->star_brightness;
+                                                    state.sun_angle =
+                                                        parsed->sun_angle;
+                                                    state.east_angle =
+                                                        parsed->east_angle;
+                                                    state.cloud_shadow =
+                                                        parsed->cloud_shadow;
+                                                    state.water_fog_density =
+                                                        parsed->water_fog_density;
+                                                    state.sky_name =
+                                                        parsed->sky_name;
+                                                    state.water_normal_map =
+                                                        parsed->water_normal_map;
+                                                    world_model.set_environment(
+                                                        std::move(state));
+                                                }
+                                                core::info(
+                                                    "CAPS EnvironmentSettings parsed successfully");
                                             }
-                                            core::info(
-                                                "CAPS EnvironmentSettings loaded successfully");
+                                            else
+                                            {
+                                                core::warning(
+                                                    "CAPS EnvironmentSettings format unsupported; renderer fallback remains active");
+                                            }
                                         }
                                         else
                                         {
@@ -3910,7 +3960,9 @@ int Application::run()
 
             world::AgentState render_agent;
             render::RenderTerrain terrain_update;
+            render::RenderEnvironment environment_update;
             bool terrain_changed = false;
+            bool environment_changed = false;
             bool terrain_materials_available = false;
             std::uint32_t texture_generation_current = 0U;
             std::uint32_t texture_material_revision_current = 0U;
@@ -3924,6 +3976,8 @@ int Application::run()
                     world_model.region();
                 const world::TerrainState& terrain =
                     world_model.terrain();
+                const world::EnvironmentState& environment =
+                    world_model.environment();
 
                 terrain_materials_available =
                     terrain.materials.available;
@@ -3968,6 +4022,44 @@ int Application::run()
 
                     terrain_changed = true;
                 }
+
+                if (environment.revision != rendered_environment_revision)
+                {
+                    rendered_environment_revision = environment.revision;
+                    environment_update.revision = environment.revision;
+                    environment_update.available = environment.available;
+                    environment_update.ambient = {
+                        environment.ambient.x,
+                        environment.ambient.y,
+                        environment.ambient.z};
+                    environment_update.blue_density = {
+                        environment.blue_density.x,
+                        environment.blue_density.y,
+                        environment.blue_density.z};
+                    environment_update.blue_horizon = {
+                        environment.blue_horizon.x,
+                        environment.blue_horizon.y,
+                        environment.blue_horizon.z};
+                    environment_update.sunlight_color = {
+                        environment.sunlight_color.x,
+                        environment.sunlight_color.y,
+                        environment.sunlight_color.z};
+                    environment_update.water_fog_color = {
+                        environment.water_fog_color.x,
+                        environment.water_fog_color.y,
+                        environment.water_fog_color.z};
+                    environment_update.haze_density = environment.haze_density;
+                    environment_update.haze_horizon = environment.haze_horizon;
+                    environment_update.gamma = environment.gamma;
+                    environment_update.sun_angle = environment.sun_angle;
+                    environment_update.east_angle = environment.east_angle;
+                    environment_changed = true;
+                }
+            }
+
+            if (environment_changed)
+            {
+                world_renderer->set_environment(environment_update);
             }
 
             if (terrain_changed)

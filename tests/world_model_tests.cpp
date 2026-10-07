@@ -109,7 +109,10 @@ int main()
         {},
         {},
         true});
-    world.set_environment({1U, true});
+    nexverse::world::EnvironmentState environment;
+    environment.revision = 1U;
+    environment.available = true;
+    world.set_environment(environment);
 
     const std::uint32_t previous_generation =
         world.region().generation;

@@ -1083,6 +1083,8 @@ Funktionen:
 - Wasser
 - Region-Grenzen
 - Umgebung
+- OpenSim-`EnvironmentSettings`/Legacy-WindLight für Himmel, Sonne, Haze und Wasser
+- moderne `ExtEnvironment`/EEP-Daycycle-Unterstützung als nächster Environment-Ausbau
 - progressive Nachladung
 - Viewer startet standardmäßig als maximiertes normales Fenster mit nativer Titelleiste und Minimize/Maximize/Close; echter exklusiver Fullscreen nur optional per F11
 - UI muss 16:9, 21:9 und 32:9/Ultrawide ohne breite feste Dashboard-Spalten unterstützen

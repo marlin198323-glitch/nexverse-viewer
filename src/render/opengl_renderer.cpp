@@ -223,6 +223,9 @@ out vec4 FragColor;
 
 uniform float uAlpha;
 uniform bool uUseTerrainTextures;
+uniform bool uOverrideColor;
+uniform vec3 uOverrideColorValue;
+uniform vec3 uFogHorizon;
 uniform sampler2D uTerrain0;
 uniform sampler2D uTerrain1;
 uniform sampler2D uTerrain2;
@@ -265,9 +268,13 @@ void main()
         base = mix(textureColor, vColor, 0.12);
     }
 
-    vec3 horizon = vec3(0.40, 0.56, 0.78);
+    if (uOverrideColor)
+    {
+        base = uOverrideColorValue;
+    }
+
     float fog = smoothstep(0.90, 1.0, gl_FragCoord.z);
-    vec3 color = mix(base, horizon, fog * 0.55);
+    vec3 color = mix(base, uFogHorizon, fog * 0.55);
     FragColor = vec4(color, uAlpha);
 }
 )GLSL";
@@ -303,27 +310,30 @@ in vec2 vUv;
 out vec4 FragColor;
 
 uniform float uTime;
+uniform vec3 uHorizon;
+uniform vec3 uZenith;
+uniform vec3 uSunColor;
+uniform vec2 uSunPosition;
+uniform float uGamma;
+uniform float uHazeDensity;
 
 void main()
 {
     float y = clamp(vUv.y, 0.0, 1.0);
+    float gradientPower = clamp(0.62 + uHazeDensity * 0.20, 0.55, 1.15);
+    vec3 sky = mix(uHorizon, uZenith, pow(y, gradientPower));
 
-    vec3 horizon = vec3(0.42, 0.58, 0.82);
-    vec3 zenith = vec3(0.08, 0.18, 0.38);
-    vec3 sky = mix(horizon, zenith, pow(y, 0.72));
-
-    vec2 sunPos = vec2(0.76, 0.72);
-    float sunDist = distance(vUv, sunPos);
+    float sunDist = distance(vUv, uSunPosition);
     float sun = 1.0 - smoothstep(0.018, 0.070, sunDist);
-    vec3 sunColor = vec3(1.00, 0.84, 0.55);
-
     float glow = 1.0 - smoothstep(0.05, 0.24, sunDist);
-    sky += sunColor * sun * 0.85;
-    sky += sunColor * glow * 0.10;
+    sky += uSunColor * sun * 0.85;
+    sky += uSunColor * glow * 0.10;
 
-    float subtle = 0.008 * sin(uTime * 0.08);
+    float subtle = 0.006 * sin(uTime * 0.08);
     sky += vec3(subtle);
 
+    float safeGamma = max(uGamma, 0.1);
+    sky = pow(max(sky, vec3(0.0)), vec3(1.0 / safeGamma));
     FragColor = vec4(sky, 1.0);
 }
 )GLSL";
@@ -822,6 +832,12 @@ public:
         }
     }
 
+    void set_environment(
+        const RenderEnvironment& environment) override
+    {
+        environment_ = environment;
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
@@ -840,11 +856,59 @@ public:
             return;
         }
 
+        const RenderEnvironment& env = environment_;
+        const RenderVec3 horizon = env.available
+            ? env.blue_horizon
+            : RenderVec3{0.42f, 0.58f, 0.82f};
+        const RenderVec3 zenith = env.available
+            ? RenderVec3{
+                std::clamp(env.blue_density.x * 0.55f, 0.02f, 1.5f),
+                std::clamp(env.blue_density.y * 0.55f, 0.02f, 1.5f),
+                std::clamp(env.blue_density.z * 0.55f, 0.02f, 1.5f)}
+            : RenderVec3{0.08f, 0.18f, 0.38f};
+        const RenderVec3 sun_color = env.available
+            ? env.sunlight_color
+            : RenderVec3{1.00f, 0.84f, 0.55f};
+
+        const float sun_x = std::clamp(
+            0.5f + 0.42f * std::cos(env.east_angle),
+            0.06f,
+            0.94f);
+        const float sun_y = std::clamp(
+            0.5f + 0.42f * std::sin(env.sun_angle),
+            0.06f,
+            0.94f);
+
         glDisable(GL_DEPTH_TEST);
         glUseProgram(sky_program_);
         glUniform1f(
             glGetUniformLocation(sky_program_, "uTime"),
             static_cast<float>(time_seconds));
+        glUniform3f(
+            glGetUniformLocation(sky_program_, "uHorizon"),
+            horizon.x,
+            horizon.y,
+            horizon.z);
+        glUniform3f(
+            glGetUniformLocation(sky_program_, "uZenith"),
+            zenith.x,
+            zenith.y,
+            zenith.z);
+        glUniform3f(
+            glGetUniformLocation(sky_program_, "uSunColor"),
+            sun_color.x,
+            sun_color.y,
+            sun_color.z);
+        glUniform2f(
+            glGetUniformLocation(sky_program_, "uSunPosition"),
+            sun_x,
+            sun_y);
+        glUniform1f(
+            glGetUniformLocation(sky_program_, "uGamma"),
+            env.available ? env.gamma : 1.0f);
+        glUniform1f(
+            glGetUniformLocation(sky_program_, "uHazeDensity"),
+            env.available ? env.haze_density : 0.70f);
         glBindVertexArray(sky_vao_);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0U);
@@ -872,6 +936,14 @@ public:
         glUniform1i(
             glGetUniformLocation(program_, "uUseTerrainTextures"),
             GL_FALSE);
+        glUniform1i(
+            glGetUniformLocation(program_, "uOverrideColor"),
+            GL_FALSE);
+        glUniform3f(
+            glGetUniformLocation(program_, "uFogHorizon"),
+            horizon.x,
+            horizon.y,
+            horizon.z);
 
         if (terrain_index_count_ > 0U && terrain_vao_ != 0U)
         {
@@ -944,6 +1016,14 @@ public:
                 glUniform1f(
                     glGetUniformLocation(program_, "uAlpha"),
                     0.32f);
+                glUniform1i(
+                    glGetUniformLocation(program_, "uOverrideColor"),
+                    GL_TRUE);
+                glUniform3f(
+                    glGetUniformLocation(program_, "uOverrideColorValue"),
+                    env.water_fog_color.x,
+                    env.water_fog_color.y,
+                    env.water_fog_color.z);
 
                 glBindVertexArray(water_vao_);
                 glDrawElements(
@@ -958,6 +1038,9 @@ public:
                 glUniform1f(
                     glGetUniformLocation(program_, "uAlpha"),
                     1.0f);
+                glUniform1i(
+                    glGetUniformLocation(program_, "uOverrideColor"),
+                    GL_FALSE);
 
                 glLineWidth(2.0f);
                 glDrawArrays(GL_LINE_LOOP, 0, 4);
@@ -1149,6 +1232,7 @@ private:
     bool nvx_memory_info_ = false;
     bool test_anchor_initialized_ = false;
     RenderCamera camera_;
+    RenderEnvironment environment_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };

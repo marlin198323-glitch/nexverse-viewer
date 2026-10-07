@@ -68,6 +68,22 @@ struct RenderTerrainTextures
     std::array<RenderImageRgba8, 4> detail;
 };
 
+struct RenderEnvironment
+{
+    std::uint32_t revision = 0U;
+    bool available = false;
+    RenderVec3 ambient{0.35f, 0.35f, 0.35f};
+    RenderVec3 blue_density{0.12f, 0.22f, 0.38f};
+    RenderVec3 blue_horizon{0.25f, 0.25f, 0.32f};
+    RenderVec3 sunlight_color{0.72f, 0.76f, 0.90f};
+    RenderVec3 water_fog_color{0.0156f, 0.149f, 0.2509f};
+    float haze_density = 0.70f;
+    float haze_horizon = 0.19f;
+    float gamma = 1.0f;
+    float sun_angle = 0.317f;
+    float east_angle = 0.0f;
+};
+
 struct RenderDiagnostics
 {
     std::string backend;
@@ -89,6 +105,8 @@ public:
     virtual void set_terrain(const RenderTerrain& terrain) = 0;
     virtual void set_terrain_textures(
         const RenderTerrainTextures& textures) = 0;
+    virtual void set_environment(
+        const RenderEnvironment& environment) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;
