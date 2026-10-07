@@ -1,14 +1,14 @@
-# NexVerse Viewer – Projektplan
+# OpenGenesisLINK Viewer für NexVerse – Projektplan
 
 Stand: 05.10.2026  
 Repository: `marlin198323-glitch/nexverse-viewer`  
-Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0.
+Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0. Produktname: OpenGenesisLINK Viewer; primäre Zielplattform/Grid: NexVerse.
 
 ---
 
 ## 1. Zielbild
 
-Der NexVerse Viewer wird kein Firestorm-Fork. Er wird als eigenständiger Viewer neu entwickelt und kommuniziert direkt mit OpenSimulator über das OpenSim/Linden-Viewer-Protokoll.
+Der OpenGenesisLINK Viewer für NexVerse wird kein Firestorm-Fork. Er wird als eigenständiger Viewer neu entwickelt und kommuniziert direkt mit OpenSimulator über das OpenSim/Linden-Viewer-Protokoll.
 
 Die Architektur wird strikt getrennt:
 
@@ -97,16 +97,74 @@ nexverse-viewer --version
 liefert beispielsweise:
 
 ```text
-NexVerse Viewer 0.1.0-alpha.1
+OpenGenesisLINK Viewer 0.1.0-alpha.1
 ```
 
-Status: ALS NÄCHSTES
+Status: IN ARBEIT
 
 ---
 
 ## Phase 1 – OpenSim Grid Discovery
 
-Ziel: Der Viewer erkennt einen OpenSimulator-Gridserver.
+Ziel: Der Viewer erkennt einen OpenSimulator-Gridserver und verwendet beim Start immer die aktuell vom NexVerse-Grid veröffentlichten Grid-Daten.
+
+### Verbindlicher NexVerse Discovery-Endpunkt
+
+Für den Einsatz des OpenGenesisLINK Viewers in NexVerse ist die feste Grid-Adresse:
+
+```text
+hg.stadt-nexverse.de
+```
+
+Der Discovery-Endpunkt lautet:
+
+```text
+http://hg.stadt-nexverse.de/get_grid_info
+```
+
+Dieser Endpunkt ist die maßgebliche Quelle für die Grid-Konfiguration des Viewers.
+
+### Verhalten bei jedem Viewer-Start
+
+Bei jedem Start des OpenGenesisLINK Viewers muss vor dem eigentlichen Login automatisch `get_grid_info` abgerufen werden.
+
+Ablauf:
+
+```text
+Viewer startet
+      |
+      v
+GET http://hg.stadt-nexverse.de/get_grid_info
+      |
+      v
+XML sicher parsen und validieren
+      |
+      v
+Änderungen gegenüber lokalem Cache erkennen
+      |
+      v
+aktuelle GridInfo übernehmen
+      |
+      v
+Login-Oberfläche / Login-Endpunkt aktualisieren
+      |
+      v
+Benutzer kann sich anmelden
+```
+
+Wichtig:
+
+- Die GridInfo darf nicht dauerhaft hart im Viewer dupliziert werden.
+- Bei jedem Start wird die XML neu vom Server geladen.
+- Änderungen an der XML müssen ohne neues Viewer-Release wirksam werden.
+- Der Viewer verwendet immer die aktuell erfolgreich validierten Serverwerte.
+- Relevante Änderungen werden im Log protokolliert, jedoch ohne Zugangsdaten oder andere sensible Werte.
+- Die letzte erfolgreich validierte GridInfo wird lokal als Cache gespeichert.
+- Ist der Discovery-Endpunkt vorübergehend nicht erreichbar, darf der Viewer die letzte gültige gecachte Version verwenden und muss den Offline-/Fallback-Zustand sichtbar kennzeichnen.
+- Eine fehlerhafte, unvollständige oder nicht parsebare XML darf niemals eine zuvor gültige Konfiguration überschreiben.
+- Netzwerkantworten erhalten Timeout- und Größenlimits.
+- Später soll HTTPS verwendet werden, sobald der Discovery-Endpunkt dafür zuverlässig bereitsteht; bis dahin wird der angegebene HTTP-Endpunkt unterstützt.
+- Nach erfolgreichem Abruf werden ausschließlich die vom Server gelieferten aktuellen Werte für Login, Welcome, Economy, About, Register, Help, Password und Web-Profile verwendet, sofern vorhanden.
 
 Implementierung:
 
