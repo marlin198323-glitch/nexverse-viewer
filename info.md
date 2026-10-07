@@ -630,6 +630,17 @@ Phase 7 gestartet:
 - dynamische Profile, Cylinder/Prism und Circular-Sweeps bleiben vorerst beim Default-Face bis deren Facegruppen explizit markiert sind
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.34`
 - kompletter Debug-Build nach erstem Renderer-Face-Mapping: 19/19 Tests grün
+- `0.2.0-alpha.35`: Renderer-Meshes führen jetzt explizite OpenSim-Face-Ranges bis in den GPU-Mesh-Cache mit
+- Standard-Zylinder werden nach OpenSim als Top=0, Outside=1, Bottom=2 getrennt materialisiert
+- Standard-Prismen werden als Top=0, drei Außenflächen=1..3 und Bottom=4 getrennt materialisiert
+- dynamische lineare Profile erzeugen ihre Face-Nummern aus den tatsächlich vorhandenen Profilflächen; durch Profile-Cuts vollständig entfernte Außenflächen verbrauchen keine Face-ID
+- Hollow-Innenwand wird als genau ein eigenes OpenSim-Face geführt, unabhängig von der inneren Profilform
+- Profile-Cut Begin/End erhalten nach Top/Außenflächen/Hollow/Bottom jeweils eigene Face-Ranges
+- dynamische Circular-Sweep-Meshes trennen bei offenem Pfad Cut-End, Outside und Cut-Begin; bei geschlossenem Sweep bleibt Outside Face 0
+- per-Face TextureEntry-Materialien werden nun auch für diese GPU-Mesh-Ranges beim Drawcall ausgewählt
+- Default-Material bleibt Fallback, falls für eine Face-ID kein Override vorhanden ist
+- kompletter Debug-Build nach erweitertem Prim-Face-Mapping: 19/19 Tests grün
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.35`
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

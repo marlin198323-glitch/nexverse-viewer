@@ -250,10 +250,18 @@ Mat4 view_matrix(const RenderCamera& camera)
     return result;
 }
 
+struct MeshFaceRange
+{
+    std::size_t face_index = 0U;
+    std::uint32_t first_index = 0U;
+    std::uint32_t index_count = 0U;
+};
+
 struct MeshData
 {
     std::vector<float> vertices;
     std::vector<std::uint32_t> indices;
+    std::vector<MeshFaceRange> face_ranges;
 };
 
 struct GpuMesh
@@ -262,6 +270,7 @@ struct GpuMesh
     GLuint vbo = 0U;
     GLuint ebo = 0U;
     GLsizei index_count = 0;
+    std::vector<MeshFaceRange> face_ranges;
 };
 
 void append_vertex(
@@ -273,6 +282,26 @@ void append_vertex(
     mesh.vertices.insert(
         mesh.vertices.end(),
         {x, y, z, 0.65f, 0.74f, 0.88f});
+}
+
+template <typename AppendIndices>
+void append_face_range(
+    MeshData& mesh,
+    std::size_t face_index,
+    AppendIndices&& append_indices)
+{
+    const std::size_t first = mesh.indices.size();
+    append_indices();
+    const std::size_t count = mesh.indices.size() - first;
+    if (count == 0U)
+    {
+        return;
+    }
+
+    mesh.face_ranges.push_back({
+        face_index,
+        static_cast<std::uint32_t>(first),
+        static_cast<std::uint32_t>(count)});
 }
 
 MeshData make_cylinder_mesh(std::uint32_t segments = 24U)
@@ -298,25 +327,47 @@ MeshData make_cylinder_mesh(std::uint32_t segments = 24U)
         static_cast<std::uint32_t>(mesh.vertices.size() / 6U);
     append_vertex(mesh, 0.0f, 0.0f, 0.5f);
 
-    for (std::uint32_t i = 0U; i < segments; ++i)
+    // OpenSim cylinder face order: top, outside, bottom.
+    append_face_range(mesh, 0U, [&]
     {
-        const std::uint32_t next = (i + 1U) % segments;
-        const std::uint32_t b0 = i * 2U;
-        const std::uint32_t t0 = b0 + 1U;
-        const std::uint32_t b1 = next * 2U;
-        const std::uint32_t t1 = b1 + 1U;
+        for (std::uint32_t i = 0U; i < segments; ++i)
+        {
+            const std::uint32_t next = (i + 1U) % segments;
+            const std::uint32_t t0 = i * 2U + 1U;
+            const std::uint32_t t1 = next * 2U + 1U;
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {top_center, t0, t1});
+        }
+    });
 
-        mesh.indices.insert(
-            mesh.indices.end(),
-            {b0, b1, t1, b0, t1, t0});
+    append_face_range(mesh, 1U, [&]
+    {
+        for (std::uint32_t i = 0U; i < segments; ++i)
+        {
+            const std::uint32_t next = (i + 1U) % segments;
+            const std::uint32_t b0 = i * 2U;
+            const std::uint32_t t0 = b0 + 1U;
+            const std::uint32_t b1 = next * 2U;
+            const std::uint32_t t1 = b1 + 1U;
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {b0, b1, t1, b0, t1, t0});
+        }
+    });
 
-        mesh.indices.insert(
-            mesh.indices.end(),
-            {bottom_center, b1, b0});
-        mesh.indices.insert(
-            mesh.indices.end(),
-            {top_center, t0, t1});
-    }
+    append_face_range(mesh, 2U, [&]
+    {
+        for (std::uint32_t i = 0U; i < segments; ++i)
+        {
+            const std::uint32_t next = (i + 1U) % segments;
+            const std::uint32_t b0 = i * 2U;
+            const std::uint32_t b1 = next * 2U;
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {bottom_center, b1, b0});
+        }
+    });
 
     return mesh;
 }
@@ -332,12 +383,33 @@ MeshData make_prism_mesh()
     append_vertex(mesh, 0.5f, 0.288675f, 0.5f);
     append_vertex(mesh, -0.5f, 0.288675f, 0.5f);
 
-    mesh.indices = {
-        0U, 2U, 1U,
-        3U, 4U, 5U,
-        0U, 1U, 4U, 0U, 4U, 3U,
-        1U, 2U, 5U, 1U, 5U, 4U,
-        2U, 0U, 3U, 2U, 3U, 5U};
+    // OpenSim prism face order: top, three outer faces, bottom.
+    append_face_range(mesh, 0U, [&]
+    {
+        mesh.indices.insert(mesh.indices.end(), {3U, 4U, 5U});
+    });
+    append_face_range(mesh, 1U, [&]
+    {
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {0U, 1U, 4U, 0U, 4U, 3U});
+    });
+    append_face_range(mesh, 2U, [&]
+    {
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {1U, 2U, 5U, 1U, 5U, 4U});
+    });
+    append_face_range(mesh, 3U, [&]
+    {
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {2U, 0U, 3U, 2U, 3U, 5U});
+    });
+    append_face_range(mesh, 4U, [&]
+    {
+        mesh.indices.insert(mesh.indices.end(), {0U, 2U, 1U});
+    });
 
     return mesh;
 }
@@ -743,104 +815,226 @@ MeshData make_linear_profile_mesh(
         }
     }
 
+    std::optional<std::uint32_t> bottom_center;
+    std::optional<std::uint32_t> top_center;
+    if (!has_hollow)
+    {
+        bottom_center =
+            append_profile_vertex(mesh, {0.0f, 0.0f}, -0.5f);
+        top_center =
+            append_profile_vertex(mesh, {0.0f, 0.0f}, 0.5f);
+    }
+
+    auto profile_side_count = [](RenderProfileKind profile)
+    {
+        switch (profile)
+        {
+            case RenderProfileKind::triangle:
+                return 3U;
+            case RenderProfileKind::square:
+                return 4U;
+            case RenderProfileKind::circle:
+            case RenderProfileKind::same:
+            default:
+                return 1U;
+        }
+    };
+
+    auto profile_side = [](RenderProfileKind profile, float parameter)
+    {
+        if (profile == RenderProfileKind::circle ||
+            profile == RenderProfileKind::same)
+        {
+            return 0U;
+        }
+
+        const float u =
+            std::clamp(
+                parameter - std::floor(parameter),
+                0.0f,
+                0.999999f);
+        const std::uint32_t count =
+            profile == RenderProfileKind::triangle ? 3U : 4U;
+        return std::min<std::uint32_t>(
+            count - 1U,
+            static_cast<std::uint32_t>(
+                std::floor(u * static_cast<float>(count))));
+    };
+
+    const std::uint32_t outer_side_count =
+        profile_side_count(outer);
+    std::array<bool, 4> outer_side_present{};
+
     for (std::size_t index = 0U;
          index + 1U < parameters.size();
          ++index)
     {
-        const std::size_t next = index + 1U;
-
-        append_quad(
-            mesh,
-            outer_bottom[index],
-            outer_bottom[next],
-            outer_top[next],
-            outer_top[index]);
-
-        if (has_hollow)
-        {
-            append_quad(
-                mesh,
-                inner_bottom[next],
-                inner_bottom[index],
-                inner_top[index],
-                inner_top[next]);
-
-            append_quad(
-                mesh,
-                outer_top[index],
-                outer_top[next],
-                inner_top[next],
-                inner_top[index]);
-
-            append_quad(
-                mesh,
-                outer_bottom[next],
-                outer_bottom[index],
-                inner_bottom[index],
-                inner_bottom[next]);
-        }
+        const float midpoint =
+            (parameters[index] + parameters[index + 1U]) * 0.5f;
+        outer_side_present[profile_side(outer, midpoint)] = true;
     }
 
-    if (!has_hollow)
+    // Face 0 is always the top cap for linear-path prims.
+    append_face_range(mesh, 0U, [&]
     {
-        const std::uint32_t bottom_center =
-            append_profile_vertex(
-                mesh,
-                {0.0f, 0.0f},
-                -0.5f);
-        const std::uint32_t top_center =
-            append_profile_vertex(
-                mesh,
-                {0.0f, 0.0f},
-                0.5f);
-
         for (std::size_t index = 0U;
              index + 1U < parameters.size();
              ++index)
         {
             const std::size_t next = index + 1U;
-            mesh.indices.insert(
-                mesh.indices.end(),
-                {
-                    bottom_center,
-                    outer_bottom[next],
-                    outer_bottom[index],
-                    top_center,
+            if (has_hollow)
+            {
+                append_quad(
+                    mesh,
                     outer_top[index],
-                    outer_top[next]
-                });
+                    outer_top[next],
+                    inner_top[next],
+                    inner_top[index]);
+            }
+            else
+            {
+                mesh.indices.insert(
+                    mesh.indices.end(),
+                    {*top_center,
+                     outer_top[index],
+                     outer_top[next]});
+            }
+        }
+    });
+
+    std::size_t next_face = 1U;
+
+    // Circle has one outside face; triangle/square keep one OpenSim face
+    // per surviving profile side. Removed sides do not consume face IDs.
+    for (std::uint32_t side = 0U;
+         side < outer_side_count;
+         ++side)
+    {
+        if (!outer_side_present[side])
+        {
+            continue;
         }
 
-        if (!full_profile)
+        const std::size_t face = next_face++;
+        append_face_range(mesh, face, [&]
         {
-            append_quad(
-                mesh,
-                bottom_center,
-                outer_bottom.front(),
-                outer_top.front(),
-                top_center);
-            append_quad(
-                mesh,
-                bottom_center,
-                top_center,
-                outer_top.back(),
-                outer_bottom.back());
-        }
+            for (std::size_t index = 0U;
+                 index + 1U < parameters.size();
+                 ++index)
+            {
+                const std::size_t next = index + 1U;
+                const float midpoint =
+                    (parameters[index] + parameters[next]) * 0.5f;
+                if (profile_side(outer, midpoint) != side)
+                {
+                    continue;
+                }
+
+                append_quad(
+                    mesh,
+                    outer_bottom[index],
+                    outer_bottom[next],
+                    outer_top[next],
+                    outer_top[index]);
+            }
+        });
     }
-    else if (!full_profile)
+
+    if (has_hollow)
     {
-        append_quad(
-            mesh,
-            outer_bottom.front(),
-            inner_bottom.front(),
-            inner_top.front(),
-            outer_top.front());
-        append_quad(
-            mesh,
-            outer_bottom.back(),
-            outer_top.back(),
-            inner_top.back(),
-            inner_bottom.back());
+        const std::size_t hollow_face = next_face++;
+        append_face_range(mesh, hollow_face, [&]
+        {
+            for (std::size_t index = 0U;
+                 index + 1U < parameters.size();
+                 ++index)
+            {
+                const std::size_t next = index + 1U;
+                append_quad(
+                    mesh,
+                    inner_bottom[next],
+                    inner_bottom[index],
+                    inner_top[index],
+                    inner_top[next]);
+            }
+        });
+    }
+
+    const std::size_t bottom_face = next_face++;
+    append_face_range(mesh, bottom_face, [&]
+    {
+        for (std::size_t index = 0U;
+             index + 1U < parameters.size();
+             ++index)
+        {
+            const std::size_t next = index + 1U;
+            if (has_hollow)
+            {
+                append_quad(
+                    mesh,
+                    outer_bottom[next],
+                    outer_bottom[index],
+                    inner_bottom[index],
+                    inner_bottom[next]);
+            }
+            else
+            {
+                mesh.indices.insert(
+                    mesh.indices.end(),
+                    {*bottom_center,
+                     outer_bottom[next],
+                     outer_bottom[index]});
+            }
+        }
+    });
+
+    if (!full_profile)
+    {
+        const std::size_t begin_cut_face = next_face++;
+        append_face_range(mesh, begin_cut_face, [&]
+        {
+            if (has_hollow)
+            {
+                append_quad(
+                    mesh,
+                    outer_bottom.front(),
+                    inner_bottom.front(),
+                    inner_top.front(),
+                    outer_top.front());
+            }
+            else
+            {
+                append_quad(
+                    mesh,
+                    *bottom_center,
+                    outer_bottom.front(),
+                    outer_top.front(),
+                    *top_center);
+            }
+        });
+
+        const std::size_t end_cut_face = next_face++;
+        append_face_range(mesh, end_cut_face, [&]
+        {
+            if (has_hollow)
+            {
+                append_quad(
+                    mesh,
+                    outer_bottom.back(),
+                    outer_top.back(),
+                    inner_top.back(),
+                    inner_bottom.back());
+            }
+            else
+            {
+                append_quad(
+                    mesh,
+                    *bottom_center,
+                    *top_center,
+                    outer_top.back(),
+                    outer_bottom.back());
+            }
+        });
     }
 
     return mesh;
@@ -1204,33 +1398,6 @@ MeshData make_curved_sweep_mesh(
     const std::uint32_t row =
         profile_segments + 1U;
 
-    for (std::uint32_t path_index = 0U;
-         path_index < path_segments;
-         ++path_index)
-    {
-        for (std::uint32_t profile_index = 0U;
-             profile_index < profile_segments;
-             ++profile_index)
-        {
-            const std::uint32_t a =
-                path_index * row +
-                profile_index;
-            const std::uint32_t b =
-                a + row;
-
-            mesh.indices.insert(
-                mesh.indices.end(),
-                {
-                    a,
-                    b,
-                    a + 1U,
-                    a + 1U,
-                    b,
-                    b + 1U
-                });
-        }
-    }
-
     const bool closed_path =
         path_begin <= 0.0001f &&
         path_end >= 0.9999f &&
@@ -1239,9 +1406,12 @@ MeshData make_curved_sweep_mesh(
             std::round(revolutions)) <
             0.0001f;
 
+    std::optional<std::uint32_t> start_center;
+    std::optional<std::uint32_t> end_center;
+
     if (!closed_path)
     {
-        const std::uint32_t start_center =
+        start_center =
             static_cast<std::uint32_t>(
                 mesh.vertices.size() / 6U);
         append_vertex(
@@ -1252,41 +1422,92 @@ MeshData make_curved_sweep_mesh(
 
         const std::uint32_t end_base =
             path_segments * row;
-        const std::uint32_t end_center =
+        end_center =
             static_cast<std::uint32_t>(
                 mesh.vertices.size() / 6U);
         append_vertex(
             mesh,
             mesh.vertices[
-                static_cast<std::size_t>(
-                    end_base) * 6U],
+                static_cast<std::size_t>(end_base) * 6U],
             mesh.vertices[
-                static_cast<std::size_t>(
-                    end_base) * 6U + 1U],
+                static_cast<std::size_t>(end_base) * 6U + 1U],
             mesh.vertices[
-                static_cast<std::size_t>(
-                    end_base) * 6U + 2U]);
+                static_cast<std::size_t>(end_base) * 6U + 2U]);
+    }
 
-        for (std::uint32_t profile_index = 0U;
-             profile_index < profile_segments;
-             ++profile_index)
+    // Circular-path prims number cut-end before the outside surface.
+    // Without a cut the outside surface is face 0.
+    const std::size_t outside_face =
+        closed_path ? 0U : 1U;
+
+    if (!closed_path)
+    {
+        append_face_range(mesh, 0U, [&]
         {
-            mesh.indices.insert(
-                mesh.indices.end(),
-                {
-                    start_center,
-                    profile_index + 1U,
-                    profile_index
-                });
+            const std::uint32_t end_base =
+                path_segments * row;
+            for (std::uint32_t profile_index = 0U;
+                 profile_index < profile_segments;
+                 ++profile_index)
+            {
+                mesh.indices.insert(
+                    mesh.indices.end(),
+                    {
+                        *end_center,
+                        end_base + profile_index,
+                        end_base + profile_index + 1U
+                    });
+            }
+        });
+    }
 
-            mesh.indices.insert(
-                mesh.indices.end(),
-                {
-                    end_center,
-                    end_base + profile_index,
-                    end_base + profile_index + 1U
-                });
+    append_face_range(mesh, outside_face, [&]
+    {
+        for (std::uint32_t path_index = 0U;
+             path_index < path_segments;
+             ++path_index)
+        {
+            for (std::uint32_t profile_index = 0U;
+                 profile_index < profile_segments;
+                 ++profile_index)
+            {
+                const std::uint32_t a =
+                    path_index * row +
+                    profile_index;
+                const std::uint32_t b =
+                    a + row;
+
+                mesh.indices.insert(
+                    mesh.indices.end(),
+                    {
+                        a,
+                        b,
+                        a + 1U,
+                        a + 1U,
+                        b,
+                        b + 1U
+                    });
+            }
         }
+    });
+
+    if (!closed_path)
+    {
+        append_face_range(mesh, 2U, [&]
+        {
+            for (std::uint32_t profile_index = 0U;
+                 profile_index < profile_segments;
+                 ++profile_index)
+            {
+                mesh.indices.insert(
+                    mesh.indices.end(),
+                    {
+                        *start_center,
+                        profile_index + 1U,
+                        profile_index
+                    });
+            }
+        });
     }
 
     return mesh;
@@ -1345,6 +1566,7 @@ bool upload_mesh(
 
     target.index_count =
         static_cast<GLsizei>(source.indices.size());
+    target.face_ranges = source.face_ranges;
     return true;
 }
 
@@ -2482,6 +2704,8 @@ public:
 
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
+                const std::vector<MeshFaceRange>* object_face_ranges =
+                    nullptr;
 
                 if (GpuMesh* sweep_mesh =
                         curved_sweep_mesh_for(object);
@@ -2490,6 +2714,8 @@ public:
                     object_vao = sweep_mesh->vao;
                     object_index_count =
                         sweep_mesh->index_count;
+                    object_face_ranges =
+                        &sweep_mesh->face_ranges;
                 }
                 else if (GpuMesh* profile_mesh =
                              profile_mesh_for(object);
@@ -2498,34 +2724,38 @@ public:
                     object_vao = profile_mesh->vao;
                     object_index_count =
                         profile_mesh->index_count;
+                    object_face_ranges =
+                        &profile_mesh->face_ranges;
                 }
                 else
                 {
+                    GpuMesh* static_mesh = nullptr;
                     switch (object.kind)
                     {
                         case RenderPrimitiveKind::cylinder:
-                            object_vao = cylinder_mesh_.vao;
-                            object_index_count =
-                                cylinder_mesh_.index_count;
+                            static_mesh = &cylinder_mesh_;
                             break;
                         case RenderPrimitiveKind::prism:
-                            object_vao = prism_mesh_.vao;
-                            object_index_count =
-                                prism_mesh_.index_count;
+                            static_mesh = &prism_mesh_;
                             break;
                         case RenderPrimitiveKind::sphere:
-                            object_vao = sphere_mesh_.vao;
-                            object_index_count =
-                                sphere_mesh_.index_count;
+                            static_mesh = &sphere_mesh_;
                             break;
                         case RenderPrimitiveKind::torus:
-                            object_vao = torus_mesh_.vao;
-                            object_index_count =
-                                torus_mesh_.index_count;
+                            static_mesh = &torus_mesh_;
                             break;
                         case RenderPrimitiveKind::box:
                         default:
                             break;
+                    }
+
+                    if (static_mesh != nullptr)
+                    {
+                        object_vao = static_mesh->vao;
+                        object_index_count =
+                            static_mesh->index_count;
+                        object_face_ranges =
+                            &static_mesh->face_ranges;
                     }
                 }
 
@@ -2754,6 +2984,27 @@ public:
                             material,
                             6,
                             group * 6U);
+                    }
+                }
+                else if (object_face_ranges != nullptr &&
+                         !object_face_ranges->empty())
+                {
+                    for (const MeshFaceRange& range :
+                         *object_face_ranges)
+                    {
+                        const RenderFaceMaterial* material =
+                            range.face_index <
+                                    object.face_materials.size() &&
+                            object.face_materials[range.face_index]
+                                .has_value()
+                                ? &*object.face_materials[range.face_index]
+                                : nullptr;
+
+                        draw_material_range(
+                            material,
+                            static_cast<GLsizei>(
+                                range.index_count),
+                            range.first_index);
                     }
                 }
                 else
