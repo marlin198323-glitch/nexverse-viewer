@@ -54,12 +54,18 @@ struct RenderSceneObject
     RenderVec3 scale{1.0f, 1.0f, 1.0f};
 
     bool linear_path_deform = false;
+    bool curved_path = false;
     float path_begin = 0.0f;
     float path_end = 1.0f;
     float profile_begin = 0.0f;
     float profile_end = 1.0f;
     float profile_hollow = 0.0f;
     RenderProfileKind hollow_profile = RenderProfileKind::same;
+    float path_hole_x = 1.0f;
+    float path_hole_y = 1.0f;
+    float radius_offset = 0.0f;
+    float revolutions = 1.0f;
+    float skew = 0.0f;
     float taper_x = 0.0f;
     float taper_y = 0.0f;
     float shear_x = 0.0f;

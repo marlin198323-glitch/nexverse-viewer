@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.29`.
+Aktuelle Viewer-Version: `0.2.0-alpha.30`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -567,6 +567,21 @@ Phase 7 gestartet:
 - Taper/Shear/Twist/PathCut wirken weiterhin auf das generierte Profilmesh
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.29`
 - kompletter Debug-Build nach ProfileCut-/Hollow-Block: 18/18 Tests grün
+- `0.2.0-alpha.30`: gekrümmte OpenSim-Circular-Paths verwenden jetzt dynamische Sweep-Geometrie statt ausschließlich statischer Torus-/Sphere-Meshes
+- `PathRadiusOffset = raw * 0.01`, `PathRevolutions = 1.0 + raw * 0.015`, `PathSkew = raw * 0.01`
+- `PathScaleX/Y` wird nach OpenSim als `(200 - raw) * 0.01` in die Circular-Path-Querschnittsgröße übernommen
+- Circular-Path-Berechnung übernimmt die wesentlichen OpenSim-`PrimMesher`-Terme für x/y-ProfileScale, RadiusScale, Skew, TopShear-X/Y, Path-Winkel und Twist
+- PathBegin/End begrenzen den tatsächlichen Sweep-Bogen
+- Revolutions steuert die Anzahl der Umläufe des Sweep-Pfads
+- RadiusOffset verändert den Pfadradius entlang des Sweeps
+- Skew verschiebt den Circular Path über seine Länge
+- Taper/Shear/Twist werden auch auf gekrümmte Sweep-Layer angewendet
+- Torus nutzt ein geschlossenes Kreisprofil; Sphere nutzt ein Halbkreisprofil über denselben Circular-Path-Mechanismus
+- gekrümmte Sweep-Meshes werden in einem separaten GPU-Cache mit maximal 256 eindeutigen Kombinationen gehalten
+- Sweep-Mesh-Cache wird beim Renderer-Shutdown vollständig freigegeben
+- bei Cache-Limit/Generierungsfehler bleibt das vorhandene statische Torus-/Sphere-Fallback verfügbar
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.30`
+- kompletter Debug-Build nach Circular-Sweep-/Revolutions-/RadiusOffset-/Skew-Block: 18/18 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

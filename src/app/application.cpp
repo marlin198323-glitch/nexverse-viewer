@@ -4295,12 +4295,17 @@ int Application::run()
                             object.scale.z};
 
                         constexpr std::uint8_t path_straight = 0x10U;
+                        constexpr std::uint8_t path_curve_1 = 0x20U;
+                        constexpr std::uint8_t path_curve_2 = 0x30U;
                         constexpr std::uint8_t path_flexible = 0x80U;
                         constexpr float pi = 3.14159265358979323846f;
 
                         render_object.linear_path_deform =
                             object.shape.path_curve == path_straight ||
                             object.shape.path_curve == path_flexible;
+                        render_object.curved_path =
+                            object.shape.path_curve == path_curve_1 ||
+                            object.shape.path_curve == path_curve_2;
 
                         render_object.path_begin =
                             std::clamp(
@@ -4335,6 +4340,36 @@ int Application::run()
                                     0.00002f,
                                 0.0f,
                                 0.95f);
+
+                        render_object.path_hole_x =
+                            std::clamp(
+                                static_cast<float>(
+                                    200 - static_cast<int>(
+                                        object.shape.path_scale_x)) *
+                                    0.01f,
+                                0.01f,
+                                2.0f);
+                        render_object.path_hole_y =
+                            std::clamp(
+                                static_cast<float>(
+                                    200 - static_cast<int>(
+                                        object.shape.path_scale_y)) *
+                                    0.01f,
+                                0.01f,
+                                2.0f);
+                        render_object.radius_offset =
+                            static_cast<float>(
+                                object.shape.path_radius_offset) *
+                            0.01f;
+                        render_object.revolutions =
+                            1.0f +
+                            static_cast<float>(
+                                object.shape.path_revolutions) *
+                                0.015f;
+                        render_object.skew =
+                            static_cast<float>(
+                                object.shape.path_skew) *
+                            0.01f;
 
                         switch (object.shape.hollow_shape())
                         {

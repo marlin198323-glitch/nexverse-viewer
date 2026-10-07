@@ -902,6 +902,396 @@ bool needs_dynamic_profile_mesh(
         object.profile_hollow > 0.0001f;
 }
 
+bool needs_curved_sweep_mesh(
+    const RenderSceneObject& object)
+{
+    return object.curved_path &&
+        (object.kind == RenderPrimitiveKind::torus ||
+         object.kind == RenderPrimitiveKind::sphere);
+}
+
+std::uint64_t curved_sweep_key(
+    const RenderSceneObject& object)
+{
+    auto quantize_signed = [](float value, float scale_value)
+    {
+        const long long raw = std::llround(
+            static_cast<double>(value) *
+            static_cast<double>(scale_value));
+        return static_cast<std::uint64_t>(
+            static_cast<std::uint32_t>(
+                static_cast<std::int32_t>(raw)));
+    };
+
+    auto quantize_unit = [](float value)
+    {
+        return static_cast<std::uint64_t>(
+            std::clamp(
+                std::llround(
+                    static_cast<double>(
+                        std::clamp(value, 0.0f, 2.0f)) *
+                    1000.0),
+                0LL,
+                2000LL));
+    };
+
+    std::uint64_t key =
+        static_cast<std::uint64_t>(object.kind) & 0x0FU;
+    key ^= quantize_unit(object.path_begin) << 4U;
+    key ^= quantize_unit(object.path_end) << 16U;
+    key ^= quantize_unit(object.path_hole_x) << 28U;
+    key ^= quantize_unit(object.path_hole_y) << 40U;
+    key ^= (quantize_signed(object.revolutions, 100.0f) & 0xFFU) << 52U;
+    key ^= (quantize_signed(object.radius_offset, 100.0f) & 0x3FU) << 60U;
+
+    key ^= quantize_signed(object.skew, 100.0f);
+    key ^= quantize_signed(object.shear_x, 100.0f) << 8U;
+    key ^= quantize_signed(object.shear_y, 100.0f) << 16U;
+    key ^= quantize_signed(object.taper_x, 100.0f) << 24U;
+    key ^= quantize_signed(object.taper_y, 100.0f) << 32U;
+    key ^= quantize_signed(object.twist_begin_radians, 100.0f) << 40U;
+    key ^= quantize_signed(object.twist_end_radians, 100.0f) << 48U;
+
+    return key;
+}
+
+ProfilePoint curved_profile_point(
+    RenderPrimitiveKind kind,
+    float parameter)
+{
+    if (kind == RenderPrimitiveKind::sphere)
+    {
+        const float angle =
+            -0.5f * std::numbers::pi_v<float> +
+            std::numbers::pi_v<float> *
+                std::clamp(parameter, 0.0f, 1.0f);
+        return {
+            0.5f * std::cos(angle),
+            0.5f * std::sin(angle)};
+    }
+
+    return profile_point(
+        RenderProfileKind::circle,
+        parameter);
+}
+
+MeshData make_curved_sweep_mesh(
+    const RenderSceneObject& object)
+{
+    MeshData mesh;
+
+    const float revolutions =
+        std::clamp(object.revolutions, 0.1f, 4.0f);
+    const float path_begin =
+        std::clamp(object.path_begin, 0.0f, 0.9998f);
+    const float path_end =
+        std::clamp(
+            object.path_end,
+            path_begin + 0.0001f,
+            1.0f);
+
+    const float two_pi =
+        2.0f * std::numbers::pi_v<float>;
+    const float start_angle =
+        two_pi * path_begin * revolutions -
+        object.shear_y * 0.9f;
+    const float end_angle =
+        two_pi * path_end * revolutions -
+        object.shear_y * 0.9f;
+
+    if (end_angle <= start_angle)
+    {
+        return mesh;
+    }
+
+    constexpr std::uint32_t steps_per_revolution = 24U;
+    const std::uint32_t path_segments =
+        std::max<std::uint32_t>(
+            2U,
+            static_cast<std::uint32_t>(
+                std::ceil(
+                    (end_angle - start_angle) /
+                    (two_pi /
+                     static_cast<float>(
+                         steps_per_revolution)))));
+
+    const std::uint32_t profile_segments =
+        object.kind == RenderPrimitiveKind::sphere
+            ? 12U
+            : 16U;
+
+    const float path_length =
+        path_end - path_begin;
+    const float total_skew =
+        object.skew * 2.0f * path_length;
+    const float skew_start =
+        path_begin * 2.0f * object.skew -
+        object.skew;
+    const float y_path_scale =
+        object.path_hole_y * 0.5f;
+    const float x_shear_factor =
+        object.shear_x *
+        (0.25f +
+         0.5f * (0.5f - object.path_hole_y));
+    const float y_shear_compensation =
+        1.0f +
+        std::abs(object.shear_y) * 0.25f;
+
+    const auto append_layer_vertex =
+        [&](float angle,
+            float percent_of_path,
+            float percent_of_angles,
+            float profile_parameter)
+        {
+            float x_profile_scale =
+                (1.0f - std::abs(object.skew)) *
+                object.path_hole_x;
+            float y_profile_scale =
+                object.path_hole_y;
+
+            if (object.taper_x > 0.01f)
+            {
+                x_profile_scale *=
+                    1.0f -
+                    percent_of_path *
+                        object.taper_x;
+            }
+            else if (object.taper_x < -0.01f)
+            {
+                x_profile_scale *=
+                    1.0f +
+                    (1.0f - percent_of_path) *
+                        object.taper_x;
+            }
+
+            if (object.taper_y > 0.01f)
+            {
+                y_profile_scale *=
+                    1.0f -
+                    percent_of_path *
+                        object.taper_y;
+            }
+            else if (object.taper_y < -0.01f)
+            {
+                y_profile_scale *=
+                    1.0f +
+                    (1.0f - percent_of_path) *
+                        object.taper_y;
+            }
+
+            float radius_scale = 1.0f;
+            if (object.radius_offset > 0.001f)
+            {
+                radius_scale =
+                    1.0f -
+                    object.radius_offset *
+                        percent_of_path;
+            }
+            else if (object.radius_offset < -0.001f)
+            {
+                radius_scale =
+                    1.0f +
+                    object.radius_offset *
+                        (1.0f - percent_of_path);
+            }
+
+            const float twist =
+                object.twist_begin_radians +
+                (object.twist_end_radians -
+                 object.twist_begin_radians) *
+                    percent_of_path;
+
+            const float x_offset =
+                0.5f *
+                    (skew_start +
+                     total_skew * percent_of_angles) +
+                std::sin(angle) *
+                    x_shear_factor;
+
+            const float path_radius =
+                (0.5f - y_path_scale) *
+                radius_scale;
+
+            const float y_offset =
+                y_shear_compensation *
+                std::cos(angle) *
+                path_radius;
+            const float z_offset =
+                std::sin(
+                    angle +
+                    object.shear_y) *
+                path_radius;
+
+            const ProfilePoint profile =
+                curved_profile_point(
+                    object.kind,
+                    profile_parameter);
+
+            float px =
+                profile.x *
+                x_profile_scale;
+            float py =
+                profile.y *
+                y_profile_scale;
+            float pz = 0.0f;
+
+            const float twist_cos =
+                std::cos(twist);
+            const float twist_sin =
+                std::sin(twist);
+            const float twisted_x =
+                px * twist_cos -
+                py * twist_sin;
+            const float twisted_y =
+                px * twist_sin +
+                py * twist_cos;
+
+            const float path_rotation =
+                angle + object.shear_y;
+            const float path_cos =
+                std::cos(path_rotation);
+            const float path_sin =
+                std::sin(path_rotation);
+
+            px = twisted_x;
+            py =
+                twisted_y * path_cos -
+                pz * path_sin;
+            pz =
+                twisted_y * path_sin +
+                pz * path_cos;
+
+            append_vertex(
+                mesh,
+                x_offset + px,
+                y_offset + py,
+                z_offset + pz);
+        };
+
+    for (std::uint32_t path_index = 0U;
+         path_index <= path_segments;
+         ++path_index)
+    {
+        const float path_lerp =
+            static_cast<float>(path_index) /
+            static_cast<float>(path_segments);
+        const float angle =
+            start_angle +
+            (end_angle - start_angle) *
+                path_lerp;
+        const float percent_of_path =
+            angle /
+            (two_pi * revolutions);
+
+        for (std::uint32_t profile_index = 0U;
+             profile_index <= profile_segments;
+             ++profile_index)
+        {
+            const float profile_parameter =
+                static_cast<float>(
+                    profile_index) /
+                static_cast<float>(
+                    profile_segments);
+
+            append_layer_vertex(
+                angle,
+                percent_of_path,
+                path_lerp,
+                profile_parameter);
+        }
+    }
+
+    const std::uint32_t row =
+        profile_segments + 1U;
+
+    for (std::uint32_t path_index = 0U;
+         path_index < path_segments;
+         ++path_index)
+    {
+        for (std::uint32_t profile_index = 0U;
+             profile_index < profile_segments;
+             ++profile_index)
+        {
+            const std::uint32_t a =
+                path_index * row +
+                profile_index;
+            const std::uint32_t b =
+                a + row;
+
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {
+                    a,
+                    b,
+                    a + 1U,
+                    a + 1U,
+                    b,
+                    b + 1U
+                });
+        }
+    }
+
+    const bool closed_path =
+        path_begin <= 0.0001f &&
+        path_end >= 0.9999f &&
+        std::abs(
+            revolutions -
+            std::round(revolutions)) <
+            0.0001f;
+
+    if (!closed_path)
+    {
+        const std::uint32_t start_center =
+            static_cast<std::uint32_t>(
+                mesh.vertices.size() / 6U);
+        append_vertex(
+            mesh,
+            mesh.vertices[0],
+            mesh.vertices[1],
+            mesh.vertices[2]);
+
+        const std::uint32_t end_base =
+            path_segments * row;
+        const std::uint32_t end_center =
+            static_cast<std::uint32_t>(
+                mesh.vertices.size() / 6U);
+        append_vertex(
+            mesh,
+            mesh.vertices[
+                static_cast<std::size_t>(
+                    end_base) * 6U],
+            mesh.vertices[
+                static_cast<std::size_t>(
+                    end_base) * 6U + 1U],
+            mesh.vertices[
+                static_cast<std::size_t>(
+                    end_base) * 6U + 2U]);
+
+        for (std::uint32_t profile_index = 0U;
+             profile_index < profile_segments;
+             ++profile_index)
+        {
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {
+                    start_center,
+                    profile_index + 1U,
+                    profile_index
+                });
+
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {
+                    end_center,
+                    end_base + profile_index,
+                    end_base + profile_index + 1U
+                });
+        }
+    }
+
+    return mesh;
+}
+
 bool upload_mesh(
     GpuMesh& target,
     const MeshData& source)
@@ -1977,9 +2367,17 @@ public:
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
 
-                if (GpuMesh* profile_mesh =
-                        profile_mesh_for(object);
-                    profile_mesh != nullptr)
+                if (GpuMesh* sweep_mesh =
+                        curved_sweep_mesh_for(object);
+                    sweep_mesh != nullptr)
+                {
+                    object_vao = sweep_mesh->vao;
+                    object_index_count =
+                        sweep_mesh->index_count;
+                }
+                else if (GpuMesh* profile_mesh =
+                             profile_mesh_for(object);
+                         profile_mesh != nullptr)
                 {
                     object_vao = profile_mesh->vao;
                     object_index_count =
@@ -2105,6 +2503,13 @@ public:
             destroy_mesh(mesh);
         }
         profile_mesh_cache_.clear();
+
+        for (auto& [key, mesh] : curved_sweep_mesh_cache_)
+        {
+            (void)key;
+            destroy_mesh(mesh);
+        }
+        curved_sweep_mesh_cache_.clear();
 
         if (terrain_textures_[0] != 0U)
         {
@@ -2234,6 +2639,51 @@ private:
                 std::max(object.scale.x, 0.01f),
                 std::max(object.scale.y, 0.01f),
                 std::max(object.scale.z, 0.01f)}));
+    }
+
+    [[nodiscard]] GpuMesh* curved_sweep_mesh_for(
+        const RenderSceneObject& object)
+    {
+        if (!needs_curved_sweep_mesh(object))
+        {
+            return nullptr;
+        }
+
+        const std::uint64_t key =
+            curved_sweep_key(object);
+
+        if (auto found = curved_sweep_mesh_cache_.find(key);
+            found != curved_sweep_mesh_cache_.end())
+        {
+            return &found->second;
+        }
+
+        constexpr std::size_t max_curved_sweep_meshes = 256U;
+        if (curved_sweep_mesh_cache_.size() >=
+            max_curved_sweep_meshes)
+        {
+            return nullptr;
+        }
+
+        const MeshData source =
+            make_curved_sweep_mesh(object);
+
+        GpuMesh gpu;
+        if (!upload_mesh(gpu, source))
+        {
+            return nullptr;
+        }
+
+        auto [inserted, ok] =
+            curved_sweep_mesh_cache_.emplace(
+                key,
+                std::move(gpu));
+        if (!ok)
+        {
+            return nullptr;
+        }
+
+        return &inserted->second;
     }
 
     [[nodiscard]] GpuMesh* profile_mesh_for(
@@ -2378,6 +2828,7 @@ private:
     std::vector<RenderSceneObject> scene_objects_;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
+    std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };
