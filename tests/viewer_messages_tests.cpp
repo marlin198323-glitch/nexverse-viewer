@@ -256,7 +256,9 @@ int main()
 
     append_u32_vec(full_update_payload, 7U);
     append_u32_vec(full_update_payload, 0U);
-    full_update_payload.insert(full_update_payload.end(), 23U, 0U);
+    full_update_payload.push_back(0x10U);
+    full_update_payload.push_back(0x01U);
+    full_update_payload.insert(full_update_payload.end(), 21U, 0U);
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
     full_update_payload.push_back(0U);
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
@@ -287,7 +289,9 @@ int main()
         full_update->objects[0].parent_id != 7U ||
         full_update->objects[0].scale.x != 2.0f ||
         full_update->objects[0].scale.y != 3.0f ||
-        full_update->objects[0].scale.z != 4.0f)
+        full_update->objects[0].scale.z != 4.0f ||
+        full_update->objects[0].shape.path_curve != 0x10U ||
+        full_update->objects[0].shape.profile_shape() != 0x01U)
     {
         std::cerr << "ObjectUpdate decode failed\n";
         return 12;

@@ -29,7 +29,11 @@ struct RenderQuaternion
 
 enum class RenderPrimitiveKind : std::uint8_t
 {
-    box = 0U
+    box = 0U,
+    cylinder = 1U,
+    prism = 2U,
+    sphere = 3U,
+    torus = 4U
 };
 
 struct RenderSceneObject

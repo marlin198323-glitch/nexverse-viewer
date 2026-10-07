@@ -247,6 +247,306 @@ Mat4 view_matrix(const RenderCamera& camera)
     return result;
 }
 
+struct MeshData
+{
+    std::vector<float> vertices;
+    std::vector<std::uint32_t> indices;
+};
+
+struct GpuMesh
+{
+    GLuint vao = 0U;
+    GLuint vbo = 0U;
+    GLuint ebo = 0U;
+    GLsizei index_count = 0;
+};
+
+void append_vertex(
+    MeshData& mesh,
+    float x,
+    float y,
+    float z)
+{
+    mesh.vertices.insert(
+        mesh.vertices.end(),
+        {x, y, z, 0.65f, 0.74f, 0.88f});
+}
+
+MeshData make_cylinder_mesh(std::uint32_t segments = 24U)
+{
+    MeshData mesh;
+    segments = std::max<std::uint32_t>(segments, 3U);
+
+    for (std::uint32_t i = 0U; i < segments; ++i)
+    {
+        const float angle =
+            (2.0f * std::numbers::pi_v<float>) * static_cast<float>(i) /
+            static_cast<float>(segments);
+        const float x = 0.5f * std::cos(angle);
+        const float y = 0.5f * std::sin(angle);
+        append_vertex(mesh, x, y, -0.5f);
+        append_vertex(mesh, x, y, 0.5f);
+    }
+
+    const std::uint32_t bottom_center =
+        static_cast<std::uint32_t>(mesh.vertices.size() / 6U);
+    append_vertex(mesh, 0.0f, 0.0f, -0.5f);
+    const std::uint32_t top_center =
+        static_cast<std::uint32_t>(mesh.vertices.size() / 6U);
+    append_vertex(mesh, 0.0f, 0.0f, 0.5f);
+
+    for (std::uint32_t i = 0U; i < segments; ++i)
+    {
+        const std::uint32_t next = (i + 1U) % segments;
+        const std::uint32_t b0 = i * 2U;
+        const std::uint32_t t0 = b0 + 1U;
+        const std::uint32_t b1 = next * 2U;
+        const std::uint32_t t1 = b1 + 1U;
+
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {b0, b1, t1, b0, t1, t0});
+
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {bottom_center, b1, b0});
+        mesh.indices.insert(
+            mesh.indices.end(),
+            {top_center, t0, t1});
+    }
+
+    return mesh;
+}
+
+MeshData make_prism_mesh()
+{
+    MeshData mesh;
+
+    append_vertex(mesh, 0.0f, -0.57735f, -0.5f);
+    append_vertex(mesh, 0.5f, 0.288675f, -0.5f);
+    append_vertex(mesh, -0.5f, 0.288675f, -0.5f);
+    append_vertex(mesh, 0.0f, -0.57735f, 0.5f);
+    append_vertex(mesh, 0.5f, 0.288675f, 0.5f);
+    append_vertex(mesh, -0.5f, 0.288675f, 0.5f);
+
+    mesh.indices = {
+        0U, 2U, 1U,
+        3U, 4U, 5U,
+        0U, 1U, 4U, 0U, 4U, 3U,
+        1U, 2U, 5U, 1U, 5U, 4U,
+        2U, 0U, 3U, 2U, 3U, 5U};
+
+    return mesh;
+}
+
+MeshData make_sphere_mesh(
+    std::uint32_t latitude_segments = 12U,
+    std::uint32_t longitude_segments = 24U)
+{
+    MeshData mesh;
+    latitude_segments =
+        std::max<std::uint32_t>(latitude_segments, 3U);
+    longitude_segments =
+        std::max<std::uint32_t>(longitude_segments, 6U);
+
+    for (std::uint32_t lat = 0U;
+         lat <= latitude_segments;
+         ++lat)
+    {
+        const float v =
+            static_cast<float>(lat) /
+            static_cast<float>(latitude_segments);
+        const float phi =
+            std::numbers::pi_v<float> * v;
+        const float z = 0.5f * std::cos(phi);
+        const float radius = 0.5f * std::sin(phi);
+
+        for (std::uint32_t lon = 0U;
+             lon <= longitude_segments;
+             ++lon)
+        {
+            const float u =
+                static_cast<float>(lon) /
+                static_cast<float>(longitude_segments);
+            const float theta =
+                (2.0f * std::numbers::pi_v<float>) * u;
+            append_vertex(
+                mesh,
+                radius * std::cos(theta),
+                radius * std::sin(theta),
+                z);
+        }
+    }
+
+    const std::uint32_t row =
+        longitude_segments + 1U;
+
+    for (std::uint32_t lat = 0U;
+         lat < latitude_segments;
+         ++lat)
+    {
+        for (std::uint32_t lon = 0U;
+             lon < longitude_segments;
+             ++lon)
+        {
+            const std::uint32_t a = lat * row + lon;
+            const std::uint32_t b = a + row;
+
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {a, b, a + 1U, a + 1U, b, b + 1U});
+        }
+    }
+
+    return mesh;
+}
+
+MeshData make_torus_mesh(
+    std::uint32_t major_segments = 24U,
+    std::uint32_t minor_segments = 12U)
+{
+    MeshData mesh;
+    major_segments =
+        std::max<std::uint32_t>(major_segments, 8U);
+    minor_segments =
+        std::max<std::uint32_t>(minor_segments, 6U);
+
+    constexpr float major_radius = 0.34f;
+    constexpr float minor_radius = 0.16f;
+
+    for (std::uint32_t major = 0U;
+         major <= major_segments;
+         ++major)
+    {
+        const float u =
+            static_cast<float>(major) /
+            static_cast<float>(major_segments);
+        const float major_angle =
+            (2.0f * std::numbers::pi_v<float>) * u;
+
+        const float major_cos = std::cos(major_angle);
+        const float major_sin = std::sin(major_angle);
+
+        for (std::uint32_t minor = 0U;
+             minor <= minor_segments;
+             ++minor)
+        {
+            const float v =
+                static_cast<float>(minor) /
+                static_cast<float>(minor_segments);
+            const float minor_angle =
+                (2.0f * std::numbers::pi_v<float>) * v;
+
+            const float ring =
+                major_radius +
+                minor_radius * std::cos(minor_angle);
+
+            append_vertex(
+                mesh,
+                ring * major_cos,
+                ring * major_sin,
+                minor_radius * std::sin(minor_angle));
+        }
+    }
+
+    const std::uint32_t row =
+        minor_segments + 1U;
+
+    for (std::uint32_t major = 0U;
+         major < major_segments;
+         ++major)
+    {
+        for (std::uint32_t minor = 0U;
+             minor < minor_segments;
+             ++minor)
+        {
+            const std::uint32_t a =
+                major * row + minor;
+            const std::uint32_t b =
+                a + row;
+
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {a, b, a + 1U, a + 1U, b, b + 1U});
+        }
+    }
+
+    return mesh;
+}
+
+bool upload_mesh(
+    GpuMesh& target,
+    const MeshData& source)
+{
+    if (source.vertices.empty() || source.indices.empty())
+    {
+        return false;
+    }
+
+    glGenVertexArrays(1, &target.vao);
+    glGenBuffers(1, &target.vbo);
+    glGenBuffers(1, &target.ebo);
+
+    glBindVertexArray(target.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, target.vbo);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(
+            source.vertices.size() * sizeof(float)),
+        source.vertices.data(),
+        GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, target.ebo);
+    glBufferData(
+        GL_ELEMENT_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(
+            source.indices.size() * sizeof(std::uint32_t)),
+        source.indices.data(),
+        GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0U);
+    glVertexAttribPointer(
+        0U,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        static_cast<GLsizei>(6U * sizeof(float)),
+        nullptr);
+
+    glEnableVertexAttribArray(1U);
+    glVertexAttribPointer(
+        1U,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        static_cast<GLsizei>(6U * sizeof(float)),
+        reinterpret_cast<void*>(3U * sizeof(float)));
+
+    glBindVertexArray(0U);
+    glBindBuffer(GL_ARRAY_BUFFER, 0U);
+
+    target.index_count =
+        static_cast<GLsizei>(source.indices.size());
+    return true;
+}
+
+void destroy_mesh(GpuMesh& mesh)
+{
+    if (mesh.ebo != 0U)
+    {
+        glDeleteBuffers(1, &mesh.ebo);
+    }
+    if (mesh.vbo != 0U)
+    {
+        glDeleteBuffers(1, &mesh.vbo);
+    }
+    if (mesh.vao != 0U)
+    {
+        glDeleteVertexArrays(1, &mesh.vao);
+    }
+    mesh = {};
+}
+
 constexpr const char* vertex_shader_source = R"GLSL(
 #version 330 core
 layout (location = 0) in vec3 aPosition;
@@ -594,6 +894,16 @@ public:
 
         glBindVertexArray(0U);
         glBindBuffer(GL_ARRAY_BUFFER, 0U);
+
+        if (!upload_mesh(cylinder_mesh_, make_cylinder_mesh()) ||
+            !upload_mesh(prism_mesh_, make_prism_mesh()) ||
+            !upload_mesh(sphere_mesh_, make_sphere_mesh()) ||
+            !upload_mesh(torus_mesh_, make_torus_mesh()))
+        {
+            core::error(
+                "OGLRender primitive base mesh initialization failed");
+            return false;
+        }
 
         diagnostics_.backend = "Legacy OpenGL 3.3";
         if (const auto* gpu =
@@ -1142,19 +1452,12 @@ public:
                 glGetUniformLocation(program_, "uOverrideColor"),
                 GL_TRUE);
 
-            glBindVertexArray(vao_);
-
             for (std::size_t index = 0U;
                  index < scene_objects_.size();
                  ++index)
             {
                 const RenderSceneObject& object =
                     scene_objects_[index];
-
-                if (object.kind != RenderPrimitiveKind::box)
-                {
-                    continue;
-                }
 
                 const Mat4 model = scene_model(index);
                 if (!scene_object_visible(model, object))
@@ -1181,14 +1484,53 @@ public:
                     child ? 0.68f : 0.74f,
                     child ? 0.82f : 0.88f);
 
+                GLuint object_vao = vao_;
+                GLsizei object_index_count = 36;
+
+                switch (object.kind)
+                {
+                    case RenderPrimitiveKind::cylinder:
+                        object_vao = cylinder_mesh_.vao;
+                        object_index_count =
+                            cylinder_mesh_.index_count;
+                        break;
+                    case RenderPrimitiveKind::prism:
+                        object_vao = prism_mesh_.vao;
+                        object_index_count =
+                            prism_mesh_.index_count;
+                        break;
+                    case RenderPrimitiveKind::sphere:
+                        object_vao = sphere_mesh_.vao;
+                        object_index_count =
+                            sphere_mesh_.index_count;
+                        break;
+                    case RenderPrimitiveKind::torus:
+                        object_vao = torus_mesh_.vao;
+                        object_index_count =
+                            torus_mesh_.index_count;
+                        break;
+                    case RenderPrimitiveKind::box:
+                    default:
+                        break;
+                }
+
+                if (object_vao == 0U ||
+                    object_index_count <= 0)
+                {
+                    continue;
+                }
+
+                glBindVertexArray(object_vao);
                 glDrawElements(
                     GL_TRIANGLES,
-                    36,
+                    object_index_count,
                     GL_UNSIGNED_INT,
                     nullptr);
 
                 ++diagnostics_.draw_calls;
-                diagnostics_.triangles += 12U;
+                diagnostics_.triangles +=
+                    static_cast<std::uint64_t>(
+                        object_index_count / 3);
                 ++diagnostics_.visible_objects;
             }
 
@@ -1248,6 +1590,11 @@ public:
 
     void shutdown() override
     {
+        destroy_mesh(cylinder_mesh_);
+        destroy_mesh(prism_mesh_);
+        destroy_mesh(sphere_mesh_);
+        destroy_mesh(torus_mesh_);
+
         if (terrain_textures_[0] != 0U)
         {
             glDeleteTextures(
@@ -1441,6 +1788,11 @@ private:
     GLuint vao_ = 0U;
     GLuint vbo_ = 0U;
     GLuint ebo_ = 0U;
+
+    GpuMesh cylinder_mesh_;
+    GpuMesh prism_mesh_;
+    GpuMesh sphere_mesh_;
+    GpuMesh torus_mesh_;
 
     GLuint terrain_vao_ = 0U;
     GLuint terrain_vbo_ = 0U;

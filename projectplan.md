@@ -1119,9 +1119,12 @@ Funktionen:
 Aktueller Implementierungsstand:
 - Full ObjectUpdate liefert Position, Quaternion, Scale, PCode und Parent-ID ins WorldModel
 - Scene-Revision überträgt Änderungen gezielt an OGLRender
-- erste sichtbare Prim-Darstellung als transformiertes Box-Basismesh
+- Primitive-Shape-Parameter (Path/Profile) werden aus ObjectUpdate dekodiert und im WorldModel erhalten
+- sichtbare Grundformen für Box, Zylinder, Prisma, Kugel und Torus vorhanden
 - Parent/Child-Transformbasis und Distanz-Culling aktiv
-- als nächstes: echte Primitive-Shape-Parameter (Path/Profile), danach Objekttexturen/Materialien
+- Compressed-/Terse-Updates erhalten bekannte statische Shape-/Scale-/Parent-Daten
+- als nächstes: vollständige Prim-Geometrie für Path/Profile Begin/End, Hollow, Twist, Taper, Shear, Revolutions und Skew
+- danach Objekttexturen/Materialien und vollständige Face-/TextureEntry-Auswertung
 
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.
 

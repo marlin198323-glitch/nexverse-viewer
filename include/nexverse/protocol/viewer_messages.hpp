@@ -140,6 +140,38 @@ struct KillObjectMessage
 inline constexpr std::uint8_t pcode_prim = 9U;
 inline constexpr std::uint8_t pcode_avatar = 47U;
 
+struct PrimitiveShapeData
+{
+    std::uint8_t path_curve = 0U;
+    std::uint8_t profile_curve = 0U;
+    std::uint16_t path_begin = 0U;
+    std::uint16_t path_end = 0U;
+    std::uint8_t path_scale_x = 100U;
+    std::uint8_t path_scale_y = 100U;
+    std::uint8_t path_shear_x = 0U;
+    std::uint8_t path_shear_y = 0U;
+    std::int8_t path_twist = 0;
+    std::int8_t path_twist_begin = 0;
+    std::int8_t path_radius_offset = 0;
+    std::int8_t path_taper_x = 0;
+    std::int8_t path_taper_y = 0;
+    std::uint8_t path_revolutions = 0U;
+    std::int8_t path_skew = 0;
+    std::uint16_t profile_begin = 0U;
+    std::uint16_t profile_end = 0U;
+    std::uint16_t profile_hollow = 0U;
+
+    [[nodiscard]] std::uint8_t profile_shape() const noexcept
+    {
+        return profile_curve & 0x0FU;
+    }
+
+    [[nodiscard]] std::uint8_t hollow_shape() const noexcept
+    {
+        return profile_curve & 0xF0U;
+    }
+};
+
 struct ObjectUpdateEntry
 {
     std::uint32_t local_id = 0U;
@@ -149,6 +181,7 @@ struct ObjectUpdateEntry
     Vec3 position;
     Quaternion rotation;
     Vec3 scale{1.0f, 1.0f, 1.0f};
+    PrimitiveShapeData shape;
 
     [[nodiscard]] bool is_avatar() const noexcept
     {

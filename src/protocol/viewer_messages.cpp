@@ -498,7 +498,36 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         {
             return std::nullopt;
         }
-        offset += 23U; // path/profile shape fields
+
+        object.shape.path_curve = payload[offset++];
+        object.shape.profile_curve = payload[offset++];
+        object.shape.path_begin = read_le_u16(payload, offset);
+        offset += 2U;
+        object.shape.path_end = read_le_u16(payload, offset);
+        offset += 2U;
+        object.shape.path_scale_x = payload[offset++];
+        object.shape.path_scale_y = payload[offset++];
+        object.shape.path_shear_x = payload[offset++];
+        object.shape.path_shear_y = payload[offset++];
+        object.shape.path_twist =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.path_twist_begin =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.path_radius_offset =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.path_taper_x =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.path_taper_y =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.path_revolutions = payload[offset++];
+        object.shape.path_skew =
+            static_cast<std::int8_t>(payload[offset++]);
+        object.shape.profile_begin = read_le_u16(payload, offset);
+        offset += 2U;
+        object.shape.profile_end = read_le_u16(payload, offset);
+        offset += 2U;
+        object.shape.profile_hollow = read_le_u16(payload, offset);
+        offset += 2U;
 
         if (!skip_variable2(payload, offset) ||
             !skip_variable1(payload, offset) ||

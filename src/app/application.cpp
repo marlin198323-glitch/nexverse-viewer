@@ -207,6 +207,65 @@ CameraState render_camera_from_agent(
     return camera;
 }
 
+nexverse::render::RenderPrimitiveKind render_primitive_kind(
+    const nexverse::protocol::PrimitiveShapeData& shape)
+{
+    constexpr std::uint8_t path_straight = 0x10U;
+    constexpr std::uint8_t path_curve_1 = 0x20U;
+    constexpr std::uint8_t path_curve_2 = 0x30U;
+    constexpr std::uint8_t path_flexible = 0x80U;
+
+    constexpr std::uint8_t profile_circle = 0U;
+    constexpr std::uint8_t profile_square = 1U;
+    constexpr std::uint8_t profile_triangle_min = 2U;
+    constexpr std::uint8_t profile_triangle_max = 4U;
+    constexpr std::uint8_t profile_half_circle = 5U;
+
+    const std::uint8_t profile = shape.profile_shape();
+
+    if (shape.path_curve == path_straight ||
+        shape.path_curve == path_flexible)
+    {
+        if (profile == profile_circle)
+        {
+            return nexverse::render::RenderPrimitiveKind::cylinder;
+        }
+        if (profile >= profile_triangle_min &&
+            profile <= profile_triangle_max)
+        {
+            return nexverse::render::RenderPrimitiveKind::prism;
+        }
+        return nexverse::render::RenderPrimitiveKind::box;
+    }
+
+    if (shape.path_curve == path_curve_1 ||
+        shape.path_curve == path_curve_2)
+    {
+        if (profile == profile_half_circle)
+        {
+            return nexverse::render::RenderPrimitiveKind::sphere;
+        }
+
+        return nexverse::render::RenderPrimitiveKind::torus;
+    }
+
+    if (profile == profile_circle)
+    {
+        return nexverse::render::RenderPrimitiveKind::cylinder;
+    }
+    if (profile == profile_square)
+    {
+        return nexverse::render::RenderPrimitiveKind::box;
+    }
+    if (profile >= profile_triangle_min &&
+        profile <= profile_triangle_max)
+    {
+        return nexverse::render::RenderPrimitiveKind::prism;
+    }
+
+    return nexverse::render::RenderPrimitiveKind::box;
+}
+
 struct LoginUiState
 {
     LoginField focused = LoginField::username;
@@ -2768,6 +2827,7 @@ int Application::run()
                 object.position = entry.position;
                 object.rotation = entry.rotation;
                 object.scale = entry.scale;
+                object.shape = entry.shape;
                 world_model.upsert_object(std::move(object));
             }
         });
@@ -2849,6 +2909,7 @@ int Application::run()
                 {
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
+                    object.shape = existing->second.shape;
                 }
 
                 world_model.upsert_object(std::move(object));
@@ -2943,6 +3004,7 @@ int Application::run()
                     object.pcode = existing->second.pcode;
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
+                    object.shape = existing->second.shape;
                 }
 
                 world_model.upsert_object(std::move(object));
@@ -4217,7 +4279,7 @@ int Application::run()
                         render_object.local_id = object.local_id;
                         render_object.parent_id = object.parent_id;
                         render_object.kind =
-                            render::RenderPrimitiveKind::box;
+                            render_primitive_kind(object.shape);
                         render_object.position = {
                             object.position.x,
                             object.position.y,
