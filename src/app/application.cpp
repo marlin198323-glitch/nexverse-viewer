@@ -4316,6 +4316,46 @@ int Application::run()
                                 render_object.path_begin + 0.0001f,
                                 1.0f);
 
+                        render_object.profile_begin =
+                            std::clamp(
+                                static_cast<float>(object.shape.profile_begin) *
+                                    0.00002f,
+                                0.0f,
+                                1.0f);
+                        render_object.profile_end =
+                            std::clamp(
+                                1.0f -
+                                    static_cast<float>(object.shape.profile_end) *
+                                        0.00002f,
+                                render_object.profile_begin + 0.0001f,
+                                1.0f);
+                        render_object.profile_hollow =
+                            std::clamp(
+                                static_cast<float>(object.shape.profile_hollow) *
+                                    0.00002f,
+                                0.0f,
+                                0.95f);
+
+                        switch (object.shape.hollow_shape())
+                        {
+                            case 0x10U:
+                                render_object.hollow_profile =
+                                    render::RenderProfileKind::circle;
+                                break;
+                            case 0x20U:
+                                render_object.hollow_profile =
+                                    render::RenderProfileKind::square;
+                                break;
+                            case 0x30U:
+                                render_object.hollow_profile =
+                                    render::RenderProfileKind::triangle;
+                                break;
+                            default:
+                                render_object.hollow_profile =
+                                    render::RenderProfileKind::same;
+                                break;
+                        }
+
                         render_object.taper_x =
                             static_cast<float>(object.shape.path_taper_x) * 0.01f;
                         render_object.taper_y =

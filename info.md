@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.28`.
+Aktuelle Viewer-Version: `0.2.0-alpha.29`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -555,6 +555,18 @@ Phase 7 gestartet:
 - ungültige/überlappende Bereiche werden auf einen minimal gültigen Pfadbereich geklemmt
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.28`
 - kompletter Debug-Build nach PathBegin-/PathEnd-Block: 18/18 Tests grün
+- `0.2.0-alpha.29`: lineare Primprofile unterstützen jetzt `ProfileBegin`, `ProfileEnd` und `ProfileHollow`
+- OpenSim-Skalierung: Profile Begin/End/Hollow verwenden `raw * 0.00002`; Hollow wird auf maximal 0.95 begrenzt
+- Quadrat-, Kreis- und Dreiecksprofile werden als echte Querschnittskonturen generiert
+- Profile-Cuts erzeugen echte Schnittflächen statt nur Fragment-Clipping
+- Hollow erzeugt Außenwand, Innenwand sowie obere/untere Ringflächen
+- Hollow-Profile `Same`, `Circle`, `Square` und `Triangle` werden berücksichtigt
+- dynamische Profilmeshes werden nach Shape/Begin/End/Hollow gecacht
+- GPU-Profilcache ist auf 512 eindeutige Kombinationen begrenzt; darüber bleibt der sichere Standardmesh-Fallback
+- Profilmesh-Cache wird beim Renderer-Shutdown vollständig freigegeben
+- Taper/Shear/Twist/PathCut wirken weiterhin auf das generierte Profilmesh
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.29`
+- kompletter Debug-Build nach ProfileCut-/Hollow-Block: 18/18 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

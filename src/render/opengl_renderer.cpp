@@ -24,6 +24,9 @@
 namespace
 {
 using nexverse::render::RenderCamera;
+using nexverse::render::RenderPrimitiveKind;
+using nexverse::render::RenderProfileKind;
+using nexverse::render::RenderSceneObject;
 using nexverse::render::RenderVec3;
 
 constexpr GLenum gl_gpu_memory_info_total_available_memory_nvx = 0x9048;
@@ -472,6 +475,431 @@ MeshData make_torus_mesh(
     }
 
     return mesh;
+}
+
+struct ProfilePoint
+{
+    float x = 0.0f;
+    float y = 0.0f;
+};
+
+RenderProfileKind outer_profile_kind(RenderPrimitiveKind kind)
+{
+    switch (kind)
+    {
+        case RenderPrimitiveKind::cylinder:
+            return RenderProfileKind::circle;
+        case RenderPrimitiveKind::prism:
+            return RenderProfileKind::triangle;
+        case RenderPrimitiveKind::box:
+        default:
+            return RenderProfileKind::square;
+    }
+}
+
+ProfilePoint profile_point(RenderProfileKind kind, float parameter)
+{
+    const float u =
+        parameter - std::floor(parameter);
+
+    if (kind == RenderProfileKind::circle)
+    {
+        const float angle =
+            -0.5f * std::numbers::pi_v<float> +
+            2.0f * std::numbers::pi_v<float> * u;
+        return {
+            0.5f * std::cos(angle),
+            0.5f * std::sin(angle)};
+    }
+
+    if (kind == RenderProfileKind::triangle)
+    {
+        constexpr std::array<ProfilePoint, 3> vertices{{
+            {0.0f, -0.577350269f},
+            {0.5f, 0.288675135f},
+            {-0.5f, 0.288675135f}
+        }};
+
+        const float scaled = u * 3.0f;
+        const std::size_t side =
+            static_cast<std::size_t>(scaled) % 3U;
+        const float t =
+            scaled - std::floor(scaled);
+        const ProfilePoint a = vertices[side];
+        const ProfilePoint b =
+            vertices[(side + 1U) % vertices.size()];
+        return {
+            a.x + (b.x - a.x) * t,
+            a.y + (b.y - a.y) * t};
+    }
+
+    constexpr std::array<ProfilePoint, 4> vertices{{
+        {0.5f, -0.5f},
+        {0.5f, 0.5f},
+        {-0.5f, 0.5f},
+        {-0.5f, -0.5f}
+    }};
+
+    const float scaled = u * 4.0f;
+    const std::size_t side =
+        static_cast<std::size_t>(scaled) % 4U;
+    const float t =
+        scaled - std::floor(scaled);
+    const ProfilePoint a = vertices[side];
+    const ProfilePoint b =
+        vertices[(side + 1U) % vertices.size()];
+    return {
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t};
+}
+
+void add_profile_breakpoints(
+    std::vector<float>& values,
+    RenderProfileKind kind,
+    float begin,
+    float end)
+{
+    if (kind == RenderProfileKind::square)
+    {
+        for (float value : {0.25f, 0.5f, 0.75f})
+        {
+            if (value > begin && value < end)
+            {
+                values.push_back(value);
+            }
+        }
+    }
+    else if (kind == RenderProfileKind::triangle)
+    {
+        for (float value : {1.0f / 3.0f, 2.0f / 3.0f})
+        {
+            if (value > begin && value < end)
+            {
+                values.push_back(value);
+            }
+        }
+    }
+}
+
+std::vector<float> profile_parameters(
+    RenderProfileKind outer,
+    RenderProfileKind inner,
+    float begin,
+    float end)
+{
+    std::vector<float> values;
+    values.push_back(begin);
+
+    if (outer == RenderProfileKind::circle ||
+        inner == RenderProfileKind::circle)
+    {
+        const float range = std::max(0.0001f, end - begin);
+        const std::uint32_t segments =
+            std::max<std::uint32_t>(
+                4U,
+                static_cast<std::uint32_t>(
+                    std::ceil(range * 32.0f)));
+        for (std::uint32_t index = 1U;
+             index < segments;
+             ++index)
+        {
+            values.push_back(
+                begin +
+                range *
+                    static_cast<float>(index) /
+                    static_cast<float>(segments));
+        }
+    }
+
+    add_profile_breakpoints(values, outer, begin, end);
+    add_profile_breakpoints(values, inner, begin, end);
+    values.push_back(end);
+
+    std::sort(values.begin(), values.end());
+    values.erase(
+        std::unique(
+            values.begin(),
+            values.end(),
+            [](float a, float b)
+            {
+                return std::abs(a - b) < 0.000001f;
+            }),
+        values.end());
+
+    return values;
+}
+
+std::uint32_t append_profile_vertex(
+    MeshData& mesh,
+    ProfilePoint point,
+    float z,
+    float scale_amount = 1.0f)
+{
+    const std::uint32_t index =
+        static_cast<std::uint32_t>(
+            mesh.vertices.size() / 6U);
+    append_vertex(
+        mesh,
+        point.x * scale_amount,
+        point.y * scale_amount,
+        z);
+    return index;
+}
+
+void append_quad(
+    MeshData& mesh,
+    std::uint32_t a,
+    std::uint32_t b,
+    std::uint32_t c,
+    std::uint32_t d)
+{
+    mesh.indices.insert(
+        mesh.indices.end(),
+        {a, b, c, a, c, d});
+}
+
+MeshData make_linear_profile_mesh(
+    RenderPrimitiveKind kind,
+    float profile_begin,
+    float profile_end,
+    float hollow,
+    RenderProfileKind hollow_kind)
+{
+    MeshData mesh;
+
+    const RenderProfileKind outer =
+        outer_profile_kind(kind);
+    const RenderProfileKind inner =
+        hollow_kind == RenderProfileKind::same
+            ? outer
+            : hollow_kind;
+
+    const float begin =
+        std::clamp(profile_begin, 0.0f, 0.9998f);
+    const float end =
+        std::clamp(
+            profile_end,
+            begin + 0.0001f,
+            1.0f);
+    const float hollow_amount =
+        std::clamp(hollow, 0.0f, 0.95f);
+    const bool has_hollow = hollow_amount > 0.0001f;
+    const bool full_profile =
+        begin <= 0.0001f && end >= 0.9999f;
+
+    const auto parameters =
+        profile_parameters(
+            outer,
+            has_hollow ? inner : outer,
+            begin,
+            end);
+
+    if (parameters.size() < 2U)
+    {
+        return mesh;
+    }
+
+    std::vector<std::uint32_t> outer_bottom;
+    std::vector<std::uint32_t> outer_top;
+    std::vector<std::uint32_t> inner_bottom;
+    std::vector<std::uint32_t> inner_top;
+
+    outer_bottom.reserve(parameters.size());
+    outer_top.reserve(parameters.size());
+    inner_bottom.reserve(parameters.size());
+    inner_top.reserve(parameters.size());
+
+    for (float parameter : parameters)
+    {
+        const ProfilePoint outer_point =
+            profile_point(outer, parameter);
+        outer_bottom.push_back(
+            append_profile_vertex(
+                mesh,
+                outer_point,
+                -0.5f));
+        outer_top.push_back(
+            append_profile_vertex(
+                mesh,
+                outer_point,
+                0.5f));
+
+        if (has_hollow)
+        {
+            const ProfilePoint inner_point =
+                profile_point(inner, parameter);
+            inner_bottom.push_back(
+                append_profile_vertex(
+                    mesh,
+                    inner_point,
+                    -0.5f,
+                    hollow_amount));
+            inner_top.push_back(
+                append_profile_vertex(
+                    mesh,
+                    inner_point,
+                    0.5f,
+                    hollow_amount));
+        }
+    }
+
+    for (std::size_t index = 0U;
+         index + 1U < parameters.size();
+         ++index)
+    {
+        const std::size_t next = index + 1U;
+
+        append_quad(
+            mesh,
+            outer_bottom[index],
+            outer_bottom[next],
+            outer_top[next],
+            outer_top[index]);
+
+        if (has_hollow)
+        {
+            append_quad(
+                mesh,
+                inner_bottom[next],
+                inner_bottom[index],
+                inner_top[index],
+                inner_top[next]);
+
+            append_quad(
+                mesh,
+                outer_top[index],
+                outer_top[next],
+                inner_top[next],
+                inner_top[index]);
+
+            append_quad(
+                mesh,
+                outer_bottom[next],
+                outer_bottom[index],
+                inner_bottom[index],
+                inner_bottom[next]);
+        }
+    }
+
+    if (!has_hollow)
+    {
+        const std::uint32_t bottom_center =
+            append_profile_vertex(
+                mesh,
+                {0.0f, 0.0f},
+                -0.5f);
+        const std::uint32_t top_center =
+            append_profile_vertex(
+                mesh,
+                {0.0f, 0.0f},
+                0.5f);
+
+        for (std::size_t index = 0U;
+             index + 1U < parameters.size();
+             ++index)
+        {
+            const std::size_t next = index + 1U;
+            mesh.indices.insert(
+                mesh.indices.end(),
+                {
+                    bottom_center,
+                    outer_bottom[next],
+                    outer_bottom[index],
+                    top_center,
+                    outer_top[index],
+                    outer_top[next]
+                });
+        }
+
+        if (!full_profile)
+        {
+            append_quad(
+                mesh,
+                bottom_center,
+                outer_bottom.front(),
+                outer_top.front(),
+                top_center);
+            append_quad(
+                mesh,
+                bottom_center,
+                top_center,
+                outer_top.back(),
+                outer_bottom.back());
+        }
+    }
+    else if (!full_profile)
+    {
+        append_quad(
+            mesh,
+            outer_bottom.front(),
+            inner_bottom.front(),
+            inner_top.front(),
+            outer_top.front());
+        append_quad(
+            mesh,
+            outer_bottom.back(),
+            outer_top.back(),
+            inner_top.back(),
+            inner_bottom.back());
+    }
+
+    return mesh;
+}
+
+std::uint64_t profile_mesh_key(
+    const RenderSceneObject& object)
+{
+    auto quantize = [](float value)
+    {
+        return static_cast<std::uint64_t>(
+            std::clamp(
+                std::llround(
+                    static_cast<double>(
+                        std::clamp(value, 0.0f, 1.0f)) *
+                    50000.0),
+                0LL,
+                50000LL));
+    };
+
+    const std::uint64_t kind =
+        static_cast<std::uint64_t>(object.kind) & 0x0FU;
+    const std::uint64_t hollow_kind =
+        static_cast<std::uint64_t>(
+            object.hollow_profile) & 0x0FU;
+    const std::uint64_t begin =
+        quantize(object.profile_begin);
+    const std::uint64_t end_cut =
+        quantize(1.0f - object.profile_end);
+    const std::uint64_t hollow =
+        quantize(object.profile_hollow);
+
+    return
+        kind |
+        (hollow_kind << 4U) |
+        (begin << 8U) |
+        (end_cut << 24U) |
+        (hollow << 40U);
+}
+
+bool needs_dynamic_profile_mesh(
+    const RenderSceneObject& object)
+{
+    if (!object.linear_path_deform)
+    {
+        return false;
+    }
+
+    if (object.kind != RenderPrimitiveKind::box &&
+        object.kind != RenderPrimitiveKind::cylinder &&
+        object.kind != RenderPrimitiveKind::prism)
+    {
+        return false;
+    }
+
+    return
+        object.profile_begin > 0.0001f ||
+        object.profile_end < 0.9999f ||
+        object.profile_hollow > 0.0001f;
 }
 
 bool upload_mesh(
@@ -1549,31 +1977,42 @@ public:
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
 
-                switch (object.kind)
+                if (GpuMesh* profile_mesh =
+                        profile_mesh_for(object);
+                    profile_mesh != nullptr)
                 {
-                    case RenderPrimitiveKind::cylinder:
-                        object_vao = cylinder_mesh_.vao;
-                        object_index_count =
-                            cylinder_mesh_.index_count;
-                        break;
-                    case RenderPrimitiveKind::prism:
-                        object_vao = prism_mesh_.vao;
-                        object_index_count =
-                            prism_mesh_.index_count;
-                        break;
-                    case RenderPrimitiveKind::sphere:
-                        object_vao = sphere_mesh_.vao;
-                        object_index_count =
-                            sphere_mesh_.index_count;
-                        break;
-                    case RenderPrimitiveKind::torus:
-                        object_vao = torus_mesh_.vao;
-                        object_index_count =
-                            torus_mesh_.index_count;
-                        break;
-                    case RenderPrimitiveKind::box:
-                    default:
-                        break;
+                    object_vao = profile_mesh->vao;
+                    object_index_count =
+                        profile_mesh->index_count;
+                }
+                else
+                {
+                    switch (object.kind)
+                    {
+                        case RenderPrimitiveKind::cylinder:
+                            object_vao = cylinder_mesh_.vao;
+                            object_index_count =
+                                cylinder_mesh_.index_count;
+                            break;
+                        case RenderPrimitiveKind::prism:
+                            object_vao = prism_mesh_.vao;
+                            object_index_count =
+                                prism_mesh_.index_count;
+                            break;
+                        case RenderPrimitiveKind::sphere:
+                            object_vao = sphere_mesh_.vao;
+                            object_index_count =
+                                sphere_mesh_.index_count;
+                            break;
+                        case RenderPrimitiveKind::torus:
+                            object_vao = torus_mesh_.vao;
+                            object_index_count =
+                                torus_mesh_.index_count;
+                            break;
+                        case RenderPrimitiveKind::box:
+                        default:
+                            break;
+                    }
                 }
 
                 if (object_vao == 0U ||
@@ -1659,6 +2098,13 @@ public:
         destroy_mesh(prism_mesh_);
         destroy_mesh(sphere_mesh_);
         destroy_mesh(torus_mesh_);
+
+        for (auto& [key, mesh] : profile_mesh_cache_)
+        {
+            (void)key;
+            destroy_mesh(mesh);
+        }
+        profile_mesh_cache_.clear();
 
         if (terrain_textures_[0] != 0U)
         {
@@ -1790,6 +2236,55 @@ private:
                 std::max(object.scale.z, 0.01f)}));
     }
 
+    [[nodiscard]] GpuMesh* profile_mesh_for(
+        const RenderSceneObject& object)
+    {
+        if (!needs_dynamic_profile_mesh(object))
+        {
+            return nullptr;
+        }
+
+        const std::uint64_t key =
+            profile_mesh_key(object);
+
+        if (auto found = profile_mesh_cache_.find(key);
+            found != profile_mesh_cache_.end())
+        {
+            return &found->second;
+        }
+
+        constexpr std::size_t max_profile_meshes = 512U;
+        if (profile_mesh_cache_.size() >= max_profile_meshes)
+        {
+            return nullptr;
+        }
+
+        const MeshData source =
+            make_linear_profile_mesh(
+                object.kind,
+                object.profile_begin,
+                object.profile_end,
+                object.profile_hollow,
+                object.hollow_profile);
+
+        GpuMesh gpu;
+        if (!upload_mesh(gpu, source))
+        {
+            return nullptr;
+        }
+
+        auto [inserted, ok] =
+            profile_mesh_cache_.emplace(
+                key,
+                std::move(gpu));
+        if (!ok)
+        {
+            return nullptr;
+        }
+
+        return &inserted->second;
+    }
+
     [[nodiscard]] bool scene_object_visible(
         const Mat4& model,
         const RenderSceneObject& object) const
@@ -1882,6 +2377,7 @@ private:
     RenderEnvironment environment_;
     std::vector<RenderSceneObject> scene_objects_;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
+    std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };

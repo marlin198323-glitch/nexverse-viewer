@@ -36,6 +36,14 @@ enum class RenderPrimitiveKind : std::uint8_t
     torus = 4U
 };
 
+enum class RenderProfileKind : std::uint8_t
+{
+    same = 0U,
+    circle = 1U,
+    square = 2U,
+    triangle = 3U
+};
+
 struct RenderSceneObject
 {
     std::uint32_t local_id = 0U;
@@ -48,6 +56,10 @@ struct RenderSceneObject
     bool linear_path_deform = false;
     float path_begin = 0.0f;
     float path_end = 1.0f;
+    float profile_begin = 0.0f;
+    float profile_end = 1.0f;
+    float profile_hollow = 0.0f;
+    RenderProfileKind hollow_profile = RenderProfileKind::same;
     float taper_x = 0.0f;
     float taper_y = 0.0f;
     float shear_x = 0.0f;
