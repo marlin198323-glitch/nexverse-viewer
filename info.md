@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.30`.
+Aktuelle Viewer-Version: `0.2.0-alpha.31`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -582,6 +582,18 @@ Phase 7 gestartet:
 - bei Cache-Limit/Generierungsfehler bleibt das vorhandene statische Torus-/Sphere-Fallback verfügbar
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.30`
 - kompletter Debug-Build nach Circular-Sweep-/Revolutions-/RadiusOffset-/Skew-Block: 18/18 Tests grün
+- `0.2.0-alpha.31`: eigenes Protocol-Modul für OpenSim/Linden-`TextureEntry` ergänzt
+- Full-`ObjectUpdate` liest den `TextureEntry`-Variable2-Block jetzt autoritativ ein statt ihn zu überspringen
+- Roh-`TextureEntry` wird im WorldModel erhalten; Compressed-/Terse-Updates übernehmen den zuletzt bekannten Materialzustand
+- Default-Face-Parser dekodiert Texture UUID, invertierte RGBA-Farbe, RepeatU/V, OffsetU/V, Rotation, BasicMaterial, Media, Glow sowie optionale Material-/RenderMaterial-UUIDs
+- TextureEntry-Face-Bitfield-Sektionen werden bounds-geprüft übersprungen; per-Face-Overrides folgen separat
+- Renderer übernimmt Default-Face-Farbe und Alpha statt der bisherigen Debugfarbe
+- transparente Default-Faces aktivieren Alpha-Blending nur für den betreffenden Drawcall; GL-Depth-/Blend-State wird anschließend wiederhergestellt
+- Glow wird als erster sichtbarer Materialparameter berücksichtigt
+- Fullbright und Shiny werden aus dem BasicMaterial-Byte dekodiert und im Render-State erhalten
+- neuer `nexverse-texture-entry-tests` Binärtest sowie Full-ObjectUpdate-Regression mit echter TextureEntry
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.31`
+- kompletter Debug-Build nach TextureEntry-/Default-Materialblock: 19/19 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

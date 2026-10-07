@@ -1434,6 +1434,7 @@ uniform float uAlpha;
 uniform bool uUseTerrainTextures;
 uniform bool uOverrideColor;
 uniform vec3 uOverrideColorValue;
+uniform float uObjectGlow;
 uniform vec3 uFogHorizon;
 uniform sampler2D uTerrain0;
 uniform sampler2D uTerrain1;
@@ -1480,6 +1481,7 @@ void main()
     if (uOverrideColor)
     {
         base = uOverrideColorValue;
+        base += vec3(clamp(uObjectGlow, 0.0, 1.0) * 0.35);
     }
 
     float fog = smoothstep(0.90, 1.0, gl_FragCoord.z);
@@ -2355,14 +2357,56 @@ public:
                     glGetUniformLocation(program_, "uPrimTwistEnd"),
                     object.twist_end_radians);
 
-                const bool child = object.parent_id != 0U;
+                const bool has_texture_entry =
+                    !object.texture_id.empty();
+                const bool child =
+                    object.parent_id != 0U;
+
+                const float color_r =
+                    has_texture_entry
+                        ? object.color[0]
+                        : (child ? 0.48f : 0.58f);
+                const float color_g =
+                    has_texture_entry
+                        ? object.color[1]
+                        : (child ? 0.68f : 0.74f);
+                const float color_b =
+                    has_texture_entry
+                        ? object.color[2]
+                        : (child ? 0.82f : 0.88f);
+                const float alpha =
+                    has_texture_entry
+                        ? std::clamp(
+                            object.color[3],
+                            0.0f,
+                            1.0f)
+                        : 1.0f;
+
                 glUniform3f(
                     glGetUniformLocation(
                         program_,
                         "uOverrideColorValue"),
-                    child ? 0.48f : 0.58f,
-                    child ? 0.68f : 0.74f,
-                    child ? 0.82f : 0.88f);
+                    color_r,
+                    color_g,
+                    color_b);
+                glUniform1f(
+                    glGetUniformLocation(
+                        program_,
+                        "uObjectGlow"),
+                    has_texture_entry
+                        ? std::clamp(
+                            object.glow,
+                            0.0f,
+                            1.0f)
+                        : 0.0f);
+                glUniform1f(
+                    glGetUniformLocation(
+                        program_,
+                        "uAlpha"),
+                    alpha);
+
+                const bool transparent =
+                    alpha < 0.999f;
 
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
@@ -2419,6 +2463,15 @@ public:
                     continue;
                 }
 
+                if (transparent)
+                {
+                    glEnable(GL_BLEND);
+                    glBlendFunc(
+                        GL_SRC_ALPHA,
+                        GL_ONE_MINUS_SRC_ALPHA);
+                    glDepthMask(GL_FALSE);
+                }
+
                 glBindVertexArray(object_vao);
                 glDrawElements(
                     GL_TRIANGLES,
@@ -2431,8 +2484,20 @@ public:
                     static_cast<std::uint64_t>(
                         object_index_count / 3);
                 ++diagnostics_.visible_objects;
+
+                if (transparent)
+                {
+                    glDepthMask(GL_TRUE);
+                    glDisable(GL_BLEND);
+                }
             }
 
+            glUniform1f(
+                glGetUniformLocation(program_, "uAlpha"),
+                1.0f);
+            glUniform1f(
+                glGetUniformLocation(program_, "uObjectGlow"),
+                0.0f);
             glBindVertexArray(0U);
             glUniform1i(
                 glGetUniformLocation(program_, "uUsePrimDeform"),

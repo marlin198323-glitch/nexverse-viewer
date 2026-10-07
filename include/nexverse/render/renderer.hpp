@@ -72,6 +72,18 @@ struct RenderSceneObject
     float shear_y = 0.0f;
     float twist_begin_radians = 0.0f;
     float twist_end_radians = 0.0f;
+
+    std::string texture_id;
+    std::array<float, 4> color{
+        0.58f, 0.74f, 0.88f, 1.0f};
+    float repeat_u = 1.0f;
+    float repeat_v = 1.0f;
+    float offset_u = 0.0f;
+    float offset_v = 0.0f;
+    float texture_rotation = 0.0f;
+    bool fullbright = false;
+    std::uint8_t shiny = 0U;
+    float glow = 0.0f;
 };
 
 struct RenderCamera

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "nexverse/protocol/lludp.hpp"
+#include "nexverse/protocol/texture_entry.hpp"
 
 #include <array>
 #include <cstdint>
@@ -182,6 +183,8 @@ struct ObjectUpdateEntry
     Quaternion rotation;
     Vec3 scale{1.0f, 1.0f, 1.0f};
     PrimitiveShapeData shape;
+    std::vector<std::uint8_t> texture_entry;
+    std::optional<TextureEntryDefaultFace> default_texture;
 
     [[nodiscard]] bool is_avatar() const noexcept
     {

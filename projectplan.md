@@ -1124,7 +1124,7 @@ Aktueller Implementierungsstand:
 - Parent/Child-Transformbasis und Distanz-Culling aktiv
 - Compressed-/Terse-Updates erhalten bekannte statische Shape-/Scale-/Parent-Daten
 - Taper, Shear, Twist, Path Begin/End sowie Profile Begin/End und Hollow für lineare Prims sind aktiv; Circular-Sweep-Pfade berücksichtigen Revolutions, RadiusOffset, Skew und PathScaleX/Y
-- als nächstes Objekttexturen/Materialien und vollständige Face-/TextureEntry-Auswertung; danach verbleibende PrimMesher-Sonderfälle/Feinabgleich
+- TextureEntry-Default-Face einschließlich Farbe/Alpha/Glow ist aktiv; als nächstes Objekttexturen über GetTexture, vollständige Face-Overrides/UV-Zuordnung und anschließend Material-/PBR-Ausbau
 
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.
 

@@ -259,7 +259,50 @@ int main()
     full_update_payload.push_back(0x10U);
     full_update_payload.push_back(0x01U);
     full_update_payload.insert(full_update_payload.end(), 21U, 0U);
-    full_update_payload.insert(full_update_payload.end(), {0U, 0U});
+
+    std::vector<std::uint8_t> object_texture_entry;
+    const auto default_texture_id =
+        uuid_to_bytes("89556747-24cb-43ed-920b-47caed15465f");
+    object_texture_entry.insert(
+        object_texture_entry.end(),
+        default_texture_id->begin(),
+        default_texture_id->end());
+    object_texture_entry.push_back(0U); // texture overrides
+
+    object_texture_entry.insert(
+        object_texture_entry.end(),
+        {64U, 128U, 191U, 51U});
+    object_texture_entry.push_back(0U); // color overrides
+
+    append_f32_vec(object_texture_entry, 1.0f);
+    object_texture_entry.push_back(0U); // repeat U overrides
+    append_f32_vec(object_texture_entry, 1.0f);
+    object_texture_entry.push_back(0U); // repeat V overrides
+
+    object_texture_entry.insert(
+        object_texture_entry.end(),
+        {0U, 0U, 0U}); // offset U + overrides
+    object_texture_entry.insert(
+        object_texture_entry.end(),
+        {0U, 0U, 0U}); // offset V + overrides
+    object_texture_entry.insert(
+        object_texture_entry.end(),
+        {0U, 0U, 0U}); // rotation + overrides
+
+    object_texture_entry.push_back(0x60U);
+    object_texture_entry.push_back(0U); // material overrides
+
+    full_update_payload.push_back(
+        static_cast<std::uint8_t>(
+            object_texture_entry.size() & 0xFFU));
+    full_update_payload.push_back(
+        static_cast<std::uint8_t>(
+            (object_texture_entry.size() >> 8U) & 0xFFU));
+    full_update_payload.insert(
+        full_update_payload.end(),
+        object_texture_entry.begin(),
+        object_texture_entry.end());
+
     full_update_payload.push_back(0U);
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
@@ -291,7 +334,17 @@ int main()
         full_update->objects[0].scale.y != 3.0f ||
         full_update->objects[0].scale.z != 4.0f ||
         full_update->objects[0].shape.path_curve != 0x10U ||
-        full_update->objects[0].shape.profile_shape() != 0x01U)
+        full_update->objects[0].shape.profile_shape() != 0x01U ||
+        !full_update->objects[0].default_texture.has_value() ||
+        full_update->objects[0].default_texture->texture_id !=
+            "89556747-24cb-43ed-920b-47caed15465f" ||
+        std::abs(
+            full_update->objects[0].default_texture->color[0] -
+            (191.0f / 255.0f)) > 0.0001f ||
+        std::abs(
+            full_update->objects[0].default_texture->color[3] -
+            (204.0f / 255.0f)) > 0.0001f ||
+        full_update->objects[0].default_texture->material != 0x60U)
     {
         std::cerr << "ObjectUpdate decode failed\n";
         return 12;

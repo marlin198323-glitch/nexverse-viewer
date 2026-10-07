@@ -2828,6 +2828,8 @@ int Application::run()
                 object.rotation = entry.rotation;
                 object.scale = entry.scale;
                 object.shape = entry.shape;
+                object.texture_entry = entry.texture_entry;
+                object.default_texture = entry.default_texture;
                 world_model.upsert_object(std::move(object));
             }
         });
@@ -2910,6 +2912,10 @@ int Application::run()
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
                     object.shape = existing->second.shape;
+                    object.texture_entry =
+                        existing->second.texture_entry;
+                    object.default_texture =
+                        existing->second.default_texture;
                 }
 
                 world_model.upsert_object(std::move(object));
@@ -3005,6 +3011,10 @@ int Application::run()
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
                     object.shape = existing->second.shape;
+                    object.texture_entry =
+                        existing->second.texture_entry;
+                    object.default_texture =
+                        existing->second.default_texture;
                 }
 
                 world_model.upsert_object(std::move(object));
@@ -4416,6 +4426,34 @@ int Application::run()
                         render_object.twist_end_radians =
                             static_cast<float>(object.shape.path_twist) *
                             pi * 0.01f;
+
+                        if (object.default_texture.has_value())
+                        {
+                            const auto& face =
+                                *object.default_texture;
+                            render_object.texture_id =
+                                face.texture_id;
+                            render_object.color =
+                                face.color;
+                            render_object.repeat_u =
+                                face.repeat_u;
+                            render_object.repeat_v =
+                                face.repeat_v;
+                            render_object.offset_u =
+                                face.offset_u;
+                            render_object.offset_v =
+                                face.offset_v;
+                            render_object.texture_rotation =
+                                face.rotation;
+                            render_object.fullbright =
+                                (face.material & 0x20U) != 0U;
+                            render_object.shiny =
+                                static_cast<std::uint8_t>(
+                                    (face.material >> 6U) &
+                                    0x03U);
+                            render_object.glow =
+                                face.glow;
+                        }
 
                         scene_object_update.push_back(
                             std::move(render_object));

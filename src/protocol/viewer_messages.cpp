@@ -166,6 +166,23 @@ bool read_variable2(
     return true;
 }
 
+bool read_variable2_bytes(
+    std::span<const std::uint8_t> bytes,
+    std::size_t& offset,
+    std::vector<std::uint8_t>& value)
+{
+    if (offset + 2U > bytes.size()) return false;
+    const std::size_t count = read_le_u16(bytes, offset);
+    offset += 2U;
+    if (offset + count > bytes.size()) return false;
+
+    value.assign(
+        bytes.begin() + static_cast<std::ptrdiff_t>(offset),
+        bytes.begin() + static_cast<std::ptrdiff_t>(offset + count));
+    offset += count;
+    return true;
+}
+
 bool skip_variable1(std::span<const std::uint8_t> bytes, std::size_t& offset)
 {
     if (offset >= bytes.size()) return false;
@@ -529,8 +546,22 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         object.shape.profile_hollow = read_le_u16(payload, offset);
         offset += 2U;
 
-        if (!skip_variable2(payload, offset) ||
-            !skip_variable1(payload, offset) ||
+        if (!read_variable2_bytes(
+                payload,
+                offset,
+                object.texture_entry))
+        {
+            return std::nullopt;
+        }
+
+        if (!object.texture_entry.empty())
+        {
+            object.default_texture =
+                parse_texture_entry_default(
+                    object.texture_entry);
+        }
+
+        if (!skip_variable1(payload, offset) ||
             !skip_variable2(payload, offset) ||
             !skip_variable2(payload, offset) ||
             !skip_variable1(payload, offset))
