@@ -641,6 +641,20 @@ Phase 7 gestartet:
 - Default-Material bleibt Fallback, falls für eine Face-ID kein Override vorhanden ist
 - kompletter Debug-Build nach erweitertem Prim-Face-Mapping: 19/19 Tests grün
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.35`
+- `0.2.0-alpha.36`: Prim-Meshes besitzen jetzt explizite UV-Koordinaten pro Vertex statt shaderseitiger Normalen-Projektion
+- Box-Mesh verwendet 24 getrennte Face-Vertices, damit jede OpenSim-Fläche eigene UV-Seams besitzt
+- Zylinder: Top/Bottom verwenden planare UVs; Outside verwendet Umfang-U und Höhen-V mit sauberer 0/1-Seam
+- Prisma: Top/Bottom verwenden planare Profil-UVs; jede der drei Außenflächen besitzt eigene 0..1-UVs
+- dynamische lineare Profile erzeugen Face-spezifische UV-Vertices für Top, Outer, Hollow, Bottom und Profile-Cut Begin/End
+- Hollow-Innenwand verwendet einen eigenen umlaufenden U-Kanal und Pfad-V
+- Circular-Sweep-Außenflächen verwenden Profilparameter als U und Sweep-Pfad als V
+- offene Circular-Sweep-Caps besitzen eigene Planar-UV-Seams und teilen keine Außenflächen-UVs mehr
+- statische Sphere-/Torus-Fallbackmeshes besitzen ebenfalls sphärische bzw. toroidale UV-Grundkoordinaten
+- TextureEntry RepeatU/V, OffsetU/V und Rotation werden nun auf den echten Prim-UVs angewendet
+- alter `objectProjectedUv()`-Pfad wurde entfernt
+- Laufzeittest des OpenGL-3.3-Shaders auf NVIDIA GeForce RTX 4070 SUPER erfolgreich
+- kompletter Debug-Build nach Prim-UV-Block: 19/19 Tests grün
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.36`
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
