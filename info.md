@@ -655,6 +655,19 @@ Phase 7 gestartet:
 - Laufzeittest des OpenGL-3.3-Shaders auf NVIDIA GeForce RTX 4070 SUPER erfolgreich
 - kompletter Debug-Build nach Prim-UV-Block: 19/19 Tests grün
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.36`
+- `0.2.0-alpha.37`: TextureEntry-Material-/Media-Bits werden zentral über Hilfsmethoden ausgewertet
+- Fullbright, Shiny und Bumpiness werden aus dem Material-Byte getrennt erhalten
+- Media-on-a-Prim und TexGen werden aus dem Media-Byte getrennt erhalten
+- TexGen Planar wird bis in Default- und per-Face-RenderMaterial übertragen
+- Planar-Mapping verwendet die lokale Face-Ebene und die echte Objektgröße
+- OpenSim/SL-Semantik für Planar-Repeats wird umgesetzt: Repeat-Werte gelten pro 0,5 Meter statt pro Face
+- Default-TexGen verwendet weiterhin die expliziten Face-UVs aus alpha.36
+- RepeatU/V, OffsetU/V und Rotation werden nach Auswahl des Mapping-Modus angewendet
+- Bumpiness und Media-Presence liegen nun im Renderer-Vertrag für die folgenden Material-/Media-Phasen bereit
+- TextureEntry-Regressionsfall prüft Fullbright, Shiny, Bumpiness, Media und Planar-TexGen gemeinsam
+- OpenGL-Shader-Laufzeittest auf NVIDIA GeForce RTX 4070 SUPER erfolgreich
+- kompletter Debug-Build nach TexGen-/Media-Bit-Block: 19/19 Tests grün
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.37`
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

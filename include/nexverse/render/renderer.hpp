@@ -57,6 +57,9 @@ struct RenderFaceMaterial
     float rotation = 0.0f;
     bool fullbright = false;
     std::uint8_t shiny = 0U;
+    std::uint8_t bumpiness = 0U;
+    bool media_present = false;
+    bool texgen_planar = false;
     float glow = 0.0f;
     std::string material_id;
     std::string render_material_id;
@@ -101,6 +104,9 @@ struct RenderSceneObject
     float texture_rotation = 0.0f;
     bool fullbright = false;
     std::uint8_t shiny = 0U;
+    std::uint8_t bumpiness = 0U;
+    bool media_present = false;
+    bool texgen_planar = false;
     float glow = 0.0f;
 
     std::array<std::optional<RenderFaceMaterial>, 64>

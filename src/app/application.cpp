@@ -4458,11 +4458,15 @@ int Application::run()
                             render_object.texture_rotation =
                                 face.rotation;
                             render_object.fullbright =
-                                (face.material & 0x20U) != 0U;
+                                face.fullbright();
                             render_object.shiny =
-                                static_cast<std::uint8_t>(
-                                    (face.material >> 6U) &
-                                    0x03U);
+                                face.shiny();
+                            render_object.bumpiness =
+                                face.bumpiness();
+                            render_object.media_present =
+                                face.media_present();
+                            render_object.texgen_planar =
+                                face.texgen_planar();
                             render_object.glow =
                                 face.glow;
 
@@ -4512,11 +4516,15 @@ int Application::run()
                                 material.rotation =
                                     face.rotation;
                                 material.fullbright =
-                                    (face.material & 0x20U) != 0U;
+                                    face.fullbright();
                                 material.shiny =
-                                    static_cast<std::uint8_t>(
-                                        (face.material >> 6U) &
-                                        0x03U);
+                                    face.shiny();
+                                material.bumpiness =
+                                    face.bumpiness();
+                                material.media_present =
+                                    face.media_present();
+                                material.texgen_planar =
+                                    face.texgen_planar();
                                 material.glow =
                                     face.glow;
                                 material.material_id =

@@ -109,10 +109,10 @@ int main()
     append_u16(bytes, 4096U);
     bytes.push_back(0U);
 
-    bytes.push_back(0x40U);
+    bytes.push_back(0x63U);
     bytes.push_back(0U);
 
-    bytes.push_back(0U);
+    bytes.push_back(0x03U);
     bytes.push_back(0U);
 
     bytes.push_back(64U);
@@ -136,8 +136,14 @@ int main()
         parsed->color[3] != 1.0f ||
         parsed->repeat_u != 1.5f ||
         parsed->repeat_v != 0.75f ||
-        parsed->material != 0x40U ||
-        parsed->media != 0U ||
+        parsed->material != 0x63U ||
+        parsed->media != 0x03U ||
+        !parsed->fullbright() ||
+        parsed->shiny() != 1U ||
+        parsed->bumpiness() != 3U ||
+        !parsed->media_present() ||
+        !parsed->texgen_planar() ||
+        parsed->texgen() != 1U ||
         parsed->glow < 0.24f ||
         parsed->glow > 0.26f)
     {

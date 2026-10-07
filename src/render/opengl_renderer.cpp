@@ -1837,6 +1837,8 @@ uniform vec3 uOverrideColorValue;
 uniform float uObjectGlow;
 uniform bool uObjectFullbright;
 uniform bool uUseObjectTexture;
+uniform bool uObjectTexGenPlanar;
+uniform vec3 uObjectScale;
 uniform vec2 uObjectRepeat;
 uniform vec2 uObjectOffset;
 uniform float uObjectRotation;
@@ -1850,6 +1852,39 @@ uniform sampler2D uTerrain3;
 vec2 objectTextureUv()
 {
     vec2 uv = vTexCoord;
+
+    if (uObjectTexGenPlanar)
+    {
+        vec3 dx = dFdx(vObjectLocal);
+        vec3 dy = dFdy(vObjectLocal);
+        vec3 normal = abs(normalize(cross(dx, dy)));
+
+        if (normal.z >= normal.x && normal.z >= normal.y)
+        {
+            uv =
+                vObjectLocal.xy *
+                uObjectScale.xy *
+                2.0 +
+                vec2(0.5);
+        }
+        else if (normal.x >= normal.y)
+        {
+            uv =
+                vObjectLocal.yz *
+                uObjectScale.yz *
+                2.0 +
+                vec2(0.5);
+        }
+        else
+        {
+            uv =
+                vObjectLocal.xz *
+                uObjectScale.xz *
+                2.0 +
+                vec2(0.5);
+        }
+    }
+
     uv *= uObjectRepeat;
 
     float c = cos(uObjectRotation);
@@ -2929,6 +2964,14 @@ public:
                 const bool child =
                     object.parent_id != 0U;
 
+                glUniform3f(
+                    glGetUniformLocation(
+                        program_,
+                        "uObjectScale"),
+                    std::max(object.scale.x, 0.01f),
+                    std::max(object.scale.y, 0.01f),
+                    std::max(object.scale.z, 0.01f));
+
                 auto draw_material_range =
                     [&](const RenderFaceMaterial* face_material,
                         GLsizei count,
@@ -2972,6 +3015,10 @@ public:
                             face_material != nullptr
                                 ? face_material->fullbright
                                 : object.fullbright;
+                        const bool texgen_planar =
+                            face_material != nullptr
+                                ? face_material->texgen_planar
+                                : object.texgen_planar;
                         const float glow =
                             face_material != nullptr
                                 ? face_material->glow
@@ -3019,6 +3066,14 @@ public:
                                 program_,
                                 "uObjectFullbright"),
                             fullbright ? GL_TRUE : GL_FALSE);
+
+                        glUniform1i(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectTexGenPlanar"),
+                            texgen_planar
+                                ? GL_TRUE
+                                : GL_FALSE);
 
                         bool use_object_texture = false;
                         if (!texture_id.empty())
@@ -3157,6 +3212,9 @@ public:
                 GL_FALSE);
             glUniform1i(
                 glGetUniformLocation(program_, "uUseObjectTexture"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectTexGenPlanar"),
                 GL_FALSE);
             glBindVertexArray(0U);
             glUniform1i(
