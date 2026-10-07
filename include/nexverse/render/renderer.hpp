@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -42,6 +43,23 @@ enum class RenderProfileKind : std::uint8_t
     circle = 1U,
     square = 2U,
     triangle = 3U
+};
+
+struct RenderFaceMaterial
+{
+    std::string texture_id;
+    std::array<float, 4> color{
+        1.0f, 1.0f, 1.0f, 1.0f};
+    float repeat_u = 1.0f;
+    float repeat_v = 1.0f;
+    float offset_u = 0.0f;
+    float offset_v = 0.0f;
+    float rotation = 0.0f;
+    bool fullbright = false;
+    std::uint8_t shiny = 0U;
+    float glow = 0.0f;
+    std::string material_id;
+    std::string render_material_id;
 };
 
 struct RenderSceneObject
@@ -84,6 +102,9 @@ struct RenderSceneObject
     bool fullbright = false;
     std::uint8_t shiny = 0U;
     float glow = 0.0f;
+
+    std::array<std::optional<RenderFaceMaterial>, 64>
+        face_materials;
 };
 
 struct RenderCamera

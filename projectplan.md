@@ -1124,7 +1124,7 @@ Aktueller Implementierungsstand:
 - Parent/Child-Transformbasis und Distanz-Culling aktiv
 - Compressed-/Terse-Updates erhalten bekannte statische Shape-/Scale-/Parent-Daten
 - Taper, Shear, Twist, Path Begin/End sowie Profile Begin/End und Hollow für lineare Prims sind aktiv; Circular-Sweep-Pfade berücksichtigen Revolutions, RadiusOffset, Skew und PathScaleX/Y
-- TextureEntry-Default-Face, echte Default-Face-Objekttexturen und vollständige per-Face-Override-Dekodierung sind aktiv; als nächstes Face-Zuordnung im Renderer, Material-/RenderMaterial-Auswertung und anschließend PBR-Ausbau
+- TextureEntry-Default-Face, echte Objekttexturen und vollständige per-Face-Override-Dekodierung sind aktiv; Standard-Box-Faces werden bereits separat materialisiert, als nächstes Cylinder/Prism/Sweep-Facegruppen, Material-/RenderMaterial-Auswertung und anschließend PBR-Ausbau
 
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.
 

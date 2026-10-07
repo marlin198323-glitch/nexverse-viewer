@@ -2480,107 +2480,6 @@ public:
                     glGetUniformLocation(program_, "uPrimTwistEnd"),
                     object.twist_end_radians);
 
-                const bool has_texture_entry =
-                    !object.texture_id.empty();
-                const bool child =
-                    object.parent_id != 0U;
-
-                const float color_r =
-                    has_texture_entry
-                        ? object.color[0]
-                        : (child ? 0.48f : 0.58f);
-                const float color_g =
-                    has_texture_entry
-                        ? object.color[1]
-                        : (child ? 0.68f : 0.74f);
-                const float color_b =
-                    has_texture_entry
-                        ? object.color[2]
-                        : (child ? 0.82f : 0.88f);
-                const float alpha =
-                    has_texture_entry
-                        ? std::clamp(
-                            object.color[3],
-                            0.0f,
-                            1.0f)
-                        : 1.0f;
-
-                glUniform3f(
-                    glGetUniformLocation(
-                        program_,
-                        "uOverrideColorValue"),
-                    color_r,
-                    color_g,
-                    color_b);
-                glUniform1f(
-                    glGetUniformLocation(
-                        program_,
-                        "uObjectGlow"),
-                    has_texture_entry
-                        ? std::clamp(
-                            object.glow,
-                            0.0f,
-                            1.0f)
-                        : 0.0f);
-                glUniform1i(
-                    glGetUniformLocation(
-                        program_,
-                        "uObjectFullbright"),
-                    object.fullbright ? GL_TRUE : GL_FALSE);
-
-                bool use_object_texture = false;
-                if (has_texture_entry)
-                {
-                    const auto found_texture =
-                        object_textures_.find(object.texture_id);
-                    if (found_texture != object_textures_.end() &&
-                        found_texture->second != 0U)
-                    {
-                        glActiveTexture(GL_TEXTURE4);
-                        glBindTexture(
-                            GL_TEXTURE_2D,
-                            found_texture->second);
-                        glUniform1i(
-                            glGetUniformLocation(
-                                program_,
-                                "uObjectTexture"),
-                            4);
-                        glUniform2f(
-                            glGetUniformLocation(
-                                program_,
-                                "uObjectRepeat"),
-                            object.repeat_u,
-                            object.repeat_v);
-                        glUniform2f(
-                            glGetUniformLocation(
-                                program_,
-                                "uObjectOffset"),
-                            object.offset_u,
-                            object.offset_v);
-                        glUniform1f(
-                            glGetUniformLocation(
-                                program_,
-                                "uObjectRotation"),
-                            object.texture_rotation);
-                        use_object_texture = true;
-                    }
-                }
-
-                glUniform1i(
-                    glGetUniformLocation(
-                        program_,
-                        "uUseObjectTexture"),
-                    use_object_texture ? GL_TRUE : GL_FALSE);
-                glUniform1f(
-                    glGetUniformLocation(
-                        program_,
-                        "uAlpha"),
-                    alpha);
-
-                const bool transparent =
-                    alpha < 0.999f ||
-                    use_object_texture;
-
                 GLuint object_vao = vao_;
                 GLsizei object_index_count = 36;
 
@@ -2636,40 +2535,236 @@ public:
                     continue;
                 }
 
-                if (transparent)
-                {
-                    glEnable(GL_BLEND);
-                    glBlendFunc(
-                        GL_SRC_ALPHA,
-                        GL_ONE_MINUS_SRC_ALPHA);
-                    glDepthMask(GL_FALSE);
-                }
+                const bool child =
+                    object.parent_id != 0U;
+
+                auto draw_material_range =
+                    [&](const RenderFaceMaterial* face_material,
+                        GLsizei count,
+                        std::size_t first_index)
+                    {
+                        const bool has_material =
+                            face_material != nullptr ||
+                            !object.texture_id.empty();
+
+                        const std::string& texture_id =
+                            face_material != nullptr
+                                ? face_material->texture_id
+                                : object.texture_id;
+
+                        const auto& color =
+                            face_material != nullptr
+                                ? face_material->color
+                                : object.color;
+
+                        const float repeat_u =
+                            face_material != nullptr
+                                ? face_material->repeat_u
+                                : object.repeat_u;
+                        const float repeat_v =
+                            face_material != nullptr
+                                ? face_material->repeat_v
+                                : object.repeat_v;
+                        const float offset_u =
+                            face_material != nullptr
+                                ? face_material->offset_u
+                                : object.offset_u;
+                        const float offset_v =
+                            face_material != nullptr
+                                ? face_material->offset_v
+                                : object.offset_v;
+                        const float rotation =
+                            face_material != nullptr
+                                ? face_material->rotation
+                                : object.texture_rotation;
+                        const bool fullbright =
+                            face_material != nullptr
+                                ? face_material->fullbright
+                                : object.fullbright;
+                        const float glow =
+                            face_material != nullptr
+                                ? face_material->glow
+                                : object.glow;
+
+                        const float color_r =
+                            has_material
+                                ? color[0]
+                                : (child ? 0.48f : 0.58f);
+                        const float color_g =
+                            has_material
+                                ? color[1]
+                                : (child ? 0.68f : 0.74f);
+                        const float color_b =
+                            has_material
+                                ? color[2]
+                                : (child ? 0.82f : 0.88f);
+                        const float alpha =
+                            has_material
+                                ? std::clamp(
+                                    color[3],
+                                    0.0f,
+                                    1.0f)
+                                : 1.0f;
+
+                        glUniform3f(
+                            glGetUniformLocation(
+                                program_,
+                                "uOverrideColorValue"),
+                            color_r,
+                            color_g,
+                            color_b);
+                        glUniform1f(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectGlow"),
+                            has_material
+                                ? std::clamp(
+                                    glow,
+                                    0.0f,
+                                    1.0f)
+                                : 0.0f);
+                        glUniform1i(
+                            glGetUniformLocation(
+                                program_,
+                                "uObjectFullbright"),
+                            fullbright ? GL_TRUE : GL_FALSE);
+
+                        bool use_object_texture = false;
+                        if (!texture_id.empty())
+                        {
+                            const auto found_texture =
+                                object_textures_.find(texture_id);
+                            if (found_texture != object_textures_.end() &&
+                                found_texture->second != 0U)
+                            {
+                                glActiveTexture(GL_TEXTURE4);
+                                glBindTexture(
+                                    GL_TEXTURE_2D,
+                                    found_texture->second);
+                                glUniform1i(
+                                    glGetUniformLocation(
+                                        program_,
+                                        "uObjectTexture"),
+                                    4);
+                                glUniform2f(
+                                    glGetUniformLocation(
+                                        program_,
+                                        "uObjectRepeat"),
+                                    repeat_u,
+                                    repeat_v);
+                                glUniform2f(
+                                    glGetUniformLocation(
+                                        program_,
+                                        "uObjectOffset"),
+                                    offset_u,
+                                    offset_v);
+                                glUniform1f(
+                                    glGetUniformLocation(
+                                        program_,
+                                        "uObjectRotation"),
+                                    rotation);
+                                use_object_texture = true;
+                            }
+                        }
+
+                        glUniform1i(
+                            glGetUniformLocation(
+                                program_,
+                                "uUseObjectTexture"),
+                            use_object_texture
+                                ? GL_TRUE
+                                : GL_FALSE);
+                        glUniform1f(
+                            glGetUniformLocation(
+                                program_,
+                                "uAlpha"),
+                            alpha);
+
+                        const bool transparent =
+                            alpha < 0.999f ||
+                            use_object_texture;
+
+                        if (transparent)
+                        {
+                            glEnable(GL_BLEND);
+                            glBlendFunc(
+                                GL_SRC_ALPHA,
+                                GL_ONE_MINUS_SRC_ALPHA);
+                            glDepthMask(GL_FALSE);
+                        }
+
+                        glDrawElements(
+                            GL_TRIANGLES,
+                            count,
+                            GL_UNSIGNED_INT,
+                            reinterpret_cast<const void*>(
+                                first_index *
+                                sizeof(std::uint32_t)));
+
+                        ++diagnostics_.draw_calls;
+                        diagnostics_.triangles +=
+                            static_cast<std::uint64_t>(
+                                count / 3);
+
+                        if (transparent)
+                        {
+                            glDepthMask(GL_TRUE);
+                            glDisable(GL_BLEND);
+                        }
+
+                        if (use_object_texture)
+                        {
+                            glActiveTexture(GL_TEXTURE4);
+                            glBindTexture(
+                                GL_TEXTURE_2D,
+                                0U);
+                            glActiveTexture(GL_TEXTURE0);
+                        }
+                    };
 
                 glBindVertexArray(object_vao);
-                glDrawElements(
-                    GL_TRIANGLES,
-                    object_index_count,
-                    GL_UNSIGNED_INT,
-                    nullptr);
 
-                ++diagnostics_.draw_calls;
-                diagnostics_.triangles +=
-                    static_cast<std::uint64_t>(
-                        object_index_count / 3);
+                const bool static_box_faces =
+                    object.kind == RenderPrimitiveKind::box &&
+                    object_vao == vao_ &&
+                    object_index_count == 36;
+
+                if (static_box_faces)
+                {
+                    // OpenSim prim faces:
+                    // top=0, outer=1..4, bottom=5.
+                    // The local cube EBO is ordered:
+                    // bottom, top, outer1..4.
+                    constexpr std::array<std::size_t, 6>
+                        box_face_map{5U, 0U, 1U, 2U, 3U, 4U};
+
+                    for (std::size_t group = 0U;
+                         group < box_face_map.size();
+                         ++group)
+                    {
+                        const std::size_t face_index =
+                            box_face_map[group];
+                        const RenderFaceMaterial* material =
+                            object.face_materials[face_index]
+                                .has_value()
+                                ? &*object.face_materials[face_index]
+                                : nullptr;
+
+                        draw_material_range(
+                            material,
+                            6,
+                            group * 6U);
+                    }
+                }
+                else
+                {
+                    draw_material_range(
+                        nullptr,
+                        object_index_count,
+                        0U);
+                }
+
                 ++diagnostics_.visible_objects;
-
-                if (transparent)
-                {
-                    glDepthMask(GL_TRUE);
-                    glDisable(GL_BLEND);
-                }
-
-                if (use_object_texture)
-                {
-                    glActiveTexture(GL_TEXTURE4);
-                    glBindTexture(GL_TEXTURE_2D, 0U);
-                    glActiveTexture(GL_TEXTURE0);
-                }
             }
 
             glUniform1f(

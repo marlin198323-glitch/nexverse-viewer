@@ -4475,6 +4475,69 @@ int Application::run()
                             }
                         }
 
+                        if (object.parsed_texture_entry.has_value())
+                        {
+                            const auto& texture_entry =
+                                *object.parsed_texture_entry;
+
+                            for (std::size_t face_index = 0U;
+                                 face_index <
+                                     texture_entry.face_overrides.size();
+                                 ++face_index)
+                            {
+                                if (!texture_entry
+                                         .face_overrides[face_index]
+                                         .has_value())
+                                {
+                                    continue;
+                                }
+
+                                const auto& face =
+                                    *texture_entry
+                                         .face_overrides[face_index];
+
+                                render::RenderFaceMaterial material;
+                                material.texture_id =
+                                    face.texture_id;
+                                material.color =
+                                    face.color;
+                                material.repeat_u =
+                                    face.repeat_u;
+                                material.repeat_v =
+                                    face.repeat_v;
+                                material.offset_u =
+                                    face.offset_u;
+                                material.offset_v =
+                                    face.offset_v;
+                                material.rotation =
+                                    face.rotation;
+                                material.fullbright =
+                                    (face.material & 0x20U) != 0U;
+                                material.shiny =
+                                    static_cast<std::uint8_t>(
+                                        (face.material >> 6U) &
+                                        0x03U);
+                                material.glow =
+                                    face.glow;
+                                material.material_id =
+                                    face.material_id;
+                                material.render_material_id =
+                                    face.render_material_id;
+
+                                render_object
+                                    .face_materials[face_index] =
+                                    std::move(material);
+
+                                if (!face.texture_id.empty() &&
+                                    face.texture_id !=
+                                        "00000000-0000-0000-0000-000000000000")
+                                {
+                                    scene_texture_update.push_back(
+                                        face.texture_id);
+                                }
+                            }
+                        }
+
                         scene_object_update.push_back(
                             std::move(render_object));
                     }

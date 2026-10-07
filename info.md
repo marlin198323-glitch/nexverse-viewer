@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.33`.
+Aktuelle Viewer-Version: `0.2.0-alpha.34`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -619,6 +619,17 @@ Phase 7 gestartet:
 - Regressionstest prüft getrennte Texture-/Color-/Glow-Overrides auf Face 0/1/2 inklusive korrekter Default-Vererbung
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.33`
 - kompletter Debug-Build nach vollständigem TextureEntry-Face-Parser: 19/19 Tests grün
+- `0.2.0-alpha.34`: aufgelöste TextureEntry-Face-Overrides werden vollständig in `RenderSceneObject::face_materials[64]` übertragen
+- jedes Face-Material enthält Texture UUID, Farbe/Alpha, Repeat, Offset, Rotation, Fullbright, Shiny, Glow sowie Material-/RenderMaterial-UUID
+- Override-Texture-UUIDs werden zusammen mit der Default-Texture in die deduplizierte GetTexture-Assetliste aufgenommen
+- Standard-Boxen werden jetzt in sechs getrennten Indexgruppen gezeichnet
+- OpenSim-Face-Mapping für Standard-Box: Top=0, Outer=1..4, Bottom=5
+- die lokale Box-EBO-Reihenfolge Bottom/Top/Outer1..4 wird auf die OpenSim-Face-Nummern umgesetzt
+- jedes Box-Face kann dadurch eigene Farbe, Alpha, Glow, Fullbright, Texture, Repeat, Offset und Rotation verwenden
+- Texture-/Alpha-Blending und GPU-Texture-Binding erfolgen pro Face-Drawcall und werden danach sauber zurückgesetzt
+- dynamische Profile, Cylinder/Prism und Circular-Sweeps bleiben vorerst beim Default-Face bis deren Facegruppen explizit markiert sind
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.34`
+- kompletter Debug-Build nach erstem Renderer-Face-Mapping: 19/19 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
