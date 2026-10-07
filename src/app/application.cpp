@@ -4302,6 +4302,20 @@ int Application::run()
                             object.shape.path_curve == path_straight ||
                             object.shape.path_curve == path_flexible;
 
+                        render_object.path_begin =
+                            std::clamp(
+                                static_cast<float>(object.shape.path_begin) *
+                                    0.00002f,
+                                0.0f,
+                                1.0f);
+                        render_object.path_end =
+                            std::clamp(
+                                1.0f -
+                                    static_cast<float>(object.shape.path_end) *
+                                        0.00002f,
+                                render_object.path_begin + 0.0001f,
+                                1.0f);
+
                         render_object.taper_x =
                             static_cast<float>(object.shape.path_taper_x) * 0.01f;
                         render_object.taper_y =

@@ -46,6 +46,8 @@ struct RenderSceneObject
     RenderVec3 scale{1.0f, 1.0f, 1.0f};
 
     bool linear_path_deform = false;
+    float path_begin = 0.0f;
+    float path_end = 1.0f;
     float taper_x = 0.0f;
     float taper_y = 0.0f;
     float shear_x = 0.0f;

@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.27`.
+Aktuelle Viewer-Version: `0.2.0-alpha.28`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -547,6 +547,14 @@ Phase 7 gestartet:
 - Terrain-/Wasser-Shaderpfade bleiben durch `uUsePrimDeform=false` unbeeinflusst
 - aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.27`
 - kompletter Debug-Build nach Taper-/Shear-/Twist-Block: 18/18 Tests grün
+- `0.2.0-alpha.28`: lineare Prims unterstützen jetzt `PathBegin`/`PathEnd`
+- OpenSim-Skalierung: `PathBegin = raw * 0.00002`, `PathEnd = 1 - raw * 0.00002`
+- der Basis-Querschnitt wird im Vertexshader auf den tatsächlich sichtbaren Pfadbereich abgebildet
+- Taper, Twist und Shear verwenden anschließend den echten Pfadparameter statt immer 0..1
+- dadurch stimmen abgeschnittene lineare Box-/Zylinder-/Prisma-Pfade deutlich besser mit OpenSim überein
+- ungültige/überlappende Bereiche werden auf einen minimal gültigen Pfadbereich geklemmt
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.28`
+- kompletter Debug-Build nach PathBegin-/PathEnd-Block: 18/18 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

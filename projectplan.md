@@ -1123,7 +1123,7 @@ Aktueller Implementierungsstand:
 - sichtbare Grundformen für Box, Zylinder, Prisma, Kugel und Torus vorhanden
 - Parent/Child-Transformbasis und Distanz-Culling aktiv
 - Compressed-/Terse-Updates erhalten bekannte statische Shape-/Scale-/Parent-Daten
-- Taper, Shear und Twist für lineare Pfade sind aktiv; als nächstes vollständige Prim-Geometrie für Path/Profile Begin/End, Hollow, Revolutions und Skew sowie gekrümmte Sweep-Pfade
+- Taper, Shear, Twist sowie Path Begin/End für lineare Pfade sind aktiv; als nächstes Profile Begin/End, Hollow, Revolutions und Skew sowie gekrümmte Sweep-Pfade
 - danach Objekttexturen/Materialien und vollständige Face-/TextureEntry-Auswertung
 
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.

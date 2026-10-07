@@ -555,6 +555,7 @@ layout (location = 2) in float aMaterial;
 
 uniform mat4 uMvp;
 uniform bool uUsePrimDeform;
+uniform vec2 uPrimPathRange;
 uniform vec2 uPrimTaper;
 uniform vec2 uPrimShear;
 uniform float uPrimTwistBegin;
@@ -570,7 +571,13 @@ void main()
 
     if (uUsePrimDeform)
     {
-        float pathT = clamp(aPosition.z + 0.5, 0.0, 1.0);
+        float basePathT = clamp(aPosition.z + 0.5, 0.0, 1.0);
+        float pathT = mix(
+            uPrimPathRange.x,
+            uPrimPathRange.y,
+            basePathT);
+
+        localPosition.z = pathT - 0.5;
 
         vec2 taperScale = max(
             vec2(0.01),
@@ -1511,6 +1518,10 @@ public:
                 glUniform1i(
                     glGetUniformLocation(program_, "uUsePrimDeform"),
                     object.linear_path_deform ? GL_TRUE : GL_FALSE);
+                glUniform2f(
+                    glGetUniformLocation(program_, "uPrimPathRange"),
+                    object.path_begin,
+                    object.path_end);
                 glUniform2f(
                     glGetUniformLocation(program_, "uPrimTaper"),
                     object.taper_x,
