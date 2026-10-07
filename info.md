@@ -380,7 +380,28 @@ Reihenfolge für Phase 1:
 
 ---
 
-## 13. Arbeitsregel für zukünftige Änderungen
+## 13. Fensterverhalten – aktueller Stand
+
+Am 07.10.2026 wurde das Fensterverhalten entsprechend dem realen Linux-Test angepasst:
+
+- Viewer startet maximiert und nutzt damit die verfügbare Desktopfläche.
+- Es wird bewusst kein exklusiver/borderless Vollbildmodus erzwungen.
+- Die native Titelleiste bleibt erhalten.
+- Minimieren, Maximieren/Wiederherstellen und Schließen bleiben über die normalen Betriebssystem-Schaltflächen möglich.
+- Fenster bleibt frei skalierbar, einschließlich Widescreen-Auflösungen.
+- `F11` schaltet zusätzlich zwischen maximiert und wiederhergestellt um.
+
+Commit des Fenster-Fixes:
+
+```text
+8bc3f54 ui: start maximized with native window controls
+```
+
+Nächster sichtbarer UI-/Viewer-Block bleibt die weitere Annäherung an die gewünschte Login-/Loading-/World-Darstellung, ohne die bestehende NexVerse-Designsprache zu ersetzen.
+
+---
+
+## 14. Arbeitsregel für zukünftige Änderungen
 
 Nach jedem größeren abgeschlossenen Block:
 
