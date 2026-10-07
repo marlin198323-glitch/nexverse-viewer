@@ -3110,6 +3110,7 @@ int Application::run()
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
     std::string get_texture_capability_uri;
+    std::optional<protocol::LlsdValue> ext_environment_payload;
     bool caps_started = false;
 
     using TerrainTextureResults =
@@ -3173,6 +3174,37 @@ int Application::run()
         std::uint32_t rendered_environment_revision =
             std::numeric_limits<std::uint32_t>::max();
         auto previous_frame = std::chrono::steady_clock::now();
+        auto next_environment_resample = previous_frame;
+
+        auto apply_environment_snapshot =
+            [&world_model, &world_mutex](
+                const protocol::WindLightEnvironment& parsed)
+            {
+                std::scoped_lock lock{world_mutex};
+                world::EnvironmentState state =
+                    world_model.environment();
+                ++state.revision;
+                state.available = true;
+                state.ambient = parsed.ambient;
+                state.blue_density = parsed.blue_density;
+                state.blue_horizon = parsed.blue_horizon;
+                state.sunlight_color = parsed.sunlight_color;
+                state.cloud_color = parsed.cloud_color;
+                state.water_fog_color = parsed.water_fog_color;
+                state.haze_density = parsed.haze_density;
+                state.haze_horizon = parsed.haze_horizon;
+                state.density_multiplier = parsed.density_multiplier;
+                state.distance_multiplier = parsed.distance_multiplier;
+                state.gamma = parsed.gamma;
+                state.star_brightness = parsed.star_brightness;
+                state.sun_angle = parsed.sun_angle;
+                state.east_angle = parsed.east_angle;
+                state.cloud_shadow = parsed.cloud_shadow;
+                state.water_fog_density = parsed.water_fog_density;
+                state.sky_name = parsed.sky_name;
+                state.water_normal_map = parsed.water_normal_map;
+                world_model.set_environment(std::move(state));
+            };
 
         while (glfwWindowShouldClose(window) == GLFW_FALSE)
         {
@@ -3183,6 +3215,29 @@ int Application::run()
                 std::chrono::duration<double, std::milli>(
                     frame_now - previous_frame).count();
             previous_frame = frame_now;
+
+            if (frame_now >= next_environment_resample)
+            {
+                std::optional<protocol::LlsdValue> eep_payload;
+                {
+                    std::scoped_lock lock{caps_mutex};
+                    eep_payload = ext_environment_payload;
+                }
+
+                if (eep_payload.has_value())
+                {
+                    const auto parsed =
+                        protocol::parse_ext_environment_settings(
+                            *eep_payload);
+                    if (parsed.has_value())
+                    {
+                        apply_environment_snapshot(*parsed);
+                    }
+                }
+
+                next_environment_resample =
+                    frame_now + std::chrono::milliseconds{2500};
+            }
 
             if (raw_frame_ms > 0.0 && raw_frame_ms < 1000.0)
             {
@@ -3332,6 +3387,7 @@ int Application::run()
                                  &caps_mutex,
                                  &caps_state,
                                  &get_texture_capability_uri,
+                                 &ext_environment_payload,
                                  &caps_event_dispatcher,
                                  &world_model,
                                  &world_mutex]()
@@ -3510,6 +3566,11 @@ int Application::run()
                                                     environment.value);
                                             if (parsed.has_value())
                                             {
+                                                {
+                                                    std::scoped_lock lock{caps_mutex};
+                                                    ext_environment_payload =
+                                                        environment.value;
+                                                }
                                                 apply_environment(*parsed);
                                                 environment_loaded = true;
                                                 core::info(

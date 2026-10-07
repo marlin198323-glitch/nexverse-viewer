@@ -41,4 +41,9 @@ parse_environment_settings(const LlsdValue& value);
 
 [[nodiscard]] std::optional<WindLightEnvironment>
 parse_ext_environment_settings(const LlsdValue& value);
+
+[[nodiscard]] std::optional<WindLightEnvironment>
+parse_ext_environment_settings_at(
+    const LlsdValue& value,
+    std::int64_t unix_seconds);
 }

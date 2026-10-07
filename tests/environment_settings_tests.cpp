@@ -185,10 +185,102 @@ int main()
         return 5;
     }
 
+    std::map<std::string, LlsdValue, std::less<>> cycle_haze_a;
+    cycle_haze_a["ambient"] = vec3(0.20, 0.20, 0.20);
+    cycle_haze_a["blue_density"] = vec3(0.10, 0.20, 0.30);
+    cycle_haze_a["blue_horizon"] = vec3(0.20, 0.30, 0.40);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_haze_b;
+    cycle_haze_b["ambient"] = vec3(0.60, 0.60, 0.60);
+    cycle_haze_b["blue_density"] = vec3(0.30, 0.40, 0.50);
+    cycle_haze_b["blue_horizon"] = vec3(0.60, 0.70, 0.80);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_sky_a;
+    cycle_sky_a["name"] = LlsdValue::string("Morning");
+    cycle_sky_a["type"] = LlsdValue::string("sky");
+    cycle_sky_a["legacy_haze"] =
+        LlsdValue::map(std::move(cycle_haze_a));
+    cycle_sky_a["sunlight_color"] = vec3(0.50, 0.50, 0.50);
+    cycle_sky_a["gamma"] = LlsdValue::real(1.0);
+    cycle_sky_a["sun_rotation"] =
+        vec4(0.0, -0.3824995, 0.0, 0.9239557);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_sky_b;
+    cycle_sky_b["name"] = LlsdValue::string("Noon");
+    cycle_sky_b["type"] = LlsdValue::string("sky");
+    cycle_sky_b["legacy_haze"] =
+        LlsdValue::map(std::move(cycle_haze_b));
+    cycle_sky_b["sunlight_color"] = vec3(1.0, 1.0, 1.0);
+    cycle_sky_b["gamma"] = LlsdValue::real(2.0);
+    cycle_sky_b["sun_rotation"] =
+        vec4(0.0, 0.0, 0.0, 1.0);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_water_a;
+    cycle_water_a["type"] = LlsdValue::string("water");
+    cycle_water_a["water_fog_color"] = vec3(0.0, 0.10, 0.20);
+    cycle_water_a["water_fog_density"] = LlsdValue::real(8.0);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_water_b;
+    cycle_water_b["type"] = LlsdValue::string("water");
+    cycle_water_b["water_fog_color"] = vec3(0.20, 0.30, 0.40);
+    cycle_water_b["water_fog_density"] = LlsdValue::real(12.0);
+
+    std::map<std::string, LlsdValue, std::less<>> cycle_frames;
+    cycle_frames["Morning"] =
+        LlsdValue::map(std::move(cycle_sky_a));
+    cycle_frames["Noon"] =
+        LlsdValue::map(std::move(cycle_sky_b));
+    cycle_frames["WaterA"] =
+        LlsdValue::map(std::move(cycle_water_a));
+    cycle_frames["WaterB"] =
+        LlsdValue::map(std::move(cycle_water_b));
+
+    const LlsdValue cycle_response = LlsdValue::map({
+        {"environment", LlsdValue::map({
+            {"day_length", LlsdValue::integer(100)},
+            {"day_offset", LlsdValue::integer(0)},
+            {"day_cycle", LlsdValue::map({
+                {"frames", LlsdValue::map(std::move(cycle_frames))},
+                {"tracks", LlsdValue::array({
+                    LlsdValue::array({
+                        LlsdValue::map({
+                            {"key_keyframe", LlsdValue::real(0.0)},
+                            {"key_name", LlsdValue::string("WaterA")}}),
+                        LlsdValue::map({
+                            {"key_keyframe", LlsdValue::real(0.5)},
+                            {"key_name", LlsdValue::string("WaterB")}})
+                    }),
+                    LlsdValue::array({
+                        LlsdValue::map({
+                            {"key_keyframe", LlsdValue::real(0.0)},
+                            {"key_name", LlsdValue::string("Morning")}}),
+                        LlsdValue::map({
+                            {"key_keyframe", LlsdValue::real(0.5)},
+                            {"key_name", LlsdValue::string("Noon")}})
+                    })
+                })}
+            })}
+        })}
+    });
+
+    const auto cycle =
+        parse_ext_environment_settings_at(cycle_response, 25);
+    if (!cycle.has_value() ||
+        std::abs(cycle->ambient.x - 0.40f) > 0.0001f ||
+        std::abs(cycle->blue_horizon.z - 0.60f) > 0.0001f ||
+        std::abs(cycle->sunlight_color.x - 0.75f) > 0.0001f ||
+        std::abs(cycle->gamma - 1.5f) > 0.0001f ||
+        std::abs(cycle->water_fog_color.x - 0.10f) > 0.0001f ||
+        std::abs(cycle->water_fog_density - 10.0f) > 0.0001f)
+    {
+        std::cerr << "EEP daycycle interpolation failed\n";
+        return 6;
+    }
+
     if (parse_ext_environment_settings(LlsdValue::array({})).has_value())
     {
         std::cerr << "Invalid EEP environment unexpectedly accepted\n";
-        return 6;
+        return 7;
     }
 
     std::cout << "Environment settings tests passed\n";

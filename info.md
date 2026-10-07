@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.23`.
+Aktuelle Viewer-Version: `0.2.0-alpha.24`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -502,6 +502,18 @@ Phase 7 gestartet:
 - Environment-Regressionsuite deckt jetzt Legacy-WindLight und modernes EEP ab
 - aktueller Phase-7-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.23`
 - kompletter Debug-Build nach ExtEnvironment-/EEP-Fallback-Block: 18/18 Tests grün
+- `0.2.0-alpha.24`: EEP-Daycycle wird zeitabhängig nach OpenSim-Semantik gesampelt
+- Daycycle-Zeit: `((UnixTime + day_offset) % day_length) / day_length`
+- Sky- und Water-Tracks werden nach `key_keyframe` sortiert und zyklisch über 0.0/1.0 hinweg ausgewertet
+- vorheriger/nächster Keyframe werden inklusive Mitternachts-Wrap bestimmt
+- Vektor-/Skalarwerte werden linear interpoliert; Sun/East Angle verwenden winkelbewusste Wrap-Interpolation
+- WaterFog-Farbe und WaterFog-Dichte werden ebenfalls zwischen Water-Keyframes interpoliert
+- neue deterministische Regression: day_length=100, Unix=25 ergibt exakt 50% zwischen Keyframes 0.0 und 0.5
+- erfolgreicher `ExtEnvironment`-Payload wird intern gehalten und nicht erneut per HTTP geladen
+- laufende Session sampelt EEP lokal ungefähr alle 2,5 Sekunden neu und schreibt eine neue Environment-Revision ins WorldModel
+- Himmel, Sonne, Haze, Terrain-Fog und Wasser können sich dadurch während der Session mit dem Region-Daycycle verändern
+- aktueller Phase-7-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.24`
+- kompletter Debug-Build nach EEP-Daycycle-Live-Sampling: 18/18 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4
