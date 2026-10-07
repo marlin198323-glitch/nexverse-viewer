@@ -236,9 +236,9 @@ int main()
     full_update_payload.push_back(pcode_prim);
     full_update_payload.push_back(3U);
     full_update_payload.push_back(0U);
-    append_f32_vec(full_update_payload, 1.0f);
-    append_f32_vec(full_update_payload, 1.0f);
-    append_f32_vec(full_update_payload, 1.0f);
+    append_f32_vec(full_update_payload, 2.0f);
+    append_f32_vec(full_update_payload, 3.0f);
+    append_f32_vec(full_update_payload, 4.0f);
 
     std::vector<std::uint8_t> full_object_data(60U, 0U);
     put_f32(full_object_data, 0U, 101.0f);
@@ -254,7 +254,7 @@ int main()
         full_object_data.begin(),
         full_object_data.end());
 
-    append_u32_vec(full_update_payload, 0U);
+    append_u32_vec(full_update_payload, 7U);
     append_u32_vec(full_update_payload, 0U);
     full_update_payload.insert(full_update_payload.end(), 23U, 0U);
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
@@ -283,7 +283,11 @@ int main()
         full_update->objects[0].is_avatar() ||
         full_update->objects[0].position.x != 101.0f ||
         full_update->objects[0].position.y != 102.0f ||
-        full_update->objects[0].position.z != 25.0f)
+        full_update->objects[0].position.z != 25.0f ||
+        full_update->objects[0].parent_id != 7U ||
+        full_update->objects[0].scale.x != 2.0f ||
+        full_update->objects[0].scale.y != 3.0f ||
+        full_update->objects[0].scale.z != 4.0f)
     {
         std::cerr << "ObjectUpdate decode failed\n";
         return 12;

@@ -19,6 +19,7 @@
 #include <numbers>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace
 {
@@ -102,6 +103,59 @@ Mat4 translation(RenderVec3 position)
     result.value[12] = position.x;
     result.value[13] = position.y;
     result.value[14] = position.z;
+    return result;
+}
+
+Mat4 scaling(RenderVec3 value)
+{
+    Mat4 result = identity();
+    result.value[0] = value.x;
+    result.value[5] = value.y;
+    result.value[10] = value.z;
+    return result;
+}
+
+Mat4 quaternion_rotation(
+    nexverse::render::RenderQuaternion q)
+{
+    const float length = std::sqrt(
+        q.x * q.x +
+        q.y * q.y +
+        q.z * q.z +
+        q.w * q.w);
+
+    if (length <= 0.000001f)
+    {
+        return identity();
+    }
+
+    q.x /= length;
+    q.y /= length;
+    q.z /= length;
+    q.w /= length;
+
+    const float xx = q.x * q.x;
+    const float yy = q.y * q.y;
+    const float zz = q.z * q.z;
+    const float xy = q.x * q.y;
+    const float xz = q.x * q.z;
+    const float yz = q.y * q.z;
+    const float wx = q.w * q.x;
+    const float wy = q.w * q.y;
+    const float wz = q.w * q.z;
+
+    Mat4 result = identity();
+    result.value[0] = 1.0f - 2.0f * (yy + zz);
+    result.value[1] = 2.0f * (xy + wz);
+    result.value[2] = 2.0f * (xz - wy);
+
+    result.value[4] = 2.0f * (xy - wz);
+    result.value[5] = 1.0f - 2.0f * (xx + zz);
+    result.value[6] = 2.0f * (yz + wx);
+
+    result.value[8] = 2.0f * (xz + wy);
+    result.value[9] = 2.0f * (yz - wx);
+    result.value[10] = 1.0f - 2.0f * (xx + yy);
     return result;
 }
 
@@ -483,14 +537,14 @@ public:
         glGenVertexArrays(1, &sky_vao_);
 
         constexpr std::array<float, 48> vertices{
-            -0.75f, -0.75f, -0.75f, 0.05f, 0.85f, 1.00f,
-             0.75f, -0.75f, -0.75f, 0.65f, 0.15f, 1.00f,
-             0.75f,  0.75f, -0.75f, 1.00f, 0.25f, 0.55f,
-            -0.75f,  0.75f, -0.75f, 0.10f, 1.00f, 0.55f,
-            -0.75f, -0.75f,  0.75f, 1.00f, 0.65f, 0.10f,
-             0.75f, -0.75f,  0.75f, 0.20f, 0.55f, 1.00f,
-             0.75f,  0.75f,  0.75f, 1.00f, 0.15f, 0.70f,
-            -0.75f,  0.75f,  0.75f, 0.35f, 0.95f, 1.00f
+            -0.50f, -0.50f, -0.50f, 0.05f, 0.85f, 1.00f,
+             0.50f, -0.50f, -0.50f, 0.65f, 0.15f, 1.00f,
+             0.50f,  0.50f, -0.50f, 1.00f, 0.25f, 0.55f,
+            -0.50f,  0.50f, -0.50f, 0.10f, 1.00f, 0.55f,
+            -0.50f, -0.50f,  0.50f, 1.00f, 0.65f, 0.10f,
+             0.50f, -0.50f,  0.50f, 0.20f, 0.55f, 1.00f,
+             0.50f,  0.50f,  0.50f, 1.00f, 0.15f, 0.70f,
+            -0.50f,  0.50f,  0.50f, 0.35f, 0.95f, 1.00f
         };
 
         constexpr std::array<std::uint32_t, 36> indices{
@@ -838,10 +892,37 @@ public:
         environment_ = environment;
     }
 
+    void set_scene_objects(
+        const std::vector<RenderSceneObject>& objects) override
+    {
+        constexpr std::size_t max_scene_objects = 50000U;
+
+        scene_objects_.assign(
+            objects.begin(),
+            objects.begin() +
+                static_cast<std::ptrdiff_t>(
+                    std::min(objects.size(), max_scene_objects)));
+
+        scene_object_index_.clear();
+        scene_object_index_.reserve(scene_objects_.size());
+
+        for (std::size_t index = 0U;
+             index < scene_objects_.size();
+             ++index)
+        {
+            if (scene_objects_[index].local_id != 0U)
+            {
+                scene_object_index_[
+                    scene_objects_[index].local_id] = index;
+            }
+        }
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
         diagnostics_.triangles = 0U;
+        diagnostics_.visible_objects = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -1050,6 +1131,75 @@ public:
             }
 
             glBindVertexArray(0U);
+        }
+
+        if (vao_ != 0U && !scene_objects_.empty())
+        {
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseTerrainTextures"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uOverrideColor"),
+                GL_TRUE);
+
+            glBindVertexArray(vao_);
+
+            for (std::size_t index = 0U;
+                 index < scene_objects_.size();
+                 ++index)
+            {
+                const RenderSceneObject& object =
+                    scene_objects_[index];
+
+                if (object.kind != RenderPrimitiveKind::box)
+                {
+                    continue;
+                }
+
+                const Mat4 model = scene_model(index);
+                if (!scene_object_visible(model, object))
+                {
+                    continue;
+                }
+
+                const Mat4 mvp = multiply(
+                    projection,
+                    multiply(view, model));
+
+                glUniformMatrix4fv(
+                    glGetUniformLocation(program_, "uMvp"),
+                    1,
+                    GL_FALSE,
+                    mvp.value.data());
+
+                const bool child = object.parent_id != 0U;
+                glUniform3f(
+                    glGetUniformLocation(
+                        program_,
+                        "uOverrideColorValue"),
+                    child ? 0.48f : 0.58f,
+                    child ? 0.68f : 0.74f,
+                    child ? 0.82f : 0.88f);
+
+                glDrawElements(
+                    GL_TRIANGLES,
+                    36,
+                    GL_UNSIGNED_INT,
+                    nullptr);
+
+                ++diagnostics_.draw_calls;
+                diagnostics_.triangles += 12U;
+                ++diagnostics_.visible_objects;
+            }
+
+            glBindVertexArray(0U);
+            glUniform1i(
+                glGetUniformLocation(program_, "uOverrideColor"),
+                GL_FALSE);
+        }
+
+        if (terrain_index_count_ > 0U || !scene_objects_.empty())
+        {
             glUseProgram(0U);
             return;
         }
@@ -1087,8 +1237,8 @@ public:
         glBindVertexArray(0U);
         glUseProgram(0U);
 
-        diagnostics_.draw_calls = 1U;
-        diagnostics_.triangles = 12U;
+        diagnostics_.draw_calls += 1U;
+        diagnostics_.triangles += 12U;
     }
 
     void end_frame() override
@@ -1175,6 +1325,86 @@ public:
     }
 
 private:
+    [[nodiscard]] Mat4 scene_pose(
+        std::size_t index,
+        std::size_t depth = 0U) const
+    {
+        if (index >= scene_objects_.size())
+        {
+            return identity();
+        }
+
+        const RenderSceneObject& object =
+            scene_objects_[index];
+
+        const Mat4 local_pose = multiply(
+            translation(object.position),
+            quaternion_rotation(object.rotation));
+
+        if (object.parent_id == 0U || depth >= 16U)
+        {
+            return local_pose;
+        }
+
+        const auto found =
+            scene_object_index_.find(object.parent_id);
+        if (found == scene_object_index_.end() ||
+            found->second == index)
+        {
+            return local_pose;
+        }
+
+        return multiply(
+            scene_pose(found->second, depth + 1U),
+            local_pose);
+    }
+
+    [[nodiscard]] Mat4 scene_model(
+        std::size_t index) const
+    {
+        if (index >= scene_objects_.size())
+        {
+            return identity();
+        }
+
+        const RenderSceneObject& object =
+            scene_objects_[index];
+
+        return multiply(
+            scene_pose(index),
+            scaling({
+                std::max(object.scale.x, 0.01f),
+                std::max(object.scale.y, 0.01f),
+                std::max(object.scale.z, 0.01f)}));
+    }
+
+    [[nodiscard]] bool scene_object_visible(
+        const Mat4& model,
+        const RenderSceneObject& object) const
+    {
+        const float dx =
+            model.value[12] - camera_.position.x;
+        const float dy =
+            model.value[13] - camera_.position.y;
+        const float dz =
+            model.value[14] - camera_.position.z;
+
+        const float distance_squared =
+            dx * dx + dy * dy + dz * dz;
+
+        const float radius =
+            0.5f * std::sqrt(
+                object.scale.x * object.scale.x +
+                object.scale.y * object.scale.y +
+                object.scale.z * object.scale.z);
+
+        const float limit =
+            std::max(camera_.far_clip, 1.0f) +
+            std::max(radius, 0.5f);
+
+        return distance_squared <= limit * limit;
+    }
+
     void refresh_vram()
     {
         if (!nvx_memory_info_)
@@ -1233,6 +1463,8 @@ private:
     bool test_anchor_initialized_ = false;
     RenderCamera camera_;
     RenderEnvironment environment_;
+    std::vector<RenderSceneObject> scene_objects_;
+    std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };

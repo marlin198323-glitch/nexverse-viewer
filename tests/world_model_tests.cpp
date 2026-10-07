@@ -69,13 +69,21 @@ int main()
     avatar.name = "Test Avatar";
     avatar.position = {130.0f, 128.0f, 25.0f};
     world.upsert_avatar(std::move(avatar));
-    world.upsert_object({
-        42U,
-        "object-uuid",
-        {132.0f, 128.0f, 25.0f},
-        {}});
 
-    if (world.avatars().size() != 1U || world.objects().size() != 1U)
+    nexverse::world::ObjectState object;
+    object.local_id = 42U;
+    object.id = "object-uuid";
+    object.pcode = nexverse::protocol::pcode_prim;
+    object.parent_id = 7U;
+    object.position = {132.0f, 128.0f, 25.0f};
+    object.scale = {2.0f, 3.0f, 4.0f};
+    world.upsert_object(object);
+
+    if (world.avatars().size() != 1U ||
+        world.objects().size() != 1U ||
+        world.object_revision() != 1U ||
+        world.objects().at(42U).parent_id != 7U ||
+        world.objects().at(42U).scale.z != 4.0f)
     {
         std::cerr << "World entity upsert failed\n";
         return 4;
@@ -86,17 +94,14 @@ int main()
 
     if (!stable_snapshot.ready ||
         stable_snapshot.objects.size() != 1U ||
-        !world.objects().empty())
+        !world.objects().empty() ||
+        world.object_revision() != 2U)
     {
         std::cerr << "WorldSnapshot isolation failed\n";
         return 5;
     }
 
-    world.upsert_object({
-        42U,
-        "object-uuid",
-        {132.0f, 128.0f, 25.0f},
-        {}});
+    world.upsert_object(std::move(object));
 
     world.set_parcel({
         9U,

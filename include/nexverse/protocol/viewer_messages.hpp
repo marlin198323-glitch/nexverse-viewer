@@ -148,6 +148,7 @@ struct ObjectUpdateEntry
     std::uint32_t parent_id = 0U;
     Vec3 position;
     Quaternion rotation;
+    Vec3 scale{1.0f, 1.0f, 1.0f};
 
     [[nodiscard]] bool is_avatar() const noexcept
     {

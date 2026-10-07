@@ -30,7 +30,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.24`.
+Aktuelle Viewer-Version: `0.2.0-alpha.25`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -514,6 +514,19 @@ Phase 7 gestartet:
 - Himmel, Sonne, Haze, Terrain-Fog und Wasser können sich dadurch während der Session mit dem Region-Daycycle verändern
 - aktueller Phase-7-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.24`
 - kompletter Debug-Build nach EEP-Daycycle-Live-Sampling: 18/18 Tests grün
+- `0.2.0-alpha.25`: Phase 8 gestartet; echte OpenSim-Prims werden vom WorldModel an OGLRender übertragen
+- `ObjectUpdate` dekodiert Scale X/Y/Z jetzt statt die 12 Bytes zu überspringen
+- WorldModel-`ObjectState` enthält PCode, Parent-ID, Position, Rotation und Scale
+- eigene `object_revision` sorgt dafür, dass Scene-Objekte nur bei Änderungen/Regionswechsel neu an den Renderer übertragen werden
+- Compressed-/Terse-Updates erhalten bekannte statische Objektwerte wie Scale/Parent/PCode aus dem bisherigen WorldModel-Zustand
+- OGLRender besitzt backendneutrale `RenderSceneObject`-/`RenderQuaternion`-Strukturen; OpenSim-PCode bleibt außerhalb des Renderers
+- Prim-Basisdarstellung verwendet ein korrekt normiertes 1x1x1-Box-Mesh mit echter Position, Quaternion-Rotation und Scale
+- Parent/Child-Transformationen werden rekursiv bis maximal 16 Ebenen aufgelöst; Root-Scale beeinflusst Child-Offsets nicht
+- Scene-Objekte werden gegen den Kamera-Far-Clip distanzbasiert gecullt
+- `KillObject` entfernt Objekte weiterhin aus dem WorldModel und erhöht nun die Scene-Revision
+- HUD-Diagnose zeigt zusätzlich `Obj <sichtbar>`
+- aktueller Phase-8-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.25`
+- kompletter Debug-Build nach erstem Prim-/Scene-Renderblock: 18/18 Tests grün
 
 Nicht mehr Phase 3, sondern spätere Phasen:
 - CAPS/EventQueue/SimulatorFeatures → Phase 4

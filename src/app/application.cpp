@@ -1246,7 +1246,8 @@ void render_world_hud(
         " | Frame " +
         std::to_string(static_cast<int>(std::round(frame_metrics.frame_time_ms))) +
         " ms | Draw " + std::to_string(render_diagnostics.draw_calls) +
-        " | Tri " + std::to_string(render_diagnostics.triangles);
+        " | Tri " + std::to_string(render_diagnostics.triangles) +
+        " | Obj " + std::to_string(render_diagnostics.visible_objects);
 
     renderer.rect(
         card_x,
@@ -2759,11 +2760,15 @@ int Application::run()
                     continue;
                 }
 
-                world_model.upsert_object({
-                    entry.local_id,
-                    entry.id,
-                    entry.position,
-                    entry.rotation});
+                world::ObjectState object;
+                object.local_id = entry.local_id;
+                object.id = entry.id;
+                object.pcode = entry.pcode;
+                object.parent_id = entry.parent_id;
+                object.position = entry.position;
+                object.rotation = entry.rotation;
+                object.scale = entry.scale;
+                world_model.upsert_object(std::move(object));
             }
         });
 
@@ -2831,11 +2836,22 @@ int Application::run()
                     continue;
                 }
 
-                world_model.upsert_object({
-                    entry.local_id,
-                    entry.id,
-                    entry.position,
-                    entry.rotation});
+                world::ObjectState object;
+                object.local_id = entry.local_id;
+                object.id = entry.id;
+                object.pcode = entry.pcode;
+                object.position = entry.position;
+                object.rotation = entry.rotation;
+
+                if (const auto existing =
+                        world_model.objects().find(entry.local_id);
+                    existing != world_model.objects().end())
+                {
+                    object.parent_id = existing->second.parent_id;
+                    object.scale = existing->second.scale;
+                }
+
+                world_model.upsert_object(std::move(object));
             }
         });
 
@@ -2924,6 +2940,9 @@ int Application::run()
                     existing != world_model.objects().end())
                 {
                     object.id = existing->second.id;
+                    object.pcode = existing->second.pcode;
+                    object.parent_id = existing->second.parent_id;
+                    object.scale = existing->second.scale;
                 }
 
                 world_model.upsert_object(std::move(object));
@@ -3172,6 +3191,10 @@ int Application::run()
         std::uint32_t rendered_material_revision =
             std::numeric_limits<std::uint32_t>::max();
         std::uint32_t rendered_environment_revision =
+            std::numeric_limits<std::uint32_t>::max();
+        std::uint32_t rendered_object_generation =
+            std::numeric_limits<std::uint32_t>::max();
+        std::uint32_t rendered_object_revision =
             std::numeric_limits<std::uint32_t>::max();
         auto previous_frame = std::chrono::steady_clock::now();
         auto next_environment_resample = previous_frame;
@@ -4071,8 +4094,10 @@ int Application::run()
             world::AgentState render_agent;
             render::RenderTerrain terrain_update;
             render::RenderEnvironment environment_update;
+            std::vector<render::RenderSceneObject> scene_object_update;
             bool terrain_changed = false;
             bool environment_changed = false;
+            bool scene_objects_changed = false;
             bool terrain_materials_available = false;
             std::uint32_t texture_generation_current = 0U;
             std::uint32_t texture_material_revision_current = 0U;
@@ -4165,6 +4190,60 @@ int Application::run()
                     environment_update.east_angle = environment.east_angle;
                     environment_changed = true;
                 }
+
+                const std::uint32_t object_revision =
+                    world_model.object_revision();
+
+                if (region.generation != rendered_object_generation ||
+                    object_revision != rendered_object_revision)
+                {
+                    rendered_object_generation = region.generation;
+                    rendered_object_revision = object_revision;
+
+                    scene_object_update.reserve(
+                        world_model.objects().size());
+
+                    for (const auto& [local_id, object] :
+                         world_model.objects())
+                    {
+                        (void)local_id;
+
+                        if (object.pcode != protocol::pcode_prim)
+                        {
+                            continue;
+                        }
+
+                        render::RenderSceneObject render_object;
+                        render_object.local_id = object.local_id;
+                        render_object.parent_id = object.parent_id;
+                        render_object.kind =
+                            render::RenderPrimitiveKind::box;
+                        render_object.position = {
+                            object.position.x,
+                            object.position.y,
+                            object.position.z};
+                        render_object.rotation = {
+                            object.rotation.x,
+                            object.rotation.y,
+                            object.rotation.z,
+                            object.rotation.w};
+                        render_object.scale = {
+                            object.scale.x,
+                            object.scale.y,
+                            object.scale.z};
+
+                        scene_object_update.push_back(
+                            std::move(render_object));
+                    }
+
+                    scene_objects_changed = true;
+                }
+            }
+
+            if (scene_objects_changed)
+            {
+                world_renderer->set_scene_objects(
+                    scene_object_update);
             }
 
             if (environment_changed)

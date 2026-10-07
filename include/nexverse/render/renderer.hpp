@@ -19,6 +19,29 @@ struct RenderVec3
     float z = 0.0f;
 };
 
+struct RenderQuaternion
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    float w = 1.0f;
+};
+
+enum class RenderPrimitiveKind : std::uint8_t
+{
+    box = 0U
+};
+
+struct RenderSceneObject
+{
+    std::uint32_t local_id = 0U;
+    std::uint32_t parent_id = 0U;
+    RenderPrimitiveKind kind = RenderPrimitiveKind::box;
+    RenderVec3 position;
+    RenderQuaternion rotation;
+    RenderVec3 scale{1.0f, 1.0f, 1.0f};
+};
+
 struct RenderCamera
 {
     RenderVec3 position;
@@ -92,6 +115,7 @@ struct RenderDiagnostics
     std::uint64_t vram_available_bytes = 0U;
     std::uint64_t draw_calls = 0U;
     std::uint64_t triangles = 0U;
+    std::uint64_t visible_objects = 0U;
 };
 
 class Renderer
@@ -107,6 +131,8 @@ public:
         const RenderTerrainTextures& textures) = 0;
     virtual void set_environment(
         const RenderEnvironment& environment) = 0;
+    virtual void set_scene_objects(
+        const std::vector<RenderSceneObject>& objects) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;

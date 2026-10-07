@@ -449,7 +449,21 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         offset += 4U; // CRC
         object.pcode = payload[offset++];
         offset += 2U; // material + click action
-        offset += 12U; // scale
+
+        object.scale.x = read_f32(payload, offset);
+        object.scale.y = read_f32(payload, offset + 4U);
+        object.scale.z = read_f32(payload, offset + 8U);
+        offset += 12U;
+
+        if (!std::isfinite(object.scale.x) ||
+            !std::isfinite(object.scale.y) ||
+            !std::isfinite(object.scale.z) ||
+            object.scale.x <= 0.0f ||
+            object.scale.y <= 0.0f ||
+            object.scale.z <= 0.0f)
+        {
+            return std::nullopt;
+        }
 
         if (offset >= payload.size())
         {

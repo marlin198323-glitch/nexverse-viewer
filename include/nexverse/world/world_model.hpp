@@ -81,8 +81,11 @@ struct ObjectState
 {
     std::uint32_t local_id = 0U;
     std::string id;
+    std::uint8_t pcode = 0U;
+    std::uint32_t parent_id = 0U;
     Vec3 position;
     Quaternion rotation;
+    Vec3 scale{1.0f, 1.0f, 1.0f};
 };
 
 struct TerrainMaterials
@@ -215,6 +218,7 @@ public:
     [[nodiscard]] const EnvironmentState& environment() const noexcept;
     [[nodiscard]] const std::map<std::string, AvatarState, std::less<>>& avatars() const noexcept;
     [[nodiscard]] const std::map<std::uint32_t, ObjectState>& objects() const noexcept;
+    [[nodiscard]] std::uint32_t object_revision() const noexcept;
     [[nodiscard]] WorldSnapshot snapshot() const;
 
     [[nodiscard]] bool ready() const noexcept;
@@ -226,6 +230,7 @@ private:
     AgentProfileState agent_profile_;
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
+    std::uint32_t object_revision_ = 0U;
     TerrainState terrain_;
     ParcelState parcel_;
     EnvironmentState environment_;

@@ -16,6 +16,7 @@ void WorldModel::reset()
     agent_profile_ = {};
     avatars_.clear();
     objects_.clear();
+    object_revision_ = 0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -52,6 +53,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
 
     avatars_.clear();
     objects_.clear();
+    object_revision_ = 0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -98,11 +100,15 @@ void WorldModel::upsert_object(ObjectState object)
         return;
     }
     objects_[object.local_id] = std::move(object);
+    ++object_revision_;
 }
 
 void WorldModel::remove_object(std::uint32_t local_id)
 {
-    objects_.erase(local_id);
+    if (objects_.erase(local_id) > 0U)
+    {
+        ++object_revision_;
+    }
 }
 
 void WorldModel::set_terrain(TerrainState terrain)
@@ -193,6 +199,11 @@ const std::map<std::string, AvatarState, std::less<>>& WorldModel::avatars() con
 const std::map<std::uint32_t, ObjectState>& WorldModel::objects() const noexcept
 {
     return objects_;
+}
+
+std::uint32_t WorldModel::object_revision() const noexcept
+{
+    return object_revision_;
 }
 
 WorldSnapshot WorldModel::snapshot() const

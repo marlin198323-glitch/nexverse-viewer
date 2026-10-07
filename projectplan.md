@@ -1116,6 +1116,13 @@ Funktionen:
 - Object Lifecycle
 - Culling
 
+Aktueller Implementierungsstand:
+- Full ObjectUpdate liefert Position, Quaternion, Scale, PCode und Parent-ID ins WorldModel
+- Scene-Revision überträgt Änderungen gezielt an OGLRender
+- erste sichtbare Prim-Darstellung als transformiertes Box-Basismesh
+- Parent/Child-Transformbasis und Distanz-Culling aktiv
+- als nächstes: echte Primitive-Shape-Parameter (Path/Profile), danach Objekttexturen/Materialien
+
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.
 
 ---
