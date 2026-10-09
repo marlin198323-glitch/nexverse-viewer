@@ -991,47 +991,137 @@ Der folgende Katalog ist die verbindliche Zielrichtung für spätere optionale M
 
 6. **OGL Advanced AO** – erweiterter Animation Override mit mehreren Sets und automatischen Zustandswechseln.
 7. **OGL RLVa** – optionale RLV/RLVa-Kompatibilität für Attachments und Restriktionsbefehle.
-8. **OGL Outfit Manager** – erweiterte Outfit-, Wearable- und Attachment-Verwaltung.
-9. **OGL Avatar Tools** – Avatar-Diagnose, Attachment-Übersicht, Animationsstatus, Komplexität und Rendering-Debug.
-10. **OGL Animation Studio** – Animation Preview, Trigger, Sequenzen und erweiterte Animationsverwaltung.
-11. **OGL Gesture Tools** – Gesten suchen, kategorisieren, testen und Trigger-Konflikte erkennen.
-12. **OGL Gamepad** – Controller-Unterstützung für Xbox-/PlayStation-kompatible Geräte mit frei belegbarer Steuerung.
-13. **OGL VR** – spätere OpenXR-basierte VR-Unterstützung mit Head Tracking, Controllern und VR-UI.
+8. **OGL Outfit Manager** – erweiterte Outfit-, Wearable- und Attachment-Verwaltung mit Kategorien, Tags, Favoriten, Suche, zuletzt getragen und optionalen Metadaten.
+9. **OGL Outfit Preview** – Screenshot-/Galerie-Erweiterung für Outfits mit manueller oder automatischer Vorschau-Erstellung, Vorschaubildern, Kamera-Presets und lokaler Verknüpfung zum Outfit.
+10. **OGL Avatar Tools** – Avatar-Diagnose, Attachment-Übersicht, Animationsstatus, Komplexität und Rendering-Debug.
+11. **OGL Animation Studio** – Animation Preview, Trigger, Sequenzen und erweiterte Animationsverwaltung.
+12. **OGL Gesture Tools** – Gesten suchen, kategorisieren, testen und Trigger-Konflikte erkennen.
+13. **OGL Gamepad** – Controller-Unterstützung für Xbox-/PlayStation-kompatible Geräte mit frei belegbarer Steuerung.
+14. **OGL VR** – spätere OpenXR-basierte VR-Unterstützung mit Head Tracking, Controllern und VR-UI.
 
 #### Klasse C – Bauen, Materialien und Assets
 
-14. **OGL Advanced Build Tools** – exakte Transformationen, Alignment, Multi-Edit, Prim-/Linkset-Werkzeuge.
-15. **OGL Mesh Tools** – Mesh-Diagnose, LOD, Triangle Count, Bounding Boxes, Material-Slots und Upload-Vorprüfung.
-16. **OGL Material Tools** – Legacy- und PBR-Materialbearbeitung, Normal/Roughness/Metallic und Materialvorschau.
-17. **OGL Scripting Tools** – erweiterter LSL/OSSL-Editor, Syntax-Highlighting, Script-Logs und Diagnose.
-18. **OGL Asset Inspector** – Asset-UUIDs, Texturen, Meshes, Animationen, Sounds, Cache- und Decode-Status.
-19. **OGL Export / Backup Tools** – Sicherung erlaubter Einstellungen, Profile, Favoriten und Inhalte unter strikter Beachtung von Copy-/Export-Rechten.
+15. **OGL Advanced Build Tools** – exakte Transformationen, Alignment, Multi-Edit, Prim-/Linkset-Werkzeuge.
+16. **OGL Mesh Tools** – Mesh-Diagnose, LOD, Triangle Count, Bounding Boxes, Material-Slots und Upload-Vorprüfung.
+17. **OGL Material Tools** – Legacy- und PBR-Materialbearbeitung, Normal/Roughness/Metallic und Materialvorschau.
+18. **OGL Scripting Tools** – erweiterter LSL/OSSL-Editor, Syntax-Highlighting, Script-Logs und Diagnose.
+19. **OGL Asset Inspector** – Asset-UUIDs, Texturen, Meshes, Animationen, Sounds, Cache- und Decode-Status.
+20. **OGL Export / Backup Tools** – Sicherung erlaubter Einstellungen, Profile, Favoriten und Inhalte unter strikter Beachtung von Copy-/Export-Rechten.
 
 #### Klasse D – Welt, Land und Administration
 
-20. **OGL Map Plus** – zusätzliche Map-Layer, Marker, Favoriten und Teleport-Historie.
-21. **OGL Hypergrid Tools** – HG-Favoriten, Grid-Verlauf, Grid-Infos, Hypergrid-Diagnose und Landmark-Verwaltung.
-22. **OGL Parcel Tools** – Parcel-Analyse, Media/Music, Access-/Ban-Listen, Objektübersicht und Landstatistiken.
-23. **OGL Estate Tools** – Region-/Estate-Administration, Access, Bans, Terrain, Neustarts und Debug-Optionen.
-24. **OGL Moderation Tools** – Freeze/Eject/Ban-Hilfen, Abuse-Report-Unterstützung und Moderationsdiagnose; Serverrechte bleiben maßgeblich.
+21. **OGL Map Plus** – zusätzliche Map-Layer, Marker, Favoriten und Teleport-Historie.
+22. **OGL Hypergrid Tools** – HG-Favoriten, Grid-Verlauf, Grid-Infos, Hypergrid-Diagnose und Landmark-Verwaltung.
+23. **OGL Parcel Tools** – Parcel-Analyse, Media/Music, Access-/Ban-Listen, Objektübersicht und Landstatistiken.
+24. **OGL Estate Tools** – Region-/Estate-Administration, Access, Bans, Terrain, Neustarts und Debug-Optionen.
+25. **OGL Moderation Tools** – Freeze/Eject/Ban-Hilfen, Abuse-Report-Unterstützung und Moderationsdiagnose; Serverrechte bleiben maßgeblich.
 
 #### Klasse E – UI, Komfort und Kommunikation
 
-25. **OGL UI Themes** – alternative Themes, Farben, Icons und Layout-Presets auf Basis der OGL-UI-API.
-26. **OGL Accessibility** – High Contrast, größere UI, Farbsehschwächen-Modi und weitere Barrierefreiheitsfunktionen.
-27. **OGL Inventory Plus** – erweiterte Suche, Smart Folders, Duplikaterkennung und Massenoperationen; Basisinventar bleibt Core.
-28. **OGL Social Plus** – Kontaktkategorien, Notizen, Filter und optionale soziale Komfortfunktionen; Freunde/IM/Gruppen bleiben Core.
-29. **OGL Stream & Radio** – Parcel Music, Icecast/Shoutcast, Stream-Metadaten und Favoriten.
-30. **OGL Translator** – optionale Chat-/IM-Übersetzung über konfigurierbare externe Dienste mit klaren Datenschutzhinweisen.
-31. **OGL Discord Integration** – optionale Rich Presence/Statusintegration nur nach ausdrücklicher Aktivierung.
-32. **OGL Streamer Mode** – Datenschutzmodus für Streams/Videos, z. B. Namen, Chat, Koordinaten und Benachrichtigungen ausblenden.
+26. **OGL UI Themes** – alternative Themes, Farben, Icons und Layout-Presets auf Basis der OGL-UI-API.
+27. **OGL Accessibility** – High Contrast, größere UI, Farbsehschwächen-Modi und weitere Barrierefreiheitsfunktionen.
+28. **OGL Inventory Plus** – erweiterte Suche, Smart Folders, Duplikaterkennung und Massenoperationen; Basisinventar bleibt Core.
+29. **OGL Social Plus** – Kontaktkategorien, Notizen, Filter und optionale soziale Komfortfunktionen; Freunde/IM/Gruppen bleiben Core.
+30. **OGL Stream & Radio** – Parcel Music, Icecast/Shoutcast, Stream-Metadaten und Favoriten.
+31. **OGL Translator** – optionale Chat-/IM-Übersetzung über konfigurierbare externe Dienste mit klaren Datenschutzhinweisen.
+32. **OGL Discord Integration** – optionale Rich Presence/Statusintegration nur nach ausdrücklicher Aktivierung.
+33. **OGL Streamer Mode** – Datenschutzmodus für Streams/Videos, z. B. Namen, Chat, Koordinaten und Benachrichtigungen ausblenden.
 
 #### Klasse F – Diagnose, Kreativ- und Entwicklerwerkzeuge
 
-33. **OGL Developer Tools** – LLUDP-, CAPS-, EventQueue-, ObjectUpdate-, TextureEntry-, Asset- und Renderer-Diagnose.
-34. **OGL Performance Monitor** – FPS, Frametime, Draw Calls, VRAM, CPU/GPU, Netzwerk und Cache-Telemetrie.
-35. **OGL Photography** – freie Kamera, Kamera-Presets, High-Resolution-Screenshots, Post-Processing und spätere DoF-/Machinima-Funktionen.
-36. **OGL AI Assistant** – spätere optionale Assistenz für UI-Hilfe, Diagnose und Build-/Scripting-Unterstützung; niemals Pflichtbestandteil des Viewers.
+34. **OGL Developer Tools** – LLUDP-, CAPS-, EventQueue-, ObjectUpdate-, TextureEntry-, Asset- und Renderer-Diagnose.
+35. **OGL Performance Monitor** – FPS, Frametime, Draw Calls, VRAM, CPU/GPU, Netzwerk und Cache-Telemetrie.
+36. **OGL Photography** – freie Kamera, Kamera-Presets, High-Resolution-Screenshots, Post-Processing und spätere DoF-/Machinima-Funktionen.
+37. **OGL AI Assistant** – spätere optionale Assistenz für UI-Hilfe, Diagnose und Build-/Scripting-Unterstützung; niemals Pflichtbestandteil des Viewers.
+
+### Verbindliche Outfit-System-Trennung
+
+Das Outfit-System wird bewusst zwischen Core und Plugins getrennt. Der Viewer muss ohne optionale Outfit-Plugins weiterhin vollständig in der Lage sein, den Avatar anzuziehen und Outfits zu verwenden.
+
+#### Outfit-Funktionen im Core
+
+Zum Viewer-Core gehören mindestens:
+
+```text
+Wearables anziehen / ausziehen
+Attachments anlegen / abnehmen
+aktuelles Outfit erkennen
+Outfit speichern
+Outfit laden / wechseln
+Inventar-/Outfit-Ordner-Verknüpfung
+serverseitige Appearance-/Outfit-Synchronisation
+Basisdarstellung der getragenen Wearables und Attachments
+```
+
+Diese Funktionen dürfen niemals davon abhängen, dass `OGL Outfit Manager` oder `OGL Outfit Preview` installiert ist.
+
+#### OGL Outfit Manager Plugin
+
+`OGL Outfit Manager` erweitert die Core-Outfit-API um Komfortfunktionen:
+
+```text
+Outfit-Galerie / erweiterte Liste
+Kategorien
+Tags
+Favoriten
+Suche und Filter
+Notizen pro Outfit
+zuletzt getragen
+erweiterte Attachment-/Wearable-Übersicht
+fehlende Outfit-Bestandteile erkennen
+lokale Metadaten pro Outfit
+```
+
+Das Plugin speichert nur Zusatzmetadaten. Die eigentliche Outfit-/Appearance-Wahrheit bleibt im Core beziehungsweise im OpenSim-Inventar-/Appearance-System.
+
+#### OGL Outfit Preview Plugin
+
+`OGL Outfit Preview` ist für visuelle Outfit-Vorschauen zuständig. Vorgesehene Funktionen:
+
+```text
+Screenshot manuell einem Outfit zuweisen
+beim Speichern optional automatisch Vorschau erzeugen
+Outfit-Galerie mit Vorschaubildern
+Kamera-Presets für Ganzkörper-/Portrait-Aufnahmen
+Vorschaubild ersetzen / löschen
+mehrere Vorschaubilder optional später
+lokale Thumbnail-/Preview-Verwaltung
+```
+
+Die Vorschau ist Zusatzinformation und darf das Outfit selbst nicht verändern.
+
+#### Speicherung der Outfit-Previews
+
+Vorschauen werden standardmäßig lokal im Benutzerprofil gespeichert und über eine stabile Outfit-ID beziehungsweise einen stabilen Inventar-/Outfit-Schlüssel referenziert. Beispiel:
+
+```text
+user-data/
+└── outfits/
+    ├── metadata.json
+    └── previews/
+        ├── <outfit-id>.png
+        └── ...
+```
+
+Die genaue Dateistruktur darf bei der Implementierung angepasst werden. Sie muss plattformunabhängig sein und darf keine absoluten benutzerspezifischen Pfade im Outfit-Metadatensatz speichern.
+
+#### Screenshot-Erstellung
+
+Für automatische Outfit-Screenshots benötigt das Preview-Plugin ausschließlich freigegebene APIs für Kamera, Frame Capture und Outfit-Identifikation. Es darf nicht direkt auf private Renderer-Datenstrukturen zugreifen.
+
+Vorgesehener Ablauf:
+
+```text
+Outfit speichern / auswählen
+→ Outfit-ID ermitteln
+→ optional Kamera-Preset anwenden
+→ Frame Capture anfordern
+→ Preview-Datei speichern
+→ Preview mit Outfit-ID verknüpfen
+→ Galerie aktualisieren
+```
+
+Später kann optional eine Cloud-/Sync-Funktion ergänzt werden. Sie gehört nicht zur ersten Outfit-Plugin-Version und darf nur mit ausdrücklicher Benutzeraktivierung Bilder hochladen. Standard ist lokale Speicherung.
 
 ### Reihenfolge für die ersten echten Module
 

@@ -734,3 +734,12 @@ Für spätere Arbeit gilt:
 - Kategorien: Infrastruktur/Renderer, Avatar/Animation, Build/Material/Assets, Welt/Land/Admin, UI/Komfort/Kommunikation sowie Diagnose/Kreativ/Developer.
 - Erste Runtime-Validierung: OGL Example Module -> Developer Tools -> Performance Monitor -> Vulkan Renderer -> RTX Renderer.
 - Voice, Media, AO, RLVa und weitere tiefe Module folgen erst, wenn API/ABI, Lifecycle, Capabilities und Dependencies durch die ersten Module praktisch bestätigt sind.
+
+
+## Outfit-System Core/Plugin-Trennung – 09.10.2026
+
+- Outfit-Basis bleibt verbindlich im Core: Wearables, Attachments, aktuelles Outfit, Speichern/Laden/Wechseln, Inventar-Verknüpfung und Appearance-Synchronisation.
+- `OGL Outfit Manager` wird Komfort-Plugin für Galerie/Liste, Kategorien, Tags, Favoriten, Suche, Notizen und lokale Zusatzmetadaten.
+- Neues Plugin `OGL Outfit Preview` übernimmt Outfit-Screenshots, automatische Vorschau-Erstellung, Kamera-Presets und lokale Thumbnail-/Galerie-Verwaltung.
+- Outfit-Screenshots werden standardmäßig lokal gespeichert; ein späterer Upload/Sync darf nur explizit aktiviert werden.
+- Preview-Plugin nutzt ausschließlich freigegebene Kamera-/Frame-Capture-/Outfit-APIs und keine privaten Renderer-Strukturen.
