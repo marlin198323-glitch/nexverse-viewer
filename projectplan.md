@@ -2187,22 +2187,144 @@ Später bekommt der Viewer dafür eine automatische Diagnosefunktion.
 
 ---
 
-# 10. Unmittelbar nächste Arbeit
+# 10. Aktueller Entwicklungsrahmen und nächste Arbeit
 
-Die nächsten Arbeitsschritte sind:
+## 10.1 Unmittelbar nächste Arbeit
 
-1. Repository-Grundgerüst erstellen.
-2. MPL 2.0 hinzufügen.
-3. CMake + CMakePresets einrichten.
-4. vcpkg einrichten.
-5. Viewer-Version implementieren.
-6. Logging und Tests einrichten.
-7. GitHub Actions für Linux, Windows und macOS hinzufügen.
-8. `develop` erstellen.
-9. Ersten erfolgreichen lokalen Build sicherstellen.
-10. Danach Phase 1: OpenSim `get_grid_info`.
+Der frühere Phase-0-Startplan ist abgeschlossen und wird durch den aktuellen Arbeitsstand ersetzt.
 
-Erst wenn Phase 0 auf allen Zielplattformen reproduzierbar baut, beginnt die eigentliche OpenSim-Protokollentwicklung.
+Die unmittelbar nächsten Arbeitsschritte sind:
+
+1. Module Runtime / ModuleManager implementieren.
+2. Versionierte Module API und stabile native ABI-Grenze festlegen.
+3. Manifest Loader, lokale Modulerkennung, Lifecycle, Aktivieren/Deaktivieren, Dependencies, Capabilities und persistente Zustände implementieren.
+4. OGL Example Module als Referenzmodul bauen und die Runtime praktisch testen.
+5. Danach Phase 8 Rendering weiterführen und Prim-/Material-/Scene-Funktionalität vervollständigen.
+6. Anschließend Meshes, Sculpties, Partikel und Lichtquellen ausbauen.
+7. Avatar, Animation, Attachments, Inventar, Outfits, Chat/IM/Freunde/Gruppen, Teleport/Map und Build/Edit schrittweise alltagstauglich machen.
+8. Erst danach die größeren NextGen-Blöcke Vulkan, RTX, Weather, Advanced Water/Hydro-Anbindung und weitere Plugins ausbauen.
+
+## 10.2 Planungsrahmen für die Entwicklungsdauer
+
+Die folgenden Zeiträume sind **grobe Planungswerte**, keine festen Termine oder Garantien. Sie hängen insbesondere von Testtiefe, Protokollproblemen, Plattformunterschieden, OpenSim-Kompatibilität, Nutzerfeedback, Fehlerkorrekturen und dem tatsächlichen Entwicklungsumfang ab.
+
+Grobe Einzelblöcke:
+
+```text
+Module-System-Grundlage                 ca. 1-3 Wochen
+Phase 8 Rendering/Prims/Materialien     ca. 3-6 Wochen
+Meshes/Sculpties/Partikel/Lichter       ca. 1-2 Monate
+Avatar/Bewegung/Animation/Attachments   ca. 1-2 Monate
+Inventar/Outfits/Appearance             ca. 1-2 Monate
+Chat/IM/Freunde/Gruppen/Profile         ca. 1-2 Monate
+Teleport/Map/Minimap/Landmarks          ca. 3-6 Wochen
+Build/Edit/Parcel/Estate                 ca. 1-2 Monate
+Media/Audio/Voice-Grundfunktionen       ca. 1-2 Monate
+Text-only/Settings/Diagnose/Polishing   ca. 1 Monat
+Vulkan NextGen Renderer                 ca. 2-4 Monate
+RTX/Weather/Hydro/Advanced Water        zusätzliche mehrere Monate
+```
+
+Diese Blöcke laufen teilweise überlappend und werden nicht zwingend streng nacheinander umgesetzt.
+
+## 10.3 Produkt-Meilensteine
+
+### Nutzbare Alpha
+
+Ziel: Der Viewer kann sinnvoll in NexVerse genutzt und getestet werden.
+
+Mindestens:
+
+```text
+Login
+Welt sichtbar
+Avatar sichtbar und steuerbar
+Chat
+Teleport
+Basisinventar
+Basisoutfits
+Region-/Environment-Darstellung
+stabile Grundnavigation
+```
+
+Planungsrahmen: etwa **3-6 Monate** ab aktuellem Stand bei kontinuierlicher Entwicklung und regelmäßigem Testen.
+
+### Alltagstaugliche Beta
+
+Ziel: Der OGL Viewer kann für einen großen Teil der normalen täglichen Nutzung eingesetzt werden.
+
+Zusätzlich unter anderem:
+
+```text
+Inventar weitgehend vollständig
+Appearance/Outfits
+IM/Freunde/Gruppen
+Map/Minimap/Landmarks
+Build/Edit
+Parcels
+Media/Audio-Grundfunktionen
+stabilere Performance
+Einstellungen
+Diagnose
+plattformübergreifende Builds
+```
+
+Planungsrahmen: ungefähr **6-9 Monate** für eine brauchbare Beta.
+
+### Weitgehender Firestorm-Ersatz im Alltag
+
+Ziel: Die wesentlichen Viewer-Funktionen sind so vollständig und stabil, dass OGL im normalen NexVerse-/OpenSim-Alltag Firestorm weitgehend ersetzen kann.
+
+Planungsrahmen: ungefähr **9-15 Monate**.
+
+### Langfristige vollständige OGL-Plattform
+
+Enthält zusätzlich die großen Zukunftsblöcke:
+
+```text
+Vulkan NextGen Renderer
+modernes PBR
+RTX / Raytracing
+modernes Wasser
+OGL Weather
+Text-only Modus
+Plugin-/Add-on-Ökosystem
+Outfit Preview
+Advanced AO/RLVa/Voice/Media
+moderne Avatar-Darstellung
+Performance-/Streaming-Systeme
+Windows/Linux/macOS Stabilisierung
+spätere HydroEngine-Viewer-Anbindung
+```
+
+Planungsrahmen für dieses Gesamtziel: ungefähr **12-24 Monate**.
+
+## 10.4 Entwicklungsprinzip
+
+Der Viewer wird nicht erst am Ende nutzbar gemacht. Die Entwicklung erfolgt in nutzbaren Stufen:
+
+```text
+Alpha
+→ Welt sehen
+→ bewegen
+→ Avatar
+→ Chat
+→ Inventar
+→ Teleport
+→ Outfits
+→ Build/Edit
+→ Alltagstauglichkeit
+→ Beta
+
+danach weiter:
+→ Vulkan
+→ RTX
+→ Advanced Weather
+→ Advanced Water / Hydro
+→ weitere Plugins
+```
+
+Priorität hat zuerst ein stabiler, täglich nutzbarer OpenGenesisLINK Viewer. High-End-Grafik und optionale Erweiterungen werden anschließend auf der bereits vorbereiteten Architektur ausgebaut.
 
 [executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
 

@@ -763,3 +763,11 @@ Für spätere Arbeit gilt:
 - Ergänzt: konkrete RT-Qualitätsprofile (Aus/Auto/Niedrig/Mittel/Hoch/Ultra) und mögliche RT-Reichweiten 50/100/150/256/512 m.
 - Ergänzt: klare Abstimmung `OGLRender` mit der neuen Module Runtime; Renderer-Backends dürfen später Module sein, WorldModel/Protocol bleiben backendunabhängig.
 - Klarstellung: eigener OGL Viewer, kein Firestorm-Fork; Firestorm/Second Life nur Referenz.
+
+
+## Entwicklungszeit und aktuelle Reihenfolge – 09.10.2026
+
+- Alter Phase-0-Abschnitt `Unmittelbar nächste Arbeit` im Projektplan ersetzt; er entsprach nicht mehr dem aktuellen Stand.
+- Nächster Block bleibt Module Runtime / ModuleManager, danach Phase 8 und die weiteren alltagstauglichen Viewer-Systeme.
+- Zeitplanung ausdrücklich nur als grober Rahmen: nutzbare Alpha ca. 3-6 Monate, brauchbare Beta ca. 6-9 Monate, weitgehender Firestorm-Ersatz ca. 9-15 Monate, vollständige langfristige OGL-Plattform ca. 12-24 Monate.
+- Vulkan/RTX/Weather/Hydro und weitere High-End-/Plugin-Funktionen kommen nach dem alltagstauglichen Core, nicht vor ihm.
