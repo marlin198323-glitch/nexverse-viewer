@@ -47,13 +47,20 @@ struct TextureAssetResult
     std::string_view texture_id,
     std::string_view bytes);
 
+// Decode JPEG2000 codestream (J2C) or boxed JP2 into RGBA8.
+[[nodiscard]] TextureAssetResult decode_jpeg2000_texture(
+    std::string_view texture_id,
+    std::string_view bytes);
+
 class TextureAssetLoader
 {
 public:
     explicit TextureAssetLoader(
         std::shared_ptr<net::IHttpTransport> transport);
 
-    [[nodiscard]] TextureAssetResult fetch_png(
+    // Request PNG first; retry the native OpenSim x-j2c codestream
+    // on conversion/HTTP/decode failures.
+    [[nodiscard]] TextureAssetResult fetch_rgba(
         std::string_view get_texture_capability,
         std::string_view texture_id) const;
 

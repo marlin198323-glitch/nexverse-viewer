@@ -6,12 +6,14 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.45`
+- Version: `0.2.0-alpha.46`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
 - letzter vollständig geprüfter Stand: 23/23 Tests grün plus OpenGL-Runtime-Smoke mit Developer-Modulen
-- aktueller Entwicklungsblock: **Phase 8 – Phase 8: Regionsgebundene Material-/GetTexture-Capabilities, epochengeschützte asynchrone Asset-Antworten, Legacy Normal-/Specular-Maps; PBR und vollständiger Teleport-Reconnect folgen**
+- aktueller Entwicklungsblock: **Phase 8 – GetTexture-PNG/JPEG2000-Fallback (OpenJPEG), regionsgebundene Material-Assets und Legacy Normal-/Specular-Maps; Live-Abnahme und PBR folgen**
+
+Der neue GetTexture-Pfad verlangt erst PNG und wechselt bei HTTP-/PNG-Fehlern auf OpenSims natives `x-j2c`; J2C und JP2 werden per OpenJPEG sicher als RGBA8 decodiert. Details: `docs/TEXTURES.md`.
 
 Bereits vorhanden sind Grid Discovery, echter OpenSim-Login, LLUDP, CAPS/EventQueue, WorldModel, Terrain/EEP, sichtbare Prim-Geometrie, OpenSim Face-Materialien, explizite Prim-UVs und Planar TexGen.
 

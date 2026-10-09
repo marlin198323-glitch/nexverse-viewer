@@ -11,6 +11,8 @@
         "gl-api-33"
       ]
     },
-    "freetype"
+    "freetype",
+    "libpng",
+    "openjpeg"
   ]
 }

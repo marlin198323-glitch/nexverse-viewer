@@ -1,6 +1,6 @@
 # OpenGenesisLINK – OpenSim Materials (Phase 8)
 
-## Stand 0.2.0-alpha.45
+## Stand 0.2.0-alpha.46
 
 Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
 **PBR/glTF RenderMaterials**. Deren UUIDs sind keine Shaderparameter.
@@ -30,8 +30,8 @@ Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
    bei späteren Scene-Updates nach dem Cooldown erneut abgefragt werden.
 7. `NormMap` und `SpecMap` werden zusammen mit separaten
    `Offset/Repeat/Rotation`-Werten (OpenSim-Festkommaformat: 1/10000)
-   als Scene-Materialdaten gespeichert. Die bestehende GetTexture-PNG-
-   Pipeline lädt sie in den GPU-Asset-Cache. OGLRender sampelt beide
+   als Scene-Materialdaten gespeichert. Die GetTexture-RGBA-Pipeline
+   (PNG oder JPEG2000) lädt sie in den GPU-Asset-Cache. OGLRender sampelt beide
    Maps pro Face getrennt: Normalmapping per approximativer TBN-Basis
    und vereinfachte Specular-Beleuchtung mit `SpecColor`, `SpecExp`
    und `EnvIntensity`. Fehlen Maps, gilt der Legacy-Fallback.
@@ -65,12 +65,23 @@ im CAPS-Parser.
 - Bereits auf der GPU liegende UUID-Texturen werden hier nicht
   vollständig evicted; ein Ressourcen-/LRU-Pfad folgt.
 
+### JPEG2000-GetTexture-Fallback (0.2.0-alpha.46)
+
+Bei fehlender serverseitiger PNG-Konvertierung greift der
+`GetTexture`-Loader auf `format=x-j2c` zurück und nutzt den
+OpenJPEG-Decoder mit begrenzter Kompressions-, Pixel- und
+Bilddimension. RGB, RGBA und Alphakanäle werden in den bestehenden
+RGBA8-OpenGL-Pfad überführt. Fehlgeschlagene Anfragen zeigen nun
+einen konkreten Fehlertext für PNG und JPEG2000 statt einer
+allgemeinen Warnung.
+
+Detailliertes Testprotokoll: `docs/TEXTURES.md`.
+
 ### Noch offen
 
-- Der initiale GET-Snapshot wird nur beim ersten Login geladen.
+- Der initiale GET-Snapshot wird nun pro Region-CAPS initialisiert.
   Materialänderungen ohne Scene-Update werden nicht proaktiv erkannt;
-  der Region-/Teleport-Lifecycle muss für Cache/Capability-Wechsel
-  noch vervollständigt werden.
+  vollständiger Teleport-Circuit-/EventQueue-Reconnect steht noch aus.
 - Legacy-Normal-/Specular-Maps werden jetzt über GetTexture nachgeladen,
   pro Face mit unabhängigen UV-Transformationen gesampelt und im
   OpenGL-3.3-Shader vereinfacht beleuchtet. Noch offen sind exakte

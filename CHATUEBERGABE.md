@@ -1,6 +1,6 @@
 # OpenGenesisLINK Viewer – Chat-Übergabe
 
-Stand: 09.10.2026
+Stand: 10.10.2026
 
 ## 1. Projekt
 
@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.45`
+Version: `0.2.0-alpha.46`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -274,3 +274,33 @@ Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
 
 Build/Smoketest 0.2.0-alpha.45: 23/23 CTest, OpenGL 3.3,
 NexVerse UI und Welcome erfolgreich; Teleport-End-to-End offen.
+
+
+## Phase 8 – JPEG2000-GetTexture-Reparatur · 10.10.2026 · 0.2.0-alpha.46
+
+Live-Beobachtung 0.2.0-alpha.45 (2026-10-10 00:13 bis 00:18):
+- Echter Login erfolgreich, LLUDP UDP LIVE, 17 CAPS-Endpunkte,
+  RegionHandshake, WorldModel READY, OpenSim RenderMaterials GET 46,
+  POST-Nachladen und Terrain-Mesh bis 126040 Triangles.
+- 300 Objekt-Texturfehler, 0 erfolgreich geladene Objekt-Texturen,
+  Terrain-Texturen im Fallback. Frühere Fehlerdiagnostik war zu unscharf.
+- CAPS EventQueueGet zeitweise erfolgreich, später wiederholte Retries.
+  Das ist ein **eigenständiges** noch offenes Problem.
+- 0.2.0-alpha.46: vcpkg `openjpeg` + explizites `libpng`.
+  `TextureAssetLoader::fetch_rgba` probiert zuerst `format=png`,
+  bei fehlender Serverkonvertierung/HTTP-/Decode-Fehler `format=x-j2c`.
+- OpenJPEG dekodiert J2C sowie JP2 (inkl. RGB/RGBA, Alpha, Grau,
+  grenzenbehaftete Dimensionen/Bit-Tiefe/Datenmengen) in RGBA8.
+  Fehlermeldungen enthalten beide Abrufursachen und die Texture-UUID;
+  keine geheimen CAPS-URLs im Log.
+- Testerweiterungen: echte verlustlose 16x16 J2C-, JP2- und
+  J2C-mit-Alpha-Fixtures; PNG-Erfolg, HTTP404-Fallback, ungültiges
+  PNG, beide Formate HTTP404, defekte JPEG2000-Daten.
+- **23/23 CTest**, Debug-Build, OpenGL-3.3-Smoke und Welcome erfolgreich.
+  **Erfolgreiche NexVerse-Welttexturen noch nicht live bestätigt**,
+  dafür Viewer neu starten und einloggen.
+- Verbindlich `projectplan.md`; technische Details
+  `docs/TEXTURES.md`, `docs/MATERIALS.md`.
+- Nächste Arbeit: echten Download-Erfolg/Nicht-Erfolg inkl.
+  konkreter HTTP-/Decoderfehler im Live-Log verifizieren,
+  CAPS-EventQueue-Reconnect und sichtbare Welttexturen.

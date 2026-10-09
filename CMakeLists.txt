@@ -36,6 +36,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(PNG REQUIRED)
+find_package(OpenJPEG CONFIG REQUIRED)
 
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
@@ -82,6 +83,7 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 
 add_library(nexverse-assets
     src/assets/texture_loader.cpp
+    src/assets/jpeg2000_decoder.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
 target_include_directories(nexverse-assets PUBLIC
@@ -92,6 +94,7 @@ target_link_libraries(nexverse-assets PUBLIC
     NexVerse::Core
     NexVerse::Net
     PNG::PNG
+    openjp2
 )
 
 add_library(nexverse-protocol

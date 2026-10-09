@@ -992,3 +992,47 @@ Für spätere Arbeit gilt:
 - Abnahme: Debug-Build erfolgreich, 23/23 CTest gruen,
   5-Sekunden-OpenGL-Smoke inklusive NexVerse-UI und Welcome erfolgreich.
   Ein eingeloggter In-World-Teleport-Test steht noch aus.
+
+
+## Phase 8 – zuverlässiger OpenSim-GetTexture-Transport · 10.10.2026 · 0.2.0-alpha.46
+
+**Anlass (Live-Login NexVerse 10.10.2026, 00:13 bis 00:18):**
+- Login und LLUDP UDP LIVE, 17 CAPS-Endpunkte, Handshake,
+  WorldModel READY, RenderMaterials GET 46 und POST, Terrain/Prim-
+  Geometrie nachweislich aus der echten OpenSim-Region empfangen.
+- Objekttexturen: 300 Fehlversuche, **0 Erfolgsfälle**. Auch die
+  Terrain-Detailtexturen fielen auf Farb-Fallback zurück.
+- Die frühere Funktion `TextureAssetLoader::fetch_png` forderte
+  ausschließlich `format=png` an. OpenSimulator verwendet nativ
+  JPEG2000 (`x-j2c`); eine serverseitige PNG-Konvertierung ist
+  nicht immer verfügbar. Die genaue Ursache wurde zuvor nicht geloggt.
+
+**Implementiert:**
+- `openjpeg` als vcpkg-Abhängigkeit + explizites `libpng`
+  (Linux/Windows/macOS-abhängige Abhängigkeiten vereinheitlicht).
+- `TextureAssetLoader::fetch_rgba` fragt bevorzugt PNG ab;
+  bei HTTP-/Decoderfehler einmalige Rückfall-Anfrage mit
+  `format=x-j2c` für dieselbe UUID. Keine Wiederholung pro Frame;
+  bestehender Cache für fehlgeschlagene UUIDs bleibt erhalten.
+- Memory-Stream-basierter OpenJPEG-Decoder für J2C-/JP2-Daten,
+  unterstützt RGB, RGBA, Graustufen, Alpha, 1 bis 16 Bit und
+  einfache Chroma-Subsampling-/YCC-Fälle.
+- Begrenzt komprimierte Downloads auf 32 MiB, Abmessungen
+  auf 4096x4096, RGBA-Ausgabe auf 64 MiB und verifiziert Metadaten
+  vor und nach dem Dekodieren.
+- Material- und Terrain-Logs melden jetzt pro UUID die konkreten
+  Ursachen von PNG- und J2C-Fehlern; erfolgreiche J2C-Rückfälle
+  sind durch die Erfolgsmeldung erkennbar. CAPS-Token/URLs werden
+  nicht in Warnmeldungen ausgegeben.
+- Erweiterte Tests mit echten 16x16 JPEG2000 J2C/JP2/RGBA-Fixtures,
+  fehlerhaftem PNG, 404-HTTP-Fallback und defekten J2C-Payloads.
+
+**Grenzen und offene Abnahme:**
+- CMake Debug-Build, 23/23 CTest und 6-Sekunden-OpenGL-3.3-Smoke
+  mit RTX 4070 SUPER, NexVerse-UI und Welcome erfolgreich.
+  End-to-End-Nachweis mit authentifiziertem NexVerse-Grid und
+  sichtbaren Texturen nach Neustart der Anwendung weiterhin offen.
+- Die wiederkehrenden CAPS-EventQueue-Poll-Fehler gehören
+  in den nächsten separaten Protokollblock, nicht zur Texturdekodierung.
+- Progressive JPEG2000-LOD, Asset-Priorisierung, Retry-/LRU-
+  Strategie, harte GPU-Speicherverwaltung und modernes PBR folgen.

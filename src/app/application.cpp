@@ -5004,7 +5004,7 @@ int Application::run(bool enable_developer_modules)
                             }
 
                             results[index] =
-                                loader.fetch_png(
+                                loader.fetch_rgba(
                                     capability,
                                     ids[index]);
                         }
@@ -5066,8 +5066,18 @@ int Application::run(bool enable_developer_modules)
                     }
                     else
                     {
+                        std::string reason;
+                        for (const auto& failed : results)
+                        {
+                            if (!failed.success && !failed.message.empty())
+                            {
+                                reason = failed.message;
+                                break;
+                            }
+                        }
                         core::warning(
-                            "Terrain texture assets unavailable; color fallback remains active");
+                            "Terrain texture assets unavailable: " + reason +
+                            "; color fallback remains active");
                     }
                 }
             }
@@ -5103,7 +5113,8 @@ int Application::run(bool enable_developer_modules)
                         object_texture_loading_id);
 
                     core::info(
-                        "Object texture asset loaded; cached=" +
+                        "Object texture asset loaded (" + result.message +
+                        "); cached=" +
                         std::to_string(
                             object_texture_loaded_ids.size()));
                 }
@@ -5112,7 +5123,9 @@ int Application::run(bool enable_developer_modules)
                     object_texture_failed_ids.insert(
                         object_texture_loading_id);
                     core::warning(
-                        "Object texture asset unavailable; material fallback remains active");
+                        "GetTexture failed for " + object_texture_loading_id +
+                        ": " + result.message +
+                        "; material fallback remains active");
                 }
 
                 object_texture_loading_id.clear();
@@ -5149,7 +5162,7 @@ int Application::run(bool enable_developer_modules)
                         {
                             assets::TextureAssetLoader loader{
                                 transport};
-                            return loader.fetch_png(
+                            return loader.fetch_rgba(
                                 capability,
                                 requested_id);
                         });

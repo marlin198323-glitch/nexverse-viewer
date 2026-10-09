@@ -192,54 +192,70 @@ TextureAssetLoader::TextureAssetLoader(
 {
 }
 
-TextureAssetResult TextureAssetLoader::fetch_png(
+TextureAssetResult TextureAssetLoader::fetch_rgba(
     std::string_view get_texture_capability,
     std::string_view texture_id) const
 {
+    TextureAssetResult result;
+    result.asset_id = std::string{texture_id};
     if (transport_ == nullptr)
     {
-        return {
-            false,
-            std::string{texture_id},
-            {},
-            "HTTP transport unavailable"};
-    }
-
-    const std::string uri = build_get_texture_uri(
-        get_texture_capability,
-        texture_id,
-        "png");
-    if (uri.empty())
-    {
-        return {
-            false,
-            std::string{texture_id},
-            {},
-            "GetTexture URI could not be constructed"};
+        result.message = "HTTP transport unavailable";
+        return result;
     }
 
     constexpr auto connect_timeout = std::chrono::seconds{8};
     constexpr auto total_timeout = std::chrono::seconds{30};
 
-    const net::HttpResponse response = transport_->get(
-        uri,
-        max_texture_download_bytes,
-        connect_timeout,
-        total_timeout);
-
-    if (!response.ok())
+    const std::string png_uri = build_get_texture_uri(
+        get_texture_capability, texture_id, "png");
+    const std::string j2c_uri = build_get_texture_uri(
+        get_texture_capability, texture_id, "x-j2c");
+    if (png_uri.empty() || j2c_uri.empty())
     {
-        return {
-            false,
-            std::string{texture_id},
-            {},
-            response.error.empty()
-                ? "GetTexture request failed"
-                : response.error};
+        result.message = "GetTexture URI could not be constructed";
+        return result;
     }
 
-    return decode_png_texture(
-        texture_id,
-        response.body);
+    const auto png_response = transport_->get(
+        png_uri, max_texture_download_bytes,
+        connect_timeout, total_timeout);
+    std::string png_error;
+    if (png_response.ok())
+    {
+        result = decode_png_texture(texture_id, png_response.body);
+        if (result.success) return result;
+        png_error = result.message;
+    }
+    else
+    {
+        png_error = png_response.error.empty()
+            ? "GetTexture PNG request failed" : png_response.error;
+    }
+
+    // A missing server-side PNG converter must not prevent native
+    // JPEG2000 textures from loading. Never reuse the failed PNG payload.
+    const auto j2c_response = transport_->get(
+        j2c_uri, max_texture_download_bytes,
+        connect_timeout, total_timeout);
+    if (j2c_response.ok())
+    {
+        result = decode_jpeg2000_texture(texture_id, j2c_response.body);
+        if (result.success)
+        {
+            result.message = "GetTexture x-j2c fallback succeeded";
+            return result;
+        }
+        result.message = "png: " + png_error +
+                         "; x-j2c decode: " + result.message;
+    }
+    else
+    {
+        const std::string j2c_error = j2c_response.error.empty()
+            ? "GetTexture x-j2c request failed" : j2c_response.error;
+        result.message = "png: " + png_error +
+                         "; x-j2c: " + j2c_error;
+    }
+    return result;
 }
 }
