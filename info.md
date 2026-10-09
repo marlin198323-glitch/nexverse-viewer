@@ -784,3 +784,31 @@ Für spätere Arbeit gilt:
 - Grund: GitHub-`develop` enthält 46 ältere Remote-only-Commits aus einer divergierenden Historie; ein Force-Push wurde bewusst vermieden.
 - Neuer Chat soll für den aktuellen Viewer-Stand **`develop-current`** verwenden.
 - Eine spätere bewusste Bereinigung/Reconciliation von `develop` kann separat erfolgen.
+
+
+## Module Runtime / ModuleManager Basis – 09.10.2026 · 0.2.0-alpha.38
+
+- Branch `develop-current`; bestehende OpenSim-/Render-Funktionalität unangetastet.
+- Neues C++23-Librarytarget `NexVerse::Modules` mit nativer C-ABI v1
+  (`ogl_module_get_api`, Host-Log-Callback, init/start/stop/shutdown).
+- Lokaler JSON Manifest Loader mit Größenbegrenzungen, Pflichtfeldern, validierten
+  IDs, Versionsvergleich, restriktivem Entrypoint und Duplicate-Key-Erkennung.
+- ModuleManager erkennt lokale Module, prüft Viewer-/ABI-/Plattform- und
+  Architekturkompatibilität, Capabilities, Abhängigkeiten und Zyklen.
+- Aktivierung/Deaktivierung mit persistentem Text-State und atomarem Schreiben.
+- Native Binary-Lader für Windows/macOS/Linux, Stop-/Shutdown-Reihenfolge und
+  Rollback bei Batch-Startfehlern.
+- Sicherheit: Unsigned immer blockiert, außer expliziter Developer Mode plus
+  Capability-Freigabe; Signaturen/Hashes noch nicht verifizierbar und entsprechend
+  blockiert. Kein Sicherheitsversprechen einer Sandbox.
+- Neues CMake-Beispielmodul `OGL Example Module` für die ABI-Regressionsprüfung.
+  Wird nicht im produktiven Viewer installiert oder automatisch aktiviert.
+- `docs/MODULES.md` dokumentiert ABI-Vertrag, Installation, Einschränkungen.
+- Debug-Build erfolgreich und 20/20 Tests grün, neuer `nexverse-module-runtime-tests`.
+- OpenGL Runtime-Smoke erfolgreich (6s Laufzeit; Timeout 124 erwartet),
+  NVIDIA RTX 4070 SUPER erkannt, NexVerse Welcome geladen.
+- Nächster Block: Host-Developer-Tools/Diagnose als echtes Modul, danach
+  Performance Monitor; dann priorisierte Viewer-Core-Phase 8.
+- Nicht erledigt: produktive Signatur- und Hash-Verifikation, sichere
+  Drittmodul-Isolation, Nutzer-Modul-UI, Add-on-Registry/Download,
+  plattformübergreifende Runtime-Abnahme, Renderer-/WorldModel-Host-APIs.

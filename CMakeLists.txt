@@ -58,6 +58,17 @@ target_compile_definitions(nexverse-core PUBLIC
     NEXVERSE_VERSION="${NEXVERSE_VERSION_LABEL}"
 )
 
+add_library(nexverse-modules
+    src/modules/manifest.cpp
+    src/modules/module_manager.cpp
+)
+add_library(NexVerse::Modules ALIAS nexverse-modules)
+target_include_directories(nexverse-modules PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(nexverse-modules PUBLIC NexVerse::Core PRIVATE ${CMAKE_DL_LIBS})
+
 add_library(nexverse-net
     src/net/curl_http_transport.cpp
     src/net/udp_socket.cpp
@@ -152,6 +163,7 @@ target_link_libraries(nexverse-ui PUBLIC
     NexVerse::World
     NexVerse::Render
     NexVerse::Assets
+    NexVerse::Modules
     OpenGL::GL
     glfw
     glad::glad
@@ -192,6 +204,7 @@ endfunction()
 
 nexverse_enable_warnings(nexverse-core)
 nexverse_enable_warnings(nexverse-net)
+nexverse_enable_warnings(nexverse-modules)
 nexverse_enable_warnings(nexverse-assets)
 nexverse_enable_warnings(nexverse-protocol)
 nexverse_enable_warnings(nexverse-world)
@@ -206,6 +219,32 @@ install(TARGETS nexverse-viewer
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+# The example module is a local developer-only test plugin, not installed by default.
+if(WIN32)
+    set(OGL_EXAMPLE_PLATFORM "windows")
+elseif(APPLE)
+    set(OGL_EXAMPLE_PLATFORM "macos")
+else()
+    set(OGL_EXAMPLE_PLATFORM "linux")
+endif()
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+    set(OGL_EXAMPLE_ARCH "arm64")
+else()
+    set(OGL_EXAMPLE_ARCH "x64")
+endif()
+set(OGL_EXAMPLE_DIR "${CMAKE_BINARY_DIR}/modules/org.opengenesislink.example")
+file(MAKE_DIRECTORY "${OGL_EXAMPLE_DIR}")
+configure_file(modules/example/manifest.json.in "${OGL_EXAMPLE_DIR}/manifest.json" @ONLY)
+add_library(nexverse-example-module MODULE modules/example/example_module.cpp)
+target_include_directories(nexverse-example-module PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set_target_properties(nexverse-example-module PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "ogl_example_module"
+    LIBRARY_OUTPUT_DIRECTORY "${OGL_EXAMPLE_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${OGL_EXAMPLE_DIR}"
+)
+nexverse_enable_warnings(nexverse-example-module)
+
 include(CTest)
 if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_executable(nexverse-core-tests tests/core_tests.cpp)
@@ -213,6 +252,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-core-tests)
 
     add_test(NAME nexverse-core-tests COMMAND nexverse-core-tests)
+
+    add_executable(nexverse-module-runtime-tests tests/module_runtime_tests.cpp)
+    target_link_libraries(nexverse-module-runtime-tests PRIVATE NexVerse::Modules)
+    add_dependencies(nexverse-module-runtime-tests nexverse-example-module)
+    nexverse_enable_warnings(nexverse-module-runtime-tests)
+    add_test(NAME nexverse-module-runtime-tests
+        COMMAND nexverse-module-runtime-tests "${OGL_EXAMPLE_DIR}")
+
 
     add_executable(nexverse-grid-info-tests tests/grid_info_tests.cpp)
     target_link_libraries(nexverse-grid-info-tests PRIVATE NexVerse::Protocol)

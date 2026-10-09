@@ -2343,3 +2343,29 @@ CHATUEBERGABE.md
 Nach jedem größeren getesteten Entwicklungsblock werden mindestens `info.md` und `CHATUEBERGABE.md` aktualisiert. Veraltete Statusangaben in README oder den Architektur-/Design-Dokumenten werden im selben Dokumentationsblock korrigiert.
 
 Wenn der Benutzer in einem neuen Chat nur `viewer` oder `weiter` schreibt und der nächste Arbeitsschritt aus der Übergabe eindeutig ist, wird ohne unnötige Rückfrage am aktuellen lokalen Repository-Stand weitergearbeitet.
+
+
+## Entwicklungsstand Module Runtime – 09.10.2026
+
+`0.2.0-alpha.38` implementiert den ersten lokalen Module-Runtime-Basisblock
+entsprechend Abschnitt „Sofortiger Modul-System-Basisblock“:
+
+- öffentliche native C-ABI v1, Host-Callback und Lifecycle;
+- validierter JSON-Manifest-Lader, Plattform-/Architektur-, ABI- und Viewer-Version;
+- lokale Module Discovery, deklarierte Capability-Gates, Dependency- und Zyklusprüfung;
+- Aktivierung/Deaktivierung, persistenter Status, native Bibliotheksladung,
+  Fehler-/Rollback-Pfad und umgekehrter Stop-Lifecycle;
+- OGL Example Module mit eigenständigem CMake-Build und automatisierten Tests.
+
+Build/Tests: 20/20 grün, OpenGL-Runtime-Smoke erfolgreich.
+
+**Nicht abgeschlossen** sind Produktions-Signaturprüfung, Hashverifikation,
+Sandbox-/Prozessisolation, Capability-Durchsetzung jenseits der Host-ABI,
+Modulverwaltungs-UI, Registry, Downloads, Updates und plattformübergreifende
+Runtime-Abnahmetests. Native unsignierte Module bleiben daher im Normalbetrieb
+blockiert; Developer Mode bedarf ausdrücklicher Aktivierung.
+
+Der nächste Entwicklungsblock ist **OGL Developer Tools**, danach
+**OGL Performance Monitor** zur praktischen Validierung erweiterter Host-APIs.
+Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
+`docs/MODULES.md`. Bestehende langfristige Zielanforderungen bleiben unverändert.

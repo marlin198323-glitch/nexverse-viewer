@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.37`
+Version: `0.2.0-alpha.38`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -52,7 +52,7 @@ Vorhanden:
 - Planar TexGen
 - Fullbright/Shiny/Bumpiness/Media-Daten im Renderer-Vertrag
 
-Letzter vollständiger Teststand: 19/19 Tests grün plus OpenGL Runtime-Smoke.
+Letzter vollständiger Teststand: 20/20 Tests grün plus OpenGL Runtime-Smoke.
 
 ## 4. NexVerse Runtime
 
@@ -65,28 +65,28 @@ Letzter vollständiger Teststand: 19/19 Tests grün plus OpenGL Runtime-Smoke.
 - F11 exklusiver Fullscreen
 - Widescreen responsiv
 
-## 5. NÄCHSTER ENTWICKLUNGSBLOCK
+## 5. Module Runtime: erster Basisblock implementiert
 
-**Module Runtime / ModuleManager jetzt implementieren.**
+Version `0.2.0-alpha.38`:
 
-Umfang:
-- versionierte Module API
-- stabile native C-ABI
-- Manifest Loader
-- lokale Modulerkennung
-- Lifecycle
-- Aktivieren/Deaktivieren
-- Dependencies
-- Capabilities
-- Plattform-/Architekturprüfung
-- Fehlerbehandlung
-- persistenter Aktivierungszustand
+- `NexVerse::Modules` als Core-Library
+- öffentliche C-ABI v1 und Lifecycle `ogl_module_get_api`, init/start/stop/shutdown
+- Manifest Loader, lokale Modulerkennung, Plattform-/Architektur- und Versionscheck
+- Dependencies inklusive Zyklusprüfung, deklarierte Capabilities
+- dynamische Bibliotheken, Start-Rollback, umgekehrtes Stoppen
+- Aktivieren/Deaktivieren und persistenter Aktivierungszustand
+- OGL Example Module als Testmodul
+- Debug-Build und 20/20 Tests bestanden, OpenGL Runtime-Smoke erfolgreich
 
-ABI-Regeln: keine STL-Typen/Exceptions über Modulgrenze; versionierte Structs/Function Tables; UTF-8 Strings; Host-Callbacks.
+Sicherheitsgrenze: **Nicht signierte native Plugins werden standardmäßig blockiert**.
+Developer Mode muss von der Hostanwendung explizit erlaubt werden und alle
+Capabilities freigeben. Signatur-/Hashprüfung, sichere Isolation und
+Nutzer-Modulverwaltung fehlen noch. Details: `docs/MODULES.md`.
 
-Erstes Testmodul: `OGL Example Module`.
-
-Danach: Developer Tools → Performance Monitor → Vulkan Renderer → RTX Renderer.
+**Nächster Block:** Developer Tools als erstes funktionsorientiertes Modul
+mit schmalen versionierten Host-Callbacks, anschließend Performance Monitor.
+Danach mit Phase 8 (Rendering-/Scene-Funktionalität) fortfahren.
+Keine vorzeitige Vulkan-/RTX-/Weather-/Hydro-Implementierung.
 
 ## 6. Plugins / Add-ons
 
@@ -156,9 +156,9 @@ Wenn der Benutzer nur **„viewer“** oder **„weiter“** schreibt:
 1. lokalen Repo-Stand prüfen
 2. diese Übergabe + Projektplan lesen
 3. keine unnötige Rückfrage
-4. Module Runtime weiterbauen
-5. build + tests
-6. bei Application/Renderer Runtime-Smoke
+4. Developer Tools / Performance Monitor als nächste Module weiterbauen
+5. build + tests, bei GUI-Änderungen Runtime-Smoke
+6. nicht signierte Module ohne ausdrücklichen Developer Mode niemals laden
 7. `info.md` und `CHATUEBERGABE.md` aktualisieren
-8. lokalen Commit erstellen
+8. Commit und GitHub-Handoff-Branch synchron halten
 9. Remote-Stand niemals destruktiv über lokale Arbeit legen

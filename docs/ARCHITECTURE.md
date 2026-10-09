@@ -42,7 +42,7 @@ Application
 
 ## Module Runtime
 
-Sie wird vor weiteren großen Viewer-Systemen implementiert. Die native Grenze soll C-kompatibel sein: keine STL-Typen oder Exceptions über die ABI, versionierte Structs/Function Tables, UTF-8 Strings und kontrollierte Host-Callbacks.
+Die erste Core-Library wurde in `0.2.0-alpha.38` implementiert. Die native Grenze soll C-kompatibel sein: keine STL-Typen oder Exceptions über die ABI, versionierte Structs/Function Tables, UTF-8 Strings und kontrollierte Host-Callbacks.
 
 Zustände:
 
@@ -52,7 +52,7 @@ installed → compatible → enabled → loaded → initialized → running
                                          stopped → unloaded
 ```
 
-Online-Registry, Download, Signaturen und automatische Updates folgen später.
+Lokale ABI v1, Manifest- und Lifecycle-Prüfung sind implementiert; ungeprüfte native Module bleiben standardmäßig blockiert. Online-Registry, geprüfte Signaturen, Download, automatische Updates und eine sichere Drittmodul-Isolation folgen später. Siehe `docs/MODULES.md`.
 
 ## Core versus Plugin
 

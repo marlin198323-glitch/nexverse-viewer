@@ -10,6 +10,7 @@
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
+#include "nexverse/modules/module_manager.hpp"
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
@@ -2329,6 +2330,13 @@ int Application::run()
         std::string{core::product_name()} +
         " " +
         std::string{core::version()});
+
+    // In-process modules are disabled unless separately enabled and trusted.
+    modules::ModuleManager module_manager(modules::default_module_options());
+    module_manager.discover();
+    std::string module_error;
+    if (!module_manager.start_enabled(module_error))
+        core::warning(std::string{"[OGL-MODULE] Startup: "} + module_error);
 
     glfwSetErrorCallback(glfw_error_callback);
     if (glfwInit() == GLFW_FALSE)

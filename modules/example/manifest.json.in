@@ -1,0 +1,16 @@
+{
+  "id": "org.opengenesislink.example",
+  "name": "OGL Example Module",
+  "version": "0.1.0",
+  "vendor": "OpenGenesisLINK",
+  "api_version": 1,
+  "minimum_viewer_version": "0.2.0-alpha.37",
+  "type": "developer",
+  "platforms": ["@OGL_EXAMPLE_PLATFORM@"],
+  "architectures": ["@OGL_EXAMPLE_ARCH@"],
+  "capabilities": ["developer"],
+  "dependencies": [],
+  "entrypoint": "ogl_example_module@CMAKE_SHARED_MODULE_SUFFIX@",
+  "package_hash": null,
+  "signature": null
+}
