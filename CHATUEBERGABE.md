@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.43`
+Version: `0.2.0-alpha.44`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -234,3 +234,22 @@ Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
 - Weiter: Legacy-Normal-/Specular-Map-Pipeline, Material-UVs,
   Region-/Teleport-Wechsel und In-World-Validierung; danach PBR.
 - Dokumentation `docs/MATERIALS.md`; Projektplan bleibt bindend.
+
+
+## Neuester Phase-8-Block · 0.2.0-alpha.44
+
+- OpenSimulator `SOPMaterial.cs` bestätigt Legacy-UV- und Glanzfelder
+  inklusive Festkommaskalierung 1/10000.
+- RenderMaterials-Parser ergänzt `Norm/SpecOffsetX/Y`,
+  `Norm/SpecRepeatX/Y`, `Norm/SpecRotation`, `SpecColor`,
+  `SpecExp`, `EnvIntensity`, mit Negativtests.
+- Application übernimmt getrennte Legacy-Maps in Scene/Face-Material;
+  GetTexture-Downloader lädt deren PNGs über denselben begrenzten Cache.
+- OpenGL nutzt GL-Texturnummern 5/6, getrennte UV-Uniforms und
+  eine derivative-basierte TBN-Normalapproximation sowie
+  vereinfachten Specular-Lichtreflex. Ohne Assets Legacy-Fallback.
+- 23/23 CTest grün; OpenGL-3.3-Shader-Start erfolgreich, Welcome geladen.
+  Keine angemeldete OpenSim-Region visuell geprüft.
+- Nächster Arbeitsblock: Region-/Teleport-Lifecycle, Material-Cache-
+  Invalidierung und In-World-Vergleich; danach Phase 8 weiterführen.
+- Bindend: `projectplan.md`; Detaildokument: `docs/MATERIALS.md`.

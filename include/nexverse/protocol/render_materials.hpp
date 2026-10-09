@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "nexverse/net/http_transport.hpp"
+#include <array>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -13,6 +14,17 @@
 
 namespace nexverse::protocol
 {
+// OpenSim serializes per-channel UV transforms as integers * 10000.
+struct LegacyMapTransform
+{
+    float offset_x = 0.0f;
+    float offset_y = 0.0f;
+    float repeat_x = 1.0f;
+    float repeat_y = 1.0f;
+    float rotation = 0.0f;
+    bool operator==(const LegacyMapTransform&) const = default;
+};
+
 // Legacy OpenSim RenderMaterials (not the newer glTF/PBR material asset).
 struct LegacyMaterial
 {
@@ -20,6 +32,11 @@ struct LegacyMaterial
     std::uint8_t alpha_mask_cutoff = 0U;
     std::string normal_id;
     std::string specular_id;
+    LegacyMapTransform normal_transform;
+    LegacyMapTransform specular_transform;
+    std::array<float, 3> specular_color{1.0f, 1.0f, 1.0f};
+    std::uint8_t specular_exponent = 51U;
+    std::uint8_t environment_intensity = 0U;
 
     bool operator==(const LegacyMaterial&) const = default;
 };

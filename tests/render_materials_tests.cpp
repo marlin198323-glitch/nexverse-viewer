@@ -78,7 +78,22 @@ int main()
         {"DiffuseAlphaMode", LlsdValue::integer(2)},
         {"AlphaMaskCutoff", LlsdValue::integer(128)},
         {"NormMap", LlsdValue::uuid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")},
-        {"SpecMap", LlsdValue::uuid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")}});
+        {"SpecMap", LlsdValue::uuid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")},
+        {"NormOffsetX", LlsdValue::integer(-2500)},
+        {"NormOffsetY", LlsdValue::integer(3750)},
+        {"NormRepeatX", LlsdValue::integer(20000)},
+        {"NormRepeatY", LlsdValue::integer(5000)},
+        {"NormRotation", LlsdValue::integer(15708)},
+        {"SpecOffsetX", LlsdValue::integer(1250)},
+        {"SpecOffsetY", LlsdValue::integer(-1000)},
+        {"SpecRepeatX", LlsdValue::integer(30000)},
+        {"SpecRepeatY", LlsdValue::integer(10000)},
+        {"SpecRotation", LlsdValue::integer(-31416)},
+        {"SpecColor", LlsdValue::array({
+            LlsdValue::integer(128), LlsdValue::integer(64),
+            LlsdValue::integer(255), LlsdValue::integer(255)})},
+        {"SpecExp", LlsdValue::integer(200)},
+        {"EnvIntensity", LlsdValue::integer(80)}});
     const auto item = LlsdValue::map({
         {"ID", LlsdValue::binary(id)}, {"Material", material}});
     const auto xml = zipped(LlsdValue::array({item}));
@@ -92,7 +107,26 @@ int main()
                found->second.diffuse_alpha_mode == 2U &&
                found->second.alpha_mask_cutoff == 128U &&
                found->second.normal_id == "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" &&
-               found->second.specular_id == "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+               found->second.specular_id == "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" &&
+               found->second.normal_transform.offset_x == -0.25f &&
+               found->second.normal_transform.offset_y == 0.375f &&
+               found->second.normal_transform.repeat_x == 2.0f &&
+               found->second.normal_transform.repeat_y == 0.5f &&
+               found->second.normal_transform.rotation > 1.5707f &&
+               found->second.normal_transform.rotation < 1.5709f &&
+               found->second.specular_transform.offset_x == 0.125f &&
+               found->second.specular_transform.offset_y == -0.1f &&
+               found->second.specular_transform.repeat_x == 3.0f &&
+               found->second.specular_transform.repeat_y == 1.0f &&
+               found->second.specular_transform.rotation < -3.1415f &&
+               found->second.specular_transform.rotation > -3.1417f &&
+               found->second.specular_color[0] > 0.501f &&
+               found->second.specular_color[0] < 0.503f &&
+               found->second.specular_color[1] > 0.250f &&
+               found->second.specular_color[1] < 0.252f &&
+               found->second.specular_color[2] == 1.0f &&
+               found->second.specular_exponent == 200U &&
+               found->second.environment_intensity == 80U,
                "RenderMaterials field decoding incorrect")) return 3;
     auto fake = std::make_shared<FakeTransport>();
     fake->payload = xml;
@@ -175,5 +209,30 @@ int main()
     if (!check(filtered.success && filtered.materials.size() == 1U &&
                filtered.materials.contains("aabbccdd-0102-0304-0506-0708090a0b0c"),
                "POST returned unrequested material definitions")) return 20;
-    std::cout << "OpenSim RenderMaterials GET/POST capability decoding passed\n";
+    const auto invalid_transform = LlsdValue::map({
+        {"ID", LlsdValue::binary(id)},
+        {"Material", LlsdValue::map({
+            {"NormRepeatX", LlsdValue::integer(2000000)}})}});
+    if (!check(parse_render_materials_response(
+        zipped(LlsdValue::array({invalid_transform}))).materials.empty(),
+        "Oversized texture transform accepted")) return 21;
+    const auto invalid_color = LlsdValue::map({
+        {"ID", LlsdValue::binary(id)},
+        {"Material", LlsdValue::map({
+            {"SpecColor", LlsdValue::array({
+                LlsdValue::integer(256),
+                LlsdValue::integer(0),
+                LlsdValue::integer(0),
+                LlsdValue::integer(255)})}})}});
+    if (!check(parse_render_materials_response(
+        zipped(LlsdValue::array({invalid_color}))).materials.empty(),
+        "Oversized specular color accepted")) return 22;
+    const auto invalid_exponent = LlsdValue::map({
+        {"ID", LlsdValue::binary(id)},
+        {"Material", LlsdValue::map({
+            {"SpecExp", LlsdValue::integer(-1)}})}});
+    if (!check(parse_render_materials_response(
+        zipped(LlsdValue::array({invalid_exponent}))).materials.empty(),
+        "Negative specular exponent accepted")) return 23;
+    std::cout << "OpenSim RenderMaterials GET/POST and map transforms passed\n";
 }

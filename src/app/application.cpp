@@ -212,6 +212,29 @@ CameraState render_camera_from_agent(
     return camera;
 }
 
+nexverse::render::RenderLegacyAppearance render_legacy_appearance(
+    const nexverse::protocol::LegacyMaterial& source)
+{
+    nexverse::render::RenderLegacyAppearance result;
+    const auto copy_map = [](
+        const std::string& id,
+        const nexverse::protocol::LegacyMapTransform& transform,
+        nexverse::render::RenderLegacyMap& out)
+    {
+        if (nexverse::protocol::is_valid_legacy_material_id(id))
+            out.texture_id = id;
+        out.repeat = {transform.repeat_x, transform.repeat_y};
+        out.offset = {transform.offset_x, transform.offset_y};
+        out.rotation = transform.rotation;
+    };
+    copy_map(source.normal_id, source.normal_transform, result.normal);
+    copy_map(source.specular_id, source.specular_transform, result.specular);
+    result.specular_color = source.specular_color;
+    result.specular_exponent = source.specular_exponent;
+    result.environment_intensity = source.environment_intensity;
+    return result;
+}
+
 nexverse::render::RenderPrimitiveKind render_primitive_kind(
     const nexverse::protocol::PrimitiveShapeData& shape)
 {
@@ -4632,6 +4655,8 @@ int Application::run(bool enable_developer_modules)
                                     found->second.diffuse_alpha_mode;
                                 render_object.alpha_mask_cutoff =
                                     found->second.alpha_mask_cutoff;
+                                render_object.legacy =
+                                    render_legacy_appearance(found->second);
                             }
 
                             if (!face.texture_id.empty() &&
@@ -4703,6 +4728,8 @@ int Application::run(bool enable_developer_modules)
                                         found->second.diffuse_alpha_mode;
                                     material.alpha_mask_cutoff =
                                         found->second.alpha_mask_cutoff;
+                                    material.legacy =
+                                        render_legacy_appearance(found->second);
                                 }
 
                                 render_object
@@ -4733,6 +4760,21 @@ int Application::run(bool enable_developer_modules)
                 // Modern RenderMaterialID must use a separate PBR resolver.
                 for (const auto& object : scene_object_update)
                 {
+                    const auto enqueue_legacy_maps =
+                        [&scene_texture_update](
+                            const render::RenderLegacyAppearance& legacy)
+                        {
+                            if (!legacy.normal.texture_id.empty())
+                                scene_texture_update.push_back(
+                                    legacy.normal.texture_id);
+                            if (!legacy.specular.texture_id.empty())
+                                scene_texture_update.push_back(
+                                    legacy.specular.texture_id);
+                        };
+                    enqueue_legacy_maps(object.legacy);
+                    for (const auto& face : object.face_materials)
+                        if (face.has_value())
+                            enqueue_legacy_maps(face->legacy);
                     if (protocol::is_valid_legacy_material_id(object.material_id))
                         material_ids_pending.insert(object.material_id);
                     for (const auto& face : object.face_materials)

@@ -1848,13 +1848,26 @@ uniform vec2 uObjectRepeat;
 uniform vec2 uObjectOffset;
 uniform float uObjectRotation;
 uniform sampler2D uObjectTexture;
+uniform bool uUseLegacyNormalMap;
+uniform bool uUseLegacySpecularMap;
+uniform sampler2D uLegacyNormalMap;
+uniform sampler2D uLegacySpecularMap;
+uniform vec2 uLegacyNormalRepeat;
+uniform vec2 uLegacyNormalOffset;
+uniform float uLegacyNormalRotation;
+uniform vec2 uLegacySpecularRepeat;
+uniform vec2 uLegacySpecularOffset;
+uniform float uLegacySpecularRotation;
+uniform vec3 uLegacySpecularColor;
+uniform float uLegacySpecularExponent;
+uniform float uLegacyEnvironmentIntensity;
 uniform vec3 uFogHorizon;
 uniform sampler2D uTerrain0;
 uniform sampler2D uTerrain1;
 uniform sampler2D uTerrain2;
 uniform sampler2D uTerrain3;
 
-vec2 objectTextureUv()
+vec2 objectBaseUv()
 {
     vec2 uv = vTexCoord;
 
@@ -1890,14 +1903,24 @@ vec2 objectTextureUv()
         }
     }
 
-    uv *= uObjectRepeat;
-
-    float c = cos(uObjectRotation);
-    float s = sin(uObjectRotation);
-    vec2 centered = uv - vec2(0.5);
-    uv = mat2(c, -s, s, c) * centered + vec2(0.5);
-    uv += uObjectOffset;
     return uv;
+}
+
+// OpenSim legacy maps each have an independent UV transform; the source
+// values were stored as fixed-point integers with scale 1/10000.
+vec2 legacyTransformUv(vec2 rawUv, vec2 repeat, vec2 offset, float rotation)
+{
+    vec2 uv = rawUv * repeat;
+    float c = cos(rotation);
+    float si = sin(rotation);
+    uv = mat2(c, -si, si, c) * (uv - vec2(0.5)) + vec2(0.5);
+    return uv + offset;
+}
+
+vec2 objectTextureUv()
+{
+    return legacyTransformUv(objectBaseUv(), uObjectRepeat,
+                             uObjectOffset, uObjectRotation);
 }
 
 vec3 terrainTextureColor(vec2 uv, float material)
@@ -1963,22 +1986,67 @@ void main()
             }
         }
 
-        // Legacy OpenSim shiny levels: subtle non-PBR specular fallback.
-        // Screen derivatives approximate the deformed primitive surface normal.
-        // The material pipeline may replace this with PBR/normal maps later.
-        if (uObjectShiny > 0 && !uObjectFullbright)
+        // Legacy per-face normal/specular maps. Derivatives approximate a
+        // local tangent frame; PBR energy conservation is not provided here.
+        // Missing assets always fall back to the earlier flat surface.
+        if (!uObjectFullbright &&
+            (uObjectShiny > 0 || uUseLegacyNormalMap ||
+             uUseLegacySpecularMap))
         {
-            vec3 dx = dFdx(vObjectLocal);
-            vec3 dy = dFdy(vObjectLocal);
-            vec3 n = normalize(cross(dx, dy));
-            if (gl_FrontFacing == false) n = -n;
+            vec3 dpdx = dFdx(vObjectLocal);
+            vec3 dpdy = dFdy(vObjectLocal);
+            vec3 geometric = cross(dpdx, dpdy);
+            vec3 normal = normalize(geometric + vec3(1e-10));
+            if (!gl_FrontFacing) normal = -normal;
+            if (uUseLegacyNormalMap)
+            {
+                vec2 normalUv = legacyTransformUv(
+                    objectBaseUv(), uLegacyNormalRepeat,
+                    uLegacyNormalOffset, uLegacyNormalRotation);
+                vec2 duvdx = dFdx(normalUv);
+                vec2 duvdy = dFdy(normalUv);
+                float det = duvdx.x * duvdy.y - duvdx.y * duvdy.x;
+                if (abs(det) > 1e-8)
+                {
+                    vec3 tangent = normalize(
+                        dpdx * duvdy.y - dpdy * duvdx.y);
+                    tangent = normalize(tangent -
+                        normal * dot(normal, tangent));
+                    vec3 bitangent = normalize(cross(normal, tangent)) *
+                        sign(det);
+                    vec3 sampleNormal = texture(uLegacyNormalMap, normalUv).xyz *
+                        2.0 - 1.0;
+                    normal = normalize(mat3(tangent, bitangent, normal) *
+                        sampleNormal);
+                }
+                float diffuse = max(dot(normal,
+                    normalize(vec3(0.32, 0.4, 0.86))), 0.0);
+                base *= 0.68 + 0.32 * diffuse;
+            }
+
             vec3 lightDir = normalize(vec3(0.32, 0.4, 0.86));
-            float facing = max(dot(n, lightDir), 0.0);
-            float gloss = pow(facing, mix(10.0, 55.0, float(uObjectShiny) / 3.0));
-            base += vec3(gloss * float(uObjectShiny) * 0.11);
+            float facing = max(dot(normal, lightDir), 0.0);
+            if (uUseLegacySpecularMap)
+            {
+                vec2 specUv = legacyTransformUv(
+                    objectBaseUv(), uLegacySpecularRepeat,
+                    uLegacySpecularOffset, uLegacySpecularRotation);
+                vec4 spec = texture(uLegacySpecularMap, specUv);
+                float exponent = mix(4.0, 128.0,
+                    clamp(uLegacySpecularExponent, 0.0, 1.0));
+                float gloss = pow(facing, exponent);
+                base += spec.rgb * uLegacySpecularColor *
+                    (gloss * (0.1 + 0.9 * spec.a) *
+                     (0.25 + 0.75 * uLegacyEnvironmentIntensity));
+            }
+            else if (uObjectShiny > 0)
+            {
+                float gloss = pow(facing,
+                    mix(10.0, 55.0, float(uObjectShiny) / 3.0));
+                base += vec3(gloss * float(uObjectShiny) * 0.11);
+            }
         }
-        // Bumpiness is decoded and kept in the material contract; a true
-        // bump/normal map requires a separate asset and tangent-space pass.
+        // Classic bumpiness values are not normal-map texture assets.
         base += vec3(clamp(uObjectGlow, 0.0, 1.0) * 0.35);
     }
 
@@ -3092,6 +3160,10 @@ public:
                             face_material != nullptr
                                 ? face_material->glow
                                 : object.glow;
+                        const RenderLegacyAppearance& legacy =
+                            face_material != nullptr
+                                ? face_material->legacy
+                                : object.legacy;
 
                         const float color_r =
                             has_material
@@ -3219,6 +3291,71 @@ public:
                                 "uAlpha"),
                             alpha);
 
+                        const auto bind_legacy_map =
+                            [&](const RenderLegacyMap& map, GLenum unit,
+                                std::string_view sampler,
+                                std::string_view enabled,
+                                std::string_view repeat_uniform,
+                                std::string_view offset_uniform,
+                                std::string_view rotation_uniform) -> bool
+                            {
+                                const auto found = object_textures_.find(
+                                    map.texture_id);
+                                const bool loaded = !map.texture_id.empty() &&
+                                    found != object_textures_.end() &&
+                                    found->second != 0U;
+                                glUniform1i(
+                                    glGetUniformLocation(program_,
+                                        std::string{enabled}.c_str()),
+                                    loaded ? GL_TRUE : GL_FALSE);
+                                if (!loaded) return false;
+                                glActiveTexture(unit);
+                                glBindTexture(GL_TEXTURE_2D, found->second);
+                                glUniform1i(
+                                    glGetUniformLocation(program_,
+                                        std::string{sampler}.c_str()),
+                                    unit == GL_TEXTURE5 ? 5 : 6);
+                                glUniform2f(
+                                    glGetUniformLocation(program_,
+                                        std::string{repeat_uniform}.c_str()),
+                                    map.repeat[0], map.repeat[1]);
+                                glUniform2f(
+                                    glGetUniformLocation(program_,
+                                        std::string{offset_uniform}.c_str()),
+                                    map.offset[0], map.offset[1]);
+                                glUniform1f(
+                                    glGetUniformLocation(program_,
+                                        std::string{rotation_uniform}.c_str()),
+                                    map.rotation);
+                                return true;
+                            };
+                        const bool use_normal = bind_legacy_map(
+                            legacy.normal, GL_TEXTURE5,
+                            "uLegacyNormalMap", "uUseLegacyNormalMap",
+                            "uLegacyNormalRepeat", "uLegacyNormalOffset",
+                            "uLegacyNormalRotation");
+                        const bool use_specular = bind_legacy_map(
+                            legacy.specular, GL_TEXTURE6,
+                            "uLegacySpecularMap", "uUseLegacySpecularMap",
+                            "uLegacySpecularRepeat", "uLegacySpecularOffset",
+                            "uLegacySpecularRotation");
+                        glUniform3f(
+                            glGetUniformLocation(program_,
+                                "uLegacySpecularColor"),
+                            legacy.specular_color[0],
+                            legacy.specular_color[1],
+                            legacy.specular_color[2]);
+                        glUniform1f(
+                            glGetUniformLocation(program_,
+                                "uLegacySpecularExponent"),
+                            static_cast<float>(legacy.specular_exponent) /
+                                255.0f);
+                        glUniform1f(
+                            glGetUniformLocation(program_,
+                                "uLegacyEnvironmentIntensity"),
+                            static_cast<float>(legacy.environment_intensity) /
+                                255.0f);
+
                         glDrawElements(
                             GL_TRIANGLES,
                             count,
@@ -3232,6 +3369,17 @@ public:
                             static_cast<std::uint64_t>(
                                 count / 3);
 
+                        if (use_normal)
+                        {
+                            glActiveTexture(GL_TEXTURE5);
+                            glBindTexture(GL_TEXTURE_2D, 0U);
+                        }
+                        if (use_specular)
+                        {
+                            glActiveTexture(GL_TEXTURE6);
+                            glBindTexture(GL_TEXTURE_2D, 0U);
+                        }
+                        glActiveTexture(GL_TEXTURE0);
                         if (use_object_texture)
                         {
                             glActiveTexture(GL_TEXTURE4);
@@ -3296,6 +3444,12 @@ public:
                 GL_FALSE);
             glUniform1i(
                 glGetUniformLocation(program_, "uUseObjectTexture"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseLegacyNormalMap"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseLegacySpecularMap"),
                 GL_FALSE);
             glUniform1i(
                 glGetUniformLocation(program_, "uObjectTexGenPlanar"),

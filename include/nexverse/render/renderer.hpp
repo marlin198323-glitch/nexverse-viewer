@@ -45,6 +45,23 @@ enum class RenderProfileKind : std::uint8_t
     triangle = 3U
 };
 
+struct RenderLegacyMap
+{
+    std::string texture_id;
+    std::array<float, 2> repeat{1.0f, 1.0f};
+    std::array<float, 2> offset{0.0f, 0.0f};
+    float rotation = 0.0f;
+};
+
+struct RenderLegacyAppearance
+{
+    RenderLegacyMap normal;
+    RenderLegacyMap specular;
+    std::array<float, 3> specular_color{1.0f, 1.0f, 1.0f};
+    std::uint8_t specular_exponent = 51U;
+    std::uint8_t environment_intensity = 0U;
+};
+
 struct RenderFaceMaterial
 {
     std::string texture_id;
@@ -66,6 +83,7 @@ struct RenderFaceMaterial
     // Legacy RenderMaterials cap data; defaults preserve TextureEntry alpha.
     std::uint8_t diffuse_alpha_mode = 1U;
     std::uint8_t alpha_mask_cutoff = 0U;
+    RenderLegacyAppearance legacy;
 };
 
 struct RenderSceneObject
@@ -117,6 +135,7 @@ struct RenderSceneObject
     // Legacy RenderMaterials cap data; defaults preserve TextureEntry alpha.
     std::uint8_t diffuse_alpha_mode = 1U;
     std::uint8_t alpha_mask_cutoff = 0U;
+    RenderLegacyAppearance legacy;
 
     std::array<std::optional<RenderFaceMaterial>, 64>
         face_materials;

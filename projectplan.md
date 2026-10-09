@@ -2466,3 +2466,30 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
 
 - Laufzeit-Smoke 5s bestätigt OpenGL 3.3, RTX 4070 SUPER, NexVerse-UI und
   geladenen Welcome-Hintergrund; `timeout`-Exit 124 erwartet.
+
+
+## Phase 8 – Legacy Normal/Specular Mapping · 09.10.2026 · 0.2.0-alpha.44
+
+- OpenSimulator `SOPMaterial.cs` als Protokollreferenz geprüft:
+  `NormMap`/`SpecMap`, `Norm/SpecOffsetX/Y`, `RepeatX/Y`,
+  `Rotation` werden per 1/10000 skaliert; dazu `SpecColor`,
+  `SpecExp` und `EnvIntensity`.
+- Die Material-CAPS-Response dekodiert nun diese typisierten Werte
+  mit Grenzen und Ablehnung fehlerhafter numerischer Felder.
+- Das Application-/Scene-Mapping übernimmt Normal-/Specular-UUIDs
+  sowie beide unabhängigen UV-Transformationen. Vorhandene
+  GetTexture-PNG-Downloads werden für diese Texturen wiederverwendet,
+  ohne einen zweiten Asset-Transport einzuführen.
+- OGLRender bindet geladene Maps pro Face auf GL-Texture-Units 5/6,
+  verwendet getrennte Repeat/Offset/Rotation-Uniforms, approximiert
+  Normalmapping über UV-/Oberflächen-Derivate (TBN-Basis) und ein
+  einfaches Legacy-Specular-Highlight aus Map/SpecColor/SpecExp.
+- Fehlen Asset oder Materialdaten, bleibt der Legacy-Shiny-Fallback
+  erhalten; Fullbright bleibt von zusätzlichen Lichteffekten ausgenommen.
+- Kein vollständiges PBR, keine echte Umgebungsspiegelung, keine
+  garantierte Texture-/Tangent-Fidelity für alle Primformen.
+- CMake Debug-Build erfolgreich, 23/23 CTest erfolgreich; OpenGL-3.3-
+  Laufzeitstart auf RTX 4070 SUPER einschließlich Welcome geladen.
+  Ein eingeloggter In-World-/Material-Vergleich bleibt offen.
+- Als Nächstes: Material-Asset-Caching/Invalidierung beim Region- und
+  Teleportwechsel, weitere Renderer-Primitiven, visuelle In-World-Tests.

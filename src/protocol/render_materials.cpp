@@ -130,6 +130,47 @@ bool parse_byte(const nexverse::protocol::LlsdValue* field,
     value = static_cast<std::uint8_t>(field->integer_value);
     return true;
 }
+
+bool scaled_transform(const nexverse::protocol::LlsdValue* field,
+                      float& output)
+{
+    using nexverse::protocol::LlsdType;
+    if (!field) return true;
+    if (field->type != LlsdType::integer ||
+        field->integer_value < -1000000 ||
+        field->integer_value > 1000000)
+        return false;
+    output = static_cast<float>(field->integer_value) / 10000.0f;
+    return true;
+}
+
+bool map_transform(
+    const nexverse::protocol::LlsdValue& data, std::string_view prefix,
+    nexverse::protocol::LegacyMapTransform& t)
+{
+    std::string k{prefix};
+    return scaled_transform(data.find(k + "OffsetX"), t.offset_x) &&
+           scaled_transform(data.find(k + "OffsetY"), t.offset_y) &&
+           scaled_transform(data.find(k + "RepeatX"), t.repeat_x) &&
+           scaled_transform(data.find(k + "RepeatY"), t.repeat_y) &&
+           scaled_transform(data.find(k + "Rotation"), t.rotation);
+}
+
+bool specular_color(const nexverse::protocol::LlsdValue* field,
+                    std::array<float, 3>& color)
+{
+    using nexverse::protocol::LlsdType;
+    if (!field) return true;
+    if (!field->is_array() || field->array_value.size() != 4U) return false;
+    for (std::size_t i = 0U; i < color.size(); ++i)
+    {
+        const auto& c = field->array_value[i];
+        if (c.type != LlsdType::integer ||
+            c.integer_value < 0 || c.integer_value > 255) return false;
+        color[i] = static_cast<float>(c.integer_value) / 255.0f;
+    }
+    return true;
+}
 }
 
 namespace nexverse::protocol
@@ -211,6 +252,17 @@ RenderMaterialsResult parse_render_materials_response(std::string_view xml)
             continue;
         material.normal_id = uuid_field(definition->find("NormMap"));
         material.specular_id = uuid_field(definition->find("SpecMap"));
+        if (!map_transform(*definition, "Norm", material.normal_transform) ||
+            !map_transform(*definition, "Spec", material.specular_transform) ||
+            !specular_color(definition->find("SpecColor"),
+                            material.specular_color))
+            continue;
+        if (const auto* exponent = definition->find("SpecExp");
+            exponent && !parse_byte(exponent, material.specular_exponent, 255))
+            continue;
+        if (const auto* intensity = definition->find("EnvIntensity");
+            intensity && !parse_byte(intensity, material.environment_intensity, 255))
+            continue;
         result.materials[id] = std::move(material);
     }
     result.success = true;

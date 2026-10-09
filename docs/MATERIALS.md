@@ -1,6 +1,6 @@
 # OpenGenesisLINK – OpenSim Materials (Phase 8)
 
-## Stand 0.2.0-alpha.43
+## Stand 0.2.0-alpha.44
 
 Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
 **PBR/glTF RenderMaterials**. Deren UUIDs sind keine Shaderparameter.
@@ -28,7 +28,14 @@ Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
    kein Re-Upload erforderlich. Unbekannte IDs werden höchstens dreimal
    mit einem Abstand von zwei Minuten angefragt; bekannte IDs können
    bei späteren Scene-Updates nach dem Cooldown erneut abgefragt werden.
-7. OpenGL rendert die Alpha-Modi 0 (keine Texture-Alpha), 1 (Blend),
+7. `NormMap` und `SpecMap` werden zusammen mit separaten
+   `Offset/Repeat/Rotation`-Werten (OpenSim-Festkommaformat: 1/10000)
+   als Scene-Materialdaten gespeichert. Die bestehende GetTexture-PNG-
+   Pipeline lädt sie in den GPU-Asset-Cache. OGLRender sampelt beide
+   Maps pro Face getrennt: Normalmapping per approximativer TBN-Basis
+   und vereinfachte Specular-Beleuchtung mit `SpecColor`, `SpecExp`
+   und `EnvIntensity`. Fehlen Maps, gilt der Legacy-Fallback.
+8. OpenGL rendert die Alpha-Modi 0 (keine Texture-Alpha), 1 (Blend),
    2 (Alpha-Mask-Cutoff) sowie 3 (Emissive-Fallback). Für Mask-Faces
    bleibt Depth-Write eingeschaltet, sofern keine Tint-Transparenz vorliegt.
 
@@ -47,8 +54,11 @@ im CAPS-Parser.
   Materialänderungen ohne Scene-Update werden nicht proaktiv erkannt;
   der Region-/Teleport-Lifecycle muss für Cache/Capability-Wechsel
   noch vervollständigt werden.
-- Legacy-Normal-/Specular-Maps, UV-Transformationen je Material-Kanal,
-  ausgebaute Lichtberechnung.
+- Legacy-Normal-/Specular-Maps werden jetzt über GetTexture nachgeladen,
+  pro Face mit unabhängigen UV-Transformationen gesampelt und im
+  OpenGL-3.3-Shader vereinfacht beleuchtet. Noch offen sind exakte
+  Tangentendaten für alle Primformen, zusätzliche Legacy-Lichtanteile,
+  tatsächliche Umgebungsspiegelungen und GPU-Sichttests in-world.
 - Neue RenderMaterialIDs: PBR/glTF-Fetch und korrektes Asset-Parsing
   sind **nicht** implementiert. Keine Interpretation einer UUID als PBR-Wert.
 - Shader-Verifikation in der realen OpenSim-Welt an alpha-maskierten,
@@ -64,3 +74,10 @@ Implementierung:
 
 Protokollreferenz (serverseitige OpenSimulator-Implementierung):
 https://github.com/opensim/opensim/blob/master/OpenSim/Region/OptionalModules/Materials/MaterialsModule.cs
+
+
+Legacy-Datenreferenz (Offset, Repeat, Rotation, SpecColor, Exp):
+https://github.com/opensim/opensim/blob/master/OpenSim/Region/Framework/Scenes/SOPMaterial.cs
+
+Es handelt sich um **Legacy-Mapping, nicht glTF/PBR**.
+Ein visuell verifizierter In-World-Test an Originalmaterialien fehlt.
