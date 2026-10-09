@@ -21,6 +21,7 @@
 #include "nexverse/protocol/login.hpp"
 #include "nexverse/protocol/packet_dispatcher.hpp"
 #include "nexverse/protocol/render_materials.hpp"
+#include "nexverse/protocol/region_material_scope.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
@@ -3245,9 +3246,15 @@ int Application::run(bool enable_developer_modules)
     std::future<void> caps_future;
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
-    std::string get_texture_capability_uri;
-    std::string render_materials_capability_uri;
+    protocol::RegionMaterialScope material_scope;
+    std::future<protocol::CapabilityDiscoveryResult> region_material_discovery_future;
+    std::uint64_t region_material_discovery_epoch = 0U;
+    bool region_material_discovery_started = false;
+    std::string scoped_render_materials_uri;
+    std::string scoped_get_texture_uri;
     std::future<protocol::RenderMaterialsResult> render_materials_future;
+    std::uint64_t render_materials_get_epoch = 0U;
+    std::uint64_t render_materials_post_epoch = 0U;
     std::future<protocol::RenderMaterialsResult> render_materials_post_future;
     std::vector<std::string> render_materials_in_flight;
     bool render_materials_started = false;
@@ -3264,6 +3271,7 @@ int Application::run(bool enable_developer_modules)
         std::array<assets::TextureAssetResult, 4>;
     std::future<TerrainTextureResults> terrain_texture_future;
     bool terrain_texture_loading = false;
+    std::uint64_t terrain_texture_request_epoch = 0U;
     std::uint32_t terrain_texture_request_generation =
         std::numeric_limits<std::uint32_t>::max();
     std::uint32_t terrain_texture_request_material_revision =
@@ -3271,6 +3279,7 @@ int Application::run(bool enable_developer_modules)
 
     std::future<assets::TextureAssetResult> object_texture_future;
     bool object_texture_loading = false;
+    std::uint64_t object_texture_request_epoch = 0U;
     std::string object_texture_loading_id;
     std::unordered_set<std::string> object_texture_loaded_ids;
     std::unordered_set<std::string> object_texture_failed_ids;
@@ -3546,8 +3555,6 @@ int Application::run(bool enable_developer_modules)
                                  &caps_stop,
                                  &caps_mutex,
                                  &caps_state,
-                                 &get_texture_capability_uri,
-                                 &render_materials_capability_uri,
                                  &ext_environment_payload,
                                  &caps_event_dispatcher,
                                  &world_model,
@@ -3582,7 +3589,6 @@ int Application::run(bool enable_developer_modules)
                                     std::string simulator_features_uri;
                                     std::string environment_settings_uri;
                                     std::string ext_environment_uri;
-                                    std::string get_texture_uri;
                                     std::string simulator_features_message;
 
                                     {
@@ -3619,24 +3625,6 @@ int Application::run(bool enable_developer_modules)
                                         found != discovery.capabilities.end())
                                     {
                                         ext_environment_uri = found->second;
-                                    }
-
-                                    if (const auto found =
-                                            discovery.capabilities.find("GetTexture");
-                                        found != discovery.capabilities.end())
-                                    {
-                                        get_texture_uri = found->second;
-                                        std::scoped_lock lock{caps_mutex};
-                                        get_texture_capability_uri =
-                                            get_texture_uri;
-                                    }
-
-                                    if (const auto found =
-                                            discovery.capabilities.find("RenderMaterials");
-                                        found != discovery.capabilities.end())
-                                    {
-                                        std::scoped_lock lock{caps_mutex};
-                                        render_materials_capability_uri = found->second;
                                     }
 
                                     if (!simulator_features_uri.empty())
@@ -4250,18 +4238,109 @@ int Application::run(bool enable_developer_modules)
             std::uint32_t texture_material_revision_current = 0U;
             std::array<std::string, 4> terrain_detail_ids;
 
+            // A new WorldModel region generation, handle or seed always
+            // invalidates both the material cache and pending HTTP epochs.
+            // Never destroy an unfinished std::async future on the UI thread:
+            // old replies are consumed later and discarded by epoch.
+            std::uint64_t current_region_handle = 0U;
+            std::uint32_t current_region_generation = 0U;
+            std::string current_region_seed;
+            {
+                std::scoped_lock lock{world_mutex};
+                const auto& active_region = world_model.region();
+                current_region_handle = active_region.handle;
+                current_region_generation = active_region.generation;
+                current_region_seed = active_region.seed_capability;
+            }
+            if (material_scope.update(
+                    current_region_handle,
+                    current_region_generation, current_region_seed))
+            {
+                scoped_render_materials_uri.clear();
+                scoped_get_texture_uri.clear();
+                region_material_discovery_started = false;
+                render_materials_started = false;
+                render_materials_get_complete = false;
+                legacy_materials.clear();
+                material_ids_pending.clear();
+                material_request_times.clear();
+                material_request_attempts.clear();
+                render_materials_in_flight.clear();
+                scene_texture_ids.clear();
+                object_texture_loaded_ids.clear();
+                object_texture_failed_ids.clear();
+                terrain_texture_request_generation =
+                    std::numeric_limits<std::uint32_t>::max();
+                terrain_texture_request_material_revision =
+                    std::numeric_limits<std::uint32_t>::max();
+                rendered_object_generation =
+                    std::numeric_limits<std::uint32_t>::max();
+                rendered_object_revision =
+                    std::numeric_limits<std::uint32_t>::max();
+                core::info("RenderMaterials region cache invalidated; epoch=" +
+                    std::to_string(material_scope.epoch()));
+            }
+
+            if (region_material_discovery_future.valid() &&
+                region_material_discovery_future.wait_for(std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                try
+                {
+                    auto discovery = region_material_discovery_future.get();
+                    if (material_scope.matches(region_material_discovery_epoch))
+                    {
+                        if (discovery.success)
+                        {
+                            if (const auto it =
+                                    discovery.capabilities.find("RenderMaterials");
+                                it != discovery.capabilities.end())
+                                scoped_render_materials_uri = it->second;
+                            if (const auto it =
+                                    discovery.capabilities.find("GetTexture");
+                                it != discovery.capabilities.end())
+                                scoped_get_texture_uri = it->second;
+                            core::info("Region-scoped material capabilities ready");
+                        }
+                        else
+                        {
+                            core::warning("Region-scoped CAPS discovery failed: " +
+                                discovery.message);
+                        }
+                    }
+                }
+                catch (const std::exception& ex)
+                {
+                    if (material_scope.matches(region_material_discovery_epoch))
+                        core::warning(std::string{"Region-scoped CAPS error: "} +
+                            ex.what());
+                }
+            }
+            if (!region_material_discovery_started &&
+                !region_material_discovery_future.valid() &&
+                !current_region_seed.empty())
+            {
+                region_material_discovery_started = true;
+                region_material_discovery_epoch = material_scope.epoch();
+                region_material_discovery_future = std::async(
+                    std::launch::async,
+                    [transport, seed = current_region_seed]()
+                    {
+                        return protocol::CapabilityService{transport}.discover(
+                            seed, {"RenderMaterials", "GetTexture"});
+                    });
+            }
+
             // Material CAPS GET runs outside the render thread. Keep the
             // LLSD snapshot per region; scene rebuild applies resolved alpha.
-            if (!render_materials_started)
+            if (!render_materials_started &&
+                !render_materials_future.valid() &&
+                !scoped_render_materials_uri.empty())
             {
-                std::string uri;
-                {
-                    std::scoped_lock lock{caps_mutex};
-                    uri = render_materials_capability_uri;
-                }
-                if (!uri.empty())
+                const std::string uri = scoped_render_materials_uri;
                 {
                     render_materials_started = true;
+                    render_materials_get_epoch = material_scope.epoch();
                     render_materials_future = std::async(
                         std::launch::async,
                         [transport, uri]()
@@ -4275,11 +4354,18 @@ int Application::run(bool enable_developer_modules)
                 render_materials_future.wait_for(std::chrono::seconds{0}) ==
                     std::future_status::ready)
             {
-                render_materials_get_complete = true;
+                const bool current_reply =
+                    material_scope.matches(render_materials_get_epoch);
+                if (current_reply)
+                    render_materials_get_complete = true;
                 try
                 {
                     auto response = render_materials_future.get();
-                    if (response.success)
+                    if (!current_reply)
+                    {
+                        core::info("Discarded stale RenderMaterials GET reply");
+                    }
+                    else if (response.success)
                     {
                         legacy_materials = std::move(response.materials);
                         const auto snapshot_time =
@@ -4304,8 +4390,9 @@ int Application::run(bool enable_developer_modules)
                 }
                 catch (const std::exception& ex)
                 {
-                    core::warning(std::string{"RenderMaterials worker failed: "} +
-                        ex.what());
+                    if (current_reply)
+                        core::warning(std::string{"RenderMaterials worker failed: "} +
+                            ex.what());
                 }
             }
 
@@ -4316,10 +4403,16 @@ int Application::run(bool enable_developer_modules)
                     std::future_status::ready)
             {
                 bool updated = false;
+                const bool current_reply =
+                    material_scope.matches(render_materials_post_epoch);
                 try
                 {
                     auto result = render_materials_post_future.get();
-                    if (result.success)
+                    if (!current_reply)
+                    {
+                        core::info("Discarded stale RenderMaterials POST reply");
+                    }
+                    else if (result.success)
                     {
                         for (auto& [id, material] : result.materials)
                         {
@@ -4341,15 +4434,18 @@ int Application::run(bool enable_developer_modules)
                 }
                 catch (const std::exception& ex)
                 {
-                    core::warning(std::string{"RenderMaterials POST worker failed: "} +
-                        ex.what());
+                    if (current_reply)
+                        core::warning(
+                            std::string{"RenderMaterials POST worker failed: "} +
+                            ex.what());
                 }
-                for (const auto& id : render_materials_in_flight)
-                {
-                    if (!legacy_materials.contains(id) &&
-                        material_request_attempts[id] < 3U)
-                        material_ids_pending.insert(id);
-                }
+                if (current_reply)
+                    for (const auto& id : render_materials_in_flight)
+                    {
+                        if (!legacy_materials.contains(id) &&
+                            material_request_attempts[id] < 3U)
+                            material_ids_pending.insert(id);
+                    }
                 render_materials_in_flight.clear();
                 if (updated)
                 {
@@ -4806,11 +4902,7 @@ int Application::run(bool enable_developer_modules)
                 !render_materials_post_future.valid() &&
                 !material_ids_pending.empty())
             {
-                std::string uri;
-                {
-                    std::scoped_lock lock{caps_mutex};
-                    uri = render_materials_capability_uri;
-                }
+                const std::string uri = scoped_render_materials_uri;
                 if (!uri.empty())
                 {
                     std::vector<std::string> batch;
@@ -4850,6 +4942,7 @@ int Application::run(bool enable_developer_modules)
                     if (!batch.empty())
                     {
                         render_materials_in_flight = batch;
+                        render_materials_post_epoch = material_scope.epoch();
                         render_materials_post_future = std::async(
                             std::launch::async,
                             [transport, uri, batch]()
@@ -4871,11 +4964,8 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->set_terrain(terrain_update);
             }
 
-            std::string texture_capability;
-            {
-                std::scoped_lock lock{caps_mutex};
-                texture_capability = get_texture_capability_uri;
-            }
+            const std::string texture_capability =
+                scoped_get_texture_uri;
 
             if (!terrain_texture_loading &&
                 terrain_materials_available &&
@@ -4890,6 +4980,7 @@ int Application::run(bool enable_developer_modules)
                 terrain_texture_request_material_revision =
                     texture_material_revision_current;
                 terrain_texture_loading = true;
+                terrain_texture_request_epoch = material_scope.epoch();
 
                 const auto ids = terrain_detail_ids;
                 const std::string capability = texture_capability;
@@ -4932,7 +5023,8 @@ int Application::run(bool enable_developer_modules)
                     terrain_texture_future.get();
                 terrain_texture_loading = false;
 
-                if (texture_generation_current ==
+                if (material_scope.matches(terrain_texture_request_epoch) &&
+                    texture_generation_current ==
                         terrain_texture_request_generation &&
                     texture_material_revision_current ==
                         terrain_texture_request_material_revision)
@@ -4990,7 +5082,11 @@ int Application::run(bool enable_developer_modules)
                     object_texture_future.get();
                 object_texture_loading = false;
 
-                if (result.success &&
+                if (!material_scope.matches(object_texture_request_epoch))
+                {
+                    core::info("Discarded stale GetTexture object reply");
+                }
+                else if (result.success &&
                     result.image.valid() &&
                     !object_texture_loading_id.empty())
                 {
@@ -5040,6 +5136,7 @@ int Application::run(bool enable_developer_modules)
 
                     object_texture_loading_id = texture_id;
                     object_texture_loading = true;
+                    object_texture_request_epoch = material_scope.epoch();
 
                     const std::string capability =
                         texture_capability;

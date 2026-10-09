@@ -2493,3 +2493,30 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
   Ein eingeloggter In-World-/Material-Vergleich bleibt offen.
 - Als Nächstes: Material-Asset-Caching/Invalidierung beim Region- und
   Teleportwechsel, weitere Renderer-Primitiven, visuelle In-World-Tests.
+
+
+## Phase 8 – regionsgebundene CAPS-/Material-Caches · 09.10.2026 · 0.2.0-alpha.45
+
+- Das Materialsystem verwendet eine explizite Region-Identität aus
+  WorldModel-Handle, Generation und Seed-Capability.
+- Bei Login, TeleportFinish und CrossedRegion (inkl. gleicher Handle
+  mit neuer Generation) werden Legacy-Material-Cache, offene Material-
+  ID-Listen, Retry-/Cooldown-Daten und Texture-Download-Metadaten
+  invalidiert; die Szene wird erneut aus dem WorldModel aufgebaut.
+- Material- und GetTexture-Capabilities werden anhand der Seed-Capability
+  **der jeweils aktuellen Region** separat asynchron neu entdeckt.
+  Die bisherige Login-EventQueue bleibt vorerst ein separater Pfad.
+- Alle asynchronen Material-GET-/POST- sowie Terrain-/Objekt-Textur-
+  Anfragen sind mit einer Region-Epoche versehen. Veraltete Ergebnisse
+  werden konsumiert, aber nicht mehr in die neue Region übernommen;
+  laufende std::async-Futures werden nicht beim Übergang überschrieben.
+- Neues Header-Modul `RegionMaterialScope` und Regressionstests für
+  identische Region, Generationserhöhung, Regionshandle- und Seed-Wechsel,
+  insbesondere die Zurückweisung von Antworten mit veralteter Epoche.
+- **Abgrenzung:** Der vollständige Teleport-/Circuit-Reconnect,
+  die Neuanmeldung der gesamten EventQueue sowie eine vollständige
+  GPU-Texture-Eviction-Strategie gehören zu weiteren Entwicklungsblöcken.
+  Dieser Block isoliert den **Material- und Asset-Abruf** bei Regionswechseln.
+- Abnahme: Debug-Build erfolgreich, 23/23 CTest gruen,
+  5-Sekunden-OpenGL-Smoke inklusive NexVerse-UI und Welcome erfolgreich.
+  Ein eingeloggter In-World-Teleport-Test steht noch aus.

@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.44`
+Version: `0.2.0-alpha.45`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -253,3 +253,24 @@ Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
 - Nächster Arbeitsblock: Region-/Teleport-Lifecycle, Material-Cache-
   Invalidierung und In-World-Vergleich; danach Phase 8 weiterführen.
 - Bindend: `projectplan.md`; Detaildokument: `docs/MATERIALS.md`.
+
+
+## Neuester Phase-8-Block · 0.2.0-alpha.45
+
+- Regionsgebundene Material-Caches: WorldModel-Handle, Generation,
+  Seed-Capability bilden eindeutige Anfrage-Epoche.
+- `RegionMaterialScope` testet die Epoche unabhängig von Netz/Render.
+- Separater regionsgebundener Seed-CAPS-Request für RenderMaterials
+  und GetTexture; neue Region erhält eigene Capability-Adressen.
+- Stale GET-/POST-Material- und Texture-Download-Resultate werden
+  nach Teleport oder Grenzübertritt ignoriert, ohne auf Futures im
+  Render-Thread zu warten.
+- Pending IDs, Cooldowns, fehlgeschlagene Texture-IDs werden beim
+  Regionswechsel invalidiert; Scene-Revision wird neu aufgebaut.
+- Noch offen: vollständiger EventQueue-/Circuit-Wechsel beim Teleport,
+  GPU-Asset-Eviction und Live-In-World-Test.
+- Weiter mit Phase 8 nach `projectplan.md`; neues Scope-Header:
+  `include/nexverse/protocol/region_material_scope.hpp`.
+
+Build/Smoketest 0.2.0-alpha.45: 23/23 CTest, OpenGL 3.3,
+NexVerse UI und Welcome erfolgreich; Teleport-End-to-End offen.

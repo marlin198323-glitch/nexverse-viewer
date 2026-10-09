@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/protocol/render_materials.hpp"
+#include "nexverse/protocol/region_material_scope.hpp"
 #include "nexverse/protocol/llsd.hpp"
 #include <zlib.h>
 #include <algorithm>
@@ -234,5 +235,31 @@ int main()
     if (!check(parse_render_materials_response(
         zipped(LlsdValue::array({invalid_exponent}))).materials.empty(),
         "Negative specular exponent accepted")) return 23;
-    std::cout << "OpenSim RenderMaterials GET/POST and map transforms passed\n";
+    // A late GET, POST, or texture response is only valid in the region
+    // and capability seed which initiated it. A handshake update with
+    // unchanged identity must not clear the cache.
+    nexverse::protocol::RegionMaterialScope scope;
+    if (!check(scope.update(100U, 0U, "https://caps.example/seed-a"),
+               "Initial region scope was not established")) return 24;
+    const auto first_epoch = scope.epoch();
+    if (!check(scope.matches(first_epoch) &&
+               !scope.update(100U, 0U, "https://caps.example/seed-a") &&
+               scope.matches(first_epoch),
+               "Same region handshake invalidated material scope")) return 25;
+    if (!check(scope.update(100U, 1U, "https://caps.example/seed-a") &&
+               !scope.matches(first_epoch),
+               "Same-handle teleport generation failed to reject stale reply"))
+        return 26;
+    const auto teleport_epoch = scope.epoch();
+    if (!check(scope.update(200U, 1U, "https://caps.example/seed-a") &&
+               !scope.matches(teleport_epoch),
+               "Crossed-region handle failed to invalidate cache")) return 27;
+    const auto crossed_epoch = scope.epoch();
+    if (!check(scope.update(200U, 1U, "https://caps.example/seed-b") &&
+               !scope.matches(crossed_epoch) &&
+               scope.seed_capability() == "https://caps.example/seed-b",
+               "Changed seed did not invalidate material scope")) return 28;
+    if (!check(scope.matches(scope.epoch()),
+               "Current material response epoch rejected")) return 29;
+    std::cout << "OpenSim RenderMaterials region scope and cache lifetimes passed\n";
 }

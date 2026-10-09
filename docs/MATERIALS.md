@@ -1,6 +1,6 @@
 # OpenGenesisLINK – OpenSim Materials (Phase 8)
 
-## Stand 0.2.0-alpha.44
+## Stand 0.2.0-alpha.45
 
 Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
 **PBR/glTF RenderMaterials**. Deren UUIDs sind keine Shaderparameter.
@@ -47,6 +47,23 @@ die TextureEntry-Fallbacks. POST-Requests werden ausschließlich über
 per Seed erhaltene HTTP(S)-Capability-URIs gesendet und außerhalb des
 Render-Threads ausgeführt. Keine direkten GPU- oder WorldModel-Zugriffe
 im CAPS-Parser.
+
+### Regionswechsel / Anfrage-Epochen (0.2.0-alpha.45)
+
+- Die Material-/Texture-URL wird pro aktivem WorldModel-Region-Seed
+  asynchron aus dem Seed-CAPS ermittelt.
+- Der Scope-Schlüssel besteht aus Regionshandle, Region-Generation und
+  Seed-Capability. Ein Wechsel invalidiert MaterialIDs, Cooldowns,
+  ausstehende IDs und die Texture-Download-Metadaten der alten Region.
+- Noch laufende HTTP-Anfragen werden nicht synchron unterbrochen
+  oder destruktiv ersetzt. Ihre Ergebnisse enthalten eine lokale
+  Anfrage-Epoche und werden beim Eintreffen verworfen, falls diese
+  nicht mehr zur aktiven Region passt.
+- Die bereits vorhandene Login-EventQueue läuft unabhängig. Diese
+  Änderung ersetzt noch **keinen vollständigen Teleport-Protokoll-
+  Reconnect** mit neuem UDP-Circuit und neuer EventQueue.
+- Bereits auf der GPU liegende UUID-Texturen werden hier nicht
+  vollständig evicted; ein Ressourcen-/LRU-Pfad folgt.
 
 ### Noch offen
 
