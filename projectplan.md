@@ -974,6 +974,83 @@ RTX-, AO-, Voice- oder andere fertige optionale Plugins
 
 Diese Online- und Produktfunktionen bauen später auf derselben Module Runtime auf. Dadurch wird der Viewer jetzt modular vorbereitet, ohne die Fertigstellung der eigentlichen Viewer-Kernfunktionen durch einen kompletten Add-on-Store zu verzögern.
 
+
+### Geplanter OpenGenesisLINK Plugin-Zielkatalog
+
+Der folgende Katalog ist die verbindliche Zielrichtung für spätere optionale Module. Die Liste definiert Zweck, grobe Verantwortungsgrenze und Prioritätsklasse. Nicht alle Plugins werden sofort umgesetzt.
+
+#### Klasse A – Infrastruktur- und Renderer-Module
+
+1. **OGL Example Module** – Referenz-/Testplugin für ABI, Manifest, Lifecycle, Capabilities, Aktivieren/Deaktivieren und Dependency-Handling.
+2. **OGL Vulkan Renderer** – moderner alternativer Raster-Renderer; Grundlage für spätere Ray-Tracing-Funktionen und bessere GPU-Auslastung.
+3. **OGL RTX Renderer** – optionales Ray-Tracing-/RTX-Backend mit Raytracing-Schatten, Reflexionen und später GI; nur auf kompatibler Hardware.
+4. **OGL Voice** – Spatial Voice, Mikrofon, Gerätewahl, Mute, Avatar-Lautstärke und Positionsaudio.
+5. **OGL Media** – erweiterte Media-on-a-Prim-/Browser-/Video-/Codec-Funktionen auf Basis einer stabilen Media-Schnittstelle.
+
+#### Klasse B – Avatar, Animation und Bedienung
+
+6. **OGL Advanced AO** – erweiterter Animation Override mit mehreren Sets und automatischen Zustandswechseln.
+7. **OGL RLVa** – optionale RLV/RLVa-Kompatibilität für Attachments und Restriktionsbefehle.
+8. **OGL Outfit Manager** – erweiterte Outfit-, Wearable- und Attachment-Verwaltung.
+9. **OGL Avatar Tools** – Avatar-Diagnose, Attachment-Übersicht, Animationsstatus, Komplexität und Rendering-Debug.
+10. **OGL Animation Studio** – Animation Preview, Trigger, Sequenzen und erweiterte Animationsverwaltung.
+11. **OGL Gesture Tools** – Gesten suchen, kategorisieren, testen und Trigger-Konflikte erkennen.
+12. **OGL Gamepad** – Controller-Unterstützung für Xbox-/PlayStation-kompatible Geräte mit frei belegbarer Steuerung.
+13. **OGL VR** – spätere OpenXR-basierte VR-Unterstützung mit Head Tracking, Controllern und VR-UI.
+
+#### Klasse C – Bauen, Materialien und Assets
+
+14. **OGL Advanced Build Tools** – exakte Transformationen, Alignment, Multi-Edit, Prim-/Linkset-Werkzeuge.
+15. **OGL Mesh Tools** – Mesh-Diagnose, LOD, Triangle Count, Bounding Boxes, Material-Slots und Upload-Vorprüfung.
+16. **OGL Material Tools** – Legacy- und PBR-Materialbearbeitung, Normal/Roughness/Metallic und Materialvorschau.
+17. **OGL Scripting Tools** – erweiterter LSL/OSSL-Editor, Syntax-Highlighting, Script-Logs und Diagnose.
+18. **OGL Asset Inspector** – Asset-UUIDs, Texturen, Meshes, Animationen, Sounds, Cache- und Decode-Status.
+19. **OGL Export / Backup Tools** – Sicherung erlaubter Einstellungen, Profile, Favoriten und Inhalte unter strikter Beachtung von Copy-/Export-Rechten.
+
+#### Klasse D – Welt, Land und Administration
+
+20. **OGL Map Plus** – zusätzliche Map-Layer, Marker, Favoriten und Teleport-Historie.
+21. **OGL Hypergrid Tools** – HG-Favoriten, Grid-Verlauf, Grid-Infos, Hypergrid-Diagnose und Landmark-Verwaltung.
+22. **OGL Parcel Tools** – Parcel-Analyse, Media/Music, Access-/Ban-Listen, Objektübersicht und Landstatistiken.
+23. **OGL Estate Tools** – Region-/Estate-Administration, Access, Bans, Terrain, Neustarts und Debug-Optionen.
+24. **OGL Moderation Tools** – Freeze/Eject/Ban-Hilfen, Abuse-Report-Unterstützung und Moderationsdiagnose; Serverrechte bleiben maßgeblich.
+
+#### Klasse E – UI, Komfort und Kommunikation
+
+25. **OGL UI Themes** – alternative Themes, Farben, Icons und Layout-Presets auf Basis der OGL-UI-API.
+26. **OGL Accessibility** – High Contrast, größere UI, Farbsehschwächen-Modi und weitere Barrierefreiheitsfunktionen.
+27. **OGL Inventory Plus** – erweiterte Suche, Smart Folders, Duplikaterkennung und Massenoperationen; Basisinventar bleibt Core.
+28. **OGL Social Plus** – Kontaktkategorien, Notizen, Filter und optionale soziale Komfortfunktionen; Freunde/IM/Gruppen bleiben Core.
+29. **OGL Stream & Radio** – Parcel Music, Icecast/Shoutcast, Stream-Metadaten und Favoriten.
+30. **OGL Translator** – optionale Chat-/IM-Übersetzung über konfigurierbare externe Dienste mit klaren Datenschutzhinweisen.
+31. **OGL Discord Integration** – optionale Rich Presence/Statusintegration nur nach ausdrücklicher Aktivierung.
+32. **OGL Streamer Mode** – Datenschutzmodus für Streams/Videos, z. B. Namen, Chat, Koordinaten und Benachrichtigungen ausblenden.
+
+#### Klasse F – Diagnose, Kreativ- und Entwicklerwerkzeuge
+
+33. **OGL Developer Tools** – LLUDP-, CAPS-, EventQueue-, ObjectUpdate-, TextureEntry-, Asset- und Renderer-Diagnose.
+34. **OGL Performance Monitor** – FPS, Frametime, Draw Calls, VRAM, CPU/GPU, Netzwerk und Cache-Telemetrie.
+35. **OGL Photography** – freie Kamera, Kamera-Presets, High-Resolution-Screenshots, Post-Processing und spätere DoF-/Machinima-Funktionen.
+36. **OGL AI Assistant** – spätere optionale Assistenz für UI-Hilfe, Diagnose und Build-/Scripting-Unterstützung; niemals Pflichtbestandteil des Viewers.
+
+### Reihenfolge für die ersten echten Module
+
+Die Module werden nicht in der Reihenfolge der obigen Liste vollständig umgesetzt. Für die Validierung der Module Runtime gilt zunächst folgende Priorität:
+
+```text
+1. OGL Example Module
+2. OGL Developer Tools
+3. OGL Performance Monitor
+4. OGL Vulkan Renderer
+5. OGL RTX Renderer
+```
+
+Erst wenn diese Module die API-/ABI-, Lifecycle-, Capability- und Dependency-Grenzen praktisch bestätigt haben, werden weitere tiefe Module wie Voice, Media, AO oder RLVa aus dem Core heraus beziehungsweise als optionale Erweiterung umgesetzt.
+
+### Grundsatz
+
+Ein Plugin darf nur Funktionen übernehmen, die über eine stabile, versionierte Schnittstelle erreichbar sind. Kernfunktionen wie Login, LLUDP/CAPS, WorldModel, Basis-Avatar, Basis-Inventar, Basis-UI und mindestens ein funktionsfähiger Standard-Renderer bleiben unabhängig von optionalen Plugins verfügbar.
+
 ---
 
 # 3. Projektphasen

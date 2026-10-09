@@ -726,3 +726,11 @@ Für spätere Arbeit gilt:
 - Jetzt: ModuleManager, versionierte Module API/ABI, Manifest Loader, lokales Laden, Lifecycle, Aktivieren/Deaktivieren, Dependencies, Capabilities, Plattformprüfung und persistenter Aktivierungszustand.
 - Später: `addons.opengenesislink.de` Registry/API, Store-UI, Online-Download, automatische Updates, Produktions-Signaturservice und konkrete optionale Plugins wie RTX/AO/Voice.
 - Ziel: OGL Viewer zuerst vollständig weiterbauen, aber ab jetzt auf einer echten modularen Grundlage.
+
+
+## Plugin-Zielkatalog – 09.10.2026
+
+- `projectplan.md` enthält jetzt einen verbindlichen Zielkatalog mit 36 geplanten Plugin-/Modulideen.
+- Kategorien: Infrastruktur/Renderer, Avatar/Animation, Build/Material/Assets, Welt/Land/Admin, UI/Komfort/Kommunikation sowie Diagnose/Kreativ/Developer.
+- Erste Runtime-Validierung: OGL Example Module -> Developer Tools -> Performance Monitor -> Vulkan Renderer -> RTX Renderer.
+- Voice, Media, AO, RLVa und weitere tiefe Module folgen erst, wenn API/ABI, Lifecycle, Capabilities und Dependencies durch die ersten Module praktisch bestätigt sind.
