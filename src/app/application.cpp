@@ -14,6 +14,7 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
+#include "nexverse/protocol/event_queue_recovery.hpp"
 #include "nexverse/protocol/caps_world_events.hpp"
 #include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/environment_settings.hpp"
@@ -3807,8 +3808,23 @@ int Application::run(bool enable_developer_modules)
                                     }
 
                                     std::optional<std::int32_t> acknowledgement;
-                                    std::uint32_t failures = 0U;
+                                    protocol::EventQueueRecovery recovery;
                                     bool event_queue_live_logged = false;
+                                    bool idle_logged = false;
+
+                                    auto pause_until_retry =
+                                        [&caps_stop](std::chrono::milliseconds duration)
+                                        {
+                                            constexpr auto step =
+                                                std::chrono::milliseconds{100};
+                                            while (!caps_stop.load() &&
+                                                   duration.count() > 0)
+                                            {
+                                                const auto next = std::min(duration, step);
+                                                std::this_thread::sleep_for(next);
+                                                duration -= next;
+                                            }
+                                        };
 
                                     while (!caps_stop.load())
                                     {
@@ -3822,10 +3838,43 @@ int Application::run(bool enable_developer_modules)
                                             break;
                                         }
 
+                                        // OpenSimulator uses HTTP 502 for an empty
+                                        // long-poll after its ~58-second keepalive.
+                                        // This is healthy activity, not a failure.
+                                        if (batch.idle)
+                                        {
+                                            const auto recovered = recovery.failures();
+                                            recovery.on_contact();
+                                            {
+                                                std::scoped_lock lock{caps_mutex};
+                                                caps_state.status = event_queue_live_logged
+                                                    ? "CAPS LIVE" : "CAPS IDLE";
+                                            }
+                                            if (!idle_logged)
+                                            {
+                                                idle_logged = true;
+                                                core::info(
+                                                    "CAPS EventQueue idle (HTTP 502 normal "
+                                                    "server keepalive); polling continues");
+                                            }
+                                            if (recovered > 0U)
+                                            {
+                                                core::info(
+                                                    "CAPS EventQueue recovered after " +
+                                                    std::to_string(recovered) +
+                                                    " failure(s); acknowledgement preserved");
+                                            }
+                                            // Guard against an endpoint returning 502
+                                            // instantly rather than long-polling.
+                                            pause_until_retry(std::chrono::milliseconds{150});
+                                            continue;
+                                        }
+
                                         if (batch.success)
                                         {
+                                            const auto recovered = recovery.failures();
                                             acknowledgement = batch.id;
-                                            failures = 0U;
+                                            recovery.on_contact();
 
                                             {
                                                 std::scoped_lock lock{caps_mutex};
@@ -3841,6 +3890,13 @@ int Application::run(bool enable_developer_modules)
                                                 core::info(
                                                     "CAPS EventQueue live; first successful batch received");
                                             }
+                                            if (recovered > 0U)
+                                            {
+                                                core::info(
+                                                    "CAPS EventQueue recovered after " +
+                                                    std::to_string(recovered) +
+                                                    " failure(s); acknowledgement updated");
+                                            }
 
                                             for (const auto& event : batch.events)
                                             {
@@ -3849,24 +3905,76 @@ int Application::run(bool enable_developer_modules)
                                             continue;
                                         }
 
-                                        ++failures;
+                                        const auto decision =
+                                            recovery.on_failure(batch.expired);
                                         {
                                             std::scoped_lock lock{caps_mutex};
                                             caps_state.status =
-                                                failures >= 5U
-                                                    ? "ERROR"
+                                                decision.failures >= 5U
+                                                    ? "CAPS DEGRADED"
                                                     : "CAPS RETRY";
                                         }
 
                                         core::warning(
                                             "CAPS EventQueue poll failed; retry=" +
-                                            std::to_string(failures));
+                                            std::to_string(decision.failures) +
+                                            "; HTTP=" + std::to_string(batch.http_status) +
+                                            "; cause=" + batch.message +
+                                            "; acknowledgement " +
+                                            (acknowledgement.has_value()
+                                                ? "preserved" : "not established"));
 
-                                        std::this_thread::sleep_for(
-                                            std::chrono::seconds{
-                                                std::min<std::uint32_t>(
-                                                    failures,
-                                                    5U)});
+                                        if (decision.refresh_seed && !caps_stop.load())
+                                        {
+                                            core::info(
+                                                "CAPS EventQueue rediscovering endpoint from "
+                                                "active login seed");
+                                            const auto refreshed = service.discover(
+                                                seed_capability, {"EventQueueGet"});
+                                            if (caps_stop.load())
+                                            {
+                                                break;
+                                            }
+                                            if (refreshed.success)
+                                            {
+                                                const auto found = refreshed.capabilities.find(
+                                                    "EventQueueGet");
+                                                if (found != refreshed.capabilities.end() &&
+                                                    !found->second.empty())
+                                                {
+                                                    if (event_queue_uri != found->second)
+                                                    {
+                                                        event_queue_uri = found->second;
+                                                        acknowledgement.reset();
+                                                        event_queue_live_logged = false;
+                                                        idle_logged = false;
+                                                        core::info(
+                                                            "CAPS EventQueue endpoint refreshed; "
+                                                            "acknowledgement reset for new queue");
+                                                    }
+                                                    else
+                                                    {
+                                                        core::info(
+                                                            "CAPS EventQueue seed refreshed; "
+                                                            "endpoint unchanged");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    core::warning(
+                                                        "CAPS EventQueue seed response did "
+                                                        "not advertise EventQueueGet");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                core::warning(
+                                                    "CAPS EventQueue seed rediscovery failed: " +
+                                                    refreshed.message);
+                                            }
+                                        }
+
+                                        pause_until_retry(decision.pause);
                                     }
                                 });
 

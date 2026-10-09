@@ -81,3 +81,17 @@ HydroEngine ist später serverautoritativ. Der Viewer visualisiert dynamische Wa
 ## Maßgeblichkeit
 
 `projectplan.md` ist bindend. `info.md` dokumentiert den realen Stand. `CHATUEBERGABE.md` ist der Wiedereinstiegspunkt.
+
+
+## OpenSim EventQueue-Lifecycle (0.2.0-alpha.47)
+
+Die CAP-HTTP-Schicht unterscheidet reguläres EventQueue-Idle
+(HTTP 502) von abgelaufenen Endpunkten (HTTP 404),
+Transport-/HTTP-Fehlern und ungültigem LLSD. Der Poll-Timeout
+beträgt 80 Sekunden, während OpenSimulator die Anfragen rund
+58 Sekunden offenhalten kann. Wiederholte echte Fehler
+verwenden eine begrenzte Retry-Pause und Seed-Re-Discovery.
+Die ursprüngliche Region bleibt bis zur separaten
+Teleport-/Circuit-Lifecycle-Implementierung gebunden.
+
+Siehe `docs/CAPS.md`.

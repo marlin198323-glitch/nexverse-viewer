@@ -1,4 +1,5 @@
 #include "nexverse/protocol/caps.hpp"
+#include "nexverse/protocol/event_queue_recovery.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -17,6 +18,8 @@ public:
     std::string last_body;
     int get_calls = 0;
     int post_calls = 0;
+    std::chrono::milliseconds last_post_timeout{0};
+    std::chrono::milliseconds last_post_connect_timeout{0};
 
     nexverse::net::HttpResponse get(
         std::string_view url,
@@ -34,9 +37,11 @@ public:
         std::string_view content_type,
         std::string_view body,
         std::size_t,
-        std::chrono::milliseconds,
-        std::chrono::milliseconds) override
+        std::chrono::milliseconds connect_timeout,
+        std::chrono::milliseconds total_timeout) override
     {
+        last_post_connect_timeout = connect_timeout;
+        last_post_timeout = total_timeout;
         ++post_calls;
         last_url = std::string{url};
         last_content_type = std::string{content_type};
@@ -190,6 +195,98 @@ int main()
     {
         std::cerr << "EventQueue transport failed\n";
         return 8;
+    }
+
+    if (transport->last_post_timeout < std::chrono::seconds{70} ||
+        transport->last_post_connect_timeout > std::chrono::seconds{10})
+    {
+        std::cerr << "EventQueue timeout shorter than OpenSim long-poll window\n";
+        return 9;
+    }
+
+    transport->post_response = {502, {}, "HTTP server returned status 502"};
+    const auto idle = service.poll_event_queue(
+        "https://caps.example.test/event", 124, false);
+    if (idle.success || !idle.idle || idle.expired ||
+        idle.http_status != 502 || idle.id != 124)
+    {
+        std::cerr << "Expected OpenSim idle 502 was treated as an error\n";
+        return 10;
+    }
+    transport->post_response = {404, {}, "HTTP server returned status 404"};
+    const auto expired = service.poll_event_queue(
+        "https://caps.example.test/event", 124, false);
+    if (expired.success || expired.idle || !expired.expired ||
+        expired.http_status != 404 || expired.id != 124)
+    {
+        std::cerr << "EventQueue 404 did not expire the endpoint\n";
+        return 11;
+    }
+    transport->post_response = {503, {}, "HTTP server returned status 503"};
+    const auto unavailable = service.poll_event_queue(
+        "https://caps.example.test/event", 124, false);
+    if (unavailable.success || unavailable.idle || unavailable.expired ||
+        unavailable.http_status != 503 ||
+        unavailable.message.find("503") == std::string::npos)
+    {
+        std::cerr << "EventQueue failure diagnostics omitted HTTP status\n";
+        return 12;
+    }
+    transport->post_response = {0, {}, "HTTP request failed: Timeout was reached"};
+    const auto timeout = service.poll_event_queue(
+        "https://caps.example.test/event", 124, false);
+    if (timeout.success || timeout.idle || timeout.expired ||
+        timeout.http_status != 0 ||
+        timeout.message.find("Timeout") == std::string::npos)
+    {
+        std::cerr << "EventQueue transport timeout was not diagnosed\n";
+        return 13;
+    }
+    transport->post_response = {200, "<invalid>", {}};
+    const auto bad_xml = service.poll_event_queue(
+        "https://caps.example.test/event", 124, false);
+    if (bad_xml.success || bad_xml.idle ||
+        bad_xml.message.empty() || bad_xml.http_status != 200)
+    {
+        std::cerr << "Malformed EventQueue LLSD was not diagnosed\n";
+        return 14;
+    }
+
+    EventQueueRecovery recovery;
+    if (recovery.failures() != 0U)
+    {
+        std::cerr << "EventQueue initial failure count incorrect\n";
+        return 15;
+    }
+    const auto first = recovery.on_failure(false);
+    const auto second = recovery.on_failure(false);
+    const auto third = recovery.on_failure(false);
+    if (first.failures != 1U || first.refresh_seed ||
+        first.pause != std::chrono::seconds{1} ||
+        second.failures != 2U || second.refresh_seed ||
+        second.pause != std::chrono::seconds{2} ||
+        third.failures != 3U || !third.refresh_seed ||
+        third.pause != std::chrono::seconds{4})
+    {
+        std::cerr << "EventQueue retry/rediscovery cadence incorrect\n";
+        return 16;
+    }
+    recovery.on_contact(); // Real event batch OR expected idle 502.
+    if (recovery.failures() != 0U)
+    {
+        std::cerr << "EventQueue health contact did not clear failures\n";
+        return 17;
+    }
+    if (!recovery.on_failure(true).refresh_seed)
+    {
+        std::cerr << "EventQueue 404 must trigger immediate seed refresh\n";
+        return 18;
+    }
+    for (int i = 0; i < 12; ++i) (void)recovery.on_failure(false);
+    if (recovery.on_failure(false).pause > std::chrono::seconds{12})
+    {
+        std::cerr << "EventQueue retry backoff not bounded\n";
+        return 19;
     }
 
     std::cout << "CAPS discovery and EventQueue tests passed\n";

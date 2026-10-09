@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.46`
+Version: `0.2.0-alpha.47`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -304,3 +304,34 @@ Live-Beobachtung 0.2.0-alpha.45 (2026-10-10 00:13 bis 00:18):
 - Nächste Arbeit: echten Download-Erfolg/Nicht-Erfolg inkl.
   konkreter HTTP-/Decoderfehler im Live-Log verifizieren,
   CAPS-EventQueue-Reconnect und sichtbare Welttexturen.
+
+
+## CAPS EventQueue Recovery · 10.10.2026 · 0.2.0-alpha.47
+
+- In-World-Live-Logs von alpha.46: CAPS-Live-Batch erfolgreich,
+  danach wiederholte Poll-Fehler exakt alle 36–40 Sekunden.
+  `CapabilityService::poll_event_queue` hatte nur 35 Sekunden
+  HTTP-Total-Timeout; OpenSimulator hält einen leeren Long-Poll
+  **bis zu 58 Sekunden**, antwortet dann regulär mit HTTP 502.
+- Alpha.47 stellt den EventQueue-Timeout auf 80 Sekunden ein.
+  HTTP 502 wird als normales leeres Keepalive behandelt, HTTP 404
+  als abgelaufener Endpoint, andere HTTP-/Transport-/LLSD-
+  Fehler mit HTTP-Status und Ursache protokolliert.
+- EventQueueRecovery: gesunde Batches und 502 resetten den
+  Fehlzähler; echte Fehler nutzen begrenzte 1/2/4/8/12-Sekunden-
+  Backoffs. Bei 404 sofort, sonst jede dritte echte Störung
+  neue `EventQueueGet`-Capability aus dem Seed abrufen.
+  Unveränderte URL bewahrt das Ack, neue URL setzt Ack zurück.
+  Reconnect-/Idle-Logs dokumentieren den Zustand ohne Token/URL-Leak.
+- Der Stopp ist im Backoff nach spätestens 100 ms überprüfbar.
+  23/23 CTest inklusive HTTP 502/404/503/Timeout/LLSD-
+  Regressionen bestanden; Debug-Build und OpenGL-3.3-GUI-Smoke
+  erfolgreich. **Authentifizierter EventQueue-Langzeittest mit alpha.47
+  steht noch aus.**
+- WICHTIG: Diese Recovery ist für den aktuellen Login-Region-Seed;
+  vollständiger Teleport-/Regionswechsel mit neuem UDP-Circuit,
+  alter EventQueue-Abmeldung und neuem Seed braucht separaten Block.
+- Dokumentation: `docs/CAPS.md`, `projectplan.md` (maßgeblich).
+- GitHub Branch weiterhin `develop-current` (nicht `develop`).
+- Zum In-World-Test:
+  `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl47-live.log`.

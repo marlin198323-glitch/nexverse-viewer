@@ -6,12 +6,17 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.46`
+- Version: `0.2.0-alpha.47`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
 - letzter vollständig geprüfter Stand: 23/23 Tests grün plus OpenGL-Runtime-Smoke mit Developer-Modulen
-- aktueller Entwicklungsblock: **Phase 8 – GetTexture-PNG/JPEG2000-Fallback (OpenJPEG), regionsgebundene Material-Assets und Legacy Normal-/Specular-Maps; Live-Abnahme und PBR folgen**
+- aktueller Entwicklungsblock: **CAPS-EventQueue-Lifecycle: OpenSim-konformes 80-Sekunden-Long-Poll, HTTP-502-Idle, HTTP-404-Endpoint-Expiry, Retry/Seed-Recovery und diagnostische Logs; kompletter Teleport-Reconnect folgt**
+
+Die EventQueue toleriert OpenSims erwartete HTTP-502-Leerantworten; 80-Sekunden-
+Long-Polls decken das etwa 58-Sekunden-Server-Keepalive ab.
+Echte Fehler werden mit Ursache, HTTP-Status, begrenztem Retry-Backoff
+und erneuter Seed-CAPS-Ermittlung behandelt. Siehe `docs/CAPS.md`.
 
 Der neue GetTexture-Pfad verlangt erst PNG und wechselt bei HTTP-/PNG-Fehlern auf OpenSims natives `x-j2c`; J2C und JP2 werden per OpenJPEG sicher als RGBA8 decodiert. Details: `docs/TEXTURES.md`.
 

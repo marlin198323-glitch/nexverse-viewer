@@ -1036,3 +1036,61 @@ Für spätere Arbeit gilt:
   in den nächsten separaten Protokollblock, nicht zur Texturdekodierung.
 - Progressive JPEG2000-LOD, Asset-Priorisierung, Retry-/LRU-
   Strategie, harte GPU-Speicherverwaltung und modernes PBR folgen.
+
+
+## CAPS – EventQueue-Lifecycle und Recovery · 10.10.2026 · 0.2.0-alpha.47
+
+**Live-Befund aus 0.2.0-alpha.46:**
+- Echtes Login, EventQueue-Live-Batch, 287+ geladene Objekttexturen
+  und WorldModel READY. Anschließend CAPS-Poll-Warnungen im
+  Abstand von ~36–40 Sekunden bei einem früheren HTTP-Timeout von
+  **35 Sekunden**.
+- OpenSimulator setzt den EventQueue-Keepalive auf 60 Sekunden
+  und hält Polls etwa 58 Sekunden offen, bevor eine leere Queue
+  mit HTTP **502 Bad Gateway** quittiert wird. Dieser Status ist
+  eine *reguläre* Leermeldung, kein verlorenes Ereignis.
+  Referenz: `OpenSim/Region/ClientStack/Linden/Caps/EventQueue/EventQueueGetModule.cs`
+  (`VIEWERKEEPALIVE=(60-2)*1000`, `NoEvents` gibt 502 zurück).
+
+**Implementiert:**
+- Spezifischer EventQueue-HTTP-Total-Timeout: **80 Sekunden**,
+  Connect-Timeout weiterhin 8 Sekunden.
+- Unterscheidung:
+  - HTTP 200 + gültiges LLSD → Batch und Acknowledgement.
+  - HTTP 502 → erwartetes Idle; keine Warnung, Ack erhalten,
+    Poll erneut senden; kleines 150-ms-Hotloop-Schutzintervall.
+  - HTTP 404 → Endpoint abgelaufen; sofort Seed-CAPS neu abrufen.
+  - Andere HTTP-/Transport-/LLSD-Fehler → Diagnose mit HTTP-
+    Status, Fehlermeldung, Retry-Zähler und Ack-Zustand.
+- Gesunde Batch-/Idle-Antworten resetten die Fehlerzählung.
+  Echte Fehler erhalten begrenzte exponentielle Backoffs
+  von 1, 2, 4, 8 bis maximal 12 Sekunden.
+- Bei jeder dritten echten Störung wird `EventQueueGet`
+  aus dem ursprünglichen Login-Seed neu angefragt.
+  Ist die Capability-URI unverändert, bleibt der Ack erhalten.
+  Bei geändertem Endpoint wird er zurückgesetzt, weil es
+  eine andere Queue ist. Werte und Tokens werden nicht geloggt.
+- CAPS-Status: `CAPS LIVE`, `CAPS IDLE`, `CAPS RETRY`,
+  `CAPS DEGRADED` mit Wiederherstellungsmeldungen.
+- Retry-Pausen sind in 100-ms-Schritten stoppbar.
+
+**Testabnahme:**
+- CMake Debug-Build erfolgreich, 23/23 automatisierte CTests
+  inkl. HTTP 502, 404, 503, Timeout, fehlerhafter LLSD-Antwort,
+  Ack-Erhalt, Wiederverbindungs-/Backoff-Entscheidung.
+- OpenGL-3.3-Smoke auf NVIDIA RTX 4070 SUPER mit NexVerse-UI
+  und Welcome erfolgreich; absichtliches Timeout des Smoke-
+  Tests ist kein Absturz.
+- **Neuer echter Alpha.47-EventQueue-Langzeittest nach Login
+  ausstehend.** Das beobachtete alte 35-Sekunden-Intervall
+  sollte nicht wieder als Fehler auftreten.
+
+**Noch offen:**
+- Vollständiger Teleport/Regionsübergang inklusive UDP-Circuit-
+  Wechsel, Stopp alter EventQueue und Start neuer Region-Queue.
+- Langzeit-Metriken, Error-Sampling, Test verschiedener Simulator-
+  und Proxy-Laufzeitkonfigurationen, Seed-Neuvergabe bei
+  abgelaufener Region, dynamischer Reconnect auf neuer Region.
+- Diese Änderung ersetzt *nicht* den bestehenden LLUDP-Circuit.
+
+Details: `docs/CAPS.md`.

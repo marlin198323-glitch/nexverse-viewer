@@ -40,6 +40,11 @@ struct EventQueueBatch
     std::optional<std::int32_t> id;
     std::vector<EventQueueEvent> events;
     std::string message;
+    // OpenSimulator returns HTTP 502 when a long-poll has no events.
+    // HTTP 404 means that this region's EventQueue endpoint is gone.
+    bool idle = false;
+    bool expired = false;
+    long http_status = 0;
 };
 
 struct SimulatorFeaturesResult

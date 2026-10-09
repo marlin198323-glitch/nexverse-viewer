@@ -326,7 +326,9 @@ EventQueueBatch CapabilityService::poll_event_queue(
         build_event_queue_request(acknowledgement, done);
 
     constexpr auto connect_timeout = std::chrono::seconds{8};
-    constexpr auto total_timeout = std::chrono::seconds{35};
+    // OpenSimulator keeps empty EventQueue long-polls open for ~58s.
+    // The HTTP client must outlive the simulator's keepalive window.
+    constexpr auto total_timeout = std::chrono::seconds{80};
 
     const net::HttpResponse response = transport_->post(
         capability_uri,
@@ -336,6 +338,17 @@ EventQueueBatch CapabilityService::poll_event_queue(
         connect_timeout,
         total_timeout);
 
+    if (response.status_code == 502)
+    {
+        // A healthy empty EventQueue is signalled by Bad Gateway in OpenSim.
+        return {false, acknowledgement, {}, "Normal empty EventQueue long-poll",
+                true, false, 502};
+    }
+    if (response.status_code == 404)
+    {
+        return {false, acknowledgement, {}, "EventQueue capability expired (HTTP 404)",
+                false, true, 404};
+    }
     if (!response.ok())
     {
         return {
@@ -344,9 +357,14 @@ EventQueueBatch CapabilityService::poll_event_queue(
             {},
             response.error.empty()
                 ? "EventQueue request failed"
-                : response.error};
+                : response.error,
+            false,
+            false,
+            response.status_code};
     }
 
-    return parse_event_queue_response(response.body);
+    EventQueueBatch batch = parse_event_queue_response(response.body);
+    batch.http_status = response.status_code;
+    return batch;
 }
 }
