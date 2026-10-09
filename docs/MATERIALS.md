@@ -1,6 +1,6 @@
 # OpenGenesisLINK – OpenSim Materials (Phase 8)
 
-## Stand 0.2.0-alpha.42
+## Stand 0.2.0-alpha.43
 
 Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
 **PBR/glTF RenderMaterials**. Deren UUIDs sind keine Shaderparameter.
@@ -18,7 +18,17 @@ Die Viewer-Pipeline unterscheidet **OpenSim Legacy RenderMaterials** von
 4. Die Legacy-Materialien werden per UUID in einem lokalen Snapshot gespeichert.
    Ein abgeschlossener Fetch erzwingt einen Scene-Upload, sodass Default-Faces
    und Face-Overrides die Legacy-Alpha-Parameter erhalten.
-5. OpenGL rendert die Alpha-Modi 0 (keine Texture-Alpha), 1 (Blend),
+5. Bei späteren Scene-Updates werden Legacy-MaterialIDs gesammelt. Unbekannte
+   IDs werden nach abgeschlossenem initialem GET in asynchronen POST-Batches
+   von maximal 32 UUIDs abgefragt: LLSD-XML `Zipped` mit zlib-komprimiertem
+   LLSD-Binary-Array von je 16 UUID-Bytes. Doppelte IDs werden entfernt;
+   zurückkommende Materialdefinitionen werden auf angefragte IDs begrenzt.
+6. Ist eine nachgeladene Definition anders, wird der Material-Cache ersetzt
+   und die Render-Scene neu aufgebaut. Bei unveränderten Definitionen ist
+   kein Re-Upload erforderlich. Unbekannte IDs werden höchstens dreimal
+   mit einem Abstand von zwei Minuten angefragt; bekannte IDs können
+   bei späteren Scene-Updates nach dem Cooldown erneut abgefragt werden.
+7. OpenGL rendert die Alpha-Modi 0 (keine Texture-Alpha), 1 (Blend),
    2 (Alpha-Mask-Cutoff) sowie 3 (Emissive-Fallback). Für Mask-Faces
    bleibt Depth-Write eingeschaltet, sofern keine Tint-Transparenz vorliegt.
 
@@ -26,14 +36,17 @@ Sicherheit: Limit 4 MiB LLSD-XML, 2 MiB zlib-Daten, 8 MiB entpackte
 LLSD-Daten und 8192 Materialeinträge; ungültige Payloads oder einzelne
 Materialdatensätze werden nicht als Renderer-Werte akzeptiert.
 Fehlt die Capability oder schlägt der Fetch fehl, gelten unverändert
-die TextureEntry-Fallbacks. Keine direkten GPU- oder WorldModel-Zugriffe
+die TextureEntry-Fallbacks. POST-Requests werden ausschließlich über
+per Seed erhaltene HTTP(S)-Capability-URIs gesendet und außerhalb des
+Render-Threads ausgeführt. Keine direkten GPU- oder WorldModel-Zugriffe
 im CAPS-Parser.
 
 ### Noch offen
 
-- Gezielte POST-Batches und Aktualisierung bei später eintreffenden
-  MaterialIDs; der GET-Snapshot wird derzeit nur beim ersten Login
-  geladen und kann veralten.
+- Der initiale GET-Snapshot wird nur beim ersten Login geladen.
+  Materialänderungen ohne Scene-Update werden nicht proaktiv erkannt;
+  der Region-/Teleport-Lifecycle muss für Cache/Capability-Wechsel
+  noch vervollständigt werden.
 - Legacy-Normal-/Specular-Maps, UV-Transformationen je Material-Kanal,
   ausgebaute Lichtberechnung.
 - Neue RenderMaterialIDs: PBR/glTF-Fetch und korrektes Asset-Parsing

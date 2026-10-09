@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <limits>
 #include <span>
+#include <set>
 #include <vector>
 
 namespace
@@ -53,6 +54,26 @@ bool valid_uuid(std::string_view id)
             return false;
     }
     return true;
+}
+
+std::vector<std::uint8_t> uuid_to_bytes(std::string_view id)
+{
+    if (!valid_uuid(id)) return {};
+    std::vector<std::uint8_t> result;
+    result.reserve(16U);
+    std::uint8_t high = 0U;
+    bool first = true;
+    for (char ch : id)
+    {
+        if (ch == '-') continue;
+        std::uint8_t nibble = static_cast<std::uint8_t>(
+            ch >= '0' && ch <= '9' ? ch - '0' :
+            ch >= 'a' && ch <= 'f' ? ch - 'a' + 10 : ch - 'A' + 10);
+        if (first) high = static_cast<std::uint8_t>(nibble << 4U);
+        else result.push_back(static_cast<std::uint8_t>(high | nibble));
+        first = !first;
+    }
+    return result;
 }
 
 bool inflate_bounded(std::span<const std::uint8_t> compressed,
@@ -113,6 +134,47 @@ bool parse_byte(const nexverse::protocol::LlsdValue* field,
 
 namespace nexverse::protocol
 {
+bool is_valid_legacy_material_id(std::string_view id) noexcept
+{
+    if (!valid_uuid(id)) return false;
+    return id != "00000000-0000-0000-0000-000000000000";
+}
+
+std::string build_render_materials_request(
+    const std::vector<std::string>& material_ids)
+{
+    if (material_ids.empty() ||
+        material_ids.size() > max_render_materials_batch_ids)
+        return {};
+
+    std::vector<LlsdValue> values;
+    values.reserve(material_ids.size());
+    std::set<std::string> seen;
+    for (const auto& id : material_ids)
+    {
+        const auto bytes = uuid_to_bytes(id);
+        if (bytes.size() != 16U) return {};
+        const std::string canonical = id_from_bytes(bytes);
+        if (canonical == "00000000-0000-0000-0000-000000000000")
+            return {};
+        if (seen.insert(canonical).second)
+            values.push_back(LlsdValue::binary(bytes));
+    }
+
+    const auto payload = serialize_llsd_binary(LlsdValue::array(std::move(values)), false);
+    if (payload.empty() || payload.size() > max_uncompressed_bytes)
+        return {};
+    uLongf compressed_size = compressBound(static_cast<uLong>(payload.size()));
+    if (compressed_size > max_compressed_bytes) return {};
+    std::vector<std::uint8_t> compressed(compressed_size);
+    const int code = compress2(compressed.data(), &compressed_size,
+        payload.data(), static_cast<uLong>(payload.size()), Z_BEST_SPEED);
+    if (code != Z_OK || compressed_size > max_compressed_bytes) return {};
+    compressed.resize(static_cast<std::size_t>(compressed_size));
+    return serialize_llsd_xml(
+        LlsdValue::map({{"Zipped", LlsdValue::binary(std::move(compressed))}}));
+}
+
 RenderMaterialsResult parse_render_materials_response(std::string_view xml)
 {
     if (xml.empty() || xml.size() > max_compressed_bytes * 2U)
@@ -172,5 +234,39 @@ RenderMaterialsResult RenderMaterialsService::fetch_all(
         return {false, {}, response.error.empty()
             ? "RenderMaterials capability GET failed" : response.error};
     return parse_render_materials_response(response.body);
+}
+
+RenderMaterialsResult RenderMaterialsService::fetch_ids(
+    std::string_view capability_uri,
+    const std::vector<std::string>& material_ids) const
+{
+    if (!transport_ || !is_valid_http_uri(capability_uri))
+        return {false, {}, "RenderMaterials POST capability URL is invalid"};
+    const std::string request = build_render_materials_request(material_ids);
+    if (request.empty())
+        return {false, {}, "RenderMaterials POST batch is invalid"};
+    const auto response = transport_->post(
+        capability_uri, "application/llsd+xml", request,
+        max_compressed_bytes * 2U,
+        std::chrono::seconds{8}, std::chrono::seconds{20});
+    if (!response.ok())
+        return {false, {}, response.error.empty()
+            ? "RenderMaterials capability POST failed" : response.error};
+    auto result = parse_render_materials_response(response.body);
+    if (!result.success) return result;
+
+    // A POST lookup is for the requested UUIDs only; never cache extra
+    // material definitions returned by a malformed/out-of-scope response.
+    std::set<std::string> allowed;
+    for (const auto& id : material_ids)
+        allowed.insert(id_from_bytes(uuid_to_bytes(id)));
+    for (auto it = result.materials.begin(); it != result.materials.end();)
+    {
+        if (!allowed.contains(it->first))
+            it = result.materials.erase(it);
+        else
+            ++it;
+    }
+    return result;
 }
 }

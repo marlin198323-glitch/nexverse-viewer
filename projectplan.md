@@ -2434,3 +2434,35 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
   bei neuen MaterialIDs, echte Normal-/Specular-Maps, PBR/glTF-Material-
   Assets, Face-/Triangle-Transparenzsortierung und In-World-Tests.
 - Siehe `docs/MATERIALS.md` für genaue Grenzen und Schnittstellen.
+
+
+## Phase 8 – gezielte Legacy-Material-Nachladung · 09.10.2026 · 0.2.0-alpha.43
+
+- An der OpenSimulator-`RenderMaterialsPostCap`-Referenz geprüft:
+  POST mit LLSD-XML-`Zipped`, zlib und binärem LLSD-Array aus
+  16-Byte-Material-UUIDs; Response verwendet das bestehende
+  `ID`/`Material`-Format.
+- `RenderMaterialsService::fetch_ids()` und
+  `build_render_materials_request()`: höchstens 32 Material-IDs
+  je POST-Batch, UUID-Prüfung, Deduplikation, Begrenzungen des
+  komprimierten Payloads und ausschließlich angeforderte IDs
+  aus der Antwort übernehmen.
+- Viewer sammelt Material-IDs aus Default- und per-Face-Renderdaten,
+  überspringt Null- und ungültige IDs, wartet auf den initialen
+  GET-Snapshot, startet dann asynchrone, sequenzielle POST-Batches.
+- Ein erfolgreicher Materialwechsel aktualisiert den lokalen Cache
+  und invalidiert die gerenderte Scene-Revision; unveränderte
+  Einträge lösen keinen unnötigen Scene-Upload aus.
+- Wiederholungsversuche für unbekannte IDs sind auf maximal drei
+  Versuche mit zwei Minuten Abstand begrenzt. Ein bekanntes Material
+  kann bei späterem Scene-Update nach Ablauf der Schutzfrist
+  erneut angefragt werden.
+- 23/23 CTest erfolgreich, einschließlich neuer POST-Request-
+  Validierung (Payload-Struktur, Deduplikation, URL-/Größenfilter,
+  Antwort-Whitelist).
+- Ausstehend: Region-/Teleport-übergreifender Material-Lifecycle,
+  kontinuierliche serverseitige Materialänderungen ohne Scene-Update,
+  echte Normal-/Specular-Texturen und glTF/PBR.
+
+- Laufzeit-Smoke 5s bestätigt OpenGL 3.3, RTX 4070 SUPER, NexVerse-UI und
+  geladenen Welcome-Hintergrund; `timeout`-Exit 124 erwartet.

@@ -39,6 +39,8 @@
 #include <future>
 #include <limits>
 #include <memory>
+#include <map>
+#include <set>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -3223,8 +3225,15 @@ int Application::run(bool enable_developer_modules)
     std::string get_texture_capability_uri;
     std::string render_materials_capability_uri;
     std::future<protocol::RenderMaterialsResult> render_materials_future;
+    std::future<protocol::RenderMaterialsResult> render_materials_post_future;
+    std::vector<std::string> render_materials_in_flight;
     bool render_materials_started = false;
+    bool render_materials_get_complete = false;
     std::map<std::string, protocol::LegacyMaterial, std::less<>> legacy_materials;
+    std::set<std::string, std::less<>> material_ids_pending;
+    std::map<std::string, std::chrono::steady_clock::time_point, std::less<>>
+        material_request_times;
+    std::map<std::string, unsigned, std::less<>> material_request_attempts;
     std::optional<protocol::LlsdValue> ext_environment_payload;
     bool caps_started = false;
 
@@ -4243,12 +4252,20 @@ int Application::run(bool enable_developer_modules)
                 render_materials_future.wait_for(std::chrono::seconds{0}) ==
                     std::future_status::ready)
             {
+                render_materials_get_complete = true;
                 try
                 {
                     auto response = render_materials_future.get();
                     if (response.success)
                     {
                         legacy_materials = std::move(response.materials);
+                        const auto snapshot_time =
+                            std::chrono::steady_clock::now();
+                        for (const auto& [id, material] : legacy_materials)
+                        {
+                            (void)material;
+                            material_request_times[id] = snapshot_time;
+                        }
                         rendered_object_generation =
                             std::numeric_limits<std::uint32_t>::max();
                         rendered_object_revision =
@@ -4266,6 +4283,58 @@ int Application::run(bool enable_developer_modules)
                 {
                     core::warning(std::string{"RenderMaterials worker failed: "} +
                         ex.what());
+                }
+            }
+
+            // Completed POST batches merge only validated material definitions.
+            // Missing IDs are retried at most three times with a cooldown.
+            if (render_materials_post_future.valid() &&
+                render_materials_post_future.wait_for(std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                bool updated = false;
+                try
+                {
+                    auto result = render_materials_post_future.get();
+                    if (result.success)
+                    {
+                        for (auto& [id, material] : result.materials)
+                        {
+                            if (const auto found = legacy_materials.find(id);
+                                found == legacy_materials.end() ||
+                                found->second != material)
+                            {
+                                legacy_materials[id] = std::move(material);
+                                updated = true;
+                            }
+                            material_request_attempts.erase(id);
+                        }
+                    }
+                    else
+                    {
+                        core::warning("OpenSim RenderMaterials POST fallback: " +
+                            result.message);
+                    }
+                }
+                catch (const std::exception& ex)
+                {
+                    core::warning(std::string{"RenderMaterials POST worker failed: "} +
+                        ex.what());
+                }
+                for (const auto& id : render_materials_in_flight)
+                {
+                    if (!legacy_materials.contains(id) &&
+                        material_request_attempts[id] < 3U)
+                        material_ids_pending.insert(id);
+                }
+                render_materials_in_flight.clear();
+                if (updated)
+                {
+                    rendered_object_generation =
+                        std::numeric_limits<std::uint32_t>::max();
+                    rendered_object_revision =
+                        std::numeric_limits<std::uint32_t>::max();
+                    core::info("OpenSim RenderMaterials updated from POST");
                 }
             }
 
@@ -4660,6 +4729,19 @@ int Application::run(bool enable_developer_modules)
 
             if (scene_objects_changed)
             {
+                // Only the legacy MaterialID is relevant for this capability.
+                // Modern RenderMaterialID must use a separate PBR resolver.
+                for (const auto& object : scene_object_update)
+                {
+                    if (protocol::is_valid_legacy_material_id(object.material_id))
+                        material_ids_pending.insert(object.material_id);
+                    for (const auto& face : object.face_materials)
+                    {
+                        if (face.has_value() &&
+                            protocol::is_valid_legacy_material_id(face->material_id))
+                            material_ids_pending.insert(face->material_id);
+                    }
+                }
                 std::sort(
                     scene_texture_update.begin(),
                     scene_texture_update.end());
@@ -4674,6 +4756,67 @@ int Application::run(bool enable_developer_modules)
 
                 world_renderer->set_scene_objects(
                     scene_object_update);
+            }
+
+            // Do not POST until the initial snapshot is available (or failed).
+            // A cooldown prevents repeated network requests on moving prims.
+            if (render_materials_get_complete &&
+                !render_materials_post_future.valid() &&
+                !material_ids_pending.empty())
+            {
+                std::string uri;
+                {
+                    std::scoped_lock lock{caps_mutex};
+                    uri = render_materials_capability_uri;
+                }
+                if (!uri.empty())
+                {
+                    std::vector<std::string> batch;
+                    const auto request_time =
+                        std::chrono::steady_clock::now();
+                    for (auto it = material_ids_pending.begin();
+                         it != material_ids_pending.end() &&
+                         batch.size() < protocol::max_render_materials_batch_ids;)
+                    {
+                        const auto& id = *it;
+                        const auto last = material_request_times.find(id);
+                        const bool known = legacy_materials.contains(id);
+                        const bool recently_requested =
+                            last != material_request_times.end() &&
+                            request_time - last->second < std::chrono::minutes{2};
+
+                        if (known && recently_requested)
+                        {
+                            it = material_ids_pending.erase(it);
+                            continue;
+                        }
+                        if (material_request_attempts[id] >= 3U)
+                        {
+                            it = material_ids_pending.erase(it);
+                            continue;
+                        }
+                        if (recently_requested)
+                        {
+                            ++it;
+                            continue;
+                        }
+                        batch.push_back(id);
+                        material_request_times[id] = request_time;
+                        ++material_request_attempts[id];
+                        it = material_ids_pending.erase(it);
+                    }
+                    if (!batch.empty())
+                    {
+                        render_materials_in_flight = batch;
+                        render_materials_post_future = std::async(
+                            std::launch::async,
+                            [transport, uri, batch]()
+                            {
+                                return protocol::RenderMaterialsService{transport}
+                                    .fetch_ids(uri, batch);
+                            });
+                    }
+                }
             }
 
             if (environment_changed)

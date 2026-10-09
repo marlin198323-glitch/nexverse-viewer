@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.42`
+Version: `0.2.0-alpha.43`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -217,3 +217,20 @@ Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
 - Nächster Schritt: MaterialIDs gezielt per POST nachladen und
   Cache/Scene-Invaliderung bei nachträglichen Änderungen erweitern.
 - **Maßgeblich:** `projectplan.md`; Details: `docs/MATERIALS.md`.
+
+
+## Neuester Entwicklungsblock · 0.2.0-alpha.43
+
+- Phase 8: gezielte `RenderMaterials`-POST-Abfragen anhand
+  serverseitig verifizierter OpenSimulator-Zipped-LLSD-Spezifikation.
+- `src/protocol/render_materials.cpp`: UUID -> 16-Byte-Binary, zlib-Kompression, LLSD-XML-`Zipped`; bis
+  32 deduplizierte UUIDs pro Batch, Antwort auf angefragte IDs begrenzt.
+- `src/app/application.cpp`: nach initialem GET unbekannte MaterialIDs
+  aus Default-/Face-Materialien asynchron nachladen; Cache bei
+  geänderten Einträgen aktualisieren, Scene-Revision invalidieren,
+  maximal drei Versuche bei fehlenden IDs, 2-Minuten-Cooldown.
+- Tests: 23/23 CTest; GET/POST-Codec inklusive Negativ- und
+  Response-Whitelist-Tests. OpenGL-Starttest bestanden.
+- Weiter: Legacy-Normal-/Specular-Map-Pipeline, Material-UVs,
+  Region-/Teleport-Wechsel und In-World-Validierung; danach PBR.
+- Dokumentation `docs/MATERIALS.md`; Projektplan bleibt bindend.

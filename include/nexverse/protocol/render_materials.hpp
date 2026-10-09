@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace nexverse::protocol
 {
@@ -19,6 +20,8 @@ struct LegacyMaterial
     std::uint8_t alpha_mask_cutoff = 0U;
     std::string normal_id;
     std::string specular_id;
+
+    bool operator==(const LegacyMaterial&) const = default;
 };
 
 struct RenderMaterialsResult
@@ -27,6 +30,15 @@ struct RenderMaterialsResult
     std::map<std::string, LegacyMaterial, std::less<>> materials;
     std::string message;
 };
+
+inline constexpr std::size_t max_render_materials_batch_ids = 32U;
+
+[[nodiscard]] bool is_valid_legacy_material_id(std::string_view id) noexcept;
+
+// POST /RenderMaterials: LLSD XML {"Zipped": binary(zlib(LLSD binary
+// array of sixteen-byte material UUIDs))}. Invalid batches are rejected.
+[[nodiscard]] std::string build_render_materials_request(
+    const std::vector<std::string>& material_ids);
 
 [[nodiscard]] RenderMaterialsResult parse_render_materials_response(
     std::string_view llsd_xml);
@@ -37,6 +49,9 @@ public:
     explicit RenderMaterialsService(std::shared_ptr<net::IHttpTransport> transport);
     // GET returns a region snapshot; do not run on the render thread.
     [[nodiscard]] RenderMaterialsResult fetch_all(std::string_view capability_uri) const;
+    [[nodiscard]] RenderMaterialsResult fetch_ids(
+        std::string_view capability_uri,
+        const std::vector<std::string>& material_ids) const;
 private:
     std::shared_ptr<net::IHttpTransport> transport_;
 };

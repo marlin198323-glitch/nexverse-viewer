@@ -6,12 +6,12 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.42`
+- Version: `0.2.0-alpha.43`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
 - letzter vollständig geprüfter Stand: 23/23 Tests grün plus OpenGL-Runtime-Smoke mit Developer-Modulen
-- aktueller Entwicklungsblock: **Phase 8 – asynchroner OpenSim-Legacy-RenderMaterials-CAPS-Fetch (zlib/LLSD), Alpha-Modi und Material-Fallback; PBR und Live-Nachladen folgen**
+- aktueller Entwicklungsblock: **Phase 8 – asynchroner Legacy-RenderMaterials-GET und gezielter POST-Nachladepfad mit begrenzten Batches, Cache-Aktualisierung und Alpha-Modi; PBR folgt**
 
 Bereits vorhanden sind Grid Discovery, echter OpenSim-Login, LLUDP, CAPS/EventQueue, WorldModel, Terrain/EEP, sichtbare Prim-Geometrie, OpenSim Face-Materialien, explizite Prim-UVs und Planar TexGen.
 

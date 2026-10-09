@@ -24,6 +24,9 @@ class FakeTransport final : public nexverse::net::IHttpTransport
 public:
     std::string payload;
     int calls = 0;
+    int post_calls = 0;
+    std::string post_body;
+    std::string post_type;
     nexverse::net::HttpResponse get(
         std::string_view uri, std::size_t,
         std::chrono::milliseconds, std::chrono::milliseconds) override
@@ -33,9 +36,17 @@ public:
         return {200, payload, {}};
     }
     nexverse::net::HttpResponse post(
-        std::string_view, std::string_view, std::string_view,
+        std::string_view uri, std::string_view content_type, std::string_view body,
         std::size_t, std::chrono::milliseconds,
-        std::chrono::milliseconds) override { return {405, "", ""}; }
+        std::chrono::milliseconds) override
+    {
+        if (uri != "https://caps.example/materials")
+            return {404, "", ""};
+        ++post_calls;
+        post_body.assign(body);
+        post_type.assign(content_type);
+        return {200, payload, {}};
+    }
 };
 
 bool check(bool condition, const char* message)
@@ -105,5 +116,64 @@ int main()
         {"Material", LlsdValue::map({{"DiffuseAlphaMode",LlsdValue::integer(7)}})}});
     if (!check(parse_render_materials_response(zipped(LlsdValue::array({invalid}))).materials.empty(),
                "Out-of-range alpha mode accepted")) return 10;
-    std::cout << "OpenSim RenderMaterials capability decoding passed\n";
+    const auto request = nexverse::protocol::build_render_materials_request({
+        "AABBCCDD-0102-0304-0506-0708090A0B0C",
+        "aabbccdd-0102-0304-0506-0708090a0b0c"});
+    if (!check(!request.empty(), "Cannot encode targeted POST batch")) return 11;
+    const auto outer = nexverse::protocol::parse_llsd_xml(request);
+    if (!check(outer.ok(), "POST wrapper LLSD is invalid")) return 12;
+    const auto* wrapped = outer.value->find("Zipped");
+    if (!check(wrapped && wrapped->type == nexverse::protocol::LlsdType::binary,
+               "POST is missing Zipped binary")) return 13;
+    std::array<std::uint8_t, 4096> uncompressed{};
+    uLongf uncompressed_size = uncompressed.size();
+    if (!check(uncompress(uncompressed.data(), &uncompressed_size,
+                         wrapped->binary_value.data(),
+                         wrapped->binary_value.size()) == Z_OK,
+               "POST compression invalid")) return 14;
+    const auto ids = nexverse::protocol::parse_llsd_binary(
+        std::span<const std::uint8_t>(uncompressed.data(), uncompressed_size));
+    if (!check(ids.ok() && ids.value->is_array() &&
+               ids.value->array_value.size() == 1U &&
+               ids.value->array_value.front().type ==
+                   nexverse::protocol::LlsdType::binary &&
+               ids.value->array_value.front().binary_value == id,
+               "POST body must contain deduplicated 16-byte binary UUIDs"))
+        return 15;
+    if (!check(service.fetch_ids("https://caps.example/materials", {
+                   "aabbccdd-0102-0304-0506-0708090a0b0c"}).success &&
+               fake->post_calls == 1 && fake->post_body.size() > 0U &&
+               fake->post_type == "application/llsd+xml",
+               "POST capability request was not sent correctly")) return 16;
+    if (!check(!service.fetch_ids("file:///etc/shadow", {
+                   "aabbccdd-0102-0304-0506-0708090a0b0c"}).success &&
+               fake->post_calls == 1, "POST allowed unsafe capability URI"))
+        return 17;
+    if (!check(nexverse::protocol::build_render_materials_request({}).empty() &&
+               nexverse::protocol::build_render_materials_request({
+                   "this-is-not-an-id"}).empty() &&
+               nexverse::protocol::build_render_materials_request({
+                   "00000000-0000-0000-0000-000000000000"}).empty() &&
+               nexverse::protocol::build_render_materials_request(
+                   std::vector<std::string>(
+                       nexverse::protocol::max_render_materials_batch_ids + 1U,
+                       "aabbccdd-0102-0304-0506-0708090a0b0c")).empty(),
+               "Invalid/overlarge POST batch accepted")) return 18;
+    if (!check(nexverse::protocol::is_valid_legacy_material_id(
+                   "aabbccdd-0102-0304-0506-0708090a0b0c") &&
+               !nexverse::protocol::is_valid_legacy_material_id(
+                   "00000000-0000-0000-0000-000000000000"),
+               "Material UUID normalization check failed")) return 19;
+    // A capable server may return a larger material list than requested.
+    // POST results must be filtered to the requested UUIDs.
+    const auto unrelated = LlsdValue::map({
+        {"ID", LlsdValue::binary(std::vector<std::uint8_t>(16U, 0x1fU))},
+        {"Material", material}});
+    fake->payload = zipped(LlsdValue::array({item, unrelated}));
+    const auto filtered = service.fetch_ids("https://caps.example/materials",
+        {"aabbccdd-0102-0304-0506-0708090a0b0c"});
+    if (!check(filtered.success && filtered.materials.size() == 1U &&
+               filtered.materials.contains("aabbccdd-0102-0304-0506-0708090a0b0c"),
+               "POST returned unrequested material definitions")) return 20;
+    std::cout << "OpenSim RenderMaterials GET/POST capability decoding passed\n";
 }
