@@ -718,3 +718,11 @@ Für spätere Arbeit gilt:
 - Renderer werden als besonderer Modultyp vorbereitet; WorldModel/Scene bleiben rendererunabhängig.
 - Ziel: Standard Renderer im Core, optionale Vulkan-/RTX-/Ray-Tracing-Renderer über klar definierte Renderer-Schnittstelle.
 - Kommende größere Systeme müssen ab sofort auf Core-vs-Plugin-Grenzen geprüft werden.
+
+
+## Modul-System-Reihenfolge – 09.10.2026
+
+- Korrektur zur bisherigen Planung: Die minimale Module Runtime wird nicht erst später gebaut, sondern als nächster Architekturblock vor weiteren großen Viewer-Features.
+- Jetzt: ModuleManager, versionierte Module API/ABI, Manifest Loader, lokales Laden, Lifecycle, Aktivieren/Deaktivieren, Dependencies, Capabilities, Plattformprüfung und persistenter Aktivierungszustand.
+- Später: `addons.opengenesislink.de` Registry/API, Store-UI, Online-Download, automatische Updates, Produktions-Signaturservice und konkrete optionale Plugins wie RTX/AO/Voice.
+- Ziel: OGL Viewer zuerst vollständig weiterbauen, aber ab jetzt auf einer echten modularen Grundlage.

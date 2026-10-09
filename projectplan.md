@@ -912,7 +912,67 @@ Ab sofort gilt bei neuen größeren Funktionen:
 6. Sicherheit, Signaturprüfung und Capability-Grenzen haben Vorrang vor maximaler Plugin-Freiheit.
 7. `addons.opengenesislink.de` ist die offizielle Registry für veröffentlichte OpenGenesisLINK Add-ons.
 
-Die konkrete Plugin Runtime wird in einer eigenen späteren Projektphase implementiert. Die Architektur muss jedoch bereits jetzt bei allen neuen Systemen berücksichtigt werden.
+Die minimale Module Runtime wird ab sofort vor weiteren großen Viewer-Funktionsblöcken implementiert. Sie ist technische Grundlage des OGL Viewers und kein späteres Add-on. Die Online-Registry, der Add-on-Store, Downloads von `addons.opengenesislink.de`, Signatur-Infrastruktur und veröffentlichte optionale Plugins folgen erst nach dem Viewer-Core beziehungsweise in späteren Phasen.
+
+
+### Sofortiger Modul-System-Basisblock – vor weiteren großen Viewer-Features
+
+Bevor nach Phase 8 weitere große Systeme wie Inventar, Voice, AO, Media, erweiterte UI oder alternative Renderer eng an den Core gekoppelt werden, wird eine minimale, lokale Module Runtime implementiert.
+
+Dieser Basisblock umfasst verbindlich:
+
+```text
+ModuleManager
+versionierte Module API
+stabile native ABI-Grenze
+Manifest Loader
+lokale Modul-Erkennung
+Modul-Lifecycle
+Aktivieren / Deaktivieren
+Abhängigkeitsprüfung
+Capability-Deklaration
+Plattform-/Architekturprüfung
+Fehlerisolierung beim Laden
+Persistenz des Aktivierungszustands
+```
+
+Vorgesehener nativer Lifecycle:
+
+```text
+ogl_module_init
+ogl_module_start
+ogl_module_stop
+ogl_module_shutdown
+```
+
+Die konkreten Symbolnamen dürfen bei der Implementierung angepasst werden, müssen danach jedoch Teil der versionierten ABI werden.
+
+Lokale Entwicklungsstruktur, beispielhaft:
+
+```text
+OpenGenesisLINK/
+├── ogl-viewer
+├── config/
+├── cache/
+└── modules/
+    └── org.opengenesislink.example/
+        ├── manifest.json
+        └── module.so / module.dll / module.dylib
+```
+
+Zunächst werden Module lokal installiert beziehungsweise aus dem Modulverzeichnis geladen. Noch nicht Bestandteil dieses Basisblocks sind:
+
+```text
+Online-Plugin-Store
+Download aus dem Viewer
+addons.opengenesislink.de API-Client
+automatische Online-Updates
+Publisher-/Developer-Accounts
+Produktions-Signaturservice
+RTX-, AO-, Voice- oder andere fertige optionale Plugins
+```
+
+Diese Online- und Produktfunktionen bauen später auf derselben Module Runtime auf. Dadurch wird der Viewer jetzt modular vorbereitet, ohne die Fertigstellung der eigentlichen Viewer-Kernfunktionen durch einen kompletten Add-on-Store zu verzögern.
 
 ---
 
