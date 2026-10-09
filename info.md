@@ -702,3 +702,19 @@ Für spätere Arbeit gilt:
 - PBR, modernes Lighting, Schatten, Reflexionen, Terrain, Wasser, Atmosphäre, Avatar-Rendering, Streaming, GPU-Culling und Performance-Diagnose werden schrittweise aufgebaut.
 - Raytracing, Upscaling, Wetter, GI und Enhanced Server Capabilities sind Zukunftsmodule und dürfen nicht ohne passende spätere Phase vorschnell vollständig umgesetzt werden.
 - Bei jeder Rendering-/WorldModel-Entscheidung ist Abschnitt 2.2 des `projectplan.md` erneut heranzuziehen.
+
+
+## Verbindliche Add-on-/Plugin-Architektur – 09.10.2026
+
+- `projectplan.md` Abschnitt 2.3 ergänzt.
+- Offizielle Add-on-Plattform: `https://addons.opengenesislink.de/`.
+- Plugin Manager, Registry Client, Paketinstallation, Signaturprüfung, Abhängigkeitsauflösung, Lifecycle, Updates und Capability-Prüfung gehören zum Viewer-Core.
+- Vorgesehenes Paketformat: `.oglpkg`.
+- Webseite und Viewer verwenden dieselbe Registry beziehungsweise denselben Release-Datenbestand.
+- Native Plugins erhalten eine kontrollierte, versionierte ABI-Grenze.
+- Vertrauensstufen: OGL Official, Verified Developer, Unverified/Developer Mode.
+- Signatur- und Hashprüfung sind für offizielle Pakete verbindlich.
+- Plugins können installiert, aktiviert, deaktiviert, aktualisiert und deinstalliert werden.
+- Renderer werden als besonderer Modultyp vorbereitet; WorldModel/Scene bleiben rendererunabhängig.
+- Ziel: Standard Renderer im Core, optionale Vulkan-/RTX-/Ray-Tracing-Renderer über klar definierte Renderer-Schnittstelle.
+- Kommende größere Systeme müssen ab sofort auf Core-vs-Plugin-Grenzen geprüft werden.

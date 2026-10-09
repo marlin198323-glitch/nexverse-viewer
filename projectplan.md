@@ -787,6 +787,135 @@ Diese Renderer-Vorgabe ist bei jeder späteren Rendering-Phase erneut heranzuzie
 
 ---
 
+## 2.3 OpenGenesisLINK Add-on- und Plugin-Architektur – verbindliche Vorgabe
+
+Diese Vorgabe ist ab 09.10.2026 verbindlicher Bestandteil des Projektplans. Neue größere Funktionen müssen so entworfen werden, dass der Viewer-Core nicht unnötig mit optionalen Funktionen gekoppelt wird.
+
+### Offizielle Add-on-Plattform
+
+Die offizielle OpenGenesisLINK Add-on- und Plugin-Plattform ist:
+
+```text
+https://addons.opengenesislink.de/
+```
+
+Diese Plattform dient als zentrale Quelle für Plugin-Katalog, Metadaten, Versionen, Download-Pakete, Prüfsummen, digitale Signaturen, Kompatibilitätsinformationen und Abhängigkeiten. Webseite und Viewer müssen auf dieselbe Add-on-Registry beziehungsweise denselben Datenbestand zugreifen.
+
+### Plugin Manager gehört zum Viewer-Core
+
+Der Plugin Manager selbst ist kein optionales Plugin. Zum Core gehören mindestens:
+
+```text
+Plugin Manager
+Plugin Registry Client
+Package Installer
+Signature Verification
+Dependency Resolver
+Compatibility Resolver
+Plugin Lifecycle Manager
+Update Manager
+Permission / Capability Manager
+```
+
+Der Viewer muss auch ohne optionale Plugins vollständig startfähig und als Basis-Viewer nutzbar bleiben.
+
+### Installationswege
+
+Unterstützt werden die direkte Installation aus dem Viewer über `addons.opengenesislink.de` sowie die manuelle Installation eines heruntergeladenen OpenGenesisLINK Plugin-Pakets. Vorgesehenes Paketformat: `*.oglpkg`.
+
+Ein Paket kann beispielsweise `manifest.json`, Plugin-Binary, Assets, Shader, Lizenz und Signatur enthalten. Die genaue Containerstruktur wird vor Implementierung der Plugin Runtime separat spezifiziert und versioniert.
+
+### Plugin Manifest und stabile IDs
+
+Jedes Plugin benötigt ein maschinenlesbares Manifest mit mindestens ID, Name, Version, Vendor, Plugin-API-Version, Mindest-Viewer-Version, Plattformen, Architekturen, Plugin-Typ, Capabilities, Abhängigkeiten, Entrypoint, Paket-Hash und Signaturmetadaten. Plugin-IDs sind dauerhaft stabil. Beispiel: `org.opengenesislink.renderer.rtx`.
+
+### Plugin API und ABI
+
+OpenGenesisLINK benötigt eine versionierte Plugin API. Native Plugins dürfen nicht direkt auf interne C++-Klassen zugreifen, deren Layout sich ohne API-Versionierung ändern kann. Bevorzugt wird eine schmale C-kompatible ABI oder eine vergleichbar stabile Boundary. Inkompatible Plugins dürfen nicht geladen werden.
+
+### Aktivieren und Deaktivieren
+
+Plugins müssen im Viewer installiert, aktiviert, deaktiviert, aktualisiert und deinstalliert werden können. Zusätzlich müssen Details, Abhängigkeiten und Kompatibilitätsstatus sichtbar sein. Wenn ein Plugin nicht gefahrlos zur Laufzeit entladen werden kann, darf ein Neustart erforderlich sein; der Viewer muss dies klar anzeigen.
+
+### Capability- und Rechte-Modell
+
+Plugins deklarieren benötigte Capabilities. Mindestens vorzusehen sind `ui`, `audio`, `voice`, `network`, `world-read`, `world-edit`, `inventory`, `avatar`, `animation`, `media`, `renderer`, `gpu`, `filesystem-scoped` und `developer`. Besonders privilegierte Plugins, insbesondere Renderer- oder Netzwerkmodule, müssen klar gekennzeichnet sein.
+
+### Vertrauensstufen und Signaturen
+
+Native Plugins sind sicherheitskritisch. Vorgesehene Vertrauensstufen:
+
+```text
+OGL Official
+Verified Developer
+Unverified / Developer Mode
+```
+
+Offizielle Pakete müssen digital signiert sein. Paket-Hash und Signatur sind vor Installation beziehungsweise Laden zu prüfen. Manipulierte oder ungültig signierte Pakete werden blockiert. Unsignierte lokale Plugins dürfen nur über einen ausdrücklich aktivierten Developer Mode geladen werden.
+
+### Registry- und Download-Schnittstelle
+
+`addons.opengenesislink.de` benötigt eine maschinenlesbare API. Vorgesehene logische Endpunkte:
+
+```text
+/api/v1/addons
+/api/v1/addons/{id}
+/api/v1/addons/{id}/releases
+/api/v1/addons/{id}/releases/{version}
+/api/v1/addons/{id}/download/{platform}/{architecture}
+```
+
+Die konkrete API darf später angepasst werden, muss aber Katalog, Suche, Kategorien, Detailinformationen, Releases, kompatible Paketauswahl, Download, Update-Erkennung sowie Hash- und Signaturprüfung unterstützen.
+
+### Kategorien
+
+Mindestens vorzusehen: Rendering, Voice, Media, Avatar, Animation/AO, Building, Developer Tools, Accessibility, UI, Social sowie OpenSim/Hypergrid.
+
+### Core versus Plugin
+
+Im Core bleiben mindestens OpenSim Login, Grid Discovery, LLUDP, CAPS, WorldModel, Asset-Grundsystem, Avatar-Grundsystem, Inventar-Grundsystem, UI-Grundsystem, Standard Renderer, Plugin Manager, Registry Client und Plugin Security.
+
+Als Plugins beziehungsweise austauschbare Module eignen sich insbesondere RTX/Ray-Tracing Renderer, alternative Renderer, Voice-Erweiterungen, AO/Animation, RLV/RLVa, Media-Erweiterungen, Advanced Build Tools, Developer Tools, zusätzliche UI-Panels und optionale Social-Funktionen.
+
+### Renderer als besonderer Modultyp
+
+Renderer-Plugins benötigen eine eigene Renderer API. Zielarchitektur:
+
+```text
+WorldModel / Scene API
+        ↓
+Renderer Interface
+        ├── Standard OpenGL Renderer
+        ├── Vulkan Renderer
+        └── RTX / Ray-Tracing Renderer Plugin
+```
+
+Das WorldModel darf nicht wissen, welcher Renderer aktiv ist. Ein RTX-/Ray-Tracing-Plugin muss GPU- und API-Capabilities prüfen, beispielsweise Vulkan, `VK_KHR_acceleration_structure` und `VK_KHR_ray_tracing_pipeline`. Ist ein optionaler Renderer nicht nutzbar, muss ein unterstützter Standard-Renderer verfügbar bleiben.
+
+### Abhängigkeiten und Updates
+
+Plugins dürfen versionierte Abhängigkeiten deklarieren. Der Dependency Resolver darf keine teilweise oder inkonsistente Installation hinterlassen. Zirkuläre oder nicht erfüllbare Abhängigkeiten werden abgelehnt. Updates dürfen erst nach erfolgreicher Prüfung von Kompatibilität, Hash, Signatur und Abhängigkeiten installiert werden. Rollback beziehungsweise sichere Wiederherstellung nach fehlgeschlagenem Update ist als spätere Anforderung vorzusehen.
+
+### Plattformen
+
+Die Plugin-Architektur muss mindestens `linux-x64`, `windows-x64`, `macos-arm64` und optional `macos-x64` berücksichtigen. Ein Plugin darf nur angeboten beziehungsweise geladen werden, wenn ein kompatibles Paket für Plattform und Architektur vorhanden ist.
+
+### Entwicklungsregel für kommende Phasen
+
+Ab sofort gilt bei neuen größeren Funktionen:
+
+1. Prüfen, ob die Funktion zwingend zum Core gehört.
+2. Falls nicht, eine Plugin-/Modulgrenze bevorzugen.
+3. Keine direkten Abhängigkeiten eines Plugins auf private Renderer-, Protocol- oder WorldModel-Implementierungsdetails.
+4. Öffentliche Plugin-Schnittstellen versionieren.
+5. Plugin-Funktionen dürfen den Viewer ohne Plugin nicht unbrauchbar machen.
+6. Sicherheit, Signaturprüfung und Capability-Grenzen haben Vorrang vor maximaler Plugin-Freiheit.
+7. `addons.opengenesislink.de` ist die offizielle Registry für veröffentlichte OpenGenesisLINK Add-ons.
+
+Die konkrete Plugin Runtime wird in einer eigenen späteren Projektphase implementiert. Die Architektur muss jedoch bereits jetzt bei allen neuen Systemen berücksichtigt werden.
+
+---
+
 # 3. Projektphasen
 
 ## Phase 0 – Projektgrundlage
