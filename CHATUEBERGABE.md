@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.41`
+Version: `0.2.0-alpha.42`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -52,7 +52,7 @@ Vorhanden:
 - Planar TexGen
 - Fullbright/Shiny/Bumpiness/Media-Daten im Renderer-Vertrag
 
-Letzter vollständiger Teststand: 22/22 Tests grün plus OpenGL Runtime-Smoke; In-World-Sichttest noch offen.
+Letzter vollständiger Teststand: 23/23 Tests grün plus OpenGL Runtime-Smoke; In-World-Sichttest noch offen.
 
 ## 4. NexVerse Runtime
 
@@ -201,3 +201,19 @@ aus OpenSim/CAPS anhand validierter Protokollantworten; keine
 erfundenen Shader-Parameter aus der Material-UUID ableiten. Als
 Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
 `projectplan.md` bleibt verbindlich.
+
+
+## Neuester Legacy-Materials-CAPS-Block · 0.2.0-alpha.42
+
+- Verifizierter OpenSimulator `RenderMaterials` GET: LLSD-XML `Zipped`
+  -> zlib -> LLSD Binary Array mit Material-UUIDs und Definitionen.
+- Begrenzter Parser, async GET nach CAPS Discovery; Fallback bei
+  fehlender/fehlerhafter Capability. 23/23 Tests grün, OpenGL-Start OK.
+- DiffuseAlphaMode (0-3) und AlphaMaskCutoff werden in Scene- und
+  RenderFace-Daten übertragen; Renderer unterscheidet Mask/Blend/
+  Opaque/Emissive und berücksichtigt Depth-Write.
+- Noch KEIN vollständiges Live-Update per POST, kein GLTF/PBR-Asset-Fetch,
+  keine Normal-/Specular-Maps, kein in-world End-to-end-Test.
+- Nächster Schritt: MaterialIDs gezielt per POST nachladen und
+  Cache/Scene-Invaliderung bei nachträglichen Änderungen erweitern.
+- **Maßgeblich:** `projectplan.md`; Details: `docs/MATERIALS.md`.

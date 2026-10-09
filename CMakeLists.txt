@@ -110,13 +110,15 @@ add_library(nexverse-protocol
     src/protocol/caps_world_events.cpp
     src/protocol/environment_settings.cpp
     src/protocol/texture_entry.cpp
+    src/protocol/render_materials.cpp
 )
 add_library(NexVerse::Protocol ALIAS nexverse-protocol)
 target_include_directories(nexverse-protocol PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tinyxml2::tinyxml2 OpenSSL::Crypto)
+find_package(ZLIB REQUIRED)
+target_link_libraries(nexverse-protocol PUBLIC NexVerse::Core NexVerse::Net tinyxml2::tinyxml2 OpenSSL::Crypto ZLIB::ZLIB)
 
 add_library(nexverse-world
     src/world/world_model.cpp
@@ -337,6 +339,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-llsd-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-llsd-tests)
     add_test(NAME nexverse-llsd-tests COMMAND nexverse-llsd-tests)
+
+    add_executable(nexverse-render-materials-tests tests/render_materials_tests.cpp)
+    target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-render-materials-tests)
+    add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
     add_executable(nexverse-caps-tests tests/caps_tests.cpp)
     target_link_libraries(nexverse-caps-tests PRIVATE NexVerse::Protocol)

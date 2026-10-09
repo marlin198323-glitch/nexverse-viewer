@@ -63,6 +63,9 @@ struct RenderFaceMaterial
     float glow = 0.0f;
     std::string material_id;
     std::string render_material_id;
+    // Legacy RenderMaterials cap data; defaults preserve TextureEntry alpha.
+    std::uint8_t diffuse_alpha_mode = 1U;
+    std::uint8_t alpha_mask_cutoff = 0U;
 };
 
 struct RenderSceneObject
@@ -111,6 +114,9 @@ struct RenderSceneObject
     // Identifiers are authoritative OpenSim references, NOT resolved PBR data.
     std::string material_id;
     std::string render_material_id;
+    // Legacy RenderMaterials cap data; defaults preserve TextureEntry alpha.
+    std::uint8_t diffuse_alpha_mode = 1U;
+    std::uint8_t alpha_mask_cutoff = 0U;
 
     std::array<std::optional<RenderFaceMaterial>, 64>
         face_materials;

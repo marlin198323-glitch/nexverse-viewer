@@ -2410,3 +2410,27 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
   werden bewahrt, aber **noch nicht** als Materials aufgelöst.
 - Als Nächstes: überprüfte Material-CAP/Asset-Resolver-Anbindung und
   vollständigeres Face-/Materialhandling, dann weitere Phase-8-Objekttypen.
+
+
+## Phase 8 – echter Legacy RenderMaterials-CAPS-Pfad · 09.10.2026 · 0.2.0-alpha.42
+
+- Verifiziert an OpenSimulator `MaterialsModule.cs`: die `RenderMaterials`-
+  Capability liefert als GET eine `Zipped`-Binary in LLSD-XML;
+  darin liegt eine zlib-komprimierte LLSD-Binary-Array mit
+  `ID` (16-Byte UUID) und `Material` (LLSD-Map).
+- Eigener Protocol-Parser und `RenderMaterialsService` (asynchrones GET
+  nach CAPS Discovery), mit begrenzten komprimierten/entpackten Größen,
+  8192 Max-Entries, UUID- und Integer-Prüfung, Ablehnung ungültiger Daten.
+- Legacy `DiffuseAlphaMode`/ `AlphaMaskCutoff` werden per Material-ID
+  an Default-/per-Face-Renderdaten gebunden. Material-Cache-Update erzwingt
+  Scene-Neuübertragung ohne Änderung des serverautoritativ gespeicherten Models.
+- OpenGL-Shader: Alpha-Mode 0/1/2/3, maskiertes `discard`, Opaque-
+  Depthpass für Mask-Faces ohne Tint-Alpha, emissives leichtes Fallback.
+- Normal-/Specular-Map-UUIDs werden eingelesen, aber nicht als Texturen
+  geladen. Moderne `RenderMaterialID`/PBR werden nicht vorgetäuscht.
+- 23/23 CTest erfolgreich; Debug-Build und OpenGL-Runtime-Smoke erfolgreich
+  (Welcome geladen, Shader initialisiert). In-World-Sichtprüfung offen.
+- Verbleibend: GET-Snapshot ist nicht live aktualisiert; POST-Batch-Abfragen
+  bei neuen MaterialIDs, echte Normal-/Specular-Maps, PBR/glTF-Material-
+  Assets, Face-/Triangle-Transparenzsortierung und In-World-Tests.
+- Siehe `docs/MATERIALS.md` für genaue Grenzen und Schnittstellen.

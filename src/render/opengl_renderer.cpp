@@ -1838,6 +1838,8 @@ uniform vec3 uOverrideColorValue;
 uniform float uObjectGlow;
 uniform int uObjectShiny;
 uniform int uObjectBumpiness;
+uniform int uObjectAlphaMode;
+uniform float uObjectAlphaCutoff;
 uniform bool uObjectFullbright;
 uniform bool uUseObjectTexture;
 uniform bool uObjectTexGenPlanar;
@@ -1947,7 +1949,18 @@ void main()
                 uObjectTexture,
                 objectTextureUv());
             base *= texel.rgb;
-            alpha *= texel.a;
+            if (uObjectAlphaMode == 2)
+            {
+                if (texel.a <= uObjectAlphaCutoff) discard;
+            }
+            else if (uObjectAlphaMode == 1)
+            {
+                alpha *= texel.a;
+            }
+            else if (uObjectAlphaMode == 3)
+            {
+                base += texel.rgb * texel.a * 0.15;
+            }
         }
 
         // Legacy OpenSim shiny levels: subtle non-PBR specular fallback.
@@ -3067,6 +3080,14 @@ public:
                             face_material != nullptr
                                 ? face_material->bumpiness
                                 : object.bumpiness;
+                        const unsigned alpha_mode =
+                            face_material != nullptr
+                                ? face_material->diffuse_alpha_mode
+                                : object.diffuse_alpha_mode;
+                        const unsigned alpha_cutoff =
+                            face_material != nullptr
+                                ? face_material->alpha_mask_cutoff
+                                : object.alpha_mask_cutoff;
                         const float glow =
                             face_material != nullptr
                                 ? face_material->glow
@@ -3101,7 +3122,7 @@ public:
                                 found_alpha->second;
                         }
                         const bool transparent = face_requires_blending(
-                            alpha, loaded_texture_has_alpha);
+                            alpha, loaded_texture_has_alpha && alpha_mode == 1U);
                         if (transparent != (pass == 1U)) return;
 
                         glUniform3f(
@@ -3127,6 +3148,12 @@ public:
                         glUniform1i(
                             glGetUniformLocation(program_, "uObjectBumpiness"),
                             static_cast<GLint>(std::min(bumpiness, 31U)));
+                        glUniform1i(
+                            glGetUniformLocation(program_, "uObjectAlphaMode"),
+                            static_cast<GLint>(std::min(alpha_mode, 3U)));
+                        glUniform1f(
+                            glGetUniformLocation(program_, "uObjectAlphaCutoff"),
+                            static_cast<float>(alpha_cutoff) / 255.0f);
                         glUniform1i(
                             glGetUniformLocation(
                                 program_,
@@ -3260,6 +3287,10 @@ public:
                 glGetUniformLocation(program_, "uObjectShiny"), 0);
             glUniform1i(
                 glGetUniformLocation(program_, "uObjectBumpiness"), 0);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectAlphaMode"), 1);
+            glUniform1f(
+                glGetUniformLocation(program_, "uObjectAlphaCutoff"), 0.0f);
             glUniform1i(
                 glGetUniformLocation(program_, "uObjectFullbright"),
                 GL_FALSE);

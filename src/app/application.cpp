@@ -20,6 +20,7 @@
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
 #include "nexverse/protocol/packet_dispatcher.hpp"
+#include "nexverse/protocol/render_materials.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
@@ -3220,6 +3221,10 @@ int Application::run(bool enable_developer_modules)
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
     std::string get_texture_capability_uri;
+    std::string render_materials_capability_uri;
+    std::future<protocol::RenderMaterialsResult> render_materials_future;
+    bool render_materials_started = false;
+    std::map<std::string, protocol::LegacyMaterial, std::less<>> legacy_materials;
     std::optional<protocol::LlsdValue> ext_environment_payload;
     bool caps_started = false;
 
@@ -3510,6 +3515,7 @@ int Application::run(bool enable_developer_modules)
                                  &caps_mutex,
                                  &caps_state,
                                  &get_texture_capability_uri,
+                                 &render_materials_capability_uri,
                                  &ext_environment_payload,
                                  &caps_event_dispatcher,
                                  &world_model,
@@ -3591,6 +3597,14 @@ int Application::run(bool enable_developer_modules)
                                         std::scoped_lock lock{caps_mutex};
                                         get_texture_capability_uri =
                                             get_texture_uri;
+                                    }
+
+                                    if (const auto found =
+                                            discovery.capabilities.find("RenderMaterials");
+                                        found != discovery.capabilities.end())
+                                    {
+                                        std::scoped_lock lock{caps_mutex};
+                                        render_materials_capability_uri = found->second;
                                     }
 
                                     if (!simulator_features_uri.empty())
@@ -4204,6 +4218,57 @@ int Application::run(bool enable_developer_modules)
             std::uint32_t texture_material_revision_current = 0U;
             std::array<std::string, 4> terrain_detail_ids;
 
+            // Material CAPS GET runs outside the render thread. Keep the
+            // LLSD snapshot per region; scene rebuild applies resolved alpha.
+            if (!render_materials_started)
+            {
+                std::string uri;
+                {
+                    std::scoped_lock lock{caps_mutex};
+                    uri = render_materials_capability_uri;
+                }
+                if (!uri.empty())
+                {
+                    render_materials_started = true;
+                    render_materials_future = std::async(
+                        std::launch::async,
+                        [transport, uri]()
+                        {
+                            return protocol::RenderMaterialsService{transport}
+                                .fetch_all(uri);
+                        });
+                }
+            }
+            if (render_materials_future.valid() &&
+                render_materials_future.wait_for(std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                try
+                {
+                    auto response = render_materials_future.get();
+                    if (response.success)
+                    {
+                        legacy_materials = std::move(response.materials);
+                        rendered_object_generation =
+                            std::numeric_limits<std::uint32_t>::max();
+                        rendered_object_revision =
+                            std::numeric_limits<std::uint32_t>::max();
+                        core::info("OpenSim RenderMaterials resolved: " +
+                            std::to_string(legacy_materials.size()));
+                    }
+                    else
+                    {
+                        core::warning("OpenSim RenderMaterials fallback: " +
+                            response.message);
+                    }
+                }
+                catch (const std::exception& ex)
+                {
+                    core::warning(std::string{"RenderMaterials worker failed: "} +
+                        ex.what());
+                }
+            }
+
             {
                 std::scoped_lock lock{world_mutex};
                 render_agent = world_model.agent();
@@ -4490,6 +4555,15 @@ int Application::run(bool enable_developer_modules)
                                 face.material_id;
                             render_object.render_material_id =
                                 face.render_material_id;
+                            if (const auto found =
+                                    legacy_materials.find(face.material_id);
+                                found != legacy_materials.end())
+                            {
+                                render_object.diffuse_alpha_mode =
+                                    found->second.diffuse_alpha_mode;
+                                render_object.alpha_mask_cutoff =
+                                    found->second.alpha_mask_cutoff;
+                            }
 
                             if (!face.texture_id.empty() &&
                                 face.texture_id !=
@@ -4552,6 +4626,15 @@ int Application::run(bool enable_developer_modules)
                                     face.material_id;
                                 material.render_material_id =
                                     face.render_material_id;
+                                if (const auto found =
+                                        legacy_materials.find(face.material_id);
+                                    found != legacy_materials.end())
+                                {
+                                    material.diffuse_alpha_mode =
+                                        found->second.diffuse_alpha_mode;
+                                    material.alpha_mask_cutoff =
+                                        found->second.alpha_mask_cutoff;
+                                }
 
                                 render_object
                                     .face_materials[face_index] =

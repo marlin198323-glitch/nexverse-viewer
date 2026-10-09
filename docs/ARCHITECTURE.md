@@ -54,6 +54,16 @@ installed → compatible → enabled → loaded → initialized → running
 
 Lokale ABI v1/v2, Manifest- und Lifecycle-Prüfung sind implementiert; die ABI v2 liefert eine schreibgeschützte Snapshot-Tabelle für Developer Tools und Performance Monitor. Ungeprüfte native Module bleiben standardmäßig blockiert. Online-Registry, geprüfte Signaturen, Download, automatische Updates und eine sichere Drittmodul-Isolation folgen später. Siehe `docs/MODULES.md`.
 
+## Legacy RenderMaterials (0.2.0-alpha.42)
+
+Der CAPS-Client lädt einen serverseitigen RenderMaterials-Snapshot
+asynchron. Der Parser verarbeitet strikt begrenzte zlib/LLSD-Binärdaten
+und stellt Legacy-Alpha-Informationen als typisierte Werte bereit.
+Application bindet per MaterialID an die Scene-Objekte. OGLRender
+enthält ausschließlich Renderdaten und keine Netzwerkroutinen.
+RenderMaterialIDs für PBR bleiben getrennt; Details in
+`docs/MATERIALS.md`.
+
 ## Core versus Plugin
 
 Core bleiben mindestens Login, LLUDP/CAPS, WorldModel, Basis-Assets, Basis-Avatar, Basis-Inventar, Basis-Outfits/Appearance, Basis-UI, Environment, Text-only-Modus, ModuleManager und mindestens ein funktionierender Fallback-Renderer.
