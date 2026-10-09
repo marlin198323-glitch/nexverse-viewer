@@ -9,7 +9,9 @@ Stand: 09.10.2026
 - Sprache: C++23
 - kein Firestorm-Fork; Firestorm/Second Life nur Referenz
 - Repo: `marlin198323-glitch/nexverse-viewer`
-- Branch: `develop`
+- lokaler Arbeitsbranch: `develop`
+- GitHub-Handoff-Branch: `develop-current`
+- Hinweis: GitHub-`develop` besitzt eine ältere divergierende Historie; **nicht** als aktuellen Stand verwenden, bis sie bewusst reconciled wurde.
 - lokal: `/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer`
 - vcpkg: `/home/jam/vcpkg`
 - `projectplan.md` ist bindend
@@ -23,7 +25,7 @@ git log -8 --oneline
 cat VERSION
 ```
 
-Danach lesen: `CHATUEBERGABE.md`, `projectplan.md`, `info.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`.
+Wenn direkt über GitHub gearbeitet wird, zuerst Branch `develop-current` verwenden. Danach lesen: `CHATUEBERGABE.md`, `projectplan.md`, `info.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`.
 
 Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 

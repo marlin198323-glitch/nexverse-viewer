@@ -7,7 +7,8 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 ## Aktueller Stand
 
 - Version: `0.2.0-alpha.37`
-- Branch: `develop`
+- lokaler Arbeitsbranch: `develop`
+- GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
 - letzter vollständig geprüfter Stand: 19/19 Tests grün plus OpenGL-Runtime-Smoke
 - nächster Entwicklungsblock: **Module Runtime / ModuleManager**

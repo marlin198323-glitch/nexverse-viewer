@@ -5,6 +5,8 @@
 
 Stand: 09.10.2026
 Lokaler Arbeitsbranch: `develop`
+GitHub-Handoff-Branch: `develop-current`
+Hinweis: Remote-`develop` besitzt derzeit eine ältere divergierende Historie und ist nicht der maßgebliche Handoff-Stand.
 Lokaler Pfad: `/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer`
 GitHub-Repository: `marlin198323-glitch/nexverse-viewer`
 
@@ -775,3 +777,10 @@ Für spätere Arbeit gilt:
 - Letzter vollständig geprüfter Codeblock: 19/19 Tests grün plus OpenGL Runtime-Smoke.
 - Nächster Entwicklungsblock: Module Runtime / ModuleManager.
 - Nach jedem größeren Block `info.md` und `CHATUEBERGABE.md` gemeinsam aktualisieren.
+
+## GitHub-Handoff-Branch – 09.10.2026
+
+- Der vollständige aktuelle lokale Stand wurde sicher auf GitHub als Branch `develop-current` veröffentlicht.
+- Grund: GitHub-`develop` enthält 46 ältere Remote-only-Commits aus einer divergierenden Historie; ein Force-Push wurde bewusst vermieden.
+- Neuer Chat soll für den aktuellen Viewer-Stand **`develop-current`** verwenden.
+- Eine spätere bewusste Bereinigung/Reconciliation von `develop` kann separat erfolgen.
