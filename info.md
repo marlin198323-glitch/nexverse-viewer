@@ -743,3 +743,14 @@ Für spätere Arbeit gilt:
 - Neues Plugin `OGL Outfit Preview` übernimmt Outfit-Screenshots, automatische Vorschau-Erstellung, Kamera-Presets und lokale Thumbnail-/Galerie-Verwaltung.
 - Outfit-Screenshots werden standardmäßig lokal gespeichert; ein späterer Upload/Sync darf nur explizit aktiviert werden.
 - Preview-Plugin nutzt ausschließlich freigegebene Kamera-/Frame-Capture-/Outfit-APIs und keine privaten Renderer-Strukturen.
+
+
+## Text-only / reale Tageszeit / Wetter – 09.10.2026
+
+- Text-only wird als Core-Betriebsmodus geplant, nicht als Plugin.
+- Text-only nutzt denselben Login-/Protocol-/Social-/Inventar-Core, kann aber ohne aktive 3D-Weltdarstellung arbeiten.
+- Reale Tag-/Nachtzeit wird als lokaler Environment-Core-Override geplant; Standard bleibt Region/OpenSim/EEP.
+- Vorgesehen: Region/EEP, feste Uhrzeit, eigener Zyklus, reale Systemzeit sowie später geografisch berechnete Sonnenposition.
+- `OGL Weather` neu im Plugin-Katalog: realistischer Regen, Schnee, Nebel, Sturm und Wind mit moderner GPU-basierter Darstellung.
+- Spätere RTX-Integration: nasse Oberflächen, Reflexionen, Pfützen, volumetrische Effekte und verbesserte Wetterbeleuchtung.
+- Lokale Wetter-/Zeit-Overrides verändern niemals serverseitige Regionseinstellungen.

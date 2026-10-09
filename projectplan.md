@@ -986,53 +986,176 @@ Der folgende Katalog ist die verbindliche Zielrichtung für spätere optionale M
 3. **OGL RTX Renderer** – optionales Ray-Tracing-/RTX-Backend mit Raytracing-Schatten, Reflexionen und später GI; nur auf kompatibler Hardware.
 4. **OGL Voice** – Spatial Voice, Mikrofon, Gerätewahl, Mute, Avatar-Lautstärke und Positionsaudio.
 5. **OGL Media** – erweiterte Media-on-a-Prim-/Browser-/Video-/Codec-Funktionen auf Basis einer stabilen Media-Schnittstelle.
+6. **OGL Weather** – realistisches Wettermodul für Regen, Schnee, Nebel, Sturm und Wind mit moderner GPU-basierter Darstellung; spätere RTX-Erweiterungen für nasse Oberflächen, Reflexionen und volumetrische Effekte vorgesehen.
 
 #### Klasse B – Avatar, Animation und Bedienung
 
-6. **OGL Advanced AO** – erweiterter Animation Override mit mehreren Sets und automatischen Zustandswechseln.
-7. **OGL RLVa** – optionale RLV/RLVa-Kompatibilität für Attachments und Restriktionsbefehle.
-8. **OGL Outfit Manager** – erweiterte Outfit-, Wearable- und Attachment-Verwaltung mit Kategorien, Tags, Favoriten, Suche, zuletzt getragen und optionalen Metadaten.
-9. **OGL Outfit Preview** – Screenshot-/Galerie-Erweiterung für Outfits mit manueller oder automatischer Vorschau-Erstellung, Vorschaubildern, Kamera-Presets und lokaler Verknüpfung zum Outfit.
-10. **OGL Avatar Tools** – Avatar-Diagnose, Attachment-Übersicht, Animationsstatus, Komplexität und Rendering-Debug.
-11. **OGL Animation Studio** – Animation Preview, Trigger, Sequenzen und erweiterte Animationsverwaltung.
-12. **OGL Gesture Tools** – Gesten suchen, kategorisieren, testen und Trigger-Konflikte erkennen.
-13. **OGL Gamepad** – Controller-Unterstützung für Xbox-/PlayStation-kompatible Geräte mit frei belegbarer Steuerung.
-14. **OGL VR** – spätere OpenXR-basierte VR-Unterstützung mit Head Tracking, Controllern und VR-UI.
+7. **OGL Advanced AO** – erweiterter Animation Override mit mehreren Sets und automatischen Zustandswechseln.
+8. **OGL RLVa** – optionale RLV/RLVa-Kompatibilität für Attachments und Restriktionsbefehle.
+9. **OGL Outfit Manager** – erweiterte Outfit-, Wearable- und Attachment-Verwaltung mit Kategorien, Tags, Favoriten, Suche, zuletzt getragen und optionalen Metadaten.
+10. **OGL Outfit Preview** – Screenshot-/Galerie-Erweiterung für Outfits mit manueller oder automatischer Vorschau-Erstellung, Vorschaubildern, Kamera-Presets und lokaler Verknüpfung zum Outfit.
+11. **OGL Avatar Tools** – Avatar-Diagnose, Attachment-Übersicht, Animationsstatus, Komplexität und Rendering-Debug.
+12. **OGL Animation Studio** – Animation Preview, Trigger, Sequenzen und erweiterte Animationsverwaltung.
+13. **OGL Gesture Tools** – Gesten suchen, kategorisieren, testen und Trigger-Konflikte erkennen.
+14. **OGL Gamepad** – Controller-Unterstützung für Xbox-/PlayStation-kompatible Geräte mit frei belegbarer Steuerung.
+15. **OGL VR** – spätere OpenXR-basierte VR-Unterstützung mit Head Tracking, Controllern und VR-UI.
 
 #### Klasse C – Bauen, Materialien und Assets
 
-15. **OGL Advanced Build Tools** – exakte Transformationen, Alignment, Multi-Edit, Prim-/Linkset-Werkzeuge.
-16. **OGL Mesh Tools** – Mesh-Diagnose, LOD, Triangle Count, Bounding Boxes, Material-Slots und Upload-Vorprüfung.
-17. **OGL Material Tools** – Legacy- und PBR-Materialbearbeitung, Normal/Roughness/Metallic und Materialvorschau.
-18. **OGL Scripting Tools** – erweiterter LSL/OSSL-Editor, Syntax-Highlighting, Script-Logs und Diagnose.
-19. **OGL Asset Inspector** – Asset-UUIDs, Texturen, Meshes, Animationen, Sounds, Cache- und Decode-Status.
-20. **OGL Export / Backup Tools** – Sicherung erlaubter Einstellungen, Profile, Favoriten und Inhalte unter strikter Beachtung von Copy-/Export-Rechten.
+16. **OGL Advanced Build Tools** – exakte Transformationen, Alignment, Multi-Edit, Prim-/Linkset-Werkzeuge.
+17. **OGL Mesh Tools** – Mesh-Diagnose, LOD, Triangle Count, Bounding Boxes, Material-Slots und Upload-Vorprüfung.
+18. **OGL Material Tools** – Legacy- und PBR-Materialbearbeitung, Normal/Roughness/Metallic und Materialvorschau.
+19. **OGL Scripting Tools** – erweiterter LSL/OSSL-Editor, Syntax-Highlighting, Script-Logs und Diagnose.
+20. **OGL Asset Inspector** – Asset-UUIDs, Texturen, Meshes, Animationen, Sounds, Cache- und Decode-Status.
+21. **OGL Export / Backup Tools** – Sicherung erlaubter Einstellungen, Profile, Favoriten und Inhalte unter strikter Beachtung von Copy-/Export-Rechten.
 
 #### Klasse D – Welt, Land und Administration
 
-21. **OGL Map Plus** – zusätzliche Map-Layer, Marker, Favoriten und Teleport-Historie.
-22. **OGL Hypergrid Tools** – HG-Favoriten, Grid-Verlauf, Grid-Infos, Hypergrid-Diagnose und Landmark-Verwaltung.
-23. **OGL Parcel Tools** – Parcel-Analyse, Media/Music, Access-/Ban-Listen, Objektübersicht und Landstatistiken.
-24. **OGL Estate Tools** – Region-/Estate-Administration, Access, Bans, Terrain, Neustarts und Debug-Optionen.
-25. **OGL Moderation Tools** – Freeze/Eject/Ban-Hilfen, Abuse-Report-Unterstützung und Moderationsdiagnose; Serverrechte bleiben maßgeblich.
+22. **OGL Map Plus** – zusätzliche Map-Layer, Marker, Favoriten und Teleport-Historie.
+23. **OGL Hypergrid Tools** – HG-Favoriten, Grid-Verlauf, Grid-Infos, Hypergrid-Diagnose und Landmark-Verwaltung.
+24. **OGL Parcel Tools** – Parcel-Analyse, Media/Music, Access-/Ban-Listen, Objektübersicht und Landstatistiken.
+25. **OGL Estate Tools** – Region-/Estate-Administration, Access, Bans, Terrain, Neustarts und Debug-Optionen.
+26. **OGL Moderation Tools** – Freeze/Eject/Ban-Hilfen, Abuse-Report-Unterstützung und Moderationsdiagnose; Serverrechte bleiben maßgeblich.
 
 #### Klasse E – UI, Komfort und Kommunikation
 
-26. **OGL UI Themes** – alternative Themes, Farben, Icons und Layout-Presets auf Basis der OGL-UI-API.
-27. **OGL Accessibility** – High Contrast, größere UI, Farbsehschwächen-Modi und weitere Barrierefreiheitsfunktionen.
-28. **OGL Inventory Plus** – erweiterte Suche, Smart Folders, Duplikaterkennung und Massenoperationen; Basisinventar bleibt Core.
-29. **OGL Social Plus** – Kontaktkategorien, Notizen, Filter und optionale soziale Komfortfunktionen; Freunde/IM/Gruppen bleiben Core.
-30. **OGL Stream & Radio** – Parcel Music, Icecast/Shoutcast, Stream-Metadaten und Favoriten.
-31. **OGL Translator** – optionale Chat-/IM-Übersetzung über konfigurierbare externe Dienste mit klaren Datenschutzhinweisen.
-32. **OGL Discord Integration** – optionale Rich Presence/Statusintegration nur nach ausdrücklicher Aktivierung.
-33. **OGL Streamer Mode** – Datenschutzmodus für Streams/Videos, z. B. Namen, Chat, Koordinaten und Benachrichtigungen ausblenden.
+27. **OGL UI Themes** – alternative Themes, Farben, Icons und Layout-Presets auf Basis der OGL-UI-API.
+28. **OGL Accessibility** – High Contrast, größere UI, Farbsehschwächen-Modi und weitere Barrierefreiheitsfunktionen.
+29. **OGL Inventory Plus** – erweiterte Suche, Smart Folders, Duplikaterkennung und Massenoperationen; Basisinventar bleibt Core.
+30. **OGL Social Plus** – Kontaktkategorien, Notizen, Filter und optionale soziale Komfortfunktionen; Freunde/IM/Gruppen bleiben Core.
+31. **OGL Stream & Radio** – Parcel Music, Icecast/Shoutcast, Stream-Metadaten und Favoriten.
+32. **OGL Translator** – optionale Chat-/IM-Übersetzung über konfigurierbare externe Dienste mit klaren Datenschutzhinweisen.
+33. **OGL Discord Integration** – optionale Rich Presence/Statusintegration nur nach ausdrücklicher Aktivierung.
+34. **OGL Streamer Mode** – Datenschutzmodus für Streams/Videos, z. B. Namen, Chat, Koordinaten und Benachrichtigungen ausblenden.
 
 #### Klasse F – Diagnose, Kreativ- und Entwicklerwerkzeuge
 
-34. **OGL Developer Tools** – LLUDP-, CAPS-, EventQueue-, ObjectUpdate-, TextureEntry-, Asset- und Renderer-Diagnose.
-35. **OGL Performance Monitor** – FPS, Frametime, Draw Calls, VRAM, CPU/GPU, Netzwerk und Cache-Telemetrie.
-36. **OGL Photography** – freie Kamera, Kamera-Presets, High-Resolution-Screenshots, Post-Processing und spätere DoF-/Machinima-Funktionen.
-37. **OGL AI Assistant** – spätere optionale Assistenz für UI-Hilfe, Diagnose und Build-/Scripting-Unterstützung; niemals Pflichtbestandteil des Viewers.
+35. **OGL Developer Tools** – LLUDP-, CAPS-, EventQueue-, ObjectUpdate-, TextureEntry-, Asset- und Renderer-Diagnose.
+36. **OGL Performance Monitor** – FPS, Frametime, Draw Calls, VRAM, CPU/GPU, Netzwerk und Cache-Telemetrie.
+37. **OGL Photography** – freie Kamera, Kamera-Presets, High-Resolution-Screenshots, Post-Processing und spätere DoF-/Machinima-Funktionen.
+38. **OGL AI Assistant** – spätere optionale Assistenz für UI-Hilfe, Diagnose und Build-/Scripting-Unterstützung; niemals Pflichtbestandteil des Viewers.
+
+### Verbindliche Core-/Plugin-Trennung für Text-only, Tageszeit und Wetter
+
+#### Text-only Viewer – Core-Betriebsmodus
+
+OpenGenesisLINK erhält einen nativen Text-only-Betriebsmodus. Dieser ist kein Plugin, sondern ein alternativer Core-Modus des Viewers.
+
+Ziel ist ein vollständig nutzbarer OpenSim-/NexVerse-Client ohne aktive 3D-Weltdarstellung. Derselbe Protocol-, Session-, Social-, Inventar- und World-State-Core wird verwendet, der 3D-Renderer wird jedoch nicht beziehungsweise nur minimal initialisiert.
+
+Mindestens vorzusehen:
+
+```text
+Login
+Grid-/Regionstatus
+Chat
+IM
+Freunde
+Gruppen
+Inventar
+Outfits / Appearance-Basis
+Teleport
+Landmarks
+Benachrichtigungen
+Avatar-/Regionstatus in Textform
+optionale minimale Karte / Regionsinformation
+```
+
+Der Startmodus soll konfigurierbar sein:
+
+```text
+Normaler 3D-Modus
+Text-only-Modus
+```
+
+Der Text-only-Modus muss auch auf Systemen ohne leistungsfähige GPU sinnvoll nutzbar sein. Renderer-spezifische Plugins wie Vulkan oder RTX dürfen dafür keine Voraussetzung sein.
+
+#### Reale Tag-/Nachtzeit – Core Environment-Funktion
+
+Die Anpassung der sichtbaren Tageszeit an reale Zeit gehört in den Environment-Core und nicht in ein Plugin. Sie ist ein lokaler Viewer-Override und darf die vom Simulator gelieferte Region-/EEP-Konfiguration nicht serverseitig verändern.
+
+Vorgesehene Modi:
+
+```text
+Region / OpenSim / EEP verwenden
+Feste lokale Uhrzeit
+Eigener lokaler Tageszyklus
+Reale lokale Systemzeit
+Reale Zeit mit geografisch berechneter Sonnenposition
+```
+
+Standard bleibt die Region-/OpenSim-Vorgabe. Der Benutzer muss einen lokalen Override ausdrücklich aktivieren.
+
+Für `Reale lokale Systemzeit` wird die lokale Uhrzeit des Betriebssystems auf den sichtbaren Tageszyklus abgebildet.
+
+Für die spätere Option `Reale Zeit mit geografisch berechneter Sonnenposition` dürfen Datum, Uhrzeit und ein vom Benutzer gewählter Referenzort verwendet werden, um Sonnenaufgang, Sonnenuntergang und Sonnenstand zu berechnen. Diese Funktion darf nicht ungefragt den physischen Standort des Benutzers ermitteln oder übertragen.
+
+Der Environment-Core muss dafür eine stabile API bereitstellen, über die Renderer und optionale Weather-Plugins den resultierenden Environment-Zustand lesen können.
+
+#### OGL Weather Plugin
+
+Realistischer Regen, Schnee und weitere Wettereffekte werden als optionales `OGL Weather`-Plugin umgesetzt.
+
+Ziel ist ausdrücklich keine einfache, grobe Pixel-/Billboard-Partikeldarstellung. Das Plugin soll eine moderne, skalierbare Wetterpipeline verwenden.
+
+Vorgesehene Funktionen:
+
+```text
+Regen
+Schnee
+Nebel
+Sturm
+Windböen
+unterschiedliche Niederschlagsintensität
+weltkoordinatenbasierte Wetterzonen
+Entfernungs-/Dichteanpassung um Kamera und Avatar
+windabhängige Partikelbewegung
+GPU-basierte Partikelsimulation beziehungsweise spätere Compute-Pfade
+weiche Übergänge zwischen Wetterzuständen
+```
+
+Das Weather-Plugin darf Environment- und Renderer-APIs benutzen, aber keine privaten Renderer-Implementierungsdetails direkt referenzieren.
+
+Vorgesehene Schnittstellen:
+
+```text
+Environment API
+Weather State API
+Wind API
+Camera API
+Scene Depth / Surface Query API
+Renderer Effects API
+```
+
+#### Spätere OGL Weather RTX-Erweiterungen
+
+Auf einem kompatiblen Vulkan-/RTX-Renderer können zusätzliche Wettereffekte aktiviert werden. Diese sind optional und dürfen nicht Voraussetzung für normales Wetter sein.
+
+Später vorgesehen:
+
+```text
+nasse Oberflächen
+Ray-Tracing-Reflexionen auf nassem Boden
+realistischere Pfützen
+volumetrischer Niederschlag / Nebel
+Lichtstreuung im Regen / Schnee
+verbesserte Schatten und Beleuchtung während Unwettern
+```
+
+Die Architektur soll es ermöglichen, dass `OGL Weather` mit dem Standard-Renderer funktioniert und bei vorhandenem `OGL RTX Renderer` zusätzliche hochwertige Effekte freischaltet.
+
+#### Zusammenspiel von Region, Tageszeit und Wetter
+
+Die Priorität wird klar definiert:
+
+```text
+1. Simulator/Region liefert Environment/EEP als Basis
+2. optionaler lokaler Tageszeit-Override verändert nur die lokale Darstellung
+3. OGL Weather ergänzt lokale Wettereffekte
+4. optionale RTX-Funktionen verbessern ausschließlich die Darstellung
+```
+
+Ein lokaler Wetter- oder Tageszeit-Override darf keine Regionseinstellungen auf dem OpenSim-Server verändern.
 
 ### Verbindliche Outfit-System-Trennung
 
