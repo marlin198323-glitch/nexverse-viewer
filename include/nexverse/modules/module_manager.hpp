@@ -3,7 +3,7 @@
  * License, v. 2.0.
  */
 #pragma once
-#include "nexverse/modules/abi.h"
+#include "nexverse/modules/abi_v2.h"
 #include "nexverse/modules/manifest.hpp"
 #include <filesystem>
 #include <map>
@@ -48,6 +48,8 @@ public:
     [[nodiscard]] bool set_enabled(std::string_view id, bool enabled, std::string& error);
     [[nodiscard]] bool start_enabled(std::string& error);
     void stop_all() noexcept;
+    void update_diagnostics(const ogl_diagnostics_snapshot_v1& snapshot) noexcept;
+    [[nodiscard]] std::size_t tick() noexcept;
 
 private:
     struct Loaded
@@ -61,6 +63,9 @@ private:
     std::vector<std::string> load_order_;
     std::set<std::string, std::less<>> enabled_;
     ogl_host_api host_api_{};
+    ogl_host_api_v2 host_api_v2_{};
+    ogl_diagnostics_snapshot_v1 diagnostics_{};
+    bool diagnostics_ready_ = false;
 
     void read_state();
     [[nodiscard]] bool write_state(std::string& error) const;
@@ -70,5 +75,6 @@ private:
                                  std::set<std::string>& finished, std::string& error);
     void unload_one(std::string_view id) noexcept;
     static void host_log(void* context, int level, const char* message);
+    static int read_diagnostics(void* context, ogl_diagnostics_snapshot_v1* out);
 };
 }

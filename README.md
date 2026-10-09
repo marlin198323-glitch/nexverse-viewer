@@ -6,12 +6,12 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.38`
-- lokaler Arbeitsbranch: `develop`
+- Version: `0.2.0-alpha.39`
+- lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 20/20 Tests grün plus OpenGL-Runtime-Smoke
-- aktueller Entwicklungsblock: **Module Runtime v1 implementiert; Developer Tools als Nächstes**
+- letzter vollständig geprüfter Stand: 21/21 Tests grün plus OpenGL-Runtime-Smoke mit Developer-Modulen
+- aktueller Entwicklungsblock: **Module Runtime ABI v1/v2 sowie OGL Developer Tools und Performance Monitor implementiert; nächster Block Phase 8**
 
 Bereits vorhanden sind Grid Discovery, echter OpenSim-Login, LLUDP, CAPS/EventQueue, WorldModel, Terrain/EEP, sichtbare Prim-Geometrie, OpenSim Face-Materialien, explizite Prim-UVs und Planar TexGen.
 
@@ -47,7 +47,10 @@ Die lokale Module Runtime ist als erster Basisblock implementiert:
 - Plattform-/Architekturprüfung
 - persistenter Aktivierungszustand
 
-Technischer ABI-Vertrag, Sicherheitsgrenzen und Testmodul: `docs/MODULES.md`.
+Technischer ABI-Vertrag, Sicherheitsgrenzen, Diagnosemodule und Entwicklerstart:
+`docs/MODULES.md`. ABI v1 bleibt unverändert; ABI v2 liefert read-only
+Diagnosewerte für Developer Tools/Performance Monitor. Die Module liefern
+derzeit Logs, keine eigenen UI-Panels.
 
 Die spätere offizielle Add-on-Plattform ist `https://addons.opengenesislink.de/`.
 

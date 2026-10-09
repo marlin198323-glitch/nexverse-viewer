@@ -51,6 +51,12 @@ int main(int argc, char** argv)
             return 0;
         }
 
+        if (argument == "--dev-modules")
+        {
+            nexverse::app::Application application;
+            return application.run(true);
+        }
+
         if (argument == "--grid-info")
         {
             return print_grid_info();
@@ -60,9 +66,10 @@ int main(int argc, char** argv)
         {
             std::cout
                 << "OpenGenesisLINK Viewer for NexVerse\n"
-                << "Usage: nexverse-viewer [--version|--grid-info|--help]\n\n"
+                << "Usage: nexverse-viewer [--version|--grid-info|--dev-modules|--help]\n\n"
                 << "--grid-info  Refresh and print the current NexVerse GridInfo.\n"
-                << "Normal startup refreshes GridInfo automatically.\n";
+                << "Normal startup refreshes GridInfo automatically.\n"
+                << "--dev-modules  Enable explicitly installed/activated unsigned developer modules.\n";
             return 0;
         }
     }

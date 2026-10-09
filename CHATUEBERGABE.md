@@ -9,7 +9,7 @@ Stand: 09.10.2026
 - Sprache: C++23
 - kein Firestorm-Fork; Firestorm/Second Life nur Referenz
 - Repo: `marlin198323-glitch/nexverse-viewer`
-- lokaler Arbeitsbranch: `develop`
+- lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - Hinweis: GitHub-`develop` besitzt eine ältere divergierende Historie; **nicht** als aktuellen Stand verwenden, bis sie bewusst reconciled wurde.
 - lokal: `/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer`
@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.38`
+Version: `0.2.0-alpha.39`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -52,7 +52,7 @@ Vorhanden:
 - Planar TexGen
 - Fullbright/Shiny/Bumpiness/Media-Daten im Renderer-Vertrag
 
-Letzter vollständiger Teststand: 20/20 Tests grün plus OpenGL Runtime-Smoke.
+Letzter vollständiger Teststand: 21/21 Tests grün plus OpenGL Runtime-Smoke (auch mit zwei Diagnosemodulen).
 
 ## 4. NexVerse Runtime
 
@@ -83,10 +83,23 @@ Developer Mode muss von der Hostanwendung explizit erlaubt werden und alle
 Capabilities freigeben. Signatur-/Hashprüfung, sichere Isolation und
 Nutzer-Modulverwaltung fehlen noch. Details: `docs/MODULES.md`.
 
-**Nächster Block:** Developer Tools als erstes funktionsorientiertes Modul
-mit schmalen versionierten Host-Callbacks, anschließend Performance Monitor.
-Danach mit Phase 8 (Rendering-/Scene-Funktionalität) fortfahren.
-Keine vorzeitige Vulkan-/RTX-/Weather-/Hydro-Implementierung.
+Version `0.2.0-alpha.39` (aktueller Stand):
+- ABI v1 unverändert; zusätzlich ABI v2 mit `ogl_host_api_v2`,
+  `ogl_diagnostics_snapshot_v1` und Main-Thread `on_frame`-Callback
+- OGL Developer Tools und OGL Performance Monitor als echte dynamische
+  Testmodule mit Dependency, Lifecycle und read-only Host-Metriken
+- `--dev-modules` als ausdrückliche CLI-Freigabe für lokal installierte,
+  bereits aktivierte unsignierte Developer-Module; Standard weiter blockiert
+- Metriken: FPS, geglättete Framezeit, Draw Calls, Triangles, Objects,
+  RAM/VRAM, `simulation_ready`, Frameindex
+- Logs im geladenen Viewer erfolgreich; 21/21 Tests grün inklusive ABI
+  v1/v2 und Dependency-Test; OpenGL-Runtime-Smoke mit Developer-Modulen OK
+
+**Nächster verbindlicher Arbeitsblock: Phase 8** gemäß `projectplan.md`:
+Prims/Materialien/Scene-Darstellung vervollständigen; anschließend
+Mesh/Sculpt/Partikel/Lichter. Kein Vulkan-/RTX-/Weather-/Hydro-Vorgriff.
+Die Entwickler-Module sind aktuell reine Log-/Diagnosemodule ohne UI,
+ohne Produktions-Signaturfreigabe und ohne Sandbox. Anleitung: `docs/MODULES.md`.
 
 ## 6. Plugins / Add-ons
 
@@ -156,7 +169,7 @@ Wenn der Benutzer nur **„viewer“** oder **„weiter“** schreibt:
 1. lokalen Repo-Stand prüfen
 2. diese Übergabe + Projektplan lesen
 3. keine unnötige Rückfrage
-4. Developer Tools / Performance Monitor als nächste Module weiterbauen
+4. Phase 8: Renderer/Prims/Material/Scene weiterbauen
 5. build + tests, bei GUI-Änderungen Runtime-Smoke
 6. nicht signierte Module ohne ausdrücklichen Developer Mode niemals laden
 7. `info.md` und `CHATUEBERGABE.md` aktualisieren

@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     replace_one(malformed, "\"entrypoint\": \"ogl_example_module", "\"entrypoint\": \"../ogl_example_module");
     require(!parse_manifest(malformed).ok(), "Directory traversal entrypoint accepted");
     malformed = manifest;
-    replace_one(malformed, "\"api_version\": 1", "\"api_version\": 2");
+    replace_one(malformed, "\"api_version\": 1", "\"api_version\": 3");
     require(!parse_manifest(malformed).ok(), "Incompatible API accepted");
     require(!parse_manifest("{\"id\":\"a\",\"id\":\"b\"}").ok(), "Duplicate JSON key accepted");
     require(!parse_manifest(std::string(65537, 'x')).ok(), "Oversized manifest accepted");

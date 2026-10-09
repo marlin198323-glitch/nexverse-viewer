@@ -812,3 +812,32 @@ Für spätere Arbeit gilt:
 - Nicht erledigt: produktive Signatur- und Hash-Verifikation, sichere
   Drittmodul-Isolation, Nutzer-Modul-UI, Add-on-Registry/Download,
   plattformübergreifende Runtime-Abnahme, Renderer-/WorldModel-Host-APIs.
+
+
+## Diagnose-Plugins / Module ABI v2 – 09.10.2026 · 0.2.0-alpha.39
+
+- ABI v1 unverändert; `abi_v2.h` ergänzt ein versioniertes, read-only
+  `ogl_diagnostics_snapshot_v1`, Host-Callback und Main-Thread Frame-Callback.
+- `ModuleManager` akzeptiert API v1/v2, veröffentlicht Diagnose-Snapshots und
+  dispatcht Frames nur an aktive ABI-v2-Module. Fehler führen zum Stop aller
+  Module im Batch; Abhängigkeiten und Developer-Mode-Sperren bleiben erhalten.
+- Zwei separat gebaute native Module:
+  `org.opengenesislink.developer-tools` und
+  `org.opengenesislink.performance-monitor` (Dependency auf Developer Tools).
+- Developer Tools protokolliert World-Ready, Frameindex, Draw Calls, Triangles,
+  sichtbare Objekte; Performance Monitor loggt nach jeweils 300 gültigen Frames
+  FPS, min/avg/max der geglätteten Framezeit und freien RAM/VRAM.
+- Viewer-Loop veröffentlicht die tatsächlich erfassten Render-/RAM-Metriken;
+  die Diagnoseschnittstelle verleiht **keine** Write-Rechte auf WorldModel/Render.
+- Expliziter Start mit `--dev-modules` und lokal vorinstalliertem, aktiviertem
+  Modul; Default bleibt aus. Modul-Lifecycle / Signaturen nicht produktionsreif.
+- CMake Debug Build erfolgreich; 21/21 Tests grün, inklusive ABI-v1/v2,
+  Default-Deny, Capability-Deny, Dependencies, Frame-Dispatch, Persistenz.
+- Echter OpenGL-Starttest: `Developer Tools running`, `Performance Monitor
+  running`, Frame-/Weltstatus-Log und Performance-Kennzahlen bestätigt;
+  Welcome-Seite lädt normal. Timeout-Code 124 durch 7s Smoke erwartet.
+- Nächste maßgebliche Arbeit: Phase 8 Prim-/Material-/Scene-Darstellung
+  vervollständigen, danach Meshes/Sculpties/Partikel/Lichter.
+- Offen: Modulverwaltungs-UI, signierter Vertrauenspfad, Prozessisolation,
+  plattformübergreifende Abnahme, echte GPU Frame-Time-Metrik und integrierte
+  Developer-UI-Panels. Kein RTX/Vulkan-Vorgriff.

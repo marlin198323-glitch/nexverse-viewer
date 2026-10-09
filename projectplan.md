@@ -2191,14 +2191,14 @@ Der frühere Phase-0-Startplan ist abgeschlossen und wird durch den aktuellen Ar
 
 Die unmittelbar nächsten Arbeitsschritte sind:
 
-1. Module Runtime / ModuleManager implementieren.
-2. Versionierte Module API und stabile native ABI-Grenze festlegen.
-3. Manifest Loader, lokale Modulerkennung, Lifecycle, Aktivieren/Deaktivieren, Dependencies, Capabilities und persistente Zustände implementieren.
-4. OGL Example Module als Referenzmodul bauen und die Runtime praktisch testen.
-5. Danach Phase 8 Rendering weiterführen und Prim-/Material-/Scene-Funktionalität vervollständigen.
-6. Anschließend Meshes, Sculpties, Partikel und Lichtquellen ausbauen.
-7. Avatar, Animation, Attachments, Inventar, Outfits, Chat/IM/Freunde/Gruppen, Teleport/Map und Build/Edit schrittweise alltagstauglich machen.
-8. Erst danach die größeren NextGen-Blöcke Vulkan, RTX, Weather, Advanced Water/Hydro-Anbindung und weitere Plugins ausbauen.
+1. ✅ Module Runtime / ModuleManager und native C-ABI v1 inklusive Manifest, Lifecycle, Abhängigkeiten, Aktivierung und Beispielmodul (`0.2.0-alpha.38`).
+2. ✅ Ergänzende kompatible Diagnose-ABI v2 mit read-only Snapshot und Frame-Callback (`0.2.0-alpha.39`).
+3. ✅ OGL Developer Tools und OGL Performance Monitor als erste funktionsfähige, optionale Testmodule (`0.2.0-alpha.39`).
+4. **JETZT: Phase 8 Rendering** weiterführen, Prim-/Material-/Scene-Funktionalität vervollständigen.
+5. Anschließend Meshes, Sculpties, Partikel und Lichtquellen ausbauen.
+6. Avatar, Animation, Attachments, Inventar, Outfits, Chat/IM/Freunde/Gruppen, Teleport/Map und Build/Edit schrittweise alltagstauglich machen.
+7. Erst danach die größeren NextGen-Blöcke Vulkan, RTX, Weather, Advanced Water/Hydro-Anbindung und weitere Plugins ausbauen.
+8. Produktions-Plugin-Sicherheit (Signaturen, Prüfsummen, Isolation und Benutzer-UI) gesondert abschließen, bevor Drittmodule freigegeben werden.
 
 ## 10.2 Planungsrahmen für die Entwicklungsdauer
 

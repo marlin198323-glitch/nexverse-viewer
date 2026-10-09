@@ -3,7 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/modules/manifest.hpp"
-#include "nexverse/modules/abi.h"
+#include "nexverse/modules/abi_v2.h"
 #include <algorithm>
 #include <charconv>
 #include <filesystem>
@@ -285,8 +285,9 @@ ManifestResult parse_manifest(std::string_view json)
         m.version = field(root, "version");
         m.vendor = field(root, "vendor");
         const auto& api = required(root, "api_version", Json::Kind::integer);
-        if (api.text != "1") throw std::runtime_error("Unsupported API version");
-        m.api_version = OGL_MODULE_ABI_VERSION;
+        if (api.text != "1" && api.text != "2")
+            throw std::runtime_error("Unsupported API version");
+        m.api_version = api.text == "1" ? OGL_MODULE_ABI_VERSION : OGL_MODULE_ABI_VERSION_2;
         m.minimum_viewer_version = field(root, "minimum_viewer_version");
         m.type = field(root, "type");
         m.platforms = array_field(root, "platforms");

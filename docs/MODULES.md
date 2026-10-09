@@ -1,6 +1,6 @@
 # OpenGenesisLINK – Module Runtime (ABI v1)
 
-Stand: 09.10.2026, `0.2.0-alpha.38`
+Stand: 09.10.2026, `0.2.0-alpha.39`
 
 Die lokale Modulbasis ist in `NexVerse::Modules` implementiert. Sie gehört
 zum Viewer-Core und lädt standardmäßig **keinen ausführbaren Fremdcode**.
@@ -40,6 +40,48 @@ Windows: `%APPDATA%/OpenGenesisLINK`.
 Das Beispielmodul wird für die Tests nach
 `build/debug/modules/org.opengenesislink.example/` gebaut. Es wird **nicht**
 automatisch installiert oder aktiviert.
+
+## Erweiterung ABI v2 (seit 0.2.0-alpha.39)
+
+`include/nexverse/modules/abi_v2.h` führt separate und versionierte Strukturen
+ein, ohne das ABI-v1-Layout zu verändern:
+
+- `ogl_host_api_v2`: Basis-Host-API plus `read_diagnostics`.
+- `ogl_diagnostics_snapshot_v1`: Frameindex, FPS, geglättete Framezeit,
+  Draw Calls, Triangles, sichtbare Objekte, verfügbarer/gesamter RAM,
+  VRAM und WorldModel-Ready.
+- `ogl_module_api_v2`: Basis-Modul-Lifecycle plus Main-Thread-`on_frame`.
+- Manifest `api_version: 1` oder `2`; bestehende v1-Module bleiben lauffähig.
+- Diagnosen liefern eine Kopie des zuletzt veröffentlichten Snapshots; die
+  Modul-API darf kein privates WorldModel-/Renderer-Objekt verändern.
+
+`OGL Developer Tools` protokolliert Frame-/World-Status; `OGL Performance
+Monitor` protokolliert alle 300 gültigen Samples durchschnittliche,
+minimale und maximale **geglättete** Framezeit sowie RAM-/VRAM-Werte. Der
+Monitor setzt Developer Tools als aktivierte Abhängigkeit voraus.
+
+Beide Module sind zunächst **Entwicklertests mit Logging** und noch keine
+grafischen Tools oder vollständige GPU-Profilinglösung.
+
+## Entwicklerstart (ausschließlich für vertrauenswürdigen Eigenbau)
+
+```bash
+cd "/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer"
+cmake --build --preset debug -j2
+base="${XDG_CONFIG_HOME:-$HOME/.config}/opengenesislink"
+mkdir -p "$base/modules"
+cp -a build/debug/modules/org.opengenesislink.developer-tools "$base/modules/"
+cp -a build/debug/modules/org.opengenesislink.performance-monitor "$base/modules/"
+printf '%s\n' 'org.opengenesislink.developer-tools' \
+  'org.opengenesislink.performance-monitor' > "$base/enabled-modules.txt"
+./build/debug/nexverse-viewer --dev-modules
+```
+
+Das Startargument `--dev-modules` ist eine **ausdrückliche
+Sicherheitsentscheidung**, keine Standardeinstellung. Wer diesem Modus
+zustimmt, erlaubt zuvor aktivierten lokalen Modulen die Ausführung von
+nativem Code mit den Rechten des Viewers. Nie fremde/unbekannte Module
+in diesen Ordner kopieren.
 
 ## Manifest
 
@@ -85,5 +127,6 @@ Dependencies. Vor größeren Erweiterungen sind Windows/macOS-CI,
 Signaturprüfung, Sandbox-Konzept, sichere Moduleinstellungen und UI-Freigabe
 gesondert zu bearbeiten.
 
-Nächste Module: OGL Developer Tools, OGL Performance Monitor. Vulkan/RTX erst
-nach abgesicherter Host-/Renderer-API und Core-Fortschritt.
+OGL Developer Tools und OGL Performance Monitor sind als reine Diagnose-Testmodule
+implementiert. Nächster Featureblock ist Phase 8 (Prims/Materialien/Scene).
+Vulkan/RTX erst nach abgesicherter Host-/Renderer-API und Core-Fortschritt.

@@ -52,7 +52,7 @@ installed → compatible → enabled → loaded → initialized → running
                                          stopped → unloaded
 ```
 
-Lokale ABI v1, Manifest- und Lifecycle-Prüfung sind implementiert; ungeprüfte native Module bleiben standardmäßig blockiert. Online-Registry, geprüfte Signaturen, Download, automatische Updates und eine sichere Drittmodul-Isolation folgen später. Siehe `docs/MODULES.md`.
+Lokale ABI v1/v2, Manifest- und Lifecycle-Prüfung sind implementiert; die ABI v2 liefert eine schreibgeschützte Snapshot-Tabelle für Developer Tools und Performance Monitor. Ungeprüfte native Module bleiben standardmäßig blockiert. Online-Registry, geprüfte Signaturen, Download, automatische Updates und eine sichere Drittmodul-Isolation folgen später. Siehe `docs/MODULES.md`.
 
 ## Core versus Plugin
 

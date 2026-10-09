@@ -2323,7 +2323,7 @@ void glfw_error_callback(int error, const char* description)
 
 namespace nexverse::app
 {
-int Application::run()
+int Application::run(bool enable_developer_modules)
 {
     core::info(
         std::string{"Starting "} +
@@ -2332,7 +2332,15 @@ int Application::run()
         std::string{core::version()});
 
     // In-process modules are disabled unless separately enabled and trusted.
-    modules::ModuleManager module_manager(modules::default_module_options());
+    auto module_options = modules::default_module_options();
+    if (enable_developer_modules)
+    {
+        core::warning("[OGL-MODULE] Developer mode explicitly enabled: "
+                      "unsigned native modules run with process privileges");
+        module_options.developer_mode = true;
+        module_options.allowed_capabilities.insert("developer");
+    }
+    modules::ModuleManager module_manager(std::move(module_options));
     module_manager.discover();
     std::string module_error;
     if (!module_manager.start_enabled(module_error))
@@ -3274,6 +3282,7 @@ int Application::run()
         }
 
         FrameMetrics frame_metrics;
+        std::uint64_t diagnostic_frame_index = 0U;
         std::uint32_t rendered_terrain_generation =
             std::numeric_limits<std::uint32_t>::max();
         std::uint32_t rendered_terrain_revision =
@@ -4804,6 +4813,23 @@ int Application::run()
                 world_renderer->diagnostics();
             const core::SystemMemoryMetrics memory_metrics =
                 core::system_memory_metrics();
+
+            ogl_diagnostics_snapshot_v1 module_diagnostics{};
+            module_diagnostics.struct_size = sizeof(module_diagnostics);
+            module_diagnostics.version = OGL_DIAGNOSTICS_VERSION_1;
+            module_diagnostics.frame_index = ++diagnostic_frame_index;
+            module_diagnostics.fps = frame_metrics.fps;
+            module_diagnostics.frame_time_ms = frame_metrics.frame_time_ms;
+            module_diagnostics.draw_calls = render_diagnostics.draw_calls;
+            module_diagnostics.triangles = render_diagnostics.triangles;
+            module_diagnostics.visible_objects = render_diagnostics.visible_objects;
+            module_diagnostics.ram_total_bytes = memory_metrics.total_bytes;
+            module_diagnostics.ram_available_bytes = memory_metrics.available_bytes;
+            module_diagnostics.vram_total_bytes = render_diagnostics.vram_total_bytes;
+            module_diagnostics.vram_available_bytes = render_diagnostics.vram_available_bytes;
+            module_diagnostics.simulation_ready = simulation_ready ? 1U : 0U;
+            module_manager.update_diagnostics(module_diagnostics);
+            (void)module_manager.tick();
 
             double mouse_x = 0.0;
             double mouse_y = 0.0;

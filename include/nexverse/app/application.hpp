@@ -11,6 +11,6 @@ namespace nexverse::app
 class Application
 {
 public:
-    int run();
+    int run(bool enable_developer_modules = false);
 };
 }

@@ -103,6 +103,8 @@ void ModuleManager::host_log(void*, int level, const char* message)
 ModuleManager::ModuleManager(ModuleOptions options) : options_(std::move(options))
 {
     host_api_ = {sizeof(ogl_host_api), OGL_MODULE_ABI_VERSION, this, &ModuleManager::host_log};
+    host_api_v2_ = {{sizeof(ogl_host_api_v2), OGL_MODULE_ABI_VERSION_2,
+                     this, &ModuleManager::host_log}, &ModuleManager::read_diagnostics};
 }
 ModuleManager::~ModuleManager() { stop_all(); }
 
@@ -164,7 +166,8 @@ bool ModuleManager::compatible(ModuleInfo& info)
         info.error = std::move(message);
         return false;
     };
-    if (m.api_version != OGL_MODULE_ABI_VERSION)
+    if (m.api_version != OGL_MODULE_ABI_VERSION &&
+        m.api_version != OGL_MODULE_ABI_VERSION_2)
         return block("Module ABI is incompatible");
     if (!version_at_least(core::version(), m.minimum_viewer_version))
         return block("Viewer version is below module requirement");
@@ -287,10 +290,10 @@ bool ModuleManager::load_one(std::string_view id, std::string& error)
     }
     const auto entry = lookup(handle);
     const ogl_module_api* api = nullptr;
-    try { if (entry) api = entry(OGL_MODULE_ABI_VERSION); }
+    try { if (entry) api = entry(info.manifest.api_version); }
     catch (...) { /* An untrusted plugin violated the no-exceptions ABI contract. */ }
     if (!api || api->struct_size < sizeof(ogl_module_api) ||
-        api->abi_version != OGL_MODULE_ABI_VERSION || !api->module_id ||
+        api->abi_version != info.manifest.api_version || !api->module_id ||
         std::string_view(api->module_id) != id || !api->init ||
         !api->start || !api->stop || !api->shutdown)
     {
@@ -300,8 +303,20 @@ bool ModuleManager::load_one(std::string_view id, std::string& error)
         info.error = error;
         return false;
     }
+    if (info.manifest.api_version == OGL_MODULE_ABI_VERSION_2 &&
+        (api->struct_size < sizeof(ogl_module_api_v2) ||
+         !reinterpret_cast<const ogl_module_api_v2*>(api)->on_frame))
+    {
+        close_lib(handle);
+        error = "V2 module has no valid on_frame callback";
+        info.state = ModuleState::failed;
+        info.error = error;
+        return false;
+    }
+    const ogl_host_api* host = info.manifest.api_version == OGL_MODULE_ABI_VERSION_2
+        ? &host_api_v2_.base : &host_api_;
     int result = -1;
-    try { result = api->init(&host_api_); }
+    try { result = api->init(host); }
     catch (...) { result = -1; }
     if (result != 0)
     {
@@ -416,5 +431,44 @@ void ModuleManager::unload_one(std::string_view id) noexcept
 void ModuleManager::stop_all() noexcept
 {
     while (!load_order_.empty()) unload_one(load_order_.back());
+}
+void ModuleManager::update_diagnostics(const ogl_diagnostics_snapshot_v1& value) noexcept
+{
+    if (value.struct_size < sizeof(ogl_diagnostics_snapshot_v1) ||
+        value.version != OGL_DIAGNOSTICS_VERSION_1) return;
+    diagnostics_ = value;
+    diagnostics_.struct_size = sizeof(diagnostics_);
+    diagnostics_.version = OGL_DIAGNOSTICS_VERSION_1;
+    diagnostics_ready_ = true;
+}
+int ModuleManager::read_diagnostics(void* context, ogl_diagnostics_snapshot_v1* out)
+{
+    if (!context || !out || out->struct_size < sizeof(ogl_diagnostics_snapshot_v1) ||
+        out->version != OGL_DIAGNOSTICS_VERSION_1) return 1;
+    auto& manager = *static_cast<ModuleManager*>(context);
+    if (!manager.diagnostics_ready_) return 2;
+    *out = manager.diagnostics_;
+    return 0;
+}
+std::size_t ModuleManager::tick() noexcept
+{
+    std::size_t invoked = 0;
+    for (const auto& id : load_order_)
+    {
+        const auto it = loaded_.find(id);
+        if (it == loaded_.end() || modules_.at(id).state != ModuleState::running ||
+            it->second.api->abi_version != OGL_MODULE_ABI_VERSION_2) continue;
+        const auto* api = reinterpret_cast<const ogl_module_api_v2*>(it->second.api);
+        int result = -1;
+        try { result = api->on_frame(); } catch (...) { result = -1; }
+        if (result != 0)
+        {
+            core::error("[OGL-MODULE] Frame callback failed: " + id);
+            stop_all();
+            break;
+        }
+        ++invoked;
+    }
+    return invoked;
 }
 }

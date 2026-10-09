@@ -245,6 +245,34 @@ set_target_properties(nexverse-example-module PROPERTIES
 )
 nexverse_enable_warnings(nexverse-example-module)
 
+# ABI v2 developer diagnostics modules: build-only, never auto-installed.
+foreach(module_name IN ITEMS developer_tools performance_monitor)
+    if(module_name STREQUAL "developer_tools")
+        set(OGL_MODULE_ID "org.opengenesislink.developer-tools")
+        set(OGL_MODULE_BINARY "ogl_developer_tools")
+    else()
+        set(OGL_MODULE_ID "org.opengenesislink.performance-monitor")
+        set(OGL_MODULE_BINARY "ogl_performance_monitor")
+    endif()
+    set(OGL_MODULE_OUT "${CMAKE_BINARY_DIR}/modules/${OGL_MODULE_ID}")
+    file(MAKE_DIRECTORY "${OGL_MODULE_OUT}")
+    configure_file(
+        "modules/${module_name}/manifest.json.in"
+        "${OGL_MODULE_OUT}/manifest.json" @ONLY
+    )
+    add_library("nexverse-${module_name}" MODULE
+        "modules/${module_name}/${module_name}.cpp")
+    target_include_directories("nexverse-${module_name}" PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    set_target_properties("nexverse-${module_name}" PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "${OGL_MODULE_BINARY}"
+        LIBRARY_OUTPUT_DIRECTORY "${OGL_MODULE_OUT}"
+        RUNTIME_OUTPUT_DIRECTORY "${OGL_MODULE_OUT}"
+    )
+    nexverse_enable_warnings("nexverse-${module_name}")
+endforeach()
+
 include(CTest)
 if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_executable(nexverse-core-tests tests/core_tests.cpp)
@@ -259,6 +287,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-module-runtime-tests)
     add_test(NAME nexverse-module-runtime-tests
         COMMAND nexverse-module-runtime-tests "${OGL_EXAMPLE_DIR}")
+
+    add_executable(nexverse-developer-modules-tests tests/developer_modules_tests.cpp)
+    target_link_libraries(nexverse-developer-modules-tests PRIVATE NexVerse::Modules)
+    add_dependencies(nexverse-developer-modules-tests
+        nexverse-developer_tools nexverse-performance_monitor)
+    nexverse_enable_warnings(nexverse-developer-modules-tests)
+    add_test(NAME nexverse-developer-modules-tests
+        COMMAND nexverse-developer-modules-tests "${CMAKE_BINARY_DIR}/modules")
 
 
     add_executable(nexverse-grid-info-tests tests/grid_info_tests.cpp)
