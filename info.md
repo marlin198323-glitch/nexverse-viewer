@@ -1,13 +1,9 @@
-[Reading 259 lines from start (total: 259 lines, 0 remaining)]
-
-[Reading 212 lines from start (total: 212 lines, 0 remaining)]
-
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
 
 > `projectplan.md` ist für Architektur, Reihenfolge und Projektumfang immer maßgebend.
 > Diese Datei dokumentiert den tatsächlichen Entwicklungsstand und den Wiedereinstiegspunkt.
 
-Stand: 05.10.2026
+Stand: 09.10.2026
 Lokaler Arbeitsbranch: `develop`
 Lokaler Pfad: `/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer`
 GitHub-Repository: `marlin198323-glitch/nexverse-viewer`
@@ -17,12 +13,13 @@ GitHub-Repository: `marlin198323-glitch/nexverse-viewer`
 Wenn der Benutzer in einem neuen Chat `viewer` schreibt:
 
 1. Zuerst lokal über Desktop Commander den Ordner prüfen.
-2. `projectplan.md` lesen.
-3. Danach `info.md` lesen.
-4. `git status` und letzten lokalen Commit prüfen.
-5. Lokal weiterentwickeln, kompilieren und testen.
-6. GitHub erst für fertige, getestete Entwicklungsblöcke verwenden.
-7. Nach jedem größeren Block diese Datei aktualisieren.
+2. `CHATUEBERGABE.md` lesen.
+3. `projectplan.md` lesen.
+4. Danach `info.md` lesen.
+5. `git status`, `git log` und `VERSION` prüfen.
+6. Lokal weiterentwickeln, kompilieren und testen.
+7. GitHub erst für fertige, getestete Entwicklungsblöcke verwenden.
+8. Nach jedem größeren Block `info.md` und `CHATUEBERGABE.md` aktualisieren.
 
 ## Produkt
 
@@ -30,7 +27,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.34`.
+Aktuelle Viewer-Version: `0.2.0-alpha.37`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -677,7 +674,6 @@ Nicht mehr Phase 3, sondern spätere Phasen:
 
 Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen werden.
 
-[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
 ## Verbindliche Funktionsbaseline
 
 Ab 05.10.2026 gilt Firestorm funktional als Mindestmaßstab für die üblichen Viewer-Kernfunktionen. OpenGenesisLINK bleibt technisch und gestalterisch eine eigenständige Implementierung.
@@ -686,7 +682,6 @@ Verbindlich eingeplant sind unter anderem Bewegung/Flug/Sitzen/Teleport, Kamera/
 
 Spezielle Firestorm-Erweiterungen wie RLV/RLVa oder sehr spezielle Firestorm-Power-User-Werkzeuge sind nicht automatisch Teil der Mindestbaseline und werden nur bei Bedarf ergänzt.
 
-[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
 
 ## Next-Gen Renderer Vorgabe
 
@@ -730,7 +725,7 @@ Für spätere Arbeit gilt:
 
 ## Plugin-Zielkatalog – 09.10.2026
 
-- `projectplan.md` enthält jetzt einen verbindlichen Zielkatalog mit 36 geplanten Plugin-/Modulideen.
+- `projectplan.md` enthält jetzt einen verbindlichen Zielkatalog mit 38 geplanten Plugin-/Modulideen.
 - Kategorien: Infrastruktur/Renderer, Avatar/Animation, Build/Material/Assets, Welt/Land/Admin, UI/Komfort/Kommunikation sowie Diagnose/Kreativ/Developer.
 - Erste Runtime-Validierung: OGL Example Module -> Developer Tools -> Performance Monitor -> Vulkan Renderer -> RTX Renderer.
 - Voice, Media, AO, RLVa und weitere tiefe Module folgen erst, wenn API/ABI, Lifecycle, Capabilities und Dependencies durch die ersten Module praktisch bestätigt sind.
@@ -771,3 +766,12 @@ Für spätere Arbeit gilt:
 - Nächster Block bleibt Module Runtime / ModuleManager, danach Phase 8 und die weiteren alltagstauglichen Viewer-Systeme.
 - Zeitplanung ausdrücklich nur als grober Rahmen: nutzbare Alpha ca. 3-6 Monate, brauchbare Beta ca. 6-9 Monate, weitgehender Firestorm-Ersatz ca. 9-15 Monate, vollständige langfristige OGL-Plattform ca. 12-24 Monate.
 - Vulkan/RTX/Weather/Hydro und weitere High-End-/Plugin-Funktionen kommen nach dem alltagstauglichen Core, nicht vor ihm.
+
+## Chat-Übergabe / neuer Chat – 09.10.2026
+
+- Neue Datei `CHATUEBERGABE.md` ist ab sofort der primäre Wiedereinstiegspunkt.
+- Alle projektbezogenen Markdown-Dateien wurden am 09.10.2026 auf den aktuellen Stand konsolidiert.
+- Aktuelle Viewer-Version: `0.2.0-alpha.37`.
+- Letzter vollständig geprüfter Codeblock: 19/19 Tests grün plus OpenGL Runtime-Smoke.
+- Nächster Entwicklungsblock: Module Runtime / ModuleManager.
+- Nach jedem größeren Block `info.md` und `CHATUEBERGABE.md` gemeinsam aktualisieren.

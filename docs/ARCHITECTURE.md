@@ -1,75 +1,73 @@
-# NexVerse Viewer Architecture
+# OpenGenesisLINK Viewer – Architektur
 
-## Objective
+## Ziel
 
-NexVerse Viewer is a native cross-platform OpenSim client.
+Eigenständiger plattformübergreifender OpenSim/OpenGenesisLINK-Client in C++23. Kein Firestorm-Fork.
 
-The project intentionally avoids coupling the OpenSim protocol implementation to a specific renderer or UI toolkit.
-
-## Layer model
+## Schichtenmodell
 
 ```text
 Application
-├── OpenSim Protocol
-│   ├── GridInfo
-│   ├── Login
-│   ├── LLSD
-│   ├── LLUDP
-│   ├── CAPS
-│   ├── Assets
-│   ├── Inventory
-│   ├── Appearance
+├── Protocol
+│   ├── GridInfo / Login / LLSD / LLUDP
+│   ├── CAPS / EventQueue
+│   ├── Assets / Inventory / Appearance
 │   └── Teleport / Hypergrid
 ├── WorldModel
-│   ├── Grid
-│   ├── Region
-│   ├── Agent
-│   ├── Avatar
-│   ├── Object
-│   ├── Terrain
-│   ├── Parcel
+│   ├── Grid / Region / Agent / Avatar / Object
+│   ├── Terrain / Parcel
 │   └── Environment
+├── Scene / RenderWorld
 ├── AssetCache
 ├── Input
-├── RenderWorld
-├── Renderer
-└── UI
+├── UI
+├── Module Runtime
+└── OGLRender
+    ├── OpenGL Legacy/Fallback
+    ├── Vulkan NextGen
+    └── optional RTX/weitere Backends
 ```
 
-## Dependency rules
+## Verbindliche Regeln
 
-1. Protocol code may update typed protocol/domain data but must not call OpenGL.
-2. Renderer code must not decode LLUDP or LLSD.
-3. UI code must not parse raw network packets.
-4. WorldModel is the boundary between network state and visual state.
-5. Platform-specific code stays behind interfaces.
-6. External payloads must have explicit bounds and validation.
-7. Server-authoritative state must never be silently invented by the client.
+1. Protocol ruft niemals OpenGL/Vulkan direkt auf.
+2. Renderer dekodieren keine LLUDP-/LLSD-Pakete.
+3. UI parst keine rohen Netzwerkdaten.
+4. WorldModel ist die Grenze zwischen Netzwerkzustand und Darstellung.
+5. OGLRender konsumiert Scene-/Renderdaten, keine Netzwerkdetails.
+6. Externe Daten werden begrenzt und validiert.
+7. Serverautoritärer Zustand wird nicht clientseitig erfunden.
+8. Plugins greifen nicht auf private C++-Layouts oder interne Rendererstrukturen zu.
+9. Öffentliche Plugin- und Renderer-APIs werden versioniert.
 
-## Phase 0
+## Module Runtime
 
-Phase 0 deliberately contains no OpenSim network implementation.
+Sie wird vor weiteren großen Viewer-Systemen implementiert. Die native Grenze soll C-kompatibel sein: keine STL-Typen oder Exceptions über die ABI, versionierte Structs/Function Tables, UTF-8 Strings und kontrollierte Host-Callbacks.
 
-Its job is to prove:
-
-- C++23 toolchain
-- dependency management
-- native application lifecycle
-- graphical UI foundation
-- testability
-- cross-platform CI structure
-
-The first renderer is OpenGL 3.3 Core because it gives the project a small common bootstrap backend across the initial desktop targets. It is not a permanent architectural dependency: protocol and WorldModel layers remain renderer-independent.
-
-## Future renderer boundary
-
-A future interface may provide backends such as:
+Zustände:
 
 ```text
-Renderer
-├── Vulkan
-├── Metal
-└── OpenGL fallback
+installed → compatible → enabled → loaded → initialized → running
+                                                   ↓
+                                         stopped → unloaded
 ```
 
-The OpenSim protocol layer must require no changes when a renderer backend changes.
+Online-Registry, Download, Signaturen und automatische Updates folgen später.
+
+## Core versus Plugin
+
+Core bleiben mindestens Login, LLUDP/CAPS, WorldModel, Basis-Assets, Basis-Avatar, Basis-Inventar, Basis-Outfits/Appearance, Basis-UI, Environment, Text-only-Modus, ModuleManager und mindestens ein funktionierender Fallback-Renderer.
+
+Optionale Module umfassen später Vulkan/RTX, Voice, Media, Weather, Advanced AO, RLVa, Outfit Manager/Preview, Build-/Material-/Mesh-Tools und Diagnosewerkzeuge.
+
+## Environment / Wetter / Wasser
+
+Region/EEP bleibt Standard. Reale Tag-/Nachtzeit ist ein lokaler Core-Override.
+
+`OGL Weather` ist ein optionales Plugin.
+
+HydroEngine ist später serverautoritativ. Der Viewer visualisiert dynamische Wasserdaten, berechnet aber nicht die verbindliche Wassermenge. Legacy `region.water_height` bleibt kompatibel; spätere Water-State-Daten dürfen Chunks, Surface Height, Depth, Velocity und Flow enthalten.
+
+## Maßgeblichkeit
+
+`projectplan.md` ist bindend. `info.md` dokumentiert den realen Stand. `CHATUEBERGABE.md` ist der Wiedereinstiegspunkt.

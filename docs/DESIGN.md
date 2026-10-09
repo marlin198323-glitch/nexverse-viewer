@@ -1,68 +1,81 @@
-# NexVerse Viewer Design Direction
+# OpenGenesisLINK Viewer – Design Direction
 
-## Reference
+## Identität
 
-The first NexVerse Viewer concept created for this project is the visual reference for Phase 0.
+Eigenständige OpenGenesisLINK-/NexVerse-Oberfläche; keine pixelgenaue Firestorm-/Second-Life-Kopie.
 
-The design is intentionally NexVerse-specific and is not intended to reproduce Firestorm or OpenGenesisLINK pixel-for-pixel.
+Visuelle Grundsprache:
 
-## Visual language
+- dunkles Navy / nahezu Schwarz
+- Silber/Weiß
+- Cyan / elektrisches Blau
+- Violett / Magenta
+- reduzierte Glas-/Panel-Flächen
+- dominante Weltansicht
+- einklappbare Panels
+- widescreen- und HiDPI-tauglich
 
-- dark navy / near-black background
-- silver-white typography
-- cyan and electric blue primary accents
-- violet and magenta secondary accents
-- restrained glass-style panels
-- large world viewport
-- compact controls
-- minimal permanent chrome
-- expandable panels instead of dense always-visible toolbars
+## Start / Login
 
-## Login shell
+Der Viewer startet maximiert als normales dekoriertes Desktop-Fenster. Native Minimieren-/Maximieren-/Schließen-Schaltflächen bleiben erhalten. F11 toggelt exklusiven Fullscreen.
 
-The Phase 0 login shell contains:
+Feste NexVerse-Endpunkte:
 
-- NexVerse branding
-- viewer version
-- Grid / Server URL
-- username
-- password
-- start Region
-- primary Enter World action
-- large visual world-preview surface
-- runtime/system-status panel
+- Discovery: `http://hg.stadt-nexverse.de/get_grid_info`
+- Welcome: `https://stadt-nexverse.de/service/welcome`
 
-The controls are visual only during Phase 0. Network login becomes functional in Phase 2.
+Die Welcome-Seite liegt hinter Login/Ladezustand. In-World-Navigation erscheint erst bei tatsächlich bereiter Simulation.
 
-## In-world target
-
-The final viewer should keep the world view dominant.
+## In-World Layout
 
 ```text
-+----------------------------------------------------------+
-| NexVerse       Region / status                 Profile   |
-+----------------------------------------------------------+
-|                                                          |
-|                       3D WORLD                           |
-|                                                          |
-|                                                [panel]   |
-|                                                          |
-+----------------------------------------------------------+
-| chat        movement / voice / inventory / camera        |
-+----------------------------------------------------------+
++--------------------------------------------------------------------+
+| OpenGenesisLINK / Region / Status                     Avatar/Profil |
++--------------------------------------------------------------------+
+|                                                                    |
+|                            3D WORLD                                |
+|                                                                    |
+| [Navigation]                                             [Context] |
+|                                                                    |
++--------------------------------------------------------------------+
+| Chat | Voice | Movement | Teleport | Inventory | Build | Camera    |
++--------------------------------------------------------------------+
 ```
 
-Side panels must be collapsible.
+## Text-only
 
-## Accessibility and scaling
+Als Core-Betriebsmodus geplant. Login, Chat, IM, Freunde, Gruppen, Inventar, Outfits, Teleport, Landmarks und Regionstatus sollen ohne aktive 3D-Weltdarstellung nutzbar sein.
 
-The UI architecture must later support:
+## Outfit UX
 
-- HiDPI
-- UI scale
-- keyboard navigation
-- readable contrast
-- configurable font size
-- Windows, Linux and macOS input conventions
+Core: Wearables, Attachments, Outfit speichern/laden/wechseln, Appearance Sync.
 
-Phase 0 establishes the color and spacing language; accessibility behavior is expanded with the interactive UI phases.
+Plugins:
+- `OGL Outfit Manager`: Kategorien, Tags, Favoriten, Suche, Notizen.
+- `OGL Outfit Preview`: Outfit-Screenshots, automatische Previews, Galerie, Kamera-Presets.
+
+Previews werden standardmäßig lokal gespeichert. Cloud/Upload später nur opt-in.
+
+## Environment / Weather
+
+Environment-Modi:
+
+- Region / OpenSim / EEP
+- feste lokale Uhrzeit
+- eigener Tageszyklus
+- reale lokale Systemzeit
+- später reale Sonnenposition über einen vom Nutzer gewählten Referenzort
+
+`OGL Weather` soll hochwertigen Regen, Schnee, Nebel und Sturm ohne grobe Pixelpartikel-Optik ermöglichen. RTX erweitert nur optional.
+
+## NextGen Grafik
+
+Langfristig: Vulkan, PBR, HDR, moderne Beleuchtung, hochwertige Schatten/Reflexionen, modernes Terrain/Wasser, Atmosphäre, Post Processing, Streaming und optional Raytracing.
+
+Grafikprofile müssen von sehr niedrig bis Ultra/Benutzerdefiniert skalieren.
+
+## Accessibility
+
+HiDPI, UI-Skalierung, Schriftgröße, Tastaturnavigation, Kontrast und plattformspezifische Eingabekonventionen bleiben verbindliche Ziele.
+
+`projectplan.md` ist maßgeblich.

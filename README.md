@@ -1,52 +1,76 @@
-# NexVerse Viewer
+# OpenGenesisLINK Viewer
 
-NexVerse Viewer is a new native OpenSim viewer written in C++23.
+OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-Viewer für NexVerse in C++23.
 
-It is not a Firestorm fork. The project is designed around a strict separation between the OpenSim protocol layer, the authoritative local WorldModel, rendering, input and UI.
+Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen ausschließlich als Funktions- und Qualitätsreferenz. Maßgeblich für Architektur und Reihenfolge ist `projectplan.md`.
 
-## Current status
+## Aktueller Stand
 
-Version: `0.2.0-alpha.34`
+- Version: `0.2.0-alpha.37`
+- Branch: `develop`
+- direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
+- letzter vollständig geprüfter Stand: 19/19 Tests grün plus OpenGL-Runtime-Smoke
+- nächster Entwicklungsblock: **Module Runtime / ModuleManager**
 
-Phase 5 (WorldModel) is complete and was accepted against the live NexVerse grid on 2026-10-06.
+Bereits vorhanden sind Grid Discovery, echter OpenSim-Login, LLUDP, CAPS/EventQueue, WorldModel, Terrain/EEP, sichtbare Prim-Geometrie, OpenSim Face-Materialien, explizite Prim-UVs und Planar TexGen.
 
-The current executable provides the first native desktop shell:
-
-- C++23 / CMake project foundation
-- Windows, Linux and macOS target structure
-- GLFW desktop window and input loop
-- OpenGL 3.3 Core UI backend
-- FreeType system-font rendering
-- NexVerse dark/cyan/violet design system
-- graphical login shell
-- OpenSim GridInfo discovery and login
-- live LLUDP circuit and CAPS/EventQueue
-- locale-independent LLSD XML/Binary handling
-- renderer-independent WorldModel foundation
-- validated LayerData ingestion for WorldModel terrain readiness
-- persistent viewer logging
-- version reporting and unit-test foundation
-
-## Architecture
+## Architektur
 
 ```text
-OpenSimulator
-      |
-      v
-OpenSim Protocol
-      |
-      v
-WorldModel
-      |
-   +--+---+
-   |      |
-Renderer  UI
+OpenSimulator / OpenGenesisLINK
+            ↓
+         Protocol
+            ↓
+        WorldModel
+            ↓
+    Scene Representation
+        ↙         ↘
+       UI        OGLRender
+                   ↓
+      OpenGL Fallback / Vulkan / RTX
 ```
 
-Networking and OpenSim contracts must remain independent from the graphics backend.
+Protocol und WorldModel dürfen nicht von einem konkreten Renderer abhängen.
 
-## License
+## Module
+
+Die lokale Module Runtime wird jetzt als Grundlage gebaut:
+
+- ModuleManager
+- versionierte native C-ABI
+- Manifest Loader
+- Lifecycle
+- Aktivieren/Deaktivieren
+- Dependencies
+- Capabilities
+- Plattform-/Architekturprüfung
+- persistenter Aktivierungszustand
+
+Die spätere offizielle Add-on-Plattform ist `https://addons.opengenesislink.de/`.
+
+## NextGen Renderer
+
+OpenGL 3.3 Core bleibt während der Migration der Legacy-/Fallback-Pfad. Vulkan ist das langfristige primäre moderne Backend. PBR, HDR, moderne Schatten/Reflexionen, Terrain, Wasser, Wetter, Streaming und optionales Raytracing werden schrittweise aufgebaut.
+
+## Build / Test
+
+```bash
+cd "/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer"
+cmake --preset debug
+cmake --build --preset debug -j2
+ctest --preset debug --output-on-failure
+./build/debug/nexverse-viewer
+```
+
+## Dokument-Reihenfolge für neue Chats
+
+1. `CHATUEBERGABE.md`
+2. `projectplan.md`
+3. `info.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/DESIGN.md`
+6. `git status`, `git log`, `VERSION`
+
+## Lizenz
 
 Mozilla Public License 2.0.
-
-See `LICENSE`, `projectplan.md` and `docs/ARCHITECTURE.md`.

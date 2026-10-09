@@ -1,11 +1,7 @@
-[Reading 1168 lines from start (total: 1168 lines, 0 remaining)]
-
-[Reading 947 lines from start (total: 947 lines, 0 remaining)]
-
 # NexVerse Viewer – Projektplan
 
-Stand: 05.10.2026  
-Repository: `marlin198323-glitch/nexverse-viewer`  
+Stand: 09.10.2026
+Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0.
 
 ---
@@ -2326,6 +2322,24 @@ danach weiter:
 
 Priorität hat zuerst ein stabiler, täglich nutzbarer OpenGenesisLINK Viewer. High-End-Grafik und optionale Erweiterungen werden anschließend auf der bereits vorbereiteten Architektur ausgebaut.
 
-[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
 
-[executed on device: jam-MS-7D28 (3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d)]
+## 10.5 Verbindliche Chat-Übergabe
+
+Für einen Wechsel in einen neuen Entwicklungs-Chat wird im Repository die Datei `CHATUEBERGABE.md` gepflegt.
+
+Ein neuer Chat steigt in dieser Reihenfolge ein:
+
+```text
+CHATUEBERGABE.md
+→ projectplan.md
+→ info.md
+→ docs/ARCHITECTURE.md
+→ docs/DESIGN.md
+→ git status / git log / VERSION
+```
+
+`projectplan.md` bleibt für Architektur, Reihenfolge und Umfang maßgebend. `info.md` dokumentiert den tatsächlichen Implementierungsstand. `CHATUEBERGABE.md` bündelt den aktuellen Wiedereinstiegspunkt und darf den Projektplan nicht überschreiben.
+
+Nach jedem größeren getesteten Entwicklungsblock werden mindestens `info.md` und `CHATUEBERGABE.md` aktualisiert. Veraltete Statusangaben in README oder den Architektur-/Design-Dokumenten werden im selben Dokumentationsblock korrigiert.
+
+Wenn der Benutzer in einem neuen Chat nur `viewer` oder `weiter` schreibt und der nächste Arbeitsschritt aus der Übergabe eindeutig ist, wird ohne unnötige Rückfrage am aktuellen lokalen Repository-Stand weitergearbeitet.
