@@ -1835,6 +1835,8 @@ uniform bool uUseTerrainTextures;
 uniform bool uOverrideColor;
 uniform vec3 uOverrideColorValue;
 uniform float uObjectGlow;
+uniform int uObjectShiny;
+uniform int uObjectBumpiness;
 uniform bool uObjectFullbright;
 uniform bool uUseObjectTexture;
 uniform bool uObjectTexGenPlanar;
@@ -1947,6 +1949,22 @@ void main()
             alpha *= texel.a;
         }
 
+        // Legacy OpenSim shiny levels: subtle non-PBR specular fallback.
+        // Screen derivatives approximate the deformed primitive surface normal.
+        // The material pipeline may replace this with PBR/normal maps later.
+        if (uObjectShiny > 0 && !uObjectFullbright)
+        {
+            vec3 dx = dFdx(vObjectLocal);
+            vec3 dy = dFdy(vObjectLocal);
+            vec3 n = normalize(cross(dx, dy));
+            if (gl_FrontFacing == false) n = -n;
+            vec3 lightDir = normalize(vec3(0.32, 0.4, 0.86));
+            float facing = max(dot(n, lightDir), 0.0);
+            float gloss = pow(facing, mix(10.0, 55.0, float(uObjectShiny) / 3.0));
+            base += vec3(gloss * float(uObjectShiny) * 0.11);
+        }
+        // Bumpiness is decoded and kept in the material contract; a true
+        // bump/normal map requires a separate asset and tangent-space pass.
         base += vec3(clamp(uObjectGlow, 0.0, 1.0) * 0.35);
     }
 
@@ -3019,6 +3037,14 @@ public:
                             face_material != nullptr
                                 ? face_material->texgen_planar
                                 : object.texgen_planar;
+                        const unsigned shiny =
+                            face_material != nullptr
+                                ? face_material->shiny
+                                : object.shiny;
+                        const unsigned bumpiness =
+                            face_material != nullptr
+                                ? face_material->bumpiness
+                                : object.bumpiness;
                         const float glow =
                             face_material != nullptr
                                 ? face_material->glow
@@ -3061,6 +3087,12 @@ public:
                                     0.0f,
                                     1.0f)
                                 : 0.0f);
+                        glUniform1i(
+                            glGetUniformLocation(program_, "uObjectShiny"),
+                            static_cast<GLint>(std::min(shiny, 3U)));
+                        glUniform1i(
+                            glGetUniformLocation(program_, "uObjectBumpiness"),
+                            static_cast<GLint>(std::min(bumpiness, 31U)));
                         glUniform1i(
                             glGetUniformLocation(
                                 program_,
@@ -3207,6 +3239,10 @@ public:
             glUniform1f(
                 glGetUniformLocation(program_, "uObjectGlow"),
                 0.0f);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectShiny"), 0);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectBumpiness"), 0);
             glUniform1i(
                 glGetUniformLocation(program_, "uObjectFullbright"),
                 GL_FALSE);

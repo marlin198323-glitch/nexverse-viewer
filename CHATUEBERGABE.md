@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.39`
+Version: `0.2.0-alpha.40`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -175,3 +175,10 @@ Wenn der Benutzer nur **„viewer“** oder **„weiter“** schreibt:
 7. `info.md` und `CHATUEBERGABE.md` aktualisieren
 8. Commit und GitHub-Handoff-Branch synchron halten
 9. Remote-Stand niemals destruktiv über lokale Arbeit legen
+
+## Phase 8: laufender Codeblock (09.10.2026)
+
+0.2.0-alpha.40: erste Legacy-Shiny-Darstellung pro Objekt/Face im
+OpenGL-Fragmentshader, kein vollständiger PBR-/Normal-Map-Pfad.
+21/21 CTest grün. Weiter mit Material-/RenderMaterial-Auswertung
+und OpenSim-Facegruppen. `projectplan.md` bleibt maßgeblich.

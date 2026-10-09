@@ -841,3 +841,17 @@ Für spätere Arbeit gilt:
 - Offen: Modulverwaltungs-UI, signierter Vertrauenspfad, Prozessisolation,
   plattformübergreifende Abnahme, echte GPU Frame-Time-Metrik und integrierte
   Developer-UI-Panels. Kein RTX/Vulkan-Vorgriff.
+
+
+## Phase 8 – Legacy Shiny-Fallback · 09.10.2026 · 0.2.0-alpha.40
+
+- OpenGL-Fragmentshader berücksichtigt OpenSim-Shiny-Stufen 0–3 erstmals
+  als begrenzte, oberflächenabhängige Glanzlichtapproximation.
+- Default- und per-Face-Materialien führen Shiny an den Shader weiter.
+- Fullbright-Flächen erhalten keinen zusätzlichen Glanzlicht-Effekt;
+  inaktive Objekt-/Terrainpässe setzen die Uniform auf 0 zurück.
+- Bumpiness-Werte werden weiterhin per Material transportiert und begrenzt,
+  aber noch nicht als Normal-/Bump-Map gerendert.
+- Dies ist ein Legacy-Compatibility-Fallback, kein vollwertiges PBR.
+- Build und 21/21 CTest grün. Der nächste Phase-8-Schritt behandelt
+  Material-ID-/RenderMaterial-Auswertung und weitere Facegruppen.
