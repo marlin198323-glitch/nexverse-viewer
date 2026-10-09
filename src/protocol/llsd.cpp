@@ -160,15 +160,24 @@ LlsdParseResult parse_xml_value(const XMLElement* element)
     }
     if (name == "integer")
     {
-        const std::string value = text_of(element);
-        std::int32_t result = 0;
-        const auto parsed = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            result);
-        if (parsed.ec != std::errc{})
+        const std::string raw = text_of(element);
+        const std::size_t first = raw.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos)
         {
-            return {std::nullopt, "LLSD integer is invalid"};
+            // LLSD XML allows an empty integer to express its default 0.
+            return {LlsdValue::integer(0), {}};
+        }
+        const std::size_t last = raw.find_last_not_of(" \t\r\n");
+        std::string_view value{raw.data() + first, last - first + 1U};
+        if (!value.empty() && value.front() == '+') value.remove_prefix(1U);
+        std::int64_t result = 0;
+        const auto parsed = std::from_chars(
+            value.data(), value.data() + value.size(), result);
+        if (parsed.ec != std::errc{} ||
+            parsed.ptr != value.data() + value.size())
+        {
+            return {std::nullopt,
+                    "LLSD integer is invalid or outside signed 64-bit range"};
         }
         return {LlsdValue::integer(result), {}};
     }
@@ -587,7 +596,7 @@ LlsdValue LlsdValue::boolean(bool value)
     return result;
 }
 
-LlsdValue LlsdValue::integer(std::int32_t value)
+LlsdValue LlsdValue::integer(std::int64_t value)
 {
     LlsdValue result;
     result.type = LlsdType::integer;
@@ -738,7 +747,9 @@ std::vector<std::uint8_t> serialize_llsd_binary(
     return output;
 }
 
-LlsdParseResult parse_llsd_binary(std::span<const std::uint8_t> bytes)
+LlsdParseResult parse_llsd_binary_prefix(
+    std::span<const std::uint8_t> bytes,
+    std::size_t& bytes_consumed)
 {
     if (bytes.empty())
     {
@@ -779,6 +790,15 @@ LlsdParseResult parse_llsd_binary(std::span<const std::uint8_t> bytes)
     }
 
     auto parsed = parse_binary_value(bytes, offset, 0);
+    if (!parsed.ok()) return parsed;
+    bytes_consumed = offset;
+    return parsed;
+}
+
+LlsdParseResult parse_llsd_binary(std::span<const std::uint8_t> bytes)
+{
+    std::size_t offset = 0U;
+    auto parsed = parse_llsd_binary_prefix(bytes, offset);
     if (!parsed.ok()) return parsed;
 
     while (offset < bytes.size() &&

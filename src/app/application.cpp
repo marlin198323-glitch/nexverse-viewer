@@ -7,6 +7,7 @@
 #include "nexverse/app/application.hpp"
 
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -2873,6 +2874,8 @@ int Application::run(bool enable_developer_modules)
                 object.rotation = entry.rotation;
                 object.scale = entry.scale;
                 object.shape = entry.shape;
+                object.sculpt_asset_id = entry.sculpt_asset_id;
+                object.sculpt_type = entry.sculpt_type;
                 object.texture_entry = entry.texture_entry;
                 object.parsed_texture_entry =
                     entry.parsed_texture_entry;
@@ -2959,6 +2962,8 @@ int Application::run(bool enable_developer_modules)
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
                     object.shape = existing->second.shape;
+                    object.sculpt_asset_id = existing->second.sculpt_asset_id;
+                    object.sculpt_type = existing->second.sculpt_type;
                     object.texture_entry =
                         existing->second.texture_entry;
                     object.default_texture =
@@ -3058,6 +3063,8 @@ int Application::run(bool enable_developer_modules)
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
                     object.shape = existing->second.shape;
+                    object.sculpt_asset_id = existing->second.sculpt_asset_id;
+                    object.sculpt_type = existing->second.sculpt_type;
                     object.texture_entry =
                         existing->second.texture_entry;
                     object.default_texture =
@@ -3253,6 +3260,13 @@ int Application::run(bool enable_developer_modules)
     bool region_material_discovery_started = false;
     std::string scoped_render_materials_uri;
     std::string scoped_get_texture_uri;
+    std::string scoped_get_mesh_uri;
+    std::future<assets::MeshAssetResult> mesh_asset_future;
+    std::string mesh_asset_loading_id;
+    std::uint64_t mesh_asset_request_epoch = 0U;
+    std::set<std::string> scene_mesh_ids;
+    std::unordered_set<std::string> mesh_asset_loaded_ids;
+    std::unordered_set<std::string> mesh_asset_failed_ids;
     std::future<protocol::RenderMaterialsResult> render_materials_future;
     std::uint64_t render_materials_get_epoch = 0U;
     std::uint64_t render_materials_post_epoch = 0U;
@@ -4366,6 +4380,10 @@ int Application::run(bool enable_developer_modules)
             {
                 scoped_render_materials_uri.clear();
                 scoped_get_texture_uri.clear();
+                scoped_get_mesh_uri.clear();
+                scene_mesh_ids.clear();
+                mesh_asset_loaded_ids.clear();
+                mesh_asset_failed_ids.clear();
                 region_material_discovery_started = false;
                 render_materials_started = false;
                 render_materials_get_complete = false;
@@ -4408,6 +4426,20 @@ int Application::run(bool enable_developer_modules)
                                     discovery.capabilities.find("GetTexture");
                                 it != discovery.capabilities.end())
                                 scoped_get_texture_uri = it->second;
+                            if (const auto it =
+                                    discovery.capabilities.find("GetMesh");
+                                it != discovery.capabilities.end())
+                                scoped_get_mesh_uri = it->second;
+                            if (scoped_get_mesh_uri.empty())
+                            {
+                                if (const auto it =
+                                        discovery.capabilities.find("GetMesh2");
+                                    it != discovery.capabilities.end())
+                                    scoped_get_mesh_uri = it->second;
+                            }
+                            if (scoped_get_mesh_uri.empty())
+                                core::warning(
+                                    "Region does not advertise GetMesh; mesh objects will use placeholders");
                             core::info("Region-scoped material capabilities ready");
                         }
                         else
@@ -4435,7 +4467,7 @@ int Application::run(bool enable_developer_modules)
                     [transport, seed = current_region_seed]()
                     {
                         return protocol::CapabilityService{transport}.discover(
-                            seed, {"RenderMaterials", "GetTexture"});
+                            seed, {"RenderMaterials", "GetTexture", "GetMesh", "GetMesh2"});
                     });
             }
 
@@ -4680,6 +4712,11 @@ int Application::run(bool enable_developer_modules)
                         render_object.parent_id = object.parent_id;
                         render_object.kind =
                             render_primitive_kind(object.shape);
+                        if (object.is_mesh())
+                        {
+                            render_object.mesh_id = object.sculpt_asset_id;
+                            scene_mesh_ids.insert(object.sculpt_asset_id);
+                        }
                         render_object.position = {
                             object.position.x,
                             object.position.y,
@@ -5274,6 +5311,67 @@ int Application::run(bool enable_developer_modules)
                                 capability,
                                 requested_id);
                         });
+                    break;
+                }
+            }
+
+            // Mesh asset decoding runs off-thread, and GPU uploads only run
+            // on the OpenGL/renderer thread. One in-flight mesh per region
+            // avoids an unbounded number of HTTP requests or async futures.
+            if (mesh_asset_future.valid() &&
+                mesh_asset_future.wait_for(std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                assets::MeshAssetResult result = mesh_asset_future.get();
+                if (!material_scope.matches(mesh_asset_request_epoch))
+                {
+                    core::info("Discarded stale GetMesh response");
+                }
+                else if (result.success && result.geometry.valid())
+                {
+                    render::RenderMeshGeometry geometry;
+                    geometry.vertices = std::move(result.geometry.vertices);
+                    geometry.indices = std::move(result.geometry.indices);
+                    for (const auto& face : result.geometry.faces)
+                        geometry.faces.push_back({
+                            face.face, face.first_index, face.index_count});
+                    world_renderer->set_mesh_asset(
+                        mesh_asset_loading_id, geometry);
+                    mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
+                    core::info(
+                        "GetMesh loaded " + mesh_asset_loading_id +
+                        "; " + result.message +
+                        "; cached=" +
+                        std::to_string(mesh_asset_loaded_ids.size()));
+                }
+                else
+                {
+                    mesh_asset_failed_ids.insert(mesh_asset_loading_id);
+                    core::warning(
+                        "GetMesh failed for " + mesh_asset_loading_id +
+                        ": " + result.message +
+                        "; placeholder remains visible");
+                }
+                mesh_asset_loading_id.clear();
+            }
+            if (!mesh_asset_future.valid() &&
+                !scoped_get_mesh_uri.empty() &&
+                mesh_asset_loaded_ids.size() < 256U)
+            {
+                for (const auto& id : scene_mesh_ids)
+                {
+                    if (mesh_asset_loaded_ids.contains(id) ||
+                        mesh_asset_failed_ids.contains(id)) continue;
+                    mesh_asset_loading_id = id;
+                    mesh_asset_request_epoch = material_scope.epoch();
+                    const std::string cap = scoped_get_mesh_uri;
+                    mesh_asset_future = std::async(
+                        std::launch::async,
+                        [transport, cap, id]()
+                        {
+                            return assets::MeshAssetLoader{transport}.fetch(cap, id);
+                        });
+                    core::info("GetMesh request started for " + id);
                     break;
                 }
             }

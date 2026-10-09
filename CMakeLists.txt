@@ -84,6 +84,7 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 add_library(nexverse-assets
     src/assets/texture_loader.cpp
     src/assets/jpeg2000_decoder.cpp
+    src/assets/mesh_loader.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
 target_include_directories(nexverse-assets PUBLIC
@@ -95,6 +96,8 @@ target_link_libraries(nexverse-assets PUBLIC
     NexVerse::Net
     PNG::PNG
     openjp2
+    NexVerse::Protocol
+    ZLIB::ZLIB
 )
 
 add_library(nexverse-protocol
@@ -382,6 +385,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-loader-tests)
     add_test(NAME nexverse-texture-loader-tests COMMAND nexverse-texture-loader-tests)
+
+    add_executable(nexverse-mesh-loader-tests tests/mesh_loader_tests.cpp)
+    target_link_libraries(nexverse-mesh-loader-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-mesh-loader-tests)
+    add_test(NAME nexverse-mesh-loader-tests COMMAND nexverse-mesh-loader-tests)
 
     add_executable(nexverse-caps-world-events-tests tests/caps_world_events_tests.cpp)
     target_link_libraries(nexverse-caps-world-events-tests PRIVATE NexVerse::Protocol)

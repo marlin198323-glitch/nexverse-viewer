@@ -183,6 +183,13 @@ struct ObjectUpdateEntry
     Quaternion rotation;
     Vec3 scale{1.0f, 1.0f, 1.0f};
     PrimitiveShapeData shape;
+    // Mesh/Sculpt identity from ObjectUpdate ExtraParams (type 0x30).
+    std::string sculpt_asset_id;
+    std::uint8_t sculpt_type = 0U;
+    [[nodiscard]] bool is_mesh() const noexcept
+    {
+        return !sculpt_asset_id.empty() && (sculpt_type & 0x07U) == 0x05U;
+    }
     std::vector<std::uint8_t> texture_entry;
     std::optional<TextureEntry> parsed_texture_entry;
     std::optional<TextureEntryDefaultFace> default_texture;
@@ -192,6 +199,21 @@ struct ObjectUpdateEntry
         return pcode == pcode_avatar;
     }
 };
+
+struct SculptExtraParam
+{
+    std::string asset_id;
+    std::uint8_t type = 0U;
+    [[nodiscard]] bool is_mesh() const noexcept
+    {
+        return !asset_id.empty() && (type & 0x07U) == 0x05U;
+    }
+};
+
+// Returns nullopt for no Sculpt block OR malformed ExtraParams.
+// Caller retains the regular object even when optional extra data is absent.
+[[nodiscard]] std::optional<SculptExtraParam> parse_sculpt_extra_params(
+    std::span<const std::uint8_t> extra);
 
 struct ObjectUpdateMessage
 {

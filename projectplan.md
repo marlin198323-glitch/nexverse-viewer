@@ -2622,3 +2622,53 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
 - Diese Änderung ersetzt *nicht* den bestehenden LLUDP-Circuit.
 
 Details: `docs/CAPS.md`.
+
+
+## Phase 8/9 – LLSD-Logs + erste OpenSim-Meshobjekte · 10.10.2026 · 0.2.0-alpha.48
+
+**Auslöser und Live-Befund:**
+- Alpha.47 lädt 293 Objekttexturen und 4 Terraintexturen.
+  Die EventQueue behandelt einen regulären HTTP-502-Leer-Poll
+  korrekt; ein initialer HTTP200/LLSD-Integer-Parsefehler erholte
+  sich beim nächsten Poll. 9 Texture-Asset-Fehler bleiben:
+  6x HTTP 404 (serverseitig kein Asset geliefert), 2x unbekanntes
+  Bildformat, 1x defekte JPEG2000-Tile-Daten. Serverassets
+  können nicht ohne Assetservice-Zugriff clientseitig ersetzt werden.
+- Meshobjekte waren vorher vollständig unterrepräsentiert:
+  ObjectUpdate ExtraParams wurden verworfen, kein Mesh-Asset
+  abgerufen, keine Mesh-Geometrie an OpenGL übergeben.
+
+**Implementiert (Basis):**
+- LLSD XML-Integer: Empty/Whitespace als 0, 64-Bit-Werte
+  mit strikter Bereichsprüfung, Pluszeichen möglich; Binary
+  LLSD bleibt standardkonform 32 Bit.
+- ObjectUpdate-SculptExtraParams: Parametertyp 0x30 mit 17 Byte
+  UUID + Sculpt-Type; Mesh-Typ `type & 7 == 5`.
+  Die Mesh-ID wird ins WorldModel/SceneObject übergeben.
+- GetMesh/GetMesh2 wird über regionsgebundene Seed-CAPS
+  entdeckt und per `mesh_id`-Query asynchron heruntergeladen.
+- Binärer LLSD-Header mit Blockoffset/Blockgröße;
+  zlib/gzip-LOD-Daten; beschränkte Gesamt-/Einzelgröße;
+  Position/UV/Index-Dekodierung von 16-Bit-Werten für die
+  High-/Medium-LOD, Face-Ranges für Texturen, geometrische
+  Dreiecksnormalen, OpenGL-Buffers. Kein lokaler OBJ/DAE-Import.
+- CPU/GPU-Asset-Daten getrennt: Decoder off-thread, OpenGL
+  Upload ausschließlich auf Render-Thread.
+- Zuordnung von Mesh-Asset-UUIDs zu geladenen Mesh-Prims,
+  Mesh-Fallback bis Download abgeschlossen, Caches auf
+  256 Asset-IDs und regionsepochengeschützte Futures begrenzt.
+
+**Abnahme und offene Grenzen:**
+- Debug-Build, 24/24 CTests einschl. synthetischem OpenSim-Mesh,
+  malformed LLSD und Invalid-Asset-Tests.
+- Ein echter Login mit visueller Mesh-Kontrolle auf NexVerse
+  ist **nicht** durch Offline-Tests ersetzt. GetMesh-Antworten,
+  Shader-/Face-UVs und Performance müssen in der Welt geprüft werden.
+- Compressed-ObjectUpdate initiale Mesh-Parameter noch nicht
+  erfasst; bisherige IDs werden bei Partial-Updates bewahrt.
+- Rigging/Skinned Mesh/Animesh, Sculpt-Texture-Parametrisierung,
+  Mesh-LOD-Distanzstrategie, Direct ViewerAsset, optimierter
+  Speicher-LRU, vollständige UV/Normal/Material-Fidelity und
+  Teleport-Circuit-Wechsel bleiben eigenständige Blöcke.
+
+Weitere Details: `docs/MESH.md`.

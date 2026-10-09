@@ -86,11 +86,26 @@ struct RenderFaceMaterial
     RenderLegacyAppearance legacy;
 };
 
+struct RenderMeshFace
+{
+    std::uint32_t face = 0U;
+    std::uint32_t first_index = 0U;
+    std::uint32_t index_count = 0U;
+};
+
+struct RenderMeshGeometry
+{
+    std::vector<float> vertices;
+    std::vector<std::uint32_t> indices;
+    std::vector<RenderMeshFace> faces;
+};
+
 struct RenderSceneObject
 {
     std::uint32_t local_id = 0U;
     std::uint32_t parent_id = 0U;
     RenderPrimitiveKind kind = RenderPrimitiveKind::box;
+    std::string mesh_id;
     RenderVec3 position;
     RenderQuaternion rotation;
     RenderVec3 scale{1.0f, 1.0f, 1.0f};
@@ -231,6 +246,9 @@ public:
     virtual void set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) = 0;
+    virtual void set_mesh_asset(
+        const std::string& mesh_id,
+        const RenderMeshGeometry& geometry) = 0;
     virtual void set_environment(
         const RenderEnvironment& environment) = 0;
     virtual void set_scene_objects(

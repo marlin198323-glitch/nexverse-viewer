@@ -32,7 +32,7 @@ struct LlsdValue
 {
     LlsdType type = LlsdType::undefined;
     bool boolean_value = false;
-    std::int32_t integer_value = 0;
+    std::int64_t integer_value = 0;
     double real_value = 0.0;
     std::string string_value;
     std::vector<std::uint8_t> binary_value;
@@ -40,7 +40,7 @@ struct LlsdValue
     std::map<std::string, LlsdValue, std::less<>> map_value;
 
     static LlsdValue boolean(bool value);
-    static LlsdValue integer(std::int32_t value);
+    static LlsdValue integer(std::int64_t value);
     static LlsdValue real(double value);
     static LlsdValue string(std::string value);
     static LlsdValue uuid(std::string value);
@@ -74,4 +74,8 @@ struct LlsdParseResult
     bool prepend_header = true);
 [[nodiscard]] LlsdParseResult parse_llsd_binary(
     std::span<const std::uint8_t> bytes);
+// Mesh assets start with a binary LLSD header followed by raw compressed blocks.
+[[nodiscard]] LlsdParseResult parse_llsd_binary_prefix(
+    std::span<const std::uint8_t> bytes,
+    std::size_t& bytes_consumed);
 }

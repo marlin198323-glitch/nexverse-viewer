@@ -427,6 +427,34 @@ std::optional<KillObjectMessage> decode_kill_object(
     return message;
 }
 
+std::optional<SculptExtraParam> parse_sculpt_extra_params(
+    std::span<const std::uint8_t> extra)
+{
+    if (extra.empty()) return std::nullopt;
+    const std::size_t count = extra[0U];
+    std::size_t offset = 1U;
+    if (count > 64U) return std::nullopt;
+
+    for (std::size_t entry = 0U; entry < count; ++entry)
+    {
+        if (extra.size() - offset < 6U) return std::nullopt;
+        const std::uint16_t type = read_le_u16(extra, offset);
+        offset += 2U;
+        const std::uint32_t size = read_le_u32(extra, offset);
+        offset += 4U;
+        if (size > extra.size() - offset) return std::nullopt;
+        if (type == 0x30U && size == 17U)
+        {
+            SculptExtraParam sculpt{
+                uuid_from_bytes(extra, offset), extra[offset + 16U]};
+            if (sculpt.asset_id.empty()) return std::nullopt;
+            return sculpt;
+        }
+        offset += size;
+    }
+    return std::nullopt;
+}
+
 std::optional<ObjectUpdateMessage> decode_object_update(
     std::span<const std::uint8_t> payload)
 {
@@ -581,10 +609,23 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         offset += 4U; // text color
 
         if (!skip_variable1(payload, offset) ||
-            !skip_variable1(payload, offset) ||
             !skip_variable1(payload, offset))
         {
             return std::nullopt;
+        }
+
+        std::string extra_params;
+        if (!read_variable1(payload, offset, extra_params))
+        {
+            return std::nullopt;
+        }
+        if (const auto sculpt = parse_sculpt_extra_params({
+                reinterpret_cast<const std::uint8_t*>(extra_params.data()),
+                extra_params.size()});
+            sculpt.has_value())
+        {
+            object.sculpt_asset_id = sculpt->asset_id;
+            object.sculpt_type = sculpt->type;
         }
 
         if (!need(66U))

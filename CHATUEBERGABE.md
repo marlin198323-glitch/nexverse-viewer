@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.47`
+Version: `0.2.0-alpha.48`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -335,3 +335,37 @@ Live-Beobachtung 0.2.0-alpha.45 (2026-10-10 00:13 bis 00:18):
 - GitHub Branch weiterhin `develop-current` (nicht `develop`).
 - Zum In-World-Test:
   `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl47-live.log`.
+
+
+## Phase 8/9 – LLSD-Integer + OpenSim-Mesh-Pipeline · 10.10.2026 · 0.2.0-alpha.48
+
+- Grundlage Live-Log alpha.47: Login/WorldModel OK, 293 Objekttexturen,
+  4 Terraintexturen, 9 fehlende/defekte Texturassets, normaler
+  EventQueue HTTP502-Idle bestätigt. Ein initiales `HTTP=200;
+  LLSD integer is invalid` konnte sich selbst erholen.
+- `parse_llsd_xml` akzeptiert nun leere/whitespace Integer-Elemente,
+  optionale führende Pluszeichen und gültige 64-Bit-XML-Integer;
+  vollständige Zahl-/Bereichsprüfung. Binary-LLSD-Wireformat
+  bleibt 32 Bit; Langwerte bei Binary-Ausgabe nicht als interoperable
+  Transportwerte verwenden.
+- `ObjectUpdate.ExtraParams` mit 0x30 Sculpt-Block und Typ 0x05
+  wird erkannt und mit UUID im WorldModel gespeichert.
+  Partial-Compressed-/Terse-Updates erhalten **bestehende**
+  Mesh-Identifier, dekodieren aber noch keine neuen Compressed-
+  Mesh-ExtraParams. Das bleibt ein offener Block.
+- Regionsgebundene GetMesh/GetMesh2-CAPS, einzelner asynchroner
+  Download, bounded 32-MiB-Asset/16-MiB-LOD-Dekompression,
+  binärer LLSD-Header-Prefix, High-/Medium-LOD und
+  16-Bit-Positions-/UV-/Dreiecksdaten. CPU-Triangulation,
+  Face-Material-Ranges, GPU-Upload durch OGLRender.
+- UUID-Caches und Region-Epochen; keine alten HTTP-Replies in
+  neue Region übernehmen. Ungültiges Mesh bleibt im sichtbaren
+  Fallback. 256 einzigartige GPU-Meshes als vorläufiges Limit.
+- Tests: 24/24 CTest inkl. synthetischem OpenSim-Mesh-Asset.
+  Realer NexVerse-Mesh-Sichttest ohne erneuten Login
+  **noch nicht durchgeführt**.
+- Mesh-Rigging, Skinning/Animesh, OBJ/DAE-Import, Textur-Sculpties,
+  vollständiges LOD-Streaming, Disk-LRU, Compressed-ObjectUpdate
+  und kompletter Teleport-Reconnect sind **noch offen**.
+- Projektplan verbindlich, Details `docs/MESH.md`.
+- GitHub Handoff: `develop-current`, lokaler Branch entsprechend.

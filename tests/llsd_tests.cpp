@@ -8,6 +8,32 @@
 
 int main()
 {
+    using nexverse::protocol::parse_llsd_xml;
+    for (const auto value : {
+        "<llsd><integer/></llsd>",
+        "<llsd><integer>   </integer></llsd>",
+        "<llsd><integer> 4294967295 </integer></llsd>",
+        "<llsd><integer>+42</integer></llsd>"})
+    {
+        const auto parsed = parse_llsd_xml(value);
+        if (!parsed.ok() ||
+            parsed.value->type != nexverse::protocol::LlsdType::integer)
+        {
+            std::cerr << "LLSD XML integral compatibility failed\n";
+            return 90;
+        }
+    }
+    const auto wide_integer =
+        parse_llsd_xml("<llsd><integer>4294967295</integer></llsd>");
+    if (!wide_integer.ok() ||
+        wide_integer.value->integer_value != 4294967295LL ||
+        parse_llsd_xml("<llsd><integer>18446744073709551616</integer></llsd>").ok() ||
+        parse_llsd_xml("<llsd><integer>12abc</integer></llsd>").ok())
+    {
+        std::cerr << "LLSD XML 64-bit range validation failed\n";
+        return 91;
+    }
+
     using namespace nexverse::protocol;
 
     LlsdValue root = LlsdValue::map({

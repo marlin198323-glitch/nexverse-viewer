@@ -6,12 +6,19 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.47`
+- Version: `0.2.0-alpha.48`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 23/23 Tests grün plus OpenGL-Runtime-Smoke mit Developer-Modulen
-- aktueller Entwicklungsblock: **CAPS-EventQueue-Lifecycle: OpenSim-konformes 80-Sekunden-Long-Poll, HTTP-502-Idle, HTTP-404-Endpoint-Expiry, Retry/Seed-Recovery und diagnostische Logs; kompletter Teleport-Reconnect folgt**
+- letzter vollständig geprüfter Stand: 24/24 Tests grün; neuer OpenGL-Starttest für alpha.48 wird separat ausgewertet
+- aktueller Entwicklungsblock: **LLSD XML-Integer-Robustheit sowie erste native OpenSim-Mesh-Pipeline: SculptExtraParams/UUID, GetMesh/GetMesh2, LOD-zlib/LLSD, Face-Geometrie und OpenGL-Upload; Live-Sichtabnahme und Compressed-ObjectUpdate folgen**
+
+Die erste OpenSim-Mesh-Pipeline dekodiert Mesh-Asset-Dateien über
+GetMesh/GetMesh2 (falls angeboten), und übernimmt Mesh-Faces als echte
+OpenGL-Dreiecke. Aktuell gilt dieser Weg für vollständige ObjectUpdate-
+Pakete; der Mesh-Block in ObjectUpdateCompressed sowie
+Skinning/Animesh, lokale OBJ-/DAE-Imports und LOD-Streaming folgen.
+Technik und Grenzen: `docs/MESH.md`.
 
 Die EventQueue toleriert OpenSims erwartete HTTP-502-Leerantworten; 80-Sekunden-
 Long-Polls decken das etwa 58-Sekunden-Server-Keepalive ab.

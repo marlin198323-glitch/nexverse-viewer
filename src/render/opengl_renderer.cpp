@@ -2694,6 +2694,30 @@ public:
         glActiveTexture(GL_TEXTURE0);
     }
 
+    void set_mesh_asset(
+        const std::string& mesh_id,
+        const RenderMeshGeometry& geometry) override
+    {
+        if (mesh_id.empty() || geometry.vertices.empty() ||
+            geometry.indices.empty() || geometry.vertices.size() % 8U != 0U ||
+            mesh_assets_.contains(mesh_id) || mesh_assets_.size() >= 256U)
+            return;
+        MeshData mesh;
+        mesh.vertices = geometry.vertices;
+        mesh.indices = geometry.indices;
+        for (const auto& face : geometry.faces)
+        {
+            mesh.face_ranges.push_back({
+                face.face, face.first_index, face.index_count});
+        }
+        GpuMesh gpu;
+        if (!upload_mesh(gpu, mesh)) return;
+        mesh_assets_.emplace(mesh_id, std::move(gpu));
+        nexverse::core::info(
+            "OGLRender mesh geometry uploaded: triangles=" +
+            std::to_string(geometry.indices.size() / 3U));
+    }
+
     void set_environment(
         const RenderEnvironment& environment) override
     {
@@ -3022,8 +3046,17 @@ public:
                 const std::vector<MeshFaceRange>* object_face_ranges =
                     nullptr;
 
-                if (GpuMesh* sweep_mesh =
-                        curved_sweep_mesh_for(object);
+                if (!object.mesh_id.empty() &&
+                    mesh_assets_.contains(object.mesh_id))
+                {
+                    auto& mesh = mesh_assets_.at(object.mesh_id);
+                    object_vao = mesh.vao;
+                    object_index_count = mesh.index_count;
+                    object_face_ranges = &mesh.face_ranges;
+                }
+                else if (GpuMesh* sweep_mesh =
+                             object.mesh_id.empty()
+                                 ? curved_sweep_mesh_for(object) : nullptr;
                     sweep_mesh != nullptr)
                 {
                     object_vao = sweep_mesh->vao;
@@ -3533,6 +3566,13 @@ public:
         }
         curved_sweep_mesh_cache_.clear();
 
+        for (auto& [id, mesh] : mesh_assets_)
+        {
+            (void)id;
+            destroy_mesh(mesh);
+        }
+        mesh_assets_.clear();
+
         for (auto& [id, texture] : object_textures_)
         {
             (void)id;
@@ -3863,6 +3903,7 @@ private:
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
+    std::unordered_map<std::string, GpuMesh> mesh_assets_;
     std::unordered_map<std::string, GLuint> object_textures_;
     std::unordered_map<std::string, bool> object_texture_alpha_;
     RenderVec3 test_anchor_;

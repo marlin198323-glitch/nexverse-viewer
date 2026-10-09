@@ -7,6 +7,33 @@
 
 int main()
 {
+    const auto id_bytes = nexverse::protocol::uuid_to_bytes(
+        "11111111-2222-3333-4444-555555555555");
+    std::vector<std::uint8_t> mesh_extra{
+        1U, 0x30U, 0x00U, 17U, 0U, 0U, 0U};
+    mesh_extra.insert(mesh_extra.end(), id_bytes->begin(), id_bytes->end());
+    mesh_extra.push_back(0x85U); // Mesh type with reserved high bit.
+    const auto mesh = nexverse::protocol::parse_sculpt_extra_params(mesh_extra);
+    if (!mesh || !mesh->is_mesh() ||
+        mesh->asset_id != "11111111-2222-3333-4444-555555555555")
+    {
+        std::cerr << "Sculpt/Mesh ExtraParams decode failed\n";
+        return 90;
+    }
+    mesh_extra.back() = 0x01U;
+    const auto sculpt = nexverse::protocol::parse_sculpt_extra_params(mesh_extra);
+    if (!sculpt || sculpt->is_mesh())
+    {
+        std::cerr << "Sculpt detected incorrectly as mesh\n";
+        return 91;
+    }
+    mesh_extra[3U] = 200U;
+    if (nexverse::protocol::parse_sculpt_extra_params(mesh_extra).has_value())
+    {
+        std::cerr << "Malformed sculpt block accepted\n";
+        return 92;
+    }
+
     using namespace nexverse::protocol;
 
     LoginSession session;

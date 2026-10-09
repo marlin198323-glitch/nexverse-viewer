@@ -87,6 +87,12 @@ struct ObjectState
     Quaternion rotation;
     Vec3 scale{1.0f, 1.0f, 1.0f};
     protocol::PrimitiveShapeData shape;
+    std::string sculpt_asset_id;
+    std::uint8_t sculpt_type = 0U;
+    [[nodiscard]] bool is_mesh() const noexcept
+    {
+        return !sculpt_asset_id.empty() && (sculpt_type & 0x07U) == 0x05U;
+    }
     std::vector<std::uint8_t> texture_entry;
     std::optional<protocol::TextureEntry> parsed_texture_entry;
     std::optional<protocol::TextureEntryDefaultFace> default_texture;
