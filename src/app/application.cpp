@@ -4486,6 +4486,10 @@ int Application::run(bool enable_developer_modules)
                                 face.texgen_planar();
                             render_object.glow =
                                 face.glow;
+                            render_object.material_id =
+                                face.material_id;
+                            render_object.render_material_id =
+                                face.render_material_id;
 
                             if (!face.texture_id.empty() &&
                                 face.texture_id !=

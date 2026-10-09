@@ -203,6 +203,16 @@ int main()
     overrides.push_back(128U);
     overrides.push_back(0U);
 
+    // Legacy normal/specular MaterialID and RenderMaterial UUID metadata.
+    append_uuid(overrides, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    overrides.push_back(0x04U); // MaterialID override on face 2
+    append_uuid(overrides, "10101010-2020-3030-4040-505050505050");
+    overrides.push_back(0U);
+    append_uuid(overrides, "aaaaaaaa-1111-2222-3333-444444444444");
+    overrides.push_back(0x02U); // RenderMaterial override on face 1
+    append_uuid(overrides, "bbbbbbbb-1111-2222-3333-444444444444");
+    overrides.push_back(0U);
+
     const auto full =
         nexverse::protocol::parse_texture_entry(
             overrides);
@@ -227,7 +237,13 @@ int main()
         face2.color[1] < 0.49f ||
         face2.color[1] > 0.51f ||
         face2.texture_id !=
-            "89556747-24cb-43ed-920b-47caed15465f")
+            "89556747-24cb-43ed-920b-47caed15465f" ||
+        face0.material_id != "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" ||
+        face1.material_id != "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" ||
+        face2.material_id != "10101010-2020-3030-4040-505050505050" ||
+        face0.render_material_id != "aaaaaaaa-1111-2222-3333-444444444444" ||
+        face1.render_material_id != "bbbbbbbb-1111-2222-3333-444444444444" ||
+        face2.render_material_id != "aaaaaaaa-1111-2222-3333-444444444444")
     {
         std::cerr << "Per-face TextureEntry inheritance mismatch\n";
         return 5;

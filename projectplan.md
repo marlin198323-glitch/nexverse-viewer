@@ -1631,7 +1631,7 @@ Aktueller Implementierungsstand:
 - Parent/Child-Transformbasis und Distanz-Culling aktiv
 - Compressed-/Terse-Updates erhalten bekannte statische Shape-/Scale-/Parent-Daten
 - Taper, Shear, Twist, Path Begin/End sowie Profile Begin/End und Hollow für lineare Prims sind aktiv; Circular-Sweep-Pfade berücksichtigen Revolutions, RadiusOffset, Skew und PathScaleX/Y
-- TextureEntry-Default-Face, echte Objekttexturen und vollständige per-Face-Override-Dekodierung sind aktiv; Standard-Box-Faces werden bereits separat materialisiert, als nächstes Cylinder/Prism/Sweep-Facegruppen, Material-/RenderMaterial-Auswertung und anschließend PBR-Ausbau
+- TextureEntry-Default-Face, echte Objekttexturen und vollständige per-Face-Override-Dekodierung sind aktiv; Statische Box-/Cylinder-/Prism- sowie dynamische Sweep-Facegruppen sind vorbereitet; als nächstes: verifizierte Material-/RenderMaterial-Assetauflösung und anschließend schrittweiser PBR-Ausbau
 
 Zunächst einfache Materialien, danach vollständige Texturen/PBR.
 
@@ -2383,3 +2383,30 @@ Anschließend Phase 8 fortsetzen. Architektur- und Sicherheitsdetails:
 - Dies ist ein Legacy-Compatibility-Fallback, kein vollwertiges PBR.
 - Build und 21/21 CTest grün. Der nächste Phase-8-Schritt behandelt
   Material-ID-/RenderMaterial-Auswertung und weitere Facegruppen.
+
+
+## Phase 8 – Alpha-Passes und Material-IDs · 09.10.2026 · 0.2.0-alpha.41
+
+- Object-Rendering in zwei Durchläufe getrennt: zuerst deckende Prim-Faces
+  mit Depth-Write, anschließend transparente Faces mit Alpha-Blending und
+  deaktiviertem Depth-Write.
+- Transparente Objekte werden mit stabiler Reihenfolge nach Abstand zum
+  Kamerastandpunkt (fern nach nah) gezeichnet; das WorldModel bleibt unverändert.
+- RGBA8-Texturen werden beim GPU-Upload einmalig auf Alpha < 255 geprüft.
+  Vollständig deckende Texturen bleiben nun im Opaque-Pass statt pauschal
+  als transparent gerendert zu werden.
+- Vollständig transparente Fragmente werden im Legacy-GLSL verworfen.
+- Die vom TextureEntry gelieferten Default-Material-ID und
+  RenderMaterial-ID gehen jetzt auch beim Scene-Object-Transfer nicht verloren;
+  die bereits vorhandene Vererbung/Override-Auswertung erhält einen
+  erweiterten Regressionstest.
+- Neues `NexVerse::Render`-CPU-Modul `material_pass` für testbare
+  Alpha-Klassifikation und stabile Sortierung; neuer CTest.
+- CMake Debug-Build, 22/22 Tests und OpenGL Runtime-Smoke erfolgreich.
+  Welcome/GL initialisieren; ein eingeloggter In-World-Echttest steht aus.
+- Grenzen: kein PBR-/Legacy-Material-Asset-Fetch, keine Normalmaps,
+  keine exakte Sortierung einzelner transparenter Dreiecke/Faces,
+  kein Order-Independent Transparency. Material-/RenderMaterial-UUIDs
+  werden bewahrt, aber **noch nicht** als Materials aufgelöst.
+- Als Nächstes: überprüfte Material-CAP/Asset-Resolver-Anbindung und
+  vollständigeres Face-/Materialhandling, dann weitere Phase-8-Objekttypen.

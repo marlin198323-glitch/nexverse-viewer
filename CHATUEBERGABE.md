@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.40`
+Version: `0.2.0-alpha.41`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -52,7 +52,7 @@ Vorhanden:
 - Planar TexGen
 - Fullbright/Shiny/Bumpiness/Media-Daten im Renderer-Vertrag
 
-Letzter vollständiger Teststand: 21/21 Tests grün plus OpenGL Runtime-Smoke (auch mit zwei Diagnosemodulen).
+Letzter vollständiger Teststand: 22/22 Tests grün plus OpenGL Runtime-Smoke; In-World-Sichttest noch offen.
 
 ## 4. NexVerse Runtime
 
@@ -182,3 +182,22 @@ Wenn der Benutzer nur **„viewer“** oder **„weiter“** schreibt:
 OpenGL-Fragmentshader, kein vollständiger PBR-/Normal-Map-Pfad.
 21/21 CTest grün. Weiter mit Material-/RenderMaterial-Auswertung
 und OpenSim-Facegruppen. `projectplan.md` bleibt maßgeblich.
+
+
+## Neuester Rendering-Block · 0.2.0-alpha.41
+
+- Getrennte deckende/transparente Material-Durchläufe.
+- RGBA8-Alpha-Analyse bei Texture-Upload, kein pauschales Blending
+  deckender Prim-Texturen.
+- Transparent-Objekte stabil back-to-front sortiert;
+  transparentes Depth-Write deaktiviert.
+- Default `material_id` / `render_material_id` werden jetzt an
+  `RenderSceneObject` übergeben, Face-Inheritance durch Tests abgesichert.
+- `src/render/material_pass.cpp` + Header + `material_pass_tests.cpp`.
+- 22/22 Tests grün, OpenGL-Viewer-Start OK, In-World-Vergleich offen.
+
+**Nächster Schritt:** tatsächliche Legacy-/PBR-Material-Auflösung
+aus OpenSim/CAPS anhand validierter Protokollantworten; keine
+erfundenen Shader-Parameter aus der Material-UUID ableiten. Als
+Fallback bleiben die bestehenden OpenSim-TextureEntry-Eigenschaften.
+`projectplan.md` bleibt verbindlich.

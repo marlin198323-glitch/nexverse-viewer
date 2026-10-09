@@ -5,6 +5,7 @@
 
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
+#include "nexverse/render/material_pass.hpp"
 
 #include "nexverse/core/logger.hpp"
 
@@ -1972,6 +1973,7 @@ void main()
         ? 0.0
         : smoothstep(0.90, 1.0, gl_FragCoord.z);
     vec3 color = mix(base, uFogHorizon, fog * 0.55);
+    if (alpha < 0.004) discard;
     FragColor = vec4(color, alpha);
 }
 )GLSL";
@@ -2605,6 +2607,7 @@ public:
             GL_UNSIGNED_BYTE,
             image.pixels.data());
         glGenerateMipmap(GL_TEXTURE_2D);
+        object_texture_alpha_[texture_id] = texture_has_alpha(image);
 
         glBindTexture(GL_TEXTURE_2D, 0U);
         glActiveTexture(GL_TEXTURE0);
@@ -2869,18 +2872,37 @@ public:
                 glGetUniformLocation(program_, "uOverrideColor"),
                 GL_TRUE);
 
-            for (std::size_t index = 0U;
-                 index < scene_objects_.size();
-                 ++index)
+            std::vector<VisibleObjectDistance> visible_objects;
+            visible_objects.reserve(scene_objects_.size());
+            for (std::size_t index = 0U; index < scene_objects_.size(); ++index)
             {
-                const RenderSceneObject& object =
-                    scene_objects_[index];
-
                 const Mat4 model = scene_model(index);
-                if (!scene_object_visible(model, object))
-                {
+                if (!scene_object_visible(model, scene_objects_[index]))
                     continue;
+                const float dx = model.value[12] - camera_.position.x;
+                const float dy = model.value[13] - camera_.position.y;
+                const float dz = model.value[14] - camera_.position.z;
+                visible_objects.push_back({index, dx * dx + dy * dy + dz * dz});
+            }
+            diagnostics_.visible_objects += visible_objects.size();
+
+            // Draw all opaque surfaces with depth writes before alpha surfaces.
+            // Transparent objects are drawn back-to-front, without depth writes.
+            for (unsigned pass = 0U; pass < 2U; ++pass)
+            {
+                if (pass == 1U)
+                {
+                    sort_transparent_objects(visible_objects);
+                    glEnable(GL_BLEND);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glDepthMask(GL_FALSE);
                 }
+
+                for (const auto& draw : visible_objects)
+                {
+                const std::size_t index = draw.index;
+                const RenderSceneObject& object = scene_objects_[index];
+                const Mat4 model = scene_model(index);
 
                 const Mat4 mvp = multiply(
                     projection,
@@ -3070,6 +3092,18 @@ public:
                                     1.0f)
                                 : 1.0f;
 
+                        bool loaded_texture_has_alpha = false;
+                        if (!texture_id.empty())
+                        {
+                            const auto found_alpha = object_texture_alpha_.find(texture_id);
+                            loaded_texture_has_alpha =
+                                found_alpha != object_texture_alpha_.end() &&
+                                found_alpha->second;
+                        }
+                        const bool transparent = face_requires_blending(
+                            alpha, loaded_texture_has_alpha);
+                        if (transparent != (pass == 1U)) return;
+
                         glUniform3f(
                             glGetUniformLocation(
                                 program_,
@@ -3158,19 +3192,6 @@ public:
                                 "uAlpha"),
                             alpha);
 
-                        const bool transparent =
-                            alpha < 0.999f ||
-                            use_object_texture;
-
-                        if (transparent)
-                        {
-                            glEnable(GL_BLEND);
-                            glBlendFunc(
-                                GL_SRC_ALPHA,
-                                GL_ONE_MINUS_SRC_ALPHA);
-                            glDepthMask(GL_FALSE);
-                        }
-
                         glDrawElements(
                             GL_TRIANGLES,
                             count,
@@ -3183,12 +3204,6 @@ public:
                         diagnostics_.triangles +=
                             static_cast<std::uint64_t>(
                                 count / 3);
-
-                        if (transparent)
-                        {
-                            glDepthMask(GL_TRUE);
-                            glDisable(GL_BLEND);
-                        }
 
                         if (use_object_texture)
                         {
@@ -3230,8 +3245,10 @@ public:
                         0U);
                 }
 
-                ++diagnostics_.visible_objects;
-            }
+                } // scene object
+            } // opaque / translucent pass
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
 
             glUniform1f(
                 glGetUniformLocation(program_, "uAlpha"),
@@ -3340,6 +3357,7 @@ public:
             }
         }
         object_textures_.clear();
+        object_texture_alpha_.clear();
 
         if (terrain_textures_[0] != 0U)
         {
@@ -3661,6 +3679,7 @@ private:
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
     std::unordered_map<std::string, GLuint> object_textures_;
+    std::unordered_map<std::string, bool> object_texture_alpha_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
 };

@@ -108,6 +108,9 @@ struct RenderSceneObject
     bool media_present = false;
     bool texgen_planar = false;
     float glow = 0.0f;
+    // Identifiers are authoritative OpenSim references, NOT resolved PBR data.
+    std::string material_id;
+    std::string render_material_id;
 
     std::array<std::optional<RenderFaceMaterial>, 64>
         face_materials;
