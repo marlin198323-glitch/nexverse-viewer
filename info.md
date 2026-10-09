@@ -754,3 +754,12 @@ Für spätere Arbeit gilt:
 - `OGL Weather` neu im Plugin-Katalog: realistischer Regen, Schnee, Nebel, Sturm und Wind mit moderner GPU-basierter Darstellung.
 - Spätere RTX-Integration: nasse Oberflächen, Reflexionen, Pfützen, volumetrische Effekte und verbesserte Wetterbeleuchtung.
 - Lokale Wetter-/Zeit-Overrides verändern niemals serverseitige Regionseinstellungen.
+
+
+## Next-Gen-Renderer-Anweisung erneut abgeglichen – 09.10.2026
+
+- Vollständige aktuelle Next-Gen-Renderer-Anweisung gegen `projectplan.md` Abschnitt 2.2 geprüft.
+- Bestehender Plan deckte den Großteil bereits ab; keine widersprüchliche Neuarchitektur erforderlich.
+- Ergänzt: konkrete RT-Qualitätsprofile (Aus/Auto/Niedrig/Mittel/Hoch/Ultra) und mögliche RT-Reichweiten 50/100/150/256/512 m.
+- Ergänzt: klare Abstimmung `OGLRender` mit der neuen Module Runtime; Renderer-Backends dürfen später Module sein, WorldModel/Protocol bleiben backendunabhängig.
+- Klarstellung: eigener OGL Viewer, kein Firestorm-Fork; Firestorm/Second Life nur Referenz.

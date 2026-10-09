@@ -510,7 +510,18 @@ GPU mit Raytracing
 
 Die Architektur soll BLAS/TLAS berücksichtigen und dynamische OpenSim-Welten effizient behandeln. Statische Geometrie soll wiederverwendet werden; bewegliche Instanzen werden aktualisiert, ohne unnötig die gesamte Beschleunigungsstruktur neu aufzubauen.
 
-Raytracing-Reichweite und Qualitätsstufen bleiben konfigurierbar und werden später konkret festgelegt.
+Raytracing-Reichweite und Qualitätsstufen bleiben konfigurierbar. Als verbindliche Zielrichtung werden folgende Profile vorgesehen, deren exakte Zuordnung später technisch angepasst werden darf:
+
+```text
+Aus
+Automatisch
+Niedrig  -> RT Shadows
+Mittel   -> RT Shadows + RT Reflections
+Hoch     -> RT Shadows + RT Reflections + RT AO
+Ultra    -> RT Shadows + RT Reflections + RT AO + optional RT GI
+```
+
+Raytracing muss außerdem räumlich begrenzbar sein. Nahe Szenenbereiche können Raytracing verwenden, während weiter entfernte Bereiche auf Rasterisierung, Reflection Probes, SSR oder andere Fallbacks zurückfallen. Als mögliche, später abstimmbare Reichweiten gelten 50 m, 100 m, 150 m, 256 m und 512 m.
 
 ### Hardwareerkennung
 
@@ -784,6 +795,27 @@ Vorgehen:
 5. Funktionen phasenweise nach Projektplan und weiteren Chat-Anweisungen implementieren.
 
 Diese Renderer-Vorgabe ist bei jeder späteren Rendering-Phase erneut heranzuziehen. Sie darf nicht dadurch übergangen werden, dass kurzfristig ein einfacherer renderergebundener Netzwerk- oder WorldModel-Weg möglich wäre.
+
+
+### Abgleich mit der vollständigen Next-Gen-Renderer-Anweisung – 09.10.2026
+
+Die vollständige Renderer-Anweisung wurde erneut gegen diesen Projektplan geprüft. Abschnitt 2.2 bleibt die verbindliche konsolidierte Fassung für dieses Repository.
+
+Dabei gelten zusätzlich ausdrücklich folgende Klarstellungen:
+
+- OpenGenesisLINK ist **kein einfacher Firestorm-Umbau** und der Renderer wird nicht als Firestorm-Renderer-Fork geführt.
+- Firestorm/Second Life dienen lediglich als Funktions- beziehungsweise Qualitätsreferenz; die Renderarchitektur bleibt eigenständig.
+- `OGLRender` bezeichnet die Render-Abstraktionsschicht und die gemeinsame Scene-/Material-/Lighting-/Water-/Environment-Schnittstelle.
+- Vulkan bleibt das primäre moderne Backend.
+- Die neue Module Runtime darf Renderer-Backends später als austauschbare Module bereitstellen, ohne die `WorldModel -> Scene -> OGLRender`-Trennung aufzugeben.
+- Ein optionales `OGL Vulkan Renderer`- beziehungsweise `OGL RTX Renderer`-Modul implementiert definierte Renderer-Interfaces; Netzwerk, WorldModel und OpenSim-Protokoll dürfen davon nicht abhängen.
+- Der vorhandene OpenGL-Renderer bleibt während der Migration der sichere Legacy-/Fallback-Pfad.
+- Raytracing bleibt optional; Rasterpfad und Fallbacks müssen vollständig funktionsfähig bleiben.
+- PBR, Beleuchtung, Schatten, Reflexionen, Wasser, Terrain, Atmosphäre, Wetter, Post Processing, Streaming und Performance-Optimierung werden schrittweise umgesetzt und nicht als ein einzelner großer Umbau.
+- OpenSim-Kompatibilität bleibt Pflicht: bestehende Regionen müssen ohne Neuanlage oder spezielle OGL-Servererweiterungen darstellbar bleiben.
+- Enhanced Capabilities erweitern die Darstellung nur optional; fehlt eine OGL-Capability, greift der Standard-OpenSim-Fallback.
+
+Die Renderer-Anweisung und die Plugin-/Modularchitektur ergänzen sich damit: OGLRender definiert die stabile Rendergrenze, während konkrete Backends und High-End-Funktionen später modular geliefert werden können.
 
 ---
 
