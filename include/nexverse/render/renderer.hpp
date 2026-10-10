@@ -156,6 +156,15 @@ struct RenderSceneObject
         face_materials;
 };
 
+// Transitional humanoid marker until full OpenSim appearance
+// (skeleton, baked skin, wearables and attachments) is implemented.
+struct RenderAvatarProxy
+{
+    RenderVec3 position;
+    RenderQuaternion rotation;
+    bool is_self = false;
+};
+
 struct RenderCamera
 {
     RenderVec3 position;
@@ -256,6 +265,8 @@ public:
         const RenderEnvironment& environment) = 0;
     virtual void set_scene_objects(
         const std::vector<RenderSceneObject>& objects) = 0;
+    virtual void set_avatar_proxies(
+        const std::vector<RenderAvatarProxy>& avatars) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;

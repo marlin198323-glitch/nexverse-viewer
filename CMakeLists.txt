@@ -396,6 +396,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-residency-tests)
     add_test(NAME nexverse-mesh-residency-tests COMMAND nexverse-mesh-residency-tests)
 
+    add_executable(nexverse-movement-controls-tests tests/movement_controls_tests.cpp)
+    target_link_libraries(nexverse-movement-controls-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-movement-controls-tests)
+    add_test(NAME nexverse-movement-controls-tests COMMAND nexverse-movement-controls-tests)
+
     add_executable(nexverse-caps-world-events-tests tests/caps_world_events_tests.cpp)
     target_link_libraries(nexverse-caps-world-events-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-caps-world-events-tests)

@@ -2768,6 +2768,16 @@ public:
         }
     }
 
+    void set_avatar_proxies(
+        const std::vector<RenderAvatarProxy>& avatars) override
+    {
+        constexpr std::size_t max_avatar_proxies = 64U;
+        avatar_proxies_.assign(
+            avatars.begin(),
+            avatars.begin() + static_cast<std::ptrdiff_t>(
+                std::min(avatars.size(), max_avatar_proxies)));
+    }
+
     void begin_frame() override
     {
         diagnostics_.draw_calls = 0U;
@@ -3514,6 +3524,109 @@ public:
                 GL_FALSE);
         }
 
+        // Avatar proxy rendering is deliberately separate from object
+        // meshes so it follows each server-authoritative avatar transform
+        // every frame without rebuilding the scene-object cache.
+        if (!avatar_proxies_.empty())
+        {
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseTerrainTextures"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseObjectTexture"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUsePrimDeform"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseLegacyNormalMap"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uUseLegacySpecularMap"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectAlphaMode"), 1);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectFullbright"),
+                GL_FALSE);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectShiny"), 0);
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectBumpiness"), 0);
+            glUniform1f(
+                glGetUniformLocation(program_, "uObjectGlow"), 0.0f);
+            glUniform1f(
+                glGetUniformLocation(program_, "uAlpha"), 1.0f);
+            glUniform1i(
+                glGetUniformLocation(program_, "uOverrideColor"),
+                GL_TRUE);
+            struct Part
+            {
+                RenderVec3 offset;
+                RenderVec3 size;
+                bool round = false;
+                unsigned color = 0U;
+            };
+            // Simple clearly non-final humanoid with shoulders, head,
+            // torso and split legs; it is not an OpenSim avatar skin.
+            const std::array<Part, 7U> parts{{
+                {{0.0f, 0.0f, 1.58f}, {0.34f, 0.34f, 0.34f}, true, 0U},
+                {{0.0f, 0.0f, 1.11f}, {0.37f, 0.54f, 0.68f}, false, 1U},
+                {{0.0f, -0.40f, 1.08f}, {0.22f, 0.23f, 0.65f}, false, 2U},
+                {{0.0f,  0.40f, 1.08f}, {0.22f, 0.23f, 0.65f}, false, 2U},
+                {{0.0f, -0.15f, 0.43f}, {0.25f, 0.24f, 0.79f}, false, 3U},
+                {{0.0f,  0.15f, 0.43f}, {0.25f, 0.24f, 0.79f}, false, 3U},
+                {{0.0f, 0.0f, 0.77f}, {0.33f, 0.46f, 0.24f}, false, 1U}
+            }};
+            for (const auto& avatar : avatar_proxies_)
+            {
+                const Mat4 parent = multiply(
+                    translation(avatar.position),
+                    quaternion_rotation(avatar.rotation));
+                for (const auto& part : parts)
+                {
+                    const GpuMesh& gpu = part.round
+                        ? sphere_mesh_ : box_mesh_;
+                    if (gpu.vao == 0U || gpu.index_count <= 0) continue;
+                    const Mat4 model = multiply(
+                        parent,
+                        multiply(translation(part.offset),
+                                 scaling(part.size)));
+                    const Mat4 mvp = multiply(
+                        projection, multiply(view, model));
+                    glUniformMatrix4fv(
+                        glGetUniformLocation(program_, "uMvp"),
+                        1, GL_FALSE, mvp.value.data());
+                    const std::array<RenderVec3, 4> colors{{
+                        {0.81f, 0.75f, 0.68f},
+                        {0.08f, 0.64f, 0.76f},
+                        {0.16f, 0.21f, 0.33f},
+                        {0.08f, 0.13f, 0.24f}
+                    }};
+                    const auto tint = colors[part.color];
+                    const float shade = avatar.is_self ? 1.0f : 0.72f;
+                    glUniform3f(
+                        glGetUniformLocation(program_,
+                            "uOverrideColorValue"),
+                        tint.x * shade, tint.y * shade, tint.z * shade);
+                    glBindVertexArray(gpu.vao);
+                    glDrawElements(
+                        GL_TRIANGLES, gpu.index_count,
+                        GL_UNSIGNED_INT, nullptr);
+                    diagnostics_.draw_calls++;
+                    diagnostics_.triangles +=
+                        static_cast<std::uint64_t>(gpu.index_count / 3);
+                }
+            }
+            glBindVertexArray(0U);
+            glUniform1i(
+                glGetUniformLocation(program_, "uOverrideColor"),
+                GL_FALSE);
+        }
+
         if (terrain_index_count_ > 0U || !scene_objects_.empty())
         {
             glUseProgram(0U);
@@ -3913,6 +4026,7 @@ private:
     RenderCamera camera_;
     RenderEnvironment environment_;
     std::vector<RenderSceneObject> scene_objects_;
+    std::vector<RenderAvatarProxy> avatar_proxies_;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;

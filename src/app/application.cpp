@@ -26,6 +26,7 @@
 #include "nexverse/protocol/render_materials.hpp"
 #include "nexverse/protocol/region_material_scope.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
@@ -386,6 +387,7 @@ void character_callback(GLFWwindow* window, unsigned int codepoint)
     if (context == nullptr || context->login == nullptr || context->login->busy) return;
 
     LoginUiState& state = *context->login;
+    if (state.authenticated) return;
     if (state.focused == LoginField::username)
     {
         append_utf8(state.username, static_cast<char32_t>(codepoint), 96U);
@@ -454,6 +456,7 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
 
     if (context == nullptr || context->login == nullptr) return;
     LoginUiState& state = *context->login;
+    if (state.authenticated) return;
 
     if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
     {
@@ -493,7 +496,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
 
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
-    if (context == nullptr || context->login == nullptr) return;
+    if (context == nullptr || context->login == nullptr ||
+        context->login->authenticated) return;
 
     int width = 0;
     int height = 0;
@@ -2489,6 +2493,9 @@ int Application::run(bool enable_developer_modules)
     protocol::OutboundCommandQueue outbound_queue{512U};
     world::WorldModel world_model;
     std::mutex world_mutex;
+    std::uint32_t self_avatar_local_id = 0U;
+    std::uint64_t self_avatar_region_handle = 0U;
+    std::chrono::steady_clock::time_point last_self_movement_log{};
     bool simulation_ready = false;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
@@ -2808,6 +2815,8 @@ int Application::run(bool enable_developer_modules)
         [&object_packets,
          &avatar_packets,
          &full_object_live_logged,
+         &self_avatar_local_id,
+         &self_avatar_region_handle,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -2840,6 +2849,13 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
+                        if (self_avatar_local_id != entry.local_id ||
+                            self_avatar_region_handle != update->region_handle)
+                        {
+                            self_avatar_local_id = entry.local_id;
+                            self_avatar_region_handle = update->region_handle;
+                            core::info("Avatar self local-id bound from ObjectUpdate");
+                        }
                         const world::AgentState current = world_model.agent();
                         world_model.apply_agent({
                             current.agent_id,
@@ -2890,6 +2906,8 @@ int Application::run(bool enable_developer_modules)
         [&object_packets,
          &avatar_packets,
          &compressed_object_live_logged,
+         &self_avatar_local_id,
+         &self_avatar_region_handle,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -2923,6 +2941,13 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
+                        if (self_avatar_local_id != entry.local_id ||
+                            self_avatar_region_handle != update->region_handle)
+                        {
+                            self_avatar_local_id = entry.local_id;
+                            self_avatar_region_handle = update->region_handle;
+                            core::info("Avatar self local-id bound from ObjectUpdateCompressed");
+                        }
                         const world::AgentState current = world_model.agent();
                         world_model.apply_agent({
                             current.agent_id,
@@ -3020,6 +3045,9 @@ int Application::run(bool enable_developer_modules)
         protocol::msg_improved_terse_object_update,
         [&object_packets,
          &terse_object_live_logged,
+         &self_avatar_local_id,
+         &self_avatar_region_handle,
+         &last_self_movement_log,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -3047,6 +3075,26 @@ int Application::run(bool enable_developer_modules)
             {
                 if (update.avatar)
                 {
+                    if (self_avatar_local_id != 0U &&
+                        self_avatar_region_handle == terse->region_handle &&
+                        update.local_id == self_avatar_local_id)
+                    {
+                        const auto current = world_model.agent();
+                        world_model.apply_agent({
+                            current.agent_id, current.session_id,
+                            update.position, update.rotation, current.present});
+                        const auto now = std::chrono::steady_clock::now();
+                        if (now - last_self_movement_log >
+                                std::chrono::seconds{2})
+                        {
+                            last_self_movement_log = now;
+                            core::info("Avatar self position synchronized: x=" +
+                                std::to_string(update.position.x) +
+                                " y=" + std::to_string(update.position.y) +
+                                " z=" + std::to_string(update.position.z));
+                        }
+                        continue;
+                    }
                     for (const auto& [id, existing] : world_model.avatars())
                     {
                         if (existing.local_id != update.local_id)
@@ -3256,6 +3304,9 @@ int Application::run(bool enable_developer_modules)
         });
 
     auto last_agent_update = std::chrono::steady_clock::now();
+    protocol::MovementController movement_controller;
+    std::uint32_t last_reported_control_flags = 0U;
+    bool movement_heading_initialized = false;
 
     std::atomic_bool circuit_stop{false};
     std::future<protocol::CircuitStatus> circuit_future;
@@ -3524,6 +3575,14 @@ int Application::run(bool enable_developer_modules)
                     {
                         active_session = std::move(result.session);
                         login_ui.authenticated = true;
+                        movement_controller.reset();
+                        movement_heading_initialized = false;
+                        last_reported_control_flags = 0U;
+                        {
+                            std::scoped_lock lock{world_mutex};
+                            self_avatar_local_id = 0U;
+                            self_avatar_region_handle = 0U;
+                        }
                         login_ui.status = "CONNECTED";
                         login_ui.notice = result.message.empty()
                             ? "OpenSim-Anmeldung erfolgreich."
@@ -4253,51 +4312,69 @@ int Application::run(bool enable_developer_modules)
                 current_circuit_state == protocol::CircuitState::active &&
                 now - last_agent_update >= std::chrono::milliseconds{100})
             {
-                protocol::AgentUpdateData update;
-                std::uint32_t controls = 0U;
-
-                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-                    controls |= protocol::control_at_pos;
-                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-                    controls |= protocol::control_at_neg;
-                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-                    controls |= protocol::control_left_pos;
-                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-                    controls |= protocol::control_left_neg;
-                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-                    controls |= protocol::control_up_pos;
-                if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-                    controls |= protocol::control_up_neg;
-                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-                    controls |= protocol::control_turn_left;
-                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-                    controls |= protocol::control_turn_right;
-                if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-                    controls |= protocol::control_fly;
-
-                if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-                    glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+                const bool focused =
+                    glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
+                const auto pressed = [&](int key)
                 {
-                    controls |= protocol::control_fast_at |
-                                protocol::control_fast_left |
-                                protocol::control_fast_up;
-                }
+                    return focused &&
+                           glfwGetKey(window, key) == GLFW_PRESS;
+                };
+                protocol::MovementKeys keys;
+                keys.forward = pressed(GLFW_KEY_W) || pressed(GLFW_KEY_UP);
+                keys.backward = pressed(GLFW_KEY_S) ||
+                                pressed(GLFW_KEY_DOWN);
+                keys.left = pressed(GLFW_KEY_A);
+                keys.right = pressed(GLFW_KEY_D);
+                keys.turn_left = pressed(GLFW_KEY_LEFT);
+                keys.turn_right = pressed(GLFW_KEY_RIGHT);
+                keys.jump = pressed(GLFW_KEY_SPACE);
+                keys.descend = pressed(GLFW_KEY_C);
+                keys.sprint = pressed(GLFW_KEY_LEFT_SHIFT) ||
+                              pressed(GLFW_KEY_RIGHT_SHIFT);
+                keys.toggle_fly = pressed(GLFW_KEY_F);
 
                 world::AgentState agent_for_camera;
                 {
                     std::scoped_lock lock{world_mutex};
                     agent_for_camera = world_model.agent();
                 }
+                if (!movement_heading_initialized)
+                {
+                    movement_controller.reset(agent_for_camera.rotation);
+                    movement_heading_initialized = true;
+                    core::info("Avatar controls active: WASD, arrow-turn, "
+                               "Shift fast, Space jump, F flight toggle");
+                }
+                auto update = movement_controller.step(
+                    keys, std::chrono::duration<float>(
+                        now - last_agent_update).count());
+                agent_for_camera.rotation = update.body_rotation;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    const auto authoritative = world_model.agent();
+                    world_model.apply_agent({
+                        authoritative.agent_id,
+                        authoritative.session_id,
+                        authoritative.position,
+                        update.body_rotation,
+                        authoritative.present});
+                }
                 const CameraState camera =
                     camera_from_agent(agent_for_camera);
-
-                update.control_flags = controls;
                 update.camera_center = camera.center;
                 update.camera_at_axis = camera.at;
                 update.camera_left_axis = camera.left;
                 update.camera_up_axis = camera.up;
                 update.far_clip = camera.far_clip;
 
+                if (update.control_flags != last_reported_control_flags)
+                {
+                    last_reported_control_flags = update.control_flags;
+                    core::info("AgentUpdate controls changed: " +
+                        std::to_string(update.control_flags) +
+                        (movement_controller.flying()
+                            ? " (flying)" : ""));
+                }
                 (void)outbound_queue.push(std::move(update));
                 last_agent_update = now;
             }
@@ -4368,6 +4445,7 @@ int Application::run(bool enable_developer_modules)
             render::RenderTerrain terrain_update;
             render::RenderEnvironment environment_update;
             std::vector<render::RenderSceneObject> scene_object_update;
+            std::vector<render::RenderAvatarProxy> avatar_proxy_update;
             std::vector<std::string> scene_texture_update;
             bool terrain_changed = false;
             bool environment_changed = false;
@@ -4623,6 +4701,32 @@ int Application::run(bool enable_developer_modules)
             {
                 std::scoped_lock lock{world_mutex};
                 render_agent = world_model.agent();
+                if (render_agent.present)
+                {
+                    avatar_proxy_update.push_back({
+                        {render_agent.position.x,
+                         render_agent.position.y,
+                         render_agent.position.z},
+                        {render_agent.rotation.x,
+                         render_agent.rotation.y,
+                         render_agent.rotation.z,
+                         render_agent.rotation.w},
+                        true});
+                }
+                for (const auto& [id, avatar] : world_model.avatars())
+                {
+                    if (id == render_agent.agent_id ||
+                        avatar_proxy_update.size() >= 64U) continue;
+                    avatar_proxy_update.push_back({
+                        {avatar.position.x,
+                         avatar.position.y,
+                         avatar.position.z},
+                        {avatar.rotation.x,
+                         avatar.rotation.y,
+                         avatar.rotation.z,
+                         avatar.rotation.w},
+                        false});
+                }
 
                 const world::RegionState& region =
                     world_model.region();
@@ -5468,6 +5572,7 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
+            world_renderer->set_avatar_proxies(avatar_proxy_update);
             if (simulation_ready)
             {
                 const CameraState camera =
