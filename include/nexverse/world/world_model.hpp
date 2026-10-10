@@ -90,6 +90,7 @@ struct ObjectState
     std::string sculpt_asset_id;
     std::uint8_t sculpt_type = 0U;
     std::optional<protocol::PointLightData> point_light;
+    std::optional<protocol::ParticleSystemData> particle_system;
     [[nodiscard]] bool is_mesh() const noexcept
     {
         return !sculpt_asset_id.empty() && (sculpt_type & 0x07U) == 0x05U;

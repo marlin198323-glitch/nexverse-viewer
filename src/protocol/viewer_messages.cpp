@@ -492,6 +492,82 @@ std::optional<PointLightData> parse_point_light_extra_params(
     return std::nullopt;
 }
 
+std::optional<ParticleSystemData> parse_particle_system(
+    std::span<const std::uint8_t> bytes)
+{
+    // OpenMetaverse ParticleSystem: 68-byte system and 18-byte
+    // particle data, optionally prefixed with length headers.
+    std::size_t start = 0U;
+    std::size_t part = 68U;
+    if (bytes.size() != 86U)
+    {
+        if (bytes.size() < 94U || bytes.size() > 98U ||
+            read_le_u32(bytes, 0U) != 68U ||
+            read_le_u32(bytes, 72U) < 18U ||
+            read_le_u32(bytes, 72U) > 22U ||
+            bytes.size() != 76U + read_le_u32(bytes, 72U))
+            return std::nullopt;
+        start = 4U;
+        part = 76U;
+    }
+
+    auto u16_fixed = [&](std::size_t offset)
+    {
+        return static_cast<float>(read_le_u16(bytes, offset)) / 256.0f;
+    };
+    const std::uint32_t part_flags = read_le_u32(bytes, part);
+    ParticleSystemData out;
+    out.crc = read_le_u32(bytes, start);
+    out.flags = read_le_u32(bytes, start + 4U);
+    out.pattern = bytes[start + 8U];
+    out.source_max_age = u16_fixed(start + 9U);
+    out.burst_rate = u16_fixed(start + 15U);
+    out.burst_radius = u16_fixed(start + 17U);
+    out.speed_min = u16_fixed(start + 19U);
+    out.speed_max = u16_fixed(start + 21U);
+    out.burst_count = bytes[start + 23U];
+    out.acceleration = {
+        static_cast<float>(read_le_u16(bytes, start + 30U)) / 128.0f - 256.0f,
+        static_cast<float>(read_le_u16(bytes, start + 32U)) / 128.0f - 256.0f,
+        static_cast<float>(read_le_u16(bytes, start + 34U)) / 128.0f - 256.0f
+    };
+    out.texture_id = uuid_from_bytes(bytes, start + 36U);
+    out.particle_flags = part_flags;
+    out.particle_max_age = u16_fixed(part + 4U);
+    for (std::size_t i = 0U; i < 4U; ++i)
+    {
+        out.start_color[i] = static_cast<float>(bytes[part + 6U + i]) / 255.0f;
+        out.end_color[i] = static_cast<float>(bytes[part + 10U + i]) / 255.0f;
+    }
+    // The wire format specifies X/Y sizes; a first, symmetrical soft
+    // sprite uses their average (non-square geometry remains future work).
+    out.start_scale = (static_cast<float>(bytes[part + 14U]) +
+                       static_cast<float>(bytes[part + 15U])) / 64.0f;
+    out.end_scale = (static_cast<float>(bytes[part + 16U]) +
+                     static_cast<float>(bytes[part + 17U])) / 64.0f;
+    if (start != 0U)
+    {
+        std::size_t opt = 94U;
+        if ((part_flags & 0x10000U) != 0U)
+        {
+            if (opt + 2U > bytes.size()) return std::nullopt;
+            out.start_glow = static_cast<float>(bytes[opt++]) / 255.0f;
+            out.end_glow = static_cast<float>(bytes[opt++]) / 255.0f;
+        }
+        if ((part_flags & 0x20000U) != 0U)
+        {
+            if (opt + 2U > bytes.size()) return std::nullopt;
+            opt += 2U; // Blend overrides parsed but rendered via alpha
+        }
+        if (opt != bytes.size()) return std::nullopt;
+    }
+    if (out.pattern == 0U || out.burst_count == 0U ||
+        out.particle_max_age <= 0.0f || out.burst_rate <= 0.0f ||
+        out.speed_min > out.speed_max)
+        return std::nullopt;
+    return out;
+}
+
 std::optional<ObjectUpdateMessage> decode_object_update(
     std::span<const std::uint8_t> payload)
 {
@@ -645,11 +721,18 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         }
         offset += 4U; // text color
 
-        if (!skip_variable1(payload, offset) ||
-            !skip_variable1(payload, offset))
+        if (!skip_variable1(payload, offset))
         {
-            return std::nullopt;
+            return std::nullopt; // MediaURL
         }
+        std::string particle_bytes;
+        if (!read_variable1(payload, offset, particle_bytes))
+        {
+            return std::nullopt; // PSBlock
+        }
+        object.particle_system = parse_particle_system({
+            reinterpret_cast<const std::uint8_t*>(particle_bytes.data()),
+            particle_bytes.size()});
 
         std::string extra_params;
         if (!read_variable1(payload, offset, extra_params))
@@ -797,6 +880,8 @@ decode_object_update_compressed(
             if ((flags & 0x08U) != 0U)
             {
                 if (!need(86U)) return std::nullopt;
+                object.particle_system =
+                    parse_particle_system(data.subspan(pos, 86U));
                 pos += 86U;
             }
 

@@ -2096,6 +2096,42 @@ void main()
 }
 )GLSL";
 
+// Dedicated soft-sprite shader: native points rendered as Gaussian
+// circles, avoiding the hard square pixels of old particle renderers.
+constexpr const char* particle_vertex_shader_source = R"GLSL(
+#version 330 core
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec4 aColor;
+layout(location = 2) in float aRadius;
+uniform mat4 uViewProjection;
+uniform vec3 uCamera;
+uniform float uViewportHeight;
+out vec4 vParticleColor;
+void main()
+{
+    gl_Position = uViewProjection * vec4(aPosition, 1.0);
+    float distanceToCamera = max(distance(aPosition, uCamera), 0.1);
+    gl_PointSize = clamp(aRadius * uViewportHeight /
+        distanceToCamera, 2.0, 96.0);
+    vParticleColor = aColor;
+}
+)GLSL";
+
+constexpr const char* particle_fragment_shader_source = R"GLSL(
+#version 330 core
+in vec4 vParticleColor;
+out vec4 FragColor;
+void main()
+{
+    vec2 xy = gl_PointCoord - vec2(0.5);
+    float r = length(xy) * 2.0;
+    if (r >= 1.0) discard;
+    // Soft edges and core allow smooth smoke/fire/spark prototypes.
+    float soft = exp(-4.0 * r * r) * (1.0 - smoothstep(0.7, 1.0, r));
+    FragColor = vec4(vParticleColor.rgb, vParticleColor.a * soft);
+}
+)GLSL";
+
 constexpr const char* sky_vertex_shader_source = R"GLSL(
 #version 330 core
 out vec2 vUv;
@@ -2292,10 +2328,30 @@ public:
 
         program_ = create_program();
         sky_program_ = create_sky_program();
-        if (program_ == 0U || sky_program_ == 0U)
+        particle_program_ = create_program_from(
+            particle_vertex_shader_source,
+            particle_fragment_shader_source);
+        if (program_ == 0U || sky_program_ == 0U ||
+            particle_program_ == 0U)
         {
             return false;
         }
+
+        glGenVertexArrays(1, &particle_vao_);
+        glGenBuffers(1, &particle_vbo_);
+        glBindVertexArray(particle_vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, particle_vbo_);
+        constexpr GLsizei stride = 8 * static_cast<GLsizei>(sizeof(float));
+        glVertexAttribPointer(0U, 3, GL_FLOAT, GL_FALSE, stride, nullptr);
+        glEnableVertexAttribArray(0U);
+        glVertexAttribPointer(1U, 4, GL_FLOAT, GL_FALSE, stride,
+            reinterpret_cast<void*>(3U * sizeof(float)));
+        glEnableVertexAttribArray(1U);
+        glVertexAttribPointer(2U, 1, GL_FLOAT, GL_FALSE, stride,
+            reinterpret_cast<void*>(7U * sizeof(float)));
+        glEnableVertexAttribArray(2U);
+        glBindVertexArray(0U);
+        glBindBuffer(GL_ARRAY_BUFFER, 0U);
 
         glGenVertexArrays(1, &sky_vao_);
 
@@ -2803,6 +2859,15 @@ public:
                     scene_objects_[index].local_id] = index;
             }
         }
+    }
+
+    void set_particle_emitters(
+        const std::vector<RenderParticleEmitter>& emitters) override
+    {
+        constexpr std::size_t max_emitters = 32U;
+        particle_emitters_.assign(emitters.begin(),
+            emitters.begin() + static_cast<std::ptrdiff_t>(
+                std::min(emitters.size(), max_emitters)));
     }
 
     void set_point_lights(
@@ -3715,6 +3780,7 @@ public:
                 GL_FALSE);
         }
 
+        draw_soft_particles(time_seconds, multiply(projection, view));
         if (terrain_index_count_ > 0U || !scene_objects_.empty())
         {
             glUseProgram(0U);
@@ -3765,6 +3831,15 @@ public:
 
     void shutdown() override
     {
+        if (particle_vbo_ != 0U)
+            glDeleteBuffers(1, &particle_vbo_);
+        if (particle_vao_ != 0U)
+            glDeleteVertexArrays(1, &particle_vao_);
+        if (particle_program_ != 0U)
+            glDeleteProgram(particle_program_);
+        particle_vbo_ = 0U;
+        particle_vao_ = 0U;
+        particle_program_ = 0U;
         destroy_mesh(box_mesh_);
         destroy_mesh(cylinder_mesh_);
         destroy_mesh(prism_mesh_);
@@ -3875,6 +3950,129 @@ public:
     }
 
 private:
+    // This stage renders a deterministic bounded approximation of
+    // OpenSim source particles. A full stateful LSL particle engine,
+    // texture blending, and target tracking remain separate phases.
+    void draw_soft_particles(double seconds, const Mat4& view_projection)
+    {
+        if (particle_emitters_.empty() || particle_program_ == 0U ||
+            particle_vao_ == 0U || !std::isfinite(seconds))
+            return;
+        std::vector<float> vertices;
+        constexpr std::size_t max_particles = 768U;
+        vertices.reserve(max_particles * 8U);
+        const auto hash01 = [](std::uint32_t seed)
+        {
+            seed ^= seed >> 16U;
+            seed *= 0x7feb352dU;
+            seed ^= seed >> 15U;
+            seed *= 0x846ca68bU;
+            seed ^= seed >> 16U;
+            return static_cast<float>(seed & 0xffffU) / 65535.0f;
+        };
+        std::size_t count = 0U;
+        for (const auto& emitter : particle_emitters_)
+        {
+            if (count >= max_particles) break;
+            if (emitter.max_age <= 0.0f || emitter.burst_rate <= 0.0f ||
+                emitter.burst_count == 0U) continue;
+            const float interval = std::max(0.04f, emitter.burst_rate);
+            const auto bursts = static_cast<std::size_t>(
+                std::clamp(std::ceil(emitter.max_age / interval),
+                    1.0f, 32.0f));
+            const auto per_burst = std::min<std::size_t>(
+                emitter.burst_count, 16U);
+            for (std::size_t burst = 0U; burst < bursts; ++burst)
+            {
+                if (count >= max_particles) break;
+                const float phase = static_cast<float>(
+                    std::fmod(std::max(0.0, seconds), interval));
+                const float age = phase +
+                    static_cast<float>(burst) * interval;
+                if (age >= emitter.max_age) continue;
+                const float t = age / emitter.max_age;
+                for (std::size_t n = 0U; n < per_burst; ++n)
+                {
+                    if (count >= max_particles) break;
+                    const auto seed = emitter.local_id ^
+                        (static_cast<std::uint32_t>(burst) * 9301U) ^
+                        (static_cast<std::uint32_t>(n) * 49297U);
+                    const float a = hash01(seed + 11U) * 6.2831853f;
+                    const float z = hash01(seed + 37U) * 2.0f - 1.0f;
+                    const float radial = std::sqrt(std::max(0.0f,
+                        1.0f - z * z));
+                    const float speed = std::lerp(
+                        emitter.speed_min, emitter.speed_max,
+                        hash01(seed + 67U));
+                    const float radius = emitter.burst_radius *
+                        hash01(seed + 93U);
+                    RenderVec3 dir{
+                        std::cos(a) * radial, std::sin(a) * radial, z};
+                    if ((emitter.pattern & 0x01U) != 0U)
+                        dir = {0.0f, 0.0f, 0.0f}; // Drop
+                    else if ((emitter.pattern & 0x0cU) != 0U)
+                        dir.z = std::abs(z); // Upward cone (approximate)
+                    const RenderVec3 pos{
+                        emitter.position.x + radius * dir.x +
+                            speed * age * dir.x +
+                            0.5f * emitter.acceleration.x * age * age,
+                        emitter.position.y + radius * dir.y +
+                            speed * age * dir.y +
+                            0.5f * emitter.acceleration.y * age * age,
+                        emitter.position.z + radius * dir.z +
+                            speed * age * dir.z +
+                            0.5f * emitter.acceleration.z * age * age};
+                    if (!std::isfinite(pos.x) || !std::isfinite(pos.y) ||
+                        !std::isfinite(pos.z)) continue;
+                    vertices.insert(vertices.end(),
+                        {pos.x, pos.y, pos.z,
+                         std::lerp(emitter.start_color[0],
+                             emitter.end_color[0], t),
+                         std::lerp(emitter.start_color[1],
+                             emitter.end_color[1], t),
+                         std::lerp(emitter.start_color[2],
+                             emitter.end_color[2], t),
+                         std::lerp(emitter.start_color[3],
+                             emitter.end_color[3], t),
+                         std::clamp(std::lerp(
+                             emitter.start_scale, emitter.end_scale, t),
+                             0.02f, 4.0f)});
+                    ++count;
+                }
+            }
+        }
+        if (count == 0U) return;
+
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glUseProgram(particle_program_);
+        glUniformMatrix4fv(
+            glGetUniformLocation(particle_program_, "uViewProjection"),
+            1, GL_FALSE, view_projection.value.data());
+        glUniform3f(
+            glGetUniformLocation(particle_program_, "uCamera"),
+            camera_.position.x, camera_.position.y, camera_.position.z);
+        glUniform1f(
+            glGetUniformLocation(particle_program_, "uViewportHeight"),
+            static_cast<float>(height_));
+        glBindVertexArray(particle_vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, particle_vbo_);
+        glBufferData(GL_ARRAY_BUFFER,
+            static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+            vertices.data(), GL_STREAM_DRAW);
+        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(count));
+        glBindVertexArray(0U);
+        glBindBuffer(GL_ARRAY_BUFFER, 0U);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        glDisable(GL_PROGRAM_POINT_SIZE);
+        glUseProgram(program_);
+        diagnostics_.draw_calls++;
+    }
+
     [[nodiscard]] Mat4 scene_pose(
         std::size_t index,
         std::size_t depth = 0U) const
@@ -4116,6 +4314,10 @@ private:
     std::vector<RenderSceneObject> scene_objects_;
     std::vector<RenderAvatarProxy> avatar_proxies_;
     std::vector<RenderPointLight> point_lights_;
+    std::vector<RenderParticleEmitter> particle_emitters_;
+    GLuint particle_program_ = 0U;
+    GLuint particle_vao_ = 0U;
+    GLuint particle_vbo_ = 0U;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;

@@ -189,6 +189,34 @@ struct PointLightData
 [[nodiscard]] std::optional<PointLightData> parse_point_light_extra_params(
     std::span<const std::uint8_t> extra);
 
+// OpenSim PSBlock legacy payload (86 bytes), or extended 94..98.
+struct ParticleSystemData
+{
+    std::uint32_t crc = 0U;
+    std::uint32_t flags = 0U;
+    std::uint32_t particle_flags = 0U;
+    std::uint8_t pattern = 0U;
+    std::uint8_t burst_count = 0U;
+    float source_max_age = 0.0f;
+    float burst_rate = 0.0f;
+    float burst_radius = 0.0f;
+    float speed_min = 0.0f;
+    float speed_max = 0.0f;
+    float particle_max_age = 0.0f;
+    Vec3 acceleration;
+    std::string texture_id;
+    std::array<float, 4> start_color{1.0f,1.0f,1.0f,1.0f};
+    std::array<float, 4> end_color{1.0f,1.0f,1.0f,0.0f};
+    float start_scale = 0.2f;
+    float end_scale = 0.2f;
+    float start_glow = 0.0f;
+    float end_glow = 0.0f;
+};
+
+// Malformed or unsupported PSBlocks are ignored without rejecting the prim.
+[[nodiscard]] std::optional<ParticleSystemData> parse_particle_system(
+    std::span<const std::uint8_t> bytes);
+
 struct ObjectUpdateEntry
 {
     std::uint32_t local_id = 0U;
@@ -203,6 +231,7 @@ struct ObjectUpdateEntry
     std::string sculpt_asset_id;
     std::uint8_t sculpt_type = 0U;
     std::optional<PointLightData> point_light;
+    std::optional<ParticleSystemData> particle_system;
     [[nodiscard]] bool is_mesh() const noexcept
     {
         return !sculpt_asset_id.empty() && (sculpt_type & 0x07U) == 0x05U;
@@ -266,6 +295,7 @@ struct ObjectUpdateCompressedEntry
     std::string sculpt_asset_id;
     std::uint8_t sculpt_type = 0U;
     std::optional<PointLightData> point_light;
+    std::optional<ParticleSystemData> particle_system;
     std::vector<std::uint8_t> texture_entry;
     std::optional<TextureEntry> parsed_texture_entry;
     std::optional<TextureEntryDefaultFace> default_texture;

@@ -8,6 +8,83 @@
 
 int main()
 {
+    // Legacy ParticleSystem: 68-byte system + 18-byte particle data.
+    std::vector<std::uint8_t> ps(86U, 0U);
+    ps[8U] = 0x02U; // explode pattern
+    ps[15U] = 0x80U; // burst rate: 0.5s (LE /256)
+    ps[17U] = 0x00U;
+    ps[18U] = 0x01U; // burst radius 1.0
+    ps[19U] = 0x00U;
+    ps[20U] = 0x01U; // speed minimum 1.0
+    ps[21U] = 0x00U;
+    ps[22U] = 0x02U; // speed maximum 2.0
+    ps[23U] = 4U;
+    ps[72U] = 0x00U;
+    ps[73U] = 0x03U; // max age 3.0
+    ps[74U] = 220U;
+    ps[75U] = 120U;
+    ps[76U] = 50U;
+    ps[77U] = 255U;
+    ps[78U] = 70U;
+    ps[79U] = 70U;
+    ps[80U] = 70U;
+    ps[81U] = 0U;
+    ps[82U] = 16U;
+    ps[83U] = 16U; // scale 0.5m
+    ps[84U] = 32U;
+    ps[85U] = 32U; // scale 1m
+    const auto decoded_ps =
+        nexverse::protocol::parse_particle_system(ps);
+    if (!decoded_ps || decoded_ps->pattern != 0x02U ||
+        decoded_ps->burst_count != 4U ||
+        decoded_ps->burst_rate != 0.5f ||
+        decoded_ps->burst_radius != 1.0f ||
+        decoded_ps->particle_max_age != 3.0f ||
+        decoded_ps->start_scale != 0.5f ||
+        decoded_ps->end_scale != 1.0f ||
+        decoded_ps->start_color[0] != 220.0f / 255.0f)
+    {
+        std::cerr << "Legacy OpenSim PSBlock decode failed\n";
+        return 98;
+    }
+    auto invalid_ps = ps;
+    invalid_ps.pop_back();
+    if (nexverse::protocol::parse_particle_system(invalid_ps))
+    {
+        std::cerr << "Truncated particle system accepted\n";
+        return 99;
+    }
+    // Extended PSBlock with system/particle length headers.
+    std::vector<std::uint8_t> extended;
+    extended.insert(extended.end(), {68U,0U,0U,0U});
+    extended.insert(extended.end(), ps.begin(), ps.begin()+68);
+    extended.insert(extended.end(), {18U,0U,0U,0U});
+    extended.insert(extended.end(), ps.begin()+68, ps.end());
+    if (!nexverse::protocol::parse_particle_system(extended))
+    {
+        std::cerr << "Extended OpenSim PSBlock decode failed\n";
+        return 100;
+    }
+    extended[72U] = 22U;
+    extended[76U] = 0x00U;
+    extended[77U] = 0x00U;
+    extended[78U] = 0x03U; // DataGlow | DataBlend
+    extended[79U] = 0x00U;
+    extended.insert(extended.end(), {20U,150U,7U,8U});
+    if (!nexverse::protocol::parse_particle_system(extended) ||
+        nexverse::protocol::parse_particle_system(extended)->end_glow !=
+            150.0f / 255.0f)
+    {
+        std::cerr << "Glow/blend extended PSBlock decode failed\n";
+        return 101;
+    }
+    extended[72U] = 25U; // invalid size (must be <=22)
+    if (nexverse::protocol::parse_particle_system(extended))
+    {
+        std::cerr << "Oversized PSBlock accepted\n";
+        return 102;
+    }
+
     // OpenSim ExtraParams 0x20, canonical 16-byte LightData wire format.
     // RGB and intensity are UNORM8; radius/cutoff/falloff are LE float32.
     const std::vector<std::uint8_t> light_extra{
@@ -375,9 +452,11 @@ int main()
     full_update_payload.insert(full_update_payload.end(), {0U, 0U});
     full_update_payload.push_back(0U);
     full_update_payload.insert(full_update_payload.end(), 4U, 0U);
-    full_update_payload.push_back(0U);
-    full_update_payload.push_back(0U);
-    full_update_payload.push_back(0U);
+    full_update_payload.push_back(0U); // MediaURL
+    full_update_payload.push_back(86U); // PSBlock (Variable1)
+    full_update_payload.insert(
+        full_update_payload.end(), ps.begin(), ps.end());
+    full_update_payload.push_back(0U); // ExtraParams
     full_update_payload.insert(full_update_payload.end(), 16U, 0U);
     full_update_payload.insert(full_update_payload.end(), 16U, 0U);
     full_update_payload.insert(full_update_payload.end(), 4U, 0U);
@@ -402,6 +481,8 @@ int main()
         full_update->objects[0].scale.z != 4.0f ||
         full_update->objects[0].shape.path_curve != 0x10U ||
         full_update->objects[0].shape.profile_shape() != 0x01U ||
+        !full_update->objects[0].particle_system.has_value() ||
+        full_update->objects[0].particle_system->burst_count != 4U ||
         !full_update->objects[0].default_texture.has_value() ||
         full_update->objects[0].default_texture->texture_id !=
             "89556747-24cb-43ed-920b-47caed15465f" ||
@@ -462,8 +543,9 @@ int main()
     put_f32(mesh_data, 28U, 2.0f);
     put_f32(mesh_data, 32U, 3.0f);
     put_f32(mesh_data, 36U, 4.0f);
-    put_u32(mesh_data, 64U, 0x20U); // HasParent
+    put_u32(mesh_data, 64U, 0x28U); // HasParent + PSBlock
     append_u32_vec(mesh_data, 123U);
+    mesh_data.insert(mesh_data.end(), ps.begin(), ps.end());
     mesh_data.push_back(1U); // one ExtraParam
     mesh_data.insert(mesh_data.end(), {0x30U, 0U}); // Sculpt type
     append_u32_vec(mesh_data, 17U);
@@ -506,6 +588,8 @@ int main()
         mesh_update->objects[0].scale.z != 4.0f ||
         mesh_update->objects[0].shape.path_curve != 0x10U ||
         mesh_update->objects[0].shape.profile_shape() != 0x01U ||
+        !mesh_update->objects[0].particle_system.has_value() ||
+        mesh_update->objects[0].particle_system->burst_count != 4U ||
         !mesh_update->objects[0].default_texture ||
         mesh_update->objects[0].default_texture->texture_id !=
             "89556747-24cb-43ed-920b-47caed15465f")

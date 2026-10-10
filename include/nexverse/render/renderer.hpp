@@ -109,6 +109,26 @@ struct RenderPointLight
     float falloff = 0.0f;
 };
 
+struct RenderParticleEmitter
+{
+    std::uint32_t local_id = 0U;
+    RenderVec3 position;
+    RenderVec3 acceleration;
+    std::string texture_id;
+    std::array<float, 4> start_color{1.0f,1.0f,1.0f,1.0f};
+    std::array<float, 4> end_color{1.0f,1.0f,1.0f,0.0f};
+    float burst_rate = 0.0f;
+    float burst_radius = 0.0f;
+    float speed_min = 0.0f;
+    float speed_max = 0.0f;
+    float max_age = 0.0f;
+    float start_scale = 0.2f;
+    float end_scale = 0.2f;
+    std::uint8_t burst_count = 0U;
+    std::uint8_t pattern = 0U;
+    std::uint32_t flags = 0U;
+};
+
 struct RenderSceneObject
 {
     std::uint32_t local_id = 0U;
@@ -278,6 +298,8 @@ public:
         const std::vector<RenderAvatarProxy>& avatars) = 0;
     virtual void set_point_lights(
         const std::vector<RenderPointLight>& lights) = 0;
+    virtual void set_particle_emitters(
+        const std::vector<RenderParticleEmitter>& emitters) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;

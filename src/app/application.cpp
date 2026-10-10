@@ -2894,6 +2894,7 @@ int Application::run(bool enable_developer_modules)
                 object.sculpt_asset_id = entry.sculpt_asset_id;
                 object.sculpt_type = entry.sculpt_type;
                 object.point_light = entry.point_light;
+                object.particle_system = entry.particle_system;
                 object.texture_entry = entry.texture_entry;
                 object.parsed_texture_entry =
                     entry.parsed_texture_entry;
@@ -2989,7 +2990,8 @@ int Application::run(bool enable_developer_modules)
                     object.shape = entry.shape;
                     object.sculpt_asset_id = entry.sculpt_asset_id;
                     object.sculpt_type = entry.sculpt_type;
-                object.point_light = entry.point_light;
+                    object.point_light = entry.point_light;
+                    object.particle_system = entry.particle_system;
                     object.texture_entry = entry.texture_entry;
                     object.parsed_texture_entry =
                         entry.parsed_texture_entry;
@@ -3005,6 +3007,7 @@ int Application::run(bool enable_developer_modules)
                     object.sculpt_asset_id = existing->second.sculpt_asset_id;
                     object.sculpt_type = existing->second.sculpt_type;
                     object.point_light = existing->second.point_light;
+                    object.particle_system = existing->second.particle_system;
                     object.texture_entry = existing->second.texture_entry;
                     object.parsed_texture_entry =
                         existing->second.parsed_texture_entry;
@@ -3130,6 +3133,7 @@ int Application::run(bool enable_developer_modules)
                     object.sculpt_asset_id = existing->second.sculpt_asset_id;
                     object.sculpt_type = existing->second.sculpt_type;
                     object.point_light = existing->second.point_light;
+                    object.particle_system = existing->second.particle_system;
                     object.texture_entry =
                         existing->second.texture_entry;
                     object.default_texture =
@@ -4451,6 +4455,7 @@ int Application::run(bool enable_developer_modules)
             std::vector<render::RenderSceneObject> scene_object_update;
             std::vector<render::RenderAvatarProxy> avatar_proxy_update;
             std::vector<render::RenderPointLight> scene_point_lights;
+            std::vector<render::RenderParticleEmitter> scene_particle_emitters;
             std::vector<std::string> scene_texture_update;
             bool terrain_changed = false;
             bool environment_changed = false;
@@ -4764,6 +4769,66 @@ int Application::run(bool enable_developer_modules)
                 for (std::size_t i = 0U; i < std::min(
                          light_candidates.size(), max_frame_point_lights); ++i)
                     scene_point_lights.push_back(light_candidates[i].value);
+
+                struct ScoredParticleEmitter
+                {
+                    float distance_squared = 0.0f;
+                    render::RenderParticleEmitter value;
+                };
+                std::vector<ScoredParticleEmitter> emitter_candidates;
+                for (const auto& [local_id, object] : world_model.objects())
+                {
+                    if (!object.particle_system.has_value()) continue;
+                    protocol::Vec3 world_position = object.position;
+                    if (object.parent_id != 0U)
+                    {
+                        if (const auto parent =
+                                world_model.objects().find(object.parent_id);
+                            parent != world_model.objects().end())
+                        {
+                            world_position.x += parent->second.position.x;
+                            world_position.y += parent->second.position.y;
+                            world_position.z += parent->second.position.z;
+                        }
+                    }
+                    const float dx = world_position.x -
+                        render_agent.position.x;
+                    const float dy = world_position.y -
+                        render_agent.position.y;
+                    const float dz = world_position.z -
+                        render_agent.position.z;
+                    const float distance_squared =
+                        dx * dx + dy * dy + dz * dz;
+                    if (!std::isfinite(distance_squared) ||
+                        distance_squared > 192.0f * 192.0f) continue;
+                    const auto& ps = *object.particle_system;
+                    emitter_candidates.push_back({
+                        distance_squared,
+                        {local_id,
+                         {world_position.x,world_position.y,world_position.z},
+                         {ps.acceleration.x,ps.acceleration.y,ps.acceleration.z},
+                         ps.texture_id,
+                         ps.start_color,ps.end_color,
+                         ps.burst_rate,ps.burst_radius,
+                         ps.speed_min,ps.speed_max,
+                         ps.particle_max_age,
+                         ps.start_scale,ps.end_scale,
+                         ps.burst_count,ps.pattern,ps.particle_flags}});
+                }
+                constexpr std::size_t emitter_budget = 32U;
+                if (emitter_candidates.size() > emitter_budget)
+                    std::partial_sort(emitter_candidates.begin(),
+                        emitter_candidates.begin() +
+                            static_cast<std::ptrdiff_t>(emitter_budget),
+                        emitter_candidates.end(),
+                        [](const auto& a, const auto& b)
+                        {
+                            return a.distance_squared < b.distance_squared;
+                        });
+                for (std::size_t i = 0U; i < std::min(
+                         emitter_candidates.size(), emitter_budget); ++i)
+                    scene_particle_emitters.push_back(
+                        emitter_candidates[i].value);
 
                 if (render_agent.present)
                 {
@@ -5637,6 +5702,7 @@ int Application::run(bool enable_developer_modules)
             }
 
             world_renderer->set_point_lights(scene_point_lights);
+            world_renderer->set_particle_emitters(scene_particle_emitters);
             world_renderer->set_avatar_proxies(avatar_proxy_update);
             if (simulation_ready)
             {

@@ -120,3 +120,16 @@ Uniforms und berechnet additive diffuse Lichtbeiträge
 nur auf Objekt-/Meshflächen. PBR/Schatten, Terrain-
 und Avatarbeleuchtung sind Folgeblöcke.
 Details: docs/POINT_LIGHTS.md.
+
+
+## OpenSim-Partikelrenderer (0.2.0-alpha.54)
+
+Phase-8-Partikel werden aus ObjectUpdate-PSBlock und
+ObjectUpdateCompressed mittels internem C++23-Parser
+in das WorldModel aufgenommen. Der Viewer-Core
+selektiert bis zu 32 Emitter pro Frame. Der OGLRender-
+Shaderpfad rendert höchstens 768 zeitbasierte Soft-
+Sprites per dynamischem VBO in einem GL-Drawcall.
+Die nächste Ausbaustufe ergänzt echte Textur-Assets,
+Target-/Ribbon- und weitere LSL-Verhaltensweisen.
+Siehe docs/PARTICLES.md.
