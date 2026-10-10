@@ -107,3 +107,16 @@ jedem Upload auf Residency und Region-Epoche geprüft.
 View-Frustum-/Occlusion-Prioritäten und Diskcache fehlen noch.
 
 Siehe docs/MESH.md.
+
+
+## OpenSim Legacy Point-Lights (alpha.53)
+
+Point-Light ExtraParams (0x20) werden getrennt von
+Sculpt/Mesh-Extras dekodiert. Das WorldModel hält
+die serverseitigen Lichtparameter. Die Anwendungs-
+schicht priorisiert pro Frame acht nahe Quellen.
+Das Legacy-OpenGL-Backend erhält positionsbezogene
+Uniforms und berechnet additive diffuse Lichtbeiträge
+nur auf Objekt-/Meshflächen. PBR/Schatten, Terrain-
+und Avatarbeleuchtung sind Folgeblöcke.
+Details: docs/POINT_LIGHTS.md.

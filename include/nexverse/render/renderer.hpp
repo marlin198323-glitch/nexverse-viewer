@@ -100,6 +100,15 @@ struct RenderMeshGeometry
     std::vector<RenderMeshFace> faces;
 };
 
+struct RenderPointLight
+{
+    RenderVec3 position;
+    RenderVec3 color{1.0f, 1.0f, 1.0f};
+    float intensity = 0.0f;
+    float radius = 0.0f;
+    float falloff = 0.0f;
+};
+
 struct RenderSceneObject
 {
     std::uint32_t local_id = 0U;
@@ -267,6 +276,8 @@ public:
         const std::vector<RenderSceneObject>& objects) = 0;
     virtual void set_avatar_proxies(
         const std::vector<RenderAvatarProxy>& avatars) = 0;
+    virtual void set_point_lights(
+        const std::vector<RenderPointLight>& lights) = 0;
     virtual void begin_frame() = 0;
     virtual void render_world(double time_seconds) = 0;
     virtual void end_frame() = 0;

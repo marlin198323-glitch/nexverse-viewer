@@ -2828,3 +2828,61 @@ weder den Avatar-Renderpfad noch die Bewegungsfähigkeit.
   Übergangsdarstellung bis zu Phase-10-Appearance.
 
 Logstart: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl52-live.log
+
+
+## 0.2.0-alpha.53 – Phase 8: OpenSim-Point-Lights · 10.10.2026
+
+**Verbindliche Nutzerentscheidung vom 10.10.2026:**
+Fortsetzung der Entwicklung entlang der Reihenfolge des
+projectplan.md. Die zuletzt untersuchten Avatar-/Bewegungs-
+und übrigen Rendering-Asset-Fehler werden **zunächst
+nicht behoben**, sondern dokumentiert und für eine
+spätere gemeinsame Fehlerbehebungsphase vorgemerkt.
+Keine implizite Behauptung, dass die Probleme gelöst seien.
+
+**Jetzt neu in Phase 8 implementiert:**
+- Point-Light ExtraParams Blocktyp 0x20, 16 Byte:
+  4x RGBA-UNORM8 (Alpha = Intensität), dazu
+  little-endian float32 Radius, Cutoff und Falloff.
+  Implementierung orientiert sich an libopenmetaverse,
+  Primitive.LightData.
+- Sichere Bounds/Finite-/Radius-Prüfungen;
+  Daten werden in vollständigem ObjectUpdate und
+  ObjectUpdateCompressed nach SculptExtraParams separat
+  dekodiert. Bei Partial-Updates behalten vorhandene
+  Objekte ihre bereits bekannte Lichtdefinition.
+- Eigenes Feld im WorldModel für lokale Lichtquellen.
+- Die acht nächsten Punktlichter werden aus
+  den Objektpositionen pro Frame ausgewählt. Child-Prim-
+  Position wird vorläufig mit Parent+Offset angenähert.
+- Legacy OGLRender: Weltposition aus uModel-Transform,
+  acht Point-Light-Uniforms und diffuse Beleuchtung
+  von nicht-fullbright Objekt-/Meshflächen nach
+  Abstand, Radius, Intensität und Falloff.
+- Terrain/Avatar werden in dieser ersten Version
+  noch nicht von den lokalen Punktlichtern beleuchtet.
+  Keine dynamischen Schatten, keine Projektoren,
+  keine PBR-Energiekonservierung.
+- Kompletter Debug-Build, 26/26 CTests bestanden,
+  GL-3.3-Smoke auf RTX 4070 SUPER erfolgreich.
+  **In-World-Sichtabnahme mit echter Lichtquelle
+  steht noch aus**.
+
+**Bekannte Fehler für spätere Fehlerphase (unverändert):**
+- Eigene Avatar-LocalID wurde in alpha.52 Live-Log nicht
+  gebunden, daher keine serverbestätigten
+  Self-Avatar-Positionsupdates / keine verifizierte
+  Benutzbarkeit der WASD-Bewegung.
+- Eigenes Erscheinungsbild ist bisher nur Proxy,
+  echtes Skeleton/Bakes/Wearables fehlen.
+- Alpha.52: 252 geladene, vier fehlgeschlagene Meshes;
+  neun fehlende/beschädigte Objekttexturen.
+- Keine aktuelle Bestätigung einer GPU-Cache-Eviction
+  bei tatsächlichem Ortswechsel.
+
+**Fortsetzung Phase 8:** Partikel-Basis, weitere
+Lichttypen (Projektor/Material-Licht), Render-Performance
+und anschließend Phase 9 bzw. weitere Funktionssysteme.
+Maßgeblich bleibt der Plan, nicht die Bugliste.
+
+Live-Log: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl53-live.log

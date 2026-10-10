@@ -2,11 +2,51 @@
 
 #include <algorithm>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 
 int main()
 {
+    // OpenSim ExtraParams 0x20, canonical 16-byte LightData wire format.
+    // RGB and intensity are UNORM8; radius/cutoff/falloff are LE float32.
+    const std::vector<std::uint8_t> light_extra{
+        1U, 0x20U, 0U, 16U, 0U, 0U, 0U,
+        255U, 128U, 64U, 192U,
+        0U, 0U, 0x20U, 0x41U,  // radius 10
+        0U, 0U, 0x80U, 0x3eU,  // cutoff .25
+        0U, 0U, 0U, 0x3fU};    // falloff .5
+    const auto point_light =
+        nexverse::protocol::parse_point_light_extra_params(light_extra);
+    if (!point_light ||
+        point_light->red != 1.0f ||
+        std::abs(point_light->green - 128.0f / 255.0f) > 0.0001f ||
+        std::abs(point_light->intensity - 192.0f / 255.0f) > 0.0001f ||
+        point_light->radius != 10.0f ||
+        point_light->cutoff != 0.25f ||
+        point_light->falloff != 0.5f)
+    {
+        std::cerr << "OpenSim point light ExtraParams decode failed\n";
+        return 95;
+    }
+    auto truncated_light = light_extra;
+    truncated_light.pop_back();
+    if (nexverse::protocol::parse_point_light_extra_params(
+            truncated_light).has_value())
+    {
+        std::cerr << "Malformed point light ExtraParams accepted\n";
+        return 96;
+    }
+    auto invalid_light = light_extra;
+    invalid_light[13U] = 0xc0U;
+    invalid_light[14U] = 0x7fU; // NaN radius
+    if (nexverse::protocol::parse_point_light_extra_params(
+            invalid_light).has_value())
+    {
+        std::cerr << "Nonfinite point-light radius accepted\n";
+        return 97;
+    }
+
     const auto id_bytes = nexverse::protocol::uuid_to_bytes(
         "11111111-2222-3333-4444-555555555555");
     std::vector<std::uint8_t> mesh_extra{

@@ -2893,6 +2893,7 @@ int Application::run(bool enable_developer_modules)
                 object.shape = entry.shape;
                 object.sculpt_asset_id = entry.sculpt_asset_id;
                 object.sculpt_type = entry.sculpt_type;
+                object.point_light = entry.point_light;
                 object.texture_entry = entry.texture_entry;
                 object.parsed_texture_entry =
                     entry.parsed_texture_entry;
@@ -2988,6 +2989,7 @@ int Application::run(bool enable_developer_modules)
                     object.shape = entry.shape;
                     object.sculpt_asset_id = entry.sculpt_asset_id;
                     object.sculpt_type = entry.sculpt_type;
+                object.point_light = entry.point_light;
                     object.texture_entry = entry.texture_entry;
                     object.parsed_texture_entry =
                         entry.parsed_texture_entry;
@@ -3002,6 +3004,7 @@ int Application::run(bool enable_developer_modules)
                     object.shape = existing->second.shape;
                     object.sculpt_asset_id = existing->second.sculpt_asset_id;
                     object.sculpt_type = existing->second.sculpt_type;
+                    object.point_light = existing->second.point_light;
                     object.texture_entry = existing->second.texture_entry;
                     object.parsed_texture_entry =
                         existing->second.parsed_texture_entry;
@@ -3126,6 +3129,7 @@ int Application::run(bool enable_developer_modules)
                     object.shape = existing->second.shape;
                     object.sculpt_asset_id = existing->second.sculpt_asset_id;
                     object.sculpt_type = existing->second.sculpt_type;
+                    object.point_light = existing->second.point_light;
                     object.texture_entry =
                         existing->second.texture_entry;
                     object.default_texture =
@@ -4446,6 +4450,7 @@ int Application::run(bool enable_developer_modules)
             render::RenderEnvironment environment_update;
             std::vector<render::RenderSceneObject> scene_object_update;
             std::vector<render::RenderAvatarProxy> avatar_proxy_update;
+            std::vector<render::RenderPointLight> scene_point_lights;
             std::vector<std::string> scene_texture_update;
             bool terrain_changed = false;
             bool environment_changed = false;
@@ -4701,6 +4706,65 @@ int Application::run(bool enable_developer_modules)
             {
                 std::scoped_lock lock{world_mutex};
                 render_agent = world_model.agent();
+                // Legacy point lights are regular prim ExtraParams.
+                // Choose a small bounded set of nearby lights for the
+                // legacy OpenGL shader; region lights never leave CPU
+                // WorldModel and do not require asset requests.
+                struct ScoredPointLight
+                {
+                    float distance_squared = 0.0f;
+                    render::RenderPointLight value;
+                };
+                std::vector<ScoredPointLight> light_candidates;
+                for (const auto& [local_id, object] : world_model.objects())
+                {
+                    (void)local_id;
+                    if (!object.point_light.has_value() ||
+                        object.point_light->intensity <= 0.0f) continue;
+                    protocol::Vec3 world_position = object.position;
+                    if (object.parent_id != 0U)
+                    {
+                        if (const auto it =
+                                world_model.objects().find(object.parent_id);
+                            it != world_model.objects().end())
+                        {
+                            world_position.x += it->second.position.x;
+                            world_position.y += it->second.position.y;
+                            world_position.z += it->second.position.z;
+                        }
+                    }
+                    const float dx = world_position.x -
+                        render_agent.position.x;
+                    const float dy = world_position.y -
+                        render_agent.position.y;
+                    const float dz = world_position.z -
+                        render_agent.position.z;
+                    const float dist = dx * dx + dy * dy + dz * dz;
+                    if (!std::isfinite(dist)) continue;
+                    const auto& light = *object.point_light;
+                    light_candidates.push_back({
+                        dist,
+                        {{world_position.x, world_position.y, world_position.z},
+                         {light.red, light.green, light.blue},
+                         light.intensity, light.radius, light.falloff}});
+                }
+                constexpr std::size_t max_frame_point_lights = 8U;
+                if (light_candidates.size() > max_frame_point_lights)
+                {
+                    std::partial_sort(
+                        light_candidates.begin(),
+                        light_candidates.begin() +
+                            static_cast<std::ptrdiff_t>(max_frame_point_lights),
+                        light_candidates.end(),
+                        [](const auto& a, const auto& b)
+                        {
+                            return a.distance_squared < b.distance_squared;
+                        });
+                }
+                for (std::size_t i = 0U; i < std::min(
+                         light_candidates.size(), max_frame_point_lights); ++i)
+                    scene_point_lights.push_back(light_candidates[i].value);
+
                 if (render_agent.present)
                 {
                     avatar_proxy_update.push_back({
@@ -5572,6 +5636,7 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
+            world_renderer->set_point_lights(scene_point_lights);
             world_renderer->set_avatar_proxies(avatar_proxy_update);
             if (simulation_ready)
             {

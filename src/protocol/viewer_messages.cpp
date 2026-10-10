@@ -455,6 +455,43 @@ std::optional<SculptExtraParam> parse_sculpt_extra_params(
     return std::nullopt;
 }
 
+std::optional<PointLightData> parse_point_light_extra_params(
+    std::span<const std::uint8_t> extra)
+{
+    if (extra.empty() || extra[0U] > 64U) return std::nullopt;
+    std::size_t offset = 1U;
+    for (std::size_t i = 0U; i < extra[0U]; ++i)
+    {
+        if (offset > extra.size() || extra.size() - offset < 6U)
+            return std::nullopt;
+        const auto type = read_le_u16(extra, offset);
+        const auto size = read_le_u32(extra, offset + 2U);
+        offset += 6U;
+        if (size > extra.size() - offset) return std::nullopt;
+        if (type == 0x20U && size == 16U)
+        {
+            const PointLightData light{
+                static_cast<float>(extra[offset]) / 255.0f,
+                static_cast<float>(extra[offset + 1U]) / 255.0f,
+                static_cast<float>(extra[offset + 2U]) / 255.0f,
+                static_cast<float>(extra[offset + 3U]) / 255.0f,
+                read_f32(extra, offset + 4U),
+                read_f32(extra, offset + 8U),
+                read_f32(extra, offset + 12U)};
+            if (!std::isfinite(light.radius) || light.radius <= 0.0f ||
+                light.radius > 256.0f ||
+                !std::isfinite(light.cutoff) ||
+                !std::isfinite(light.falloff) ||
+                light.cutoff < 0.0f || light.falloff < 0.0f ||
+                light.cutoff > 256.0f || light.falloff > 256.0f)
+                return std::nullopt;
+            return light;
+        }
+        offset += size;
+    }
+    return std::nullopt;
+}
+
 std::optional<ObjectUpdateMessage> decode_object_update(
     std::span<const std::uint8_t> payload)
 {
@@ -627,6 +664,9 @@ std::optional<ObjectUpdateMessage> decode_object_update(
             object.sculpt_asset_id = sculpt->asset_id;
             object.sculpt_type = sculpt->type;
         }
+        object.point_light = parse_point_light_extra_params({
+            reinterpret_cast<const std::uint8_t*>(extra_params.data()),
+            extra_params.size()});
 
         if (!need(66U))
         {
@@ -778,6 +818,8 @@ decode_object_update_compressed(
                 object.sculpt_asset_id = sculpt->asset_id;
                 object.sculpt_type = sculpt->type;
             }
+            object.point_light = parse_point_light_extra_params(
+                data.subspan(start, pos - start));
 
             if ((flags & 0x10U) != 0U)
             {

@@ -6,12 +6,12 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.52`
+- Version: `0.2.0-alpha.53`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 26/26 CTests erfolgreich; GPU-GUI-Smoke separat
-- aktueller Entwicklungsblock: **Avatar-Proxies, WASD/Flug-/Drehsteuerung und serverautoritatives Self-Avatar-Tracking; In-World-Bewegungstest ausstehend**
+- letzter vollständig geprüfter Stand: 26/26 CTests erfolgreich; OpenGL-Starttest alpha.53 OK
+- aktueller Entwicklungsblock: **Phase 8 Welt-Rendering: OpenSim-Point-Lights (ExtraParams 0x20) und bis zu acht dynamische lokale GPU-Lichter; Avatar-/Bewegungsfehler gemäß Nutzerentscheidung zurückgestellt**
 
 Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256
 nächsten unterschiedlichen Mesh-Assets anhand der Avatarposition aus.

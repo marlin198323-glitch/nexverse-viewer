@@ -1767,6 +1767,7 @@ layout (location = 2) in float aMaterial;
 layout (location = 3) in vec2 aTexCoord;
 
 uniform mat4 uMvp;
+uniform mat4 uModel;
 uniform bool uUsePrimDeform;
 uniform vec2 uPrimPathRange;
 uniform vec2 uPrimTaper;
@@ -1777,6 +1778,7 @@ uniform float uPrimTwistEnd;
 out vec3 vColor;
 out vec2 vWorldXY;
 out vec3 vObjectLocal;
+out vec3 vPointLightWorldPosition;
 out float vMaterial;
 out vec2 vTexCoord;
 
@@ -1817,6 +1819,7 @@ void main()
     vColor = aColor;
     vWorldXY = localPosition.xy;
     vObjectLocal = localPosition;
+    vPointLightWorldPosition = (uModel * vec4(localPosition, 1.0)).xyz;
     vMaterial = aMaterial;
     vTexCoord = aTexCoord;
 }
@@ -1827,11 +1830,16 @@ constexpr const char* fragment_shader_source = R"GLSL(
 in vec3 vColor;
 in vec2 vWorldXY;
 in vec3 vObjectLocal;
+in vec3 vPointLightWorldPosition;
 in float vMaterial;
 in vec2 vTexCoord;
 out vec4 FragColor;
 
 uniform float uAlpha;
+uniform int uPointLightCount;
+uniform vec4 uPointLightPositions[8]; // xyz world position, w radius
+uniform vec4 uPointLightColors[8];    // RGB, intensity
+uniform vec4 uPointLightFalloffs[8];  // x falloff
 uniform bool uUseTerrainTextures;
 uniform bool uOverrideColor;
 uniform vec3 uOverrideColorValue;
@@ -2045,6 +2053,35 @@ void main()
                     mix(10.0, 55.0, float(uObjectShiny) / 3.0));
                 base += vec3(gloss * float(uObjectShiny) * 0.11);
             }
+        }
+        // First OpenSim legacy point-light pass; no shadows or PBR.
+        // Only non-fullbright objects receive dynamic light shading.
+        if (!uObjectFullbright && uPointLightCount > 0)
+        {
+            vec3 normal = cross(
+                dFdx(vPointLightWorldPosition),
+                dFdy(vPointLightWorldPosition));
+            normal = normalize(normal + vec3(1e-9));
+            if (!gl_FrontFacing) normal = -normal;
+            vec3 illumination = vec3(0.0);
+            for (int i = 0; i < 8; ++i)
+            {
+                if (i >= uPointLightCount) break;
+                vec3 toward = uPointLightPositions[i].xyz -
+                    vPointLightWorldPosition;
+                float distanceToLight = length(toward);
+                float radius = max(uPointLightPositions[i].w, 0.01);
+                if (distanceToLight >= radius) continue;
+                float diffuse = max(
+                    dot(normal, toward / max(distanceToLight, 0.0001)),
+                    0.0);
+                float attenuation = 1.0 - distanceToLight / radius;
+                float falloff = max(uPointLightFalloffs[i].x, 0.05);
+                attenuation = pow(attenuation, 1.0 + falloff);
+                illumination += uPointLightColors[i].rgb *
+                    uPointLightColors[i].a * diffuse * attenuation;
+            }
+            base *= 1.0 + min(illumination, vec3(1.5));
         }
         // Classic bumpiness values are not normal-map texture assets.
         base += vec3(clamp(uObjectGlow, 0.0, 1.0) * 0.35);
@@ -2768,6 +2805,16 @@ public:
         }
     }
 
+    void set_point_lights(
+        const std::vector<RenderPointLight>& lights) override
+    {
+        constexpr std::size_t max_active_lights = 8U;
+        point_lights_.assign(
+            lights.begin(),
+            lights.begin() + static_cast<std::ptrdiff_t>(
+                std::min(lights.size(), max_active_lights)));
+    }
+
     void set_avatar_proxies(
         const std::vector<RenderAvatarProxy>& avatars) override
     {
@@ -2871,6 +2918,11 @@ public:
         const Mat4 view = view_matrix(camera_);
 
         glUseProgram(program_);
+        glUniformMatrix4fv(
+            glGetUniformLocation(program_, "uModel"),
+            1, GL_FALSE, identity().value.data());
+        glUniform1i(
+            glGetUniformLocation(program_, "uPointLightCount"), 0);
         glUniform1f(
             glGetUniformLocation(program_, "uAlpha"),
             1.0f);
@@ -2998,6 +3050,37 @@ public:
 
         if (vao_ != 0U && !scene_objects_.empty())
         {
+            const GLsizei active_light_count = static_cast<GLsizei>(
+                std::min<std::size_t>(point_lights_.size(), 8U));
+            std::array<float, 32U> positions{};
+            std::array<float, 32U> colors{};
+            std::array<float, 32U> falloffs{};
+            for (GLsizei i = 0; i < active_light_count; ++i)
+            {
+                const auto& light = point_lights_[
+                    static_cast<std::size_t>(i)];
+                const auto k = static_cast<std::size_t>(i) * 4U;
+                positions[k] = light.position.x;
+                positions[k+1U] = light.position.y;
+                positions[k+2U] = light.position.z;
+                positions[k+3U] = std::max(light.radius, 0.01f);
+                colors[k] = light.color.x;
+                colors[k+1U] = light.color.y;
+                colors[k+2U] = light.color.z;
+                colors[k+3U] = light.intensity;
+                falloffs[k] = light.falloff;
+            }
+            glUniform1i(
+                glGetUniformLocation(program_, "uPointLightCount"), active_light_count);
+            glUniform4fv(
+                glGetUniformLocation(program_, "uPointLightPositions[0]"),
+                active_light_count, positions.data());
+            glUniform4fv(
+                glGetUniformLocation(program_, "uPointLightColors[0]"),
+                active_light_count, colors.data());
+            glUniform4fv(
+                glGetUniformLocation(program_, "uPointLightFalloffs[0]"),
+                active_light_count, falloffs.data());
             glUniform1i(
                 glGetUniformLocation(program_, "uUseTerrainTextures"),
                 GL_FALSE);
@@ -3046,6 +3129,9 @@ public:
                     1,
                     GL_FALSE,
                     mvp.value.data());
+                glUniformMatrix4fv(
+                    glGetUniformLocation(program_, "uModel"),
+                    1, GL_FALSE, model.value.data());
 
                 glUniform1i(
                     glGetUniformLocation(program_, "uUsePrimDeform"),
@@ -3485,6 +3571,8 @@ public:
             } // opaque / translucent pass
             glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
+            glUniform1i(
+                glGetUniformLocation(program_, "uPointLightCount"), 0);
 
             glUniform1f(
                 glGetUniformLocation(program_, "uAlpha"),
@@ -4027,6 +4115,7 @@ private:
     RenderEnvironment environment_;
     std::vector<RenderSceneObject> scene_objects_;
     std::vector<RenderAvatarProxy> avatar_proxies_;
+    std::vector<RenderPointLight> point_lights_;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;

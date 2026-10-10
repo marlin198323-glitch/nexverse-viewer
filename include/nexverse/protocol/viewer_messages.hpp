@@ -173,6 +173,22 @@ struct PrimitiveShapeData
     }
 };
 
+// ExtraParams type 0x20: RGBA UNORM8 (alpha = intensity), then
+// radius/cutoff/falloff as three little-endian float32 values.
+struct PointLightData
+{
+    float red = 1.0f;
+    float green = 1.0f;
+    float blue = 1.0f;
+    float intensity = 0.0f;
+    float radius = 0.0f;
+    float cutoff = 0.0f;
+    float falloff = 0.0f;
+};
+
+[[nodiscard]] std::optional<PointLightData> parse_point_light_extra_params(
+    std::span<const std::uint8_t> extra);
+
 struct ObjectUpdateEntry
 {
     std::uint32_t local_id = 0U;
@@ -186,6 +202,7 @@ struct ObjectUpdateEntry
     // Mesh/Sculpt identity from ObjectUpdate ExtraParams (type 0x30).
     std::string sculpt_asset_id;
     std::uint8_t sculpt_type = 0U;
+    std::optional<PointLightData> point_light;
     [[nodiscard]] bool is_mesh() const noexcept
     {
         return !sculpt_asset_id.empty() && (sculpt_type & 0x07U) == 0x05U;
@@ -248,6 +265,7 @@ struct ObjectUpdateCompressedEntry
     PrimitiveShapeData shape;
     std::string sculpt_asset_id;
     std::uint8_t sculpt_type = 0U;
+    std::optional<PointLightData> point_light;
     std::vector<std::uint8_t> texture_entry;
     std::optional<TextureEntry> parsed_texture_entry;
     std::optional<TextureEntryDefaultFace> default_texture;
