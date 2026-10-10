@@ -104,6 +104,18 @@ int main()
         return 7;
     }
 
+    // Apparent size can outweigh pure distance; this changes asset
+    // priority, not the actual OpenSim LOD decoder.
+    const auto size_rank=plan_mesh_residency({
+        {"tiny-near",15,0,0,0.5f},
+        {"large-far",25,0,0,16.0f}},
+        0,0,0,{},1U);
+    if(size_rank.prioritized_ids[0]!="large-far")
+    {
+        std::cerr << "Screen-size mesh asset heuristic failed\n";
+        return 8;
+    }
+
     std::cout << "Mesh residency, movement, dedup and eviction tests passed\n";
     return 0;
 }

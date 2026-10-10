@@ -22,6 +22,7 @@ struct MeshDistanceSample
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
+    float diameter = 1.0f;
 };
 
 struct MeshResidencyPlan
@@ -59,12 +60,18 @@ struct MeshResidencyPlan
         const double dy = static_cast<double>(item.y) - y;
         const double dz = static_cast<double>(item.z) - z;
         const double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-        if (!std::isfinite(distance)) continue;
+        if (!std::isfinite(distance) || !std::isfinite(item.diameter)) continue;
+        // Projected-size heuristic: larger meshes remain visually
+        // significant at a longer distance. This is priority only,
+        // not a fabricated mesh LOD level.
+        const double diameter = std::clamp(
+            static_cast<double>(item.diameter), 0.5, 16.0);
+        const double weighted = distance/std::sqrt(diameter);
         const auto it = min_distance.find(item.id);
         if (it == min_distance.end())
-            min_distance.emplace(item.id, distance);
-        else if (distance < it->second)
-            it->second = distance;
+            min_distance.emplace(item.id, weighted);
+        else if (weighted < it->second)
+            it->second = weighted;
     }
 
     std::vector<std::pair<std::string, double>> ranked;

@@ -2379,6 +2379,25 @@ public:
     {
         width_ = width > 0 ? width : 1;
         height_ = height > 0 ? height : 1;
+        // GL_EXT_texture_filter_anisotropic is optional on OpenGL 3.3.
+        // Query extensions rather than blindly passing enum 0x84FE.
+        GLint extension_count = 0;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
+        for (GLint i = 0; i < extension_count; ++i)
+        {
+            const auto* name = glGetStringi(
+                GL_EXTENSIONS, static_cast<GLuint>(i));
+            if (name != nullptr &&
+                std::string_view{reinterpret_cast<const char*>(name)} ==
+                    "GL_EXT_texture_filter_anisotropic")
+            {
+                GLfloat limit = 1.0f;
+                glGetFloatv(0x84FFU, &limit);
+                if (std::isfinite(limit) && limit >= 1.0f)
+                    texture_anisotropy_ = std::min(limit, 8.0f);
+                break;
+            }
+        }
 
         program_ = create_program();
         sky_program_ = create_sky_program();
@@ -2860,6 +2879,8 @@ public:
             GL_TEXTURE_2D,
             GL_TEXTURE_MAG_FILTER,
             GL_LINEAR);
+        if (texture_anisotropy_ > 1.0f)
+            glTexParameterf(GL_TEXTURE_2D,0x84FEU,texture_anisotropy_);
 
         glTexImage2D(
             GL_TEXTURE_2D,
@@ -4638,6 +4659,7 @@ private:
     GLuint water_vbo_ = 0U;
     GLuint water_ebo_ = 0U;
 
+    GLfloat texture_anisotropy_ = 1.0f;
     bool nvx_memory_info_ = false;
     bool test_anchor_initialized_ = false;
     RenderCamera camera_;

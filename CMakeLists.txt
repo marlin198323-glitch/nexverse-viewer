@@ -83,6 +83,7 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 
 add_library(nexverse-assets
     src/assets/texture_loader.cpp
+    src/assets/texture_disk_cache.cpp
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
 )
@@ -415,6 +416,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-texture-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-residency-tests)
     add_test(NAME nexverse-texture-residency-tests COMMAND nexverse-texture-residency-tests)
+
+    add_executable(nexverse-texture-disk-cache-tests tests/texture_disk_cache_tests.cpp)
+    target_link_libraries(nexverse-texture-disk-cache-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-disk-cache-tests)
+    add_test(NAME nexverse-texture-disk-cache-tests COMMAND nexverse-texture-disk-cache-tests)
+
+    add_executable(nexverse-texture-distance-tests tests/texture_distance_tests.cpp)
+    target_link_libraries(nexverse-texture-distance-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-distance-tests)
+    add_test(NAME nexverse-texture-distance-tests COMMAND nexverse-texture-distance-tests)
 
     add_executable(nexverse-movement-controls-tests tests/movement_controls_tests.cpp)
     target_link_libraries(nexverse-movement-controls-tests PRIVATE NexVerse::Protocol)

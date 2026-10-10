@@ -181,3 +181,18 @@ Der Viewer plant alle 750ms und nach Scene-Revisionsänderung
 die Residency, lädt Assetdaten weiter über GetTexture und
 verwirft stale/nonresident HTTP-Antworten.
 Siehe docs/PARTICLES.md und docs/ASSET_STREAMING.md.
+
+
+## Phase-9 Asset-Großrelease alpha.58
+
+Disk-Cache (assets/texture_disk_cache.hpp/.cpp) verwendet
+eine private, validierte Version-1-RGBA-Repräsentation mit
+FNV64-Integrität und begrenztem LRU-Diskbudget. Der Async-
+GetTexture-Lader prüft zuerst diesen Cache und speichert
+erfolgreich dekodierte Downloads. texture_distance.hpp
+berechnet laufend materialbezogene Texture-Prioritäten;
+mesh_residency.hpp berücksichtigt zusätzlich die
+ungefähre Primgröße. Der Renderer unterstützt optional
+anisotropes Sampling, das UI erfasst Streaming-Metriken
+ohne Netzwerk-Telemetrie zu erfinden. Details siehe
+docs/ASSET_STREAMING.md.

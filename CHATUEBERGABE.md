@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.57`
+Version: `0.2.0-alpha.58`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -822,3 +822,77 @@ Kompatibilität. projectplan.md bleibt verbindlich.
 
 Live-Befehl:
 ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl57-live.log
+
+
+## 0.2.0-alpha.58 – Phase 9 Großrelease (vier Blöcke) · 10.10.2026
+
+Nutzerentscheid: Jeweils drei bis vier vollständige Entwicklungsblöcke
+pro Release; bekannte Avatar-/Bewegungs-/Mesh-Asset-Fehler bis
+zur späteren Bugfixphase zurückstellen. Verbindlich: projectplan.md.
+
+**Block A – Persistenter Texture-Disk-Cache:**
+- TextureDiskCache lädt/speichert validierte RGBA8-Assetdaten
+  unter $XDG_CACHE_HOME/opengenesislink/textures-v1 bzw.
+  $HOME/.cache/opengenesislink/textures-v1.
+- 8-Byte-Version-Magic, Width/Height, FNV-64-Inhaltshash über
+  Dimensionen und Pixeldaten, Größen-/Bounds-Prüfungen, sichere
+  UUID-Dateinamen, temp-Datei + Umbenennung.
+- 256 MiB Diskbudget, 64 MiB maximales Einzelbild,
+  least-recently-used-ähnliche Eviction anhand File-MTime;
+  auf Cache-Miss/Fälschung/IO-Problem normaler GetTexture-Download.
+- Cache wird im Hintergrund-Texture-Future geprüft; bei Erfolg
+  wird HTTP übersprungen. Kein persistenter Mesh-/Animationscache
+  in diesem Release, keine echte Hash-/Version-Aushandlung mit
+  dem OpenSim-Asset-Service.
+
+**Block B – Dynamische Texturprioritäten:**
+- Texturpositionen werden bei Object-/Scene-Update für Default,
+  Face sowie Normal-/Specular-Materialien gesammelt.
+- Alle 750ms/Scene-Revisionsänderung werden sie ausgehend von
+  der aktuellen Avatarposition nach Entfernung neu sortiert.
+- Identische UUIDs werden zusammengefasst; bereits GPU-geladene
+  Assets erhalten 8m Hysterese gegen Thrashing.
+- Partikel-Assetpriorität sowie 512 gleichzeitige GPU-Texturen,
+  begrenzte GL-Eviction und Regions-Epochenprüfungen bleiben.
+
+**Block C – Mesh-Sichtgrößenpriorität:**
+- MeshDistanceSample führt zusätzlich den maximalen
+  Prim-Scale-Durchmesser; Priorisierung gewichtet
+  distance / sqrt(clamp(diameter,0.5,16)).
+- Größe beeinflusst ausschließlich Assetabruf/Priorität,
+  **noch nicht** echte Mesh-LOD-Stufen, View-Frustum-/Occlusion-
+  Culling oder Mesh-Vertex-Dekodierung. Defekte Meshes werden
+  nicht als repariert bezeichnet.
+
+**Block D – GPU-Sampling und Asset-Diagnose:**
+- Bei unterstützter GL_EXT_texture_filter_anisotropic
+  aktiviert das Legacy-GL-Backend für Objekttexturen
+  bis zu 8x anisotrope Filterung zusätzlich zum Mipmap-Sampler.
+  Auf inkompatiblen GPUs bleibt das alte Verhalten.
+- Log alle ~60s: kumulative Disk-Cache-Hits, HTTP-Downloads,
+  GPU-Evictions, residente Texturen und GPU-Slotbudget.
+  Die Zähler sind Sitzungsstatistik, keine serverbestätigte
+  Bandbreitenmessung.
+
+**Verifikation:**
+- CMake Debug C++23 erfolgreich; 32/32 CTests.
+- Neue Tests für persistente Cacheintegrität, manipulierte
+  Cache-Dateien, Neustart-/LRU-Verhalten, bewegungsabhängige
+  Texture-Distance-Ordering/Hysterese und größenbasierte
+  Mesh-Priorität.
+- Linux NVIDIA GeForce RTX 4070 SUPER OpenGL 3.3 GUI-Smoke
+  bei 3440x1440 mit Welcome-Seite, keine gemeldeten GL-
+  Shaderfehler; Exitcode 124 war beabsichtigtes 7s-Timeout.
+- **Authentifizierte In-World-Streaming-Abnahme ausstehend.**
+
+**Bekannte, absichtlich unangetastete Probleme:**
+Self-Avatar-LocalID/Bewegung, echtes Avatar-Skeleton/Bakes,
+noch fehlerhafte/fehlende Mesh-/Texturassets, Teleport.
+Keiner dieser Punkte wird als geschlossen markiert.
+
+**Nächste Großrelease-Ideen gemäß Phase 9:** Mesh-Disk-Cache,
+RAM-Assetcache, Chunk-/Mip-Streaming-Priorität, GPU/CPU-
+Speicherbudget und anschließend Avatar-Funktionssysteme.
+
+Live-Befehl:
+./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl58-live.log

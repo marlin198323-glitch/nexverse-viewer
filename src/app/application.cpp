@@ -7,8 +7,10 @@
 #include "nexverse/app/application.hpp"
 
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/texture_disk_cache.hpp"
 #include "nexverse/assets/texture_request_priority.hpp"
 #include "nexverse/assets/texture_residency.hpp"
+#include "nexverse/assets/texture_distance.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3377,8 +3379,13 @@ int Application::run(bool enable_developer_modules)
     std::unordered_set<std::string> object_texture_loaded_ids;
     std::unordered_set<std::string> object_texture_failed_ids;
     std::vector<std::string> scene_texture_ids;
+    std::vector<assets::TextureDistanceSample> scene_texture_samples;
     assets::TextureResidencyPlan texture_residency;
     std::chrono::steady_clock::time_point last_texture_residency_plan{};
+    std::size_t texture_cache_hits = 0U;
+    std::size_t texture_http_loads = 0U;
+    std::size_t texture_gpu_evictions = 0U;
+    std::chrono::steady_clock::time_point last_texture_telemetry{};
 
     {
         auto world_renderer = render::create_legacy_opengl_renderer();
@@ -4506,6 +4513,7 @@ int Application::run(bool enable_developer_modules)
                 material_request_attempts.clear();
                 render_materials_in_flight.clear();
                 scene_texture_ids.clear();
+                scene_texture_samples.clear();
                 texture_residency = {};
                 last_texture_residency_plan = {};
                 world_renderer->clear_object_textures();
@@ -5052,7 +5060,9 @@ int Application::run(bool enable_developer_modules)
                             }
                             scene_mesh_samples.push_back({
                                 object.sculpt_asset_id,
-                                position.x, position.y, position.z});
+                                position.x, position.y, position.z,
+                                std::max({object.scale.x, object.scale.y,
+                                          object.scale.z, 0.5f})});
                         }
                         render_object.position = {
                             object.position.x,
@@ -5362,22 +5372,15 @@ int Application::run(bool enable_developer_modules)
                             material_ids_pending.insert(face->material_id);
                     }
                 }
-                std::unordered_map<std::string,float> texture_distances;
+                scene_texture_samples.clear();
                 for (const auto& object:scene_object_update)
                 {
-                    const float dx=object.position.x-render_agent.position.x;
-                    const float dy=object.position.y-render_agent.position.y;
-                    const float dz=object.position.z-render_agent.position.z;
-                    const float distance=dx*dx+dy*dy+dz*dz;
-                    if(!std::isfinite(distance))continue;
                     const auto add=[&](const std::string& id)
                     {
                         if(id.empty())return;
-                        const auto it=texture_distances.find(id);
-                        if(it==texture_distances.end())
-                            texture_distances.emplace(id,distance);
-                        else if(distance<it->second)
-                            it->second=distance;
+                        scene_texture_samples.push_back({
+                            id,object.position.x,object.position.y,
+                            object.position.z});
                     };
                     add(object.texture_id);
                     add(object.legacy.normal.texture_id);
@@ -5398,21 +5401,6 @@ int Application::run(bool enable_developer_modules)
                         scene_texture_update.begin(),
                         scene_texture_update.end()),
                     scene_texture_update.end());
-                // Near material assets arrive before distant ones. This
-                // order feeds the bounded, reusable texture residency plan.
-                std::sort(scene_texture_update.begin(),
-                    scene_texture_update.end(),
-                    [&](const std::string& a,const std::string& b)
-                    {
-                        const auto it_a=texture_distances.find(a);
-                        const auto it_b=texture_distances.find(b);
-                        const float da=it_a==texture_distances.end()
-                            ?std::numeric_limits<float>::max():it_a->second;
-                        const float db=it_b==texture_distances.end()
-                            ?std::numeric_limits<float>::max():it_b->second;
-                        return da!=db?da<db:a<b;
-                    });
-
                 scene_texture_ids =
                     std::move(scene_texture_update);
 
@@ -5644,6 +5632,10 @@ int Application::run(bool enable_developer_modules)
                     object_texture_loaded_ids.insert(
                         object_texture_loading_id);
 
+                    if (result.message == "Disk texture cache hit")
+                        ++texture_cache_hits;
+                    else
+                        ++texture_http_loads;
                     core::info(
                         "Object texture asset loaded (" + result.message +
                         "); cached=" +
@@ -5676,8 +5668,12 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::milliseconds{750})
             {
                 last_texture_residency_plan = texture_plan_now;
+                const auto nearby_textures = assets::rank_texture_distances(
+                    scene_texture_samples,
+                    render_agent.position.x,render_agent.position.y,
+                    render_agent.position.z,object_texture_loaded_ids);
                 texture_residency = assets::plan_texture_residency(
-                    emitter_texture_ids, scene_texture_ids,
+                    emitter_texture_ids, nearby_textures,
                     object_texture_loaded_ids, max_object_texture_assets);
                 std::size_t evicted = 0U;
                 for (const auto& id:texture_residency.eviction_ids)
@@ -5687,6 +5683,7 @@ int Application::run(bool enable_developer_modules)
                     object_texture_loaded_ids.erase(id);
                     ++evicted;
                 }
+                texture_gpu_evictions += evicted;
                 if(evicted>0U)
                     core::info("GetTexture GPU residency evicted=" +
                         std::to_string(evicted));
@@ -5709,11 +5706,40 @@ int Application::run(bool enable_developer_modules)
                         std::launch::async,
                         [transport, capability, requested_id]()
                         {
+                            assets::TextureDiskCache disk{
+                                assets::TextureDiskCache::default_directory()};
+                            if (const auto cached = disk.load(requested_id))
+                            {
+                                assets::TextureAssetResult result;
+                                result.success = true;
+                                result.asset_id = requested_id;
+                                result.image = *cached;
+                                result.message = "Disk texture cache hit";
+                                return result;
+                            }
                             assets::TextureAssetLoader loader{transport};
-                            return loader.fetch_rgba(
+                            auto result=loader.fetch_rgba(
                                 capability, requested_id);
+                            if(result.success && result.image.valid())
+                                (void)disk.store(requested_id,result.image);
+                            return result;
                         });
                 }
+            }
+
+            if (last_texture_telemetry.time_since_epoch().count()==0 ||
+                texture_plan_now-last_texture_telemetry >=
+                    std::chrono::seconds{60})
+            {
+                last_texture_telemetry = texture_plan_now;
+                core::info("GetTexture streaming metrics: disk_hits=" +
+                    std::to_string(texture_cache_hits) +
+                    " network_loads=" + std::to_string(texture_http_loads) +
+                    " gpu_evictions=" + std::to_string(texture_gpu_evictions) +
+                    " gpu_resident=" +
+                    std::to_string(object_texture_loaded_ids.size()) +
+                    " gpu_budget=" +
+                    std::to_string(max_object_texture_assets));
             }
 
             // Select the closest distinct mesh assets to the avatar.
