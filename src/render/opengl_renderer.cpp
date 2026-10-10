@@ -2694,28 +2694,46 @@ public:
         glActiveTexture(GL_TEXTURE0);
     }
 
-    void set_mesh_asset(
+    [[nodiscard]] bool set_mesh_asset(
         const std::string& mesh_id,
         const RenderMeshGeometry& geometry) override
     {
         if (mesh_id.empty() || geometry.vertices.empty() ||
-            geometry.indices.empty() || geometry.vertices.size() % 8U != 0U ||
-            mesh_assets_.contains(mesh_id) || mesh_assets_.size() >= 256U)
-            return;
+            geometry.indices.empty() || geometry.vertices.size() % 8U != 0U)
+            return false;
+        if (mesh_assets_.contains(mesh_id)) return true;
+        if (mesh_assets_.size() >= 256U) return false;
         MeshData mesh;
         mesh.vertices = geometry.vertices;
         mesh.indices = geometry.indices;
         for (const auto& face : geometry.faces)
-        {
             mesh.face_ranges.push_back({
                 face.face, face.first_index, face.index_count});
-        }
         GpuMesh gpu;
-        if (!upload_mesh(gpu, mesh)) return;
+        if (!upload_mesh(gpu, mesh)) return false;
         mesh_assets_.emplace(mesh_id, std::move(gpu));
         nexverse::core::info(
             "OGLRender mesh geometry uploaded: triangles=" +
             std::to_string(geometry.indices.size() / 3U));
+        return true;
+    }
+
+    void remove_mesh_asset(const std::string& mesh_id) override
+    {
+        const auto it = mesh_assets_.find(mesh_id);
+        if (it == mesh_assets_.end()) return;
+        destroy_mesh(it->second);
+        mesh_assets_.erase(it);
+    }
+
+    void clear_mesh_assets() override
+    {
+        for (auto& [id, mesh] : mesh_assets_)
+        {
+            (void)id;
+            destroy_mesh(mesh);
+        }
+        mesh_assets_.clear();
     }
 
     void set_environment(
@@ -3566,12 +3584,7 @@ public:
         }
         curved_sweep_mesh_cache_.clear();
 
-        for (auto& [id, mesh] : mesh_assets_)
-        {
-            (void)id;
-            destroy_mesh(mesh);
-        }
-        mesh_assets_.clear();
+        clear_mesh_assets();
 
         for (auto& [id, texture] : object_textures_)
         {

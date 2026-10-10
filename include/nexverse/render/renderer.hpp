@@ -246,9 +246,12 @@ public:
     virtual void set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) = 0;
-    virtual void set_mesh_asset(
+    // GPU uploads and removals must happen on the render thread.
+    [[nodiscard]] virtual bool set_mesh_asset(
         const std::string& mesh_id,
         const RenderMeshGeometry& geometry) = 0;
+    virtual void remove_mesh_asset(const std::string& mesh_id) = 0;
+    virtual void clear_mesh_assets() = 0;
     virtual void set_environment(
         const RenderEnvironment& environment) = 0;
     virtual void set_scene_objects(

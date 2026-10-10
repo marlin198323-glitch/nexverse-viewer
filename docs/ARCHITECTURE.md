@@ -95,3 +95,15 @@ Die ursprüngliche Region bleibt bis zur separaten
 Teleport-/Circuit-Lifecycle-Implementierung gebunden.
 
 Siehe `docs/CAPS.md`.
+
+
+## GPU-Mesh-Residency (0.2.0-alpha.51)
+
+Der CPU-Distanzplaner bestimmt Top-256 Mesh-Asset-UUIDs,
+mit Hysterese für bereits hochgeladene Daten. Der Renderer
+verwaltet die OpenGL-Ressourcen und entfernt GPU-VAO/VBO/EBO
+bei Eviction und Regionenwechsel. HTTP-Antworten werden vor
+jedem Upload auf Residency und Region-Epoche geprüft.
+View-Frustum-/Occlusion-Prioritäten und Diskcache fehlen noch.
+
+Siehe docs/MESH.md.

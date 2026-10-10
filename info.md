@@ -1210,3 +1210,46 @@ Mesh-LOD, Rigging/Animesh, Teleport-Regionswechsel und
 fehlende Servertexturen.
 
 Logstart: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl50-live.log
+
+
+## 0.2.0-alpha.51 – Dynamischer GPU-Mesh-Cache · 10.10.2026
+
+**Ausgangsbefund alpha.50:** Der Live-Test meldete 256 erfolgreiche
+Mesh-Uploads, 2 vollständig fehlerhafte Mesh-LODs,
+3 teilweise gerettete Submeshes. Durch die Bedingung
+loaded_ids.size() < 256 wurden danach keine weiteren
+Meshes angefordert. Das ist ein Cache-Limit und nicht
+die tatsächliche Anzahl von Meshes der NexVerse-Region.
+
+**Implementiert:**
+- Neue pure Mesh-Residency-Planung mit nach Entfernung zum
+  Avatar priorisierten Mesh-UUIDs und Duplikatentfernung.
+- GPU-Asset-Budget 256. Werden durch Ortswechsel neue Meshes
+  relevanter, verdrängen sie zuvor geladene entfernte Meshes.
+- 24 Meter Prioritätsbonus für residente Meshes vermeidet
+  Cache-Churn bei geringfügiger Bewegung.
+- Plan-Neuberechnung bei SceneObject-Änderung oder nach
+  maximal 750 ms; GPU-Eviction pro Zyklus auf acht begrenzt.
+- Renderer: set_mesh_asset liefert Upload-Erfolg, dazu
+  remove_mesh_asset und clear_mesh_assets für explizite
+  GL-VAO/VBO/EBO-Freigabe auf dem Renderer-Thread.
+- Bei Region-Epochenwechsel werden ältere GPU-Meshes gelöscht.
+  Stale Mesh-HTTP-Ergebnisse und nicht mehr priorisierte
+  Ergebnisse werden nicht hochgeladen.
+- Unbekannte/doppelte UUIDs und nicht-finite Positionen
+  werden bei der Auswahl ignoriert; Gleichstände deterministisch.
+- Zusätzlicher Testsatz für Bewegung, Eviction, Hysterese,
+  Deduplikation, NaN, Nullbudget und 320 Meshes; 25/25 CTests.
+
+**Offen und begrenzt:**
+- Echte In-World-Abnahme von alpha.51 bei Ortswechsel.
+- Noch keine Frustum-/Occlusion-Priorisierung.
+- Mesh-Kindposition nur angenähert mit Parent-Position
+  plus lokalem Offset (ohne Rotation).
+- Keine persistenten Mesh-Disk-/CPU-LOD-Caches;
+  beim Zurückkommen können Downloads erneut erfolgen.
+- Zwei vollständig ungültige Mesh-LODs, beschädigte oder
+  HTTP404-Textur-Assets; Rigging/Animesh und Teleport
+  bleiben eigenständige Entwicklungsblöcke.
+
+Live-Test: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl51-live.log

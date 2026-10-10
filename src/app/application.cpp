@@ -8,6 +8,7 @@
 
 #include "nexverse/assets/texture_loader.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
+#include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -3277,7 +3278,10 @@ int Application::run(bool enable_developer_modules)
     std::future<assets::MeshAssetResult> mesh_asset_future;
     std::string mesh_asset_loading_id;
     std::uint64_t mesh_asset_request_epoch = 0U;
-    std::set<std::string> scene_mesh_ids;
+    std::vector<assets::MeshDistanceSample> scene_mesh_samples;
+    assets::MeshResidencyPlan mesh_residency;
+    auto last_mesh_residency_plan = std::chrono::steady_clock::time_point{};
+    constexpr std::size_t mesh_gpu_asset_budget = 256U;
     std::unordered_set<std::string> mesh_asset_loaded_ids;
     std::unordered_set<std::string> mesh_asset_failed_ids;
     std::future<protocol::RenderMaterialsResult> render_materials_future;
@@ -4395,7 +4399,10 @@ int Application::run(bool enable_developer_modules)
                 scoped_get_texture_uri.clear();
                 scoped_get_mesh_uri.clear();
                 scoped_get_mesh_alt_uri.clear();
-                scene_mesh_ids.clear();
+                scene_mesh_samples.clear();
+                mesh_residency = {};
+                last_mesh_residency_plan = {};
+                world_renderer->clear_mesh_assets();
                 mesh_asset_loaded_ids.clear();
                 mesh_asset_failed_ids.clear();
                 region_material_discovery_started = false;
@@ -4712,6 +4719,7 @@ int Application::run(bool enable_developer_modules)
 
                     scene_object_update.reserve(
                         world_model.objects().size());
+                    scene_mesh_samples.clear();
 
                     for (const auto& [local_id, object] :
                          world_model.objects())
@@ -4731,7 +4739,24 @@ int Application::run(bool enable_developer_modules)
                         if (object.is_mesh())
                         {
                             render_object.mesh_id = object.sculpt_asset_id;
-                            scene_mesh_ids.insert(object.sculpt_asset_id);
+                            // Child prim positions are commonly relative to
+                            // their linkset root; approximate their region
+                            // position with their parent's transform.
+                            auto position = object.position;
+                            if (object.parent_id != 0U)
+                            {
+                                if (const auto parent =
+                                        world_model.objects().find(object.parent_id);
+                                    parent != world_model.objects().end())
+                                {
+                                    position.x += parent->second.position.x;
+                                    position.y += parent->second.position.y;
+                                    position.z += parent->second.position.z;
+                                }
+                            }
+                            scene_mesh_samples.push_back({
+                                object.sculpt_asset_id,
+                                position.x, position.y, position.z});
                         }
                         render_object.position = {
                             object.position.x,
@@ -5331,9 +5356,44 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
-            // Mesh asset decoding runs off-thread, and GPU uploads only run
-            // on the OpenGL/renderer thread. One in-flight mesh per region
-            // avoids an unbounded number of HTTP requests or async futures.
+            // Select the closest distinct mesh assets to the avatar.
+            // Already-resident assets receive hysteresis so tiny movement
+            // does not cause repeated GPU uploads/evictions.
+            const auto mesh_plan_now = std::chrono::steady_clock::now();
+            if (scene_objects_changed ||
+                mesh_plan_now - last_mesh_residency_plan >=
+                    std::chrono::milliseconds{750})
+            {
+                last_mesh_residency_plan = mesh_plan_now;
+                mesh_residency = assets::plan_mesh_residency(
+                    scene_mesh_samples,
+                    render_agent.position.x,
+                    render_agent.position.y,
+                    render_agent.position.z,
+                    mesh_asset_loaded_ids,
+                    mesh_gpu_asset_budget);
+
+                // Evict in small batches to avoid long OpenGL stalls. The
+                // next frame can immediately start loading newly relevant
+                // meshes, even when the cache previously hit its limit.
+                std::size_t evicted = 0U;
+                for (const auto& id : mesh_residency.eviction_ids)
+                {
+                    if (evicted >= 8U) break;
+                    world_renderer->remove_mesh_asset(id);
+                    mesh_asset_loaded_ids.erase(id);
+                    ++evicted;
+                }
+                if (evicted > 0U)
+                    core::info("GetMesh cache evicted distant assets=" +
+                        std::to_string(evicted) +
+                        "; cached=" +
+                        std::to_string(mesh_asset_loaded_ids.size()));
+            }
+
+            // Asset decoding runs off-thread, GPU uploads only on the
+            // renderer thread. Never upload results from a former region
+            // or for meshes that have left the current residency set.
             if (mesh_asset_future.valid() &&
                 mesh_asset_future.wait_for(std::chrono::seconds{0}) ==
                     std::future_status::ready)
@@ -5343,6 +5403,11 @@ int Application::run(bool enable_developer_modules)
                 {
                     core::info("Discarded stale GetMesh response");
                 }
+                else if (!mesh_residency.desired_ids.contains(
+                             mesh_asset_loading_id))
+                {
+                    core::info("Discarded no-longer-prioritized GetMesh response");
+                }
                 else if (result.success && result.geometry.valid())
                 {
                     render::RenderMeshGeometry geometry;
@@ -5351,14 +5416,22 @@ int Application::run(bool enable_developer_modules)
                     for (const auto& face : result.geometry.faces)
                         geometry.faces.push_back({
                             face.face, face.first_index, face.index_count});
-                    world_renderer->set_mesh_asset(
-                        mesh_asset_loading_id, geometry);
-                    mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
-                    core::info(
-                        "GetMesh loaded " + mesh_asset_loading_id +
-                        "; " + result.message +
-                        "; cached=" +
-                        std::to_string(mesh_asset_loaded_ids.size()));
+                    if (world_renderer->set_mesh_asset(
+                            mesh_asset_loading_id, geometry))
+                    {
+                        mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
+                        core::info(
+                            "GetMesh loaded " + mesh_asset_loading_id +
+                            "; " + result.message +
+                            "; cached=" +
+                            std::to_string(mesh_asset_loaded_ids.size()));
+                    }
+                    else
+                    {
+                        mesh_asset_failed_ids.insert(mesh_asset_loading_id);
+                        core::warning("GetMesh GPU upload failed for " +
+                            mesh_asset_loading_id);
+                    }
                 }
                 else
                 {
@@ -5372,9 +5445,10 @@ int Application::run(bool enable_developer_modules)
             }
             if (!mesh_asset_future.valid() &&
                 !scoped_get_mesh_uri.empty() &&
-                mesh_asset_loaded_ids.size() < 256U)
+                mesh_asset_loaded_ids.size() < mesh_gpu_asset_budget)
             {
-                for (const auto& id : scene_mesh_ids)
+                // Prefer near meshes, not lexicographic UUID order.
+                for (const auto& id : mesh_residency.prioritized_ids)
                 {
                     if (mesh_asset_loaded_ids.contains(id) ||
                         mesh_asset_failed_ids.contains(id)) continue;

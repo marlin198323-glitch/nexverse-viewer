@@ -6,12 +6,20 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.50`
+- Version: `0.2.0-alpha.51`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 24/24 Tests grün; GUI-Smoke alpha.49 separat geprüft
-- aktueller Entwicklungsblock: **Mesh-ExtraParams und Shape-Daten aus ObjectUpdateCompressed; In-World-Abnahme steht aus**
+- letzter vollständig geprüfter Stand: 25/25 CTests erfolgreich; GPU-GUI-Smoke separat
+- aktueller Entwicklungsblock: **Dynamischer, entfernungsabhängiger GPU-Mesh-Cache mit Freigabe entfernter Meshes; Live-Bewegungstest ausstehend**
+
+Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256
+nächsten unterschiedlichen Mesh-Assets anhand der Avatarposition aus.
+Bereits geladene Assets erhalten einen 24-Meter-Prioritätsbonus gegen
+ständiges Austauschen. Entfernte Meshes werden auf dem GPU-Renderthread
+freigegeben, anschließend können neue Meshes nachgeladen werden.
+Diese Priorisierung arbeitet noch nicht mit Frustum/Occlusion-Culling.
+Details: docs/MESH.md.
 
 Der aktuelle Mesh-Decoder erhält zusätzliche Kompatibilität für
 optionale TexCoord0Domain-Felder, bewahrt valide Faces bei defekten
