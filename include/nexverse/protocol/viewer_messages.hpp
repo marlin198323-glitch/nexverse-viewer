@@ -205,6 +205,9 @@ struct ParticleSystemData
     float particle_max_age = 0.0f;
     Vec3 acceleration;
     std::string texture_id;
+    std::string target_id;
+    std::uint8_t blend_source = 7U; // OpenMetaverse SrcAlpha
+    std::uint8_t blend_destination = 9U; // OneMinusSrcAlpha
     std::array<float, 4> start_color{1.0f,1.0f,1.0f,1.0f};
     std::array<float, 4> end_color{1.0f,1.0f,1.0f,0.0f};
     float start_scale = 0.2f;

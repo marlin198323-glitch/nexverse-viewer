@@ -1,6 +1,6 @@
 # OpenGenesisLINK Viewer – OpenSim-Partikelsystem
 
-Stand: 0.2.0-alpha.55 · 10.10.2026
+Stand: 0.2.0-alpha.56 · 10.10.2026
 Verbindlicher Plan: projectplan.md, Phase 8.
 
 ## Wire-Format
@@ -171,3 +171,32 @@ danach Phase 9 Asset-Streaming und übrige Viewerfunktionen.
 Protokolldetails: docs/PARTICLES.md.
 
 Live-Log: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl55-live.log
+
+
+## alpha.56 – Vier technische Ausbaublöcke
+
+1. **Wind/Bounce/Partikelphysik:** Die Partikel bewegen sich
+   in einem fix gestuften lokalen Modell. Die Beschleunigung
+   aus dem PSBlock wirkt auf die Trajektorie, Wind/Bounce
+   nur bei gesetzten OpenSim-Flags. Wind kommt derzeit aus
+   einem langsamen synthetischen Feld, nicht vom Simulator.
+   Bounce findet an der Quelle-Z-Höhe statt, nicht am Boden.
+2. **Target, Beam, Ribbon:** TargetUUID aus PSBlock bytes
+   52..67; Zielposition bekannter Prims/Avatare wird über
+   das WorldModel aufgelöst. TargetPos/TargetLinear führen
+   Partikel zum Ziel; Beam erzeugt eine räumliche Punktfolge;
+   Ribbon eine zeitlich versetzte Spur aus Sprites. Beides
+   sind Zwischenstufen, kein durchgehendes Mesh-Ribbon.
+3. **Blend/Sichtung:** 0..9 OpenMetaverse BlendFunc-Werte
+   mit Standard SrcAlpha=7 / OneMinusSrcAlpha=9.
+   Acht distanzsortierte Bänder mit Textur-/Blend-Batches,
+   bis zu 768 Partikel und 192 Batches. Innerhalb eines
+   Tiefenbands keine garantierte exakte Tiefensortierung.
+4. **Beleuchtung:** Legacy-Point-Light-Cutoff und
+   einfache Glanzlichter im Objektshader erweitert.
+   Kein Photorealismus/PBR oder echter Light-Projector.
+
+Tests: tests/particle_motion_tests.cpp (Kinematik),
+tests/viewer_messages_tests.cpp (TargetUUID/Blend-Enums).
+Build 28/28 CTests, OGL 3.3 NVIDIA-Start erfolgreich.
+Authentifizierter In-World-Partikeltest weiter offen.

@@ -107,6 +107,7 @@ struct RenderPointLight
     float intensity = 0.0f;
     float radius = 0.0f;
     float falloff = 0.0f;
+    float cutoff = 0.0f;
 };
 
 struct RenderParticleEmitter
@@ -127,6 +128,10 @@ struct RenderParticleEmitter
     std::uint8_t burst_count = 0U;
     std::uint8_t pattern = 0U;
     std::uint32_t flags = 0U;
+    bool target_available = false;
+    RenderVec3 target_position;
+    std::uint8_t blend_source = 7U;
+    std::uint8_t blend_destination = 9U;
 };
 
 struct RenderSceneObject

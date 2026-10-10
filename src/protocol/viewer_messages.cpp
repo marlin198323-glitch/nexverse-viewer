@@ -532,6 +532,7 @@ std::optional<ParticleSystemData> parse_particle_system(
         static_cast<float>(read_le_u16(bytes, start + 34U)) / 128.0f - 256.0f
     };
     out.texture_id = uuid_from_bytes(bytes, start + 36U);
+    out.target_id = uuid_from_bytes(bytes, start + 52U);
     out.particle_flags = part_flags;
     out.particle_max_age = u16_fixed(part + 4U);
     for (std::size_t i = 0U; i < 4U; ++i)
@@ -557,7 +558,10 @@ std::optional<ParticleSystemData> parse_particle_system(
         if ((part_flags & 0x20000U) != 0U)
         {
             if (opt + 2U > bytes.size()) return std::nullopt;
-            opt += 2U; // Blend overrides parsed but rendered via alpha
+            out.blend_source = bytes[opt++];
+            out.blend_destination = bytes[opt++];
+            if (out.blend_source > 9U || out.blend_destination > 9U)
+                return std::nullopt; // Reject unsupported GL blend enum
         }
         if (opt != bytes.size()) return std::nullopt;
     }

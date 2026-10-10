@@ -6,6 +6,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/material_pass.hpp"
+#include "nexverse/render/particle_motion.hpp"
 
 #include "nexverse/core/logger.hpp"
 
@@ -16,7 +17,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <memory>
+#include <tuple>
 #include <numbers>
 #include <string>
 #include <string_view>
@@ -1836,6 +1839,7 @@ in vec2 vTexCoord;
 out vec4 FragColor;
 
 uniform float uAlpha;
+uniform vec3 uCameraWorld;
 uniform int uPointLightCount;
 uniform vec4 uPointLightPositions[8]; // xyz world position, w radius
 uniform vec4 uPointLightColors[8];    // RGB, intensity
@@ -2077,9 +2081,21 @@ void main()
                     0.0);
                 float attenuation = 1.0 - distanceToLight / radius;
                 float falloff = max(uPointLightFalloffs[i].x, 0.05);
+                // Legacy cutoff defines the core versus penumbra
+                // approximately; it is not a shadow-casting spotlight.
+                float cutoff = clamp(uPointLightFalloffs[i].y, 0.0, 0.90);
                 attenuation = pow(attenuation, 1.0 + falloff);
+                attenuation *= smoothstep(cutoff, 1.0, attenuation);
+                vec3 incident = toward / max(distanceToLight, 0.0001);
+                vec3 viewDir = normalize(uCameraWorld - vPointLightWorldPosition);
+                vec3 halfVec = normalize(incident + viewDir);
+                float specular = uObjectShiny > 0 ?
+                    pow(max(dot(normal, halfVec), 0.0),
+                        mix(10.0, 64.0, float(uObjectShiny)/3.0)) *
+                        float(uObjectShiny)/3.0 : 0.0;
                 illumination += uPointLightColors[i].rgb *
-                    uPointLightColors[i].a * diffuse * attenuation;
+                    uPointLightColors[i].a *
+                    (diffuse + 0.25 * specular) * attenuation;
             }
             base *= 1.0 + min(illumination, vec3(1.5));
         }
@@ -3139,7 +3155,12 @@ public:
                 colors[k+2U] = light.color.z;
                 colors[k+3U] = light.intensity;
                 falloffs[k] = light.falloff;
+                falloffs[k + 1U] = light.cutoff;
             }
+            glUniform3f(
+                glGetUniformLocation(program_, "uCameraWorld"),
+                camera_.position.x, camera_.position.y,
+                camera_.position.z);
             glUniform1i(
                 glGetUniformLocation(program_, "uPointLightCount"), active_light_count);
             glUniform4fv(
@@ -3963,10 +3984,15 @@ private:
         if (particle_emitters_.empty() || particle_program_ == 0U ||
             particle_vao_ == 0U || !std::isfinite(seconds))
             return;
-        // Collect vertices by image asset; bind each shared GPU texture
-        // once per batch. A missing texture maps to the soft-disc group.
-        std::unordered_map<std::string, std::vector<float>> batches;
+
+        // Eight distance bands, rendered back to front. Within each band
+        // particles are grouped by GPU texture and blend function.
+        // Bounded storage and GL calls avoid pathological emitter storms.
+        using BatchKey = std::tuple<int, std::uint8_t, std::uint8_t,
+                                    std::string>;
+        std::map<BatchKey, std::vector<float>, std::greater<>> batches;
         constexpr std::size_t max_particles = 768U;
+        constexpr std::size_t max_batches = 192U;
         const auto hash01 = [](std::uint32_t seed)
         {
             seed ^= seed >> 16U;
@@ -3976,18 +4002,19 @@ private:
             seed ^= seed >> 16U;
             return static_cast<float>(seed & 0xffffU) / 65535.0f;
         };
+        const render::RenderVec3 local_wind{
+            std::sin(static_cast<float>(seconds) * 0.13f) * 1.2f,
+            std::cos(static_cast<float>(seconds) * 0.09f) * 0.75f,
+            0.0f};
         std::size_t count = 0U;
         for (const auto& emitter : particle_emitters_)
         {
             if (count >= max_particles) break;
             if (emitter.max_age <= 0.0f || emitter.burst_rate <= 0.0f ||
                 emitter.burst_count == 0U) continue;
-            // Only reference a texture which has actually reached the GPU.
-            // Otherwise render the existing soft-circle fallback.
-            const auto it = object_textures_.find(emitter.texture_id);
+            const auto found = object_textures_.find(emitter.texture_id);
             const std::string texture_key =
-                it == object_textures_.end() ? "" : emitter.texture_id;
-            auto& vertices = batches[texture_key];
+                found == object_textures_.end() ? "" : emitter.texture_id;
             const float interval = std::max(0.04f, emitter.burst_rate);
             const auto bursts = static_cast<std::size_t>(
                 std::clamp(std::ceil(emitter.max_age / interval),
@@ -4002,7 +4029,6 @@ private:
                 const float age = phase +
                     static_cast<float>(burst) * interval;
                 if (age >= emitter.max_age) continue;
-                const float t = age / emitter.max_age;
                 for (std::size_t n = 0U; n < per_burst; ++n)
                 {
                     if (count >= max_particles) break;
@@ -4021,45 +4047,104 @@ private:
                     RenderVec3 dir{
                         std::cos(a) * radial, std::sin(a) * radial, z};
                     if ((emitter.pattern & 0x01U) != 0U)
-                        dir = {0.0f, 0.0f, 0.0f}; // Drop
+                        dir = {0.0f, 0.0f, 0.0f};
                     else if ((emitter.pattern & 0x0cU) != 0U)
-                        dir.z = std::abs(z); // Upward cone (approximate)
-                    const RenderVec3 pos{
-                        emitter.position.x + radius * dir.x +
-                            speed * age * dir.x +
-                            0.5f * emitter.acceleration.x * age * age,
-                        emitter.position.y + radius * dir.y +
-                            speed * age * dir.y +
-                            0.5f * emitter.acceleration.y * age * age,
-                        emitter.position.z + radius * dir.z +
-                            speed * age * dir.z +
-                            0.5f * emitter.acceleration.z * age * age};
+                        dir.z = std::abs(z);
+
+                    // Beam: samples lie on the source-to-target span.
+                    // Ribbon: samples form a trail of successive ages;
+                    // native connected triangle ribbons remain future work.
+                    float particle_age = age;
+                    if (emitter.target_available &&
+                        (emitter.flags & particle_beam) != 0U)
+                    {
+                        particle_age = emitter.max_age *
+                            (static_cast<float>(n) + 0.5f) /
+                            static_cast<float>(per_burst);
+                    }
+                    else if ((emitter.flags & particle_ribbon) != 0U)
+                    {
+                        particle_age = std::max(0.0f, age -
+                            0.045f * static_cast<float>(n));
+                    }
+                    const RenderVec3 velocity{
+                        speed * dir.x, speed * dir.y, speed * dir.z};
+                    const auto sample = sample_particle_motion(
+                        emitter.position, velocity,
+                        emitter.acceleration, local_wind,
+                        particle_age, emitter.max_age, emitter.flags,
+                        emitter.target_available,
+                        emitter.target_position);
+                    RenderVec3 pos = sample.position;
+                    if (emitter.target_available &&
+                        (emitter.flags & particle_beam) != 0U)
+                    {
+                        const float t = sample.fraction;
+                        pos = {
+                            std::lerp(emitter.position.x,
+                                emitter.target_position.x, t) +
+                                radius * dir.x * 0.08f,
+                            std::lerp(emitter.position.y,
+                                emitter.target_position.y, t) +
+                                radius * dir.y * 0.08f,
+                            std::lerp(emitter.position.z,
+                                emitter.target_position.z, t) +
+                                radius * dir.z * 0.08f};
+                    }
                     if (!std::isfinite(pos.x) || !std::isfinite(pos.y) ||
                         !std::isfinite(pos.z)) continue;
+                    const auto t = sample.fraction;
+                    const bool lerp_color =
+                        (emitter.flags & particle_interp_color) != 0U;
+                    const bool lerp_scale =
+                        (emitter.flags & particle_interp_scale) != 0U;
+                    const auto lerped_color = [&](std::size_t channel)
+                    {
+                        return lerp_color
+                            ? std::lerp(emitter.start_color[channel],
+                                emitter.end_color[channel], t)
+                            : emitter.start_color[channel];
+                    };
+                    const float size = std::clamp(
+                        lerp_scale ? std::lerp(
+                            emitter.start_scale, emitter.end_scale, t)
+                            : emitter.start_scale,
+                        0.02f, 4.0f);
+
+                    const float dx = camera_.position.x - pos.x;
+                    const float dy = camera_.position.y - pos.y;
+                    const float dz = camera_.position.z - pos.z;
+                    const float distance = std::sqrt(
+                        dx*dx + dy*dy + dz*dz);
+                    if (!std::isfinite(distance)) continue;
+                    const int band = std::clamp(
+                        static_cast<int>(distance / 24.0f), 0, 7);
+                    const BatchKey key{
+                        band, emitter.blend_source,
+                        emitter.blend_destination, texture_key};
+                    if (!batches.contains(key) &&
+                        batches.size() >= max_batches) continue;
+                    auto& vertices = batches[key];
                     vertices.insert(vertices.end(),
                         {pos.x, pos.y, pos.z,
-                         std::lerp(emitter.start_color[0],
-                             emitter.end_color[0], t),
-                         std::lerp(emitter.start_color[1],
-                             emitter.end_color[1], t),
-                         std::lerp(emitter.start_color[2],
-                             emitter.end_color[2], t),
-                         std::lerp(emitter.start_color[3],
-                             emitter.end_color[3], t),
-                         std::clamp(std::lerp(
-                             emitter.start_scale, emitter.end_scale, t),
-                             0.02f, 4.0f)});
+                         lerped_color(0U), lerped_color(1U),
+                         lerped_color(2U), lerped_color(3U), size});
                     ++count;
                 }
             }
         }
         if (count == 0U) return;
 
+        constexpr std::array<GLenum, 10U> blend_modes{{
+            GL_ONE, GL_ZERO, GL_DST_COLOR, GL_SRC_COLOR,
+            GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR,
+            GL_DST_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA,
+            GL_ONE_MINUS_SRC_ALPHA
+        }};
         glEnable(GL_PROGRAM_POINT_SIZE);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glUseProgram(particle_program_);
         glUniformMatrix4fv(
             glGetUniformLocation(particle_program_, "uViewProjection"),
@@ -4075,9 +4160,14 @@ private:
         glBindVertexArray(particle_vao_);
         glBindBuffer(GL_ARRAY_BUFFER, particle_vbo_);
         glActiveTexture(GL_TEXTURE4);
-        for (const auto& [texture_id, vertices] : batches)
+        for (const auto& [key, vertices] : batches)
         {
             if (vertices.empty()) continue;
+            const auto& [band, src, dst, texture_id] = key;
+            (void)band;
+            if (src >= blend_modes.size() || dst >= blend_modes.size())
+                continue;
+            glBlendFunc(blend_modes[src], blend_modes[dst]);
             const auto found = object_textures_.find(texture_id);
             const bool textured = !texture_id.empty() &&
                 found != object_textures_.end() && found->second != 0U;
@@ -4096,6 +4186,7 @@ private:
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(0U);
         glBindBuffer(GL_ARRAY_BUFFER, 0U);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
         glDisable(GL_PROGRAM_POINT_SIZE);

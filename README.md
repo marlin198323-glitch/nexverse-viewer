@@ -6,12 +6,12 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.55`
+- Version: `0.2.0-alpha.56`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 27/27 CTests erfolgreich; OpenGL-Starttest alpha.53 OK
-- aktueller Entwicklungsblock: **Phase 8: echte PSBlock-Textur-Assets via priorisiertem GetTexture, gemeinsame GPU-Objekttexturen und texturierte Soft-Sprites; Avatar-/Bewegungs-/Asset-Fehler bleiben zurückgestellt**
+- letzter vollständig geprüfter Stand: 28/28 CTests erfolgreich; OpenGL-Starttest alpha.53 OK
+- aktueller Entwicklungsblock: **Phase 8 Großrelease alpha.56: Partikel-Wind/Bounce, Target/Beam/Ribbon-Grundformen, OpenSim-Blend-Flags und distanzgestufte Transparenz sowie erweiterte lokale Punktlichter; Debug-Build und 28/28 CTests, In-World-Test ausstehend**
 
 Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256
 nächsten unterschiedlichen Mesh-Assets anhand der Avatarposition aus.

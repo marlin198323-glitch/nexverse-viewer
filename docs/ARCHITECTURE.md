@@ -147,3 +147,17 @@ dieselbe GL_TEXTURE4-Textur. Ohne GPU-Asset bleibt der
 Soft-Sprite-Fallback sichtbar. Es gilt weiterhin das
 gemeinsame 512-Asset-Limit und ein Partikelbudget von
 maximal 768 pro Frame. Details docs/PARTICLES.md.
+
+
+## Phase-8 Großrelease alpha.56
+
+Die reine Kinematik aus render/particle_motion.hpp
+wird beim Generieren der Partikelpositionen wiederverwendet.
+Der Core löst PSBlock-TargetUUIDs anhand des WorldModels
+auf und reicht optional Zielkoordinaten sowie BlendEnums
+an den OpenGL-Renderer weiter. Dort erfolgen begrenzte
+48-Schritt-Simulation, Wind/Bounce, Target-Interpolation,
+prozedurale Beam-/Ribbon-Spuren und distanzgestaffelte
+Textur-/Blend-Batches. Der Legacy-Objektshader verarbeitet
+zusätzlich Point-Light-Cutoff und ein einfaches Specular.
+Die bekannten Avatar-/Bewegungsfehler bleiben separat.

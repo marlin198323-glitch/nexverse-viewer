@@ -1,6 +1,6 @@
 # OpenGenesisLINK – OpenSim lokale Point-Lights
 
-Stand: 0.2.0-alpha.53 · 10.10.2026
+Stand: 0.2.0-alpha.56 · 10.10.2026
 Projektplan: Phase 8 (Prims/Scene Objects, Lichtquellen).
 
 ## Protokoll und Daten
@@ -36,8 +36,11 @@ Fullbright-/unbeleuchtete Flächen sind ausgenommen.
 PBR-Materialien, keine Projektorlichter, keine
 Beleuchtung von Terrain, Wasser oder Avataren,
 noch keine exakte Parent-Rotation für Linksets.
-Der Cutoff-Wert wird validiert/gespeichert,
-in der Basisbeleuchtung aber noch nicht ausgewertet.
+Der Cutoff-Wert wird seit alpha.56 zusätzlich als
+weiche Kern-zu-Rand-Abnahme **approximiert**. Außerdem
+gibt es auf glänzenden Oberflächen ein kleines
+Blinn-Phong-Highlight. Beide Effekte sind nicht
+physikalisch kalibriert.
 Diese Implementierung ist keine Zusage vollständiger
 Firestorm-Lichtkompatibilität.
 
@@ -60,3 +63,13 @@ werden als bekannte Fehler separat behandelt.
 
 Referenz:
 https://github.com/openmetaversefoundation/libopenmetaverse/blob/master/OpenMetaverse/Primitives/Primitive.cs
+
+
+## Erweiterung alpha.56
+
+Wenige lokale Punktlichter können den Kontrast von
+glänzenden Prims/Meshes erhöhen. Der Viewer überträgt
+neben Radius/Falloff nun auch Cutoff an den Fragment-
+Shader und wertet spekulare Glanzanteile abhängig vom
+Legacy-Shiny-Wert aus. Fullbright bleibt unverändert.
+Keine Schatten/Projektion/PBR, In-World-Abnahme offen.

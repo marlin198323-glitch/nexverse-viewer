@@ -1461,3 +1461,75 @@ danach Phase 9 Asset-Streaming und übrige Viewerfunktionen.
 Protokolldetails: docs/PARTICLES.md.
 
 Live-Log: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl55-live.log
+
+
+## 0.2.0-alpha.56 – Großrelease Phase 8 / vier Entwicklungsblöcke · 10.10.2026
+
+Auf Nutzerwunsch werden zukünftig **3–4 zusammenhängende Funktionen
+pro Release** umgesetzt, mit einem gemeinsamen Abschluss aus Build,
+Tests, Versionspflege, Dokumentation und GitHub-Commit. Einzelne
+Zwischentests bleiben zur Qualitätssicherung möglich.
+
+**Block A – Partikelphysik:**
+- Neuer testbarer reiner Partikelkinematik-Helfer, mit Begrenzung
+  von Lebensdauer und festen Integrationsschritten (48).
+- Gravity/PSBlock-Beschleunigung, Wind-Flag 0x008 und Bounce-Flag
+  0x004. Wind ist aktuell ein **lokal generiertes Feld** und
+  keine behauptete Simulator-Windmessung; Bounce erfolgt auf der
+  Höhe der Quellprim, nicht durch Terrain-/Collision-Abfragen.
+- Flags für InterpColor (0x001) und InterpScale (0x002) werden
+  berücksichtigt statt unbedingter Interpolation.
+
+**Block B – Ziel- und Verbindungseffekte:**
+- Target UUID aus dem 68-Byte-PSBlock-Systemteil auslesen;
+  bekannte Zielprims, Avatare und eigener Agent werden anhand
+  UUID dem Emitter zugeordnet; unbekannte Ziele bleiben
+  unaufgelöst, ohne auf erfundene Positionen zu springen.
+- TargetPos (0x040) und TargetLinear (0x080) im CPU-Sampler,
+  Beam (0x200) als verteilte Partikel entlang einer Strecke
+  und Ribbon (0x400) als zeitlich versetzte Punktspur.
+- Echte zusammenhängende Ribbon-Flächen, SourceRotation,
+  Target-Bewegungs-Prediction und spezifische Formmodi sind
+  **noch offen**.
+
+**Block C – Transparenz, Blending, Budget:**
+- OpenMetaverse ParticleSystem BlendFunc-Enums 0..9 für
+  Extended PSBlock werden validiert und mit OpenGL abgebildet.
+  Default SourceAlpha=7, OneMinusSourceAlpha=9.
+- Neue distanzbasierte Sortierung in acht Tiefenbändern,
+  innerhalb eines Bands Batching nach Blend/Texture.
+- Feste Obergrenzen von 768 Partikeln und maximal 192
+  Zeichen-Batches schützen vor übergroßer Drawcall-Zahl.
+- Das ist nur näherungsweise Alpha-Tiefensortierung; echte
+  per-Partikel-Sortierung über alle Texturen ist offen.
+
+**Block D – Beleuchtung/Materialgrundlagen:**
+- Bei den bis zu acht Legacy-Point-Lights wird zusätzlich
+  zum bestehenden Radius/Falloff der Cutoff-Wert im Shader
+  als näherungsweiche Kernausblendung berücksichtigt.
+- Lokales Blinn-Phong-Highlight für glänzende,
+  nicht-fullbright Objektoberflächen ergänzt.
+- Kein vollständiges PBR, keine Projektorlichter, keine
+  dynamischen Schatten oder Energieerhaltung.
+
+**Abnahme:** Debug-CMake + C++23 erfolgreich, 28/28 CTests
+einschließlich neuer reiner Wind-/Bounce-/Target-Tests,
+Parser-Tests für TargetUUID und Blend-Enums;
+OpenGL-GUI-Smoke auf NVIDIA RTX 4070 SUPER, Version alpha.56,
+NexVerse-Welcome geladen, keine Shader-Fehler (der Exit 124
+des Smoke-Tests ist die beabsichtigte 7-Sekunden-Begrenzung).
+**Authentifizierter In-World-Sichttest dieser Effekte ausstehend.**
+
+**Zurückgestellte Fehler unverändert:** Eigene Avatar-LocalID
+und Bewegungsbestätigung, echte Avatar-Skeleton-/Appearance,
+defekte/fehlende Mesh-/Texturassets und Teleport/Region-Handoff.
+Keine dieser Fehlergruppen wird in diesem Release als gelöst
+ausgegeben.
+
+**Nächste gemeinsame Blöcke:** echte PSBlock-Emitter-Lebenszyklen,
+Parent-/ObjectRelative- und Target-Pfade, verbundene Ribbons
+und Beam-Geometrie, Asset-Caching und moderne Materialeffekte.
+Die Reihenfolge bleibt an projectplan.md gebunden.
+
+Live-Abnahme:
+./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl56-live.log

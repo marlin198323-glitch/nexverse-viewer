@@ -33,6 +33,11 @@ int main()
     ps[83U] = 16U; // scale 0.5m
     ps[84U] = 32U;
     ps[85U] = 32U; // scale 1m
+    const auto target_uuid =
+        nexverse::protocol::uuid_to_bytes(
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    ps.insert(ps.begin() + 52, target_uuid->begin(), target_uuid->end());
+    ps.erase(ps.begin() + 68, ps.begin() + 84);
     const auto decoded_ps =
         nexverse::protocol::parse_particle_system(ps);
     if (!decoded_ps || decoded_ps->pattern != 0x02U ||
@@ -42,7 +47,11 @@ int main()
         decoded_ps->particle_max_age != 3.0f ||
         decoded_ps->start_scale != 0.5f ||
         decoded_ps->end_scale != 1.0f ||
-        decoded_ps->start_color[0] != 220.0f / 255.0f)
+        decoded_ps->start_color[0] != 220.0f / 255.0f ||
+        decoded_ps->target_id !=
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" ||
+        decoded_ps->blend_source != 7U ||
+        decoded_ps->blend_destination != 9U)
     {
         std::cerr << "Legacy OpenSim PSBlock decode failed\n";
         return 98;
@@ -71,13 +80,23 @@ int main()
     extended[78U] = 0x03U; // DataGlow | DataBlend
     extended[79U] = 0x00U;
     extended.insert(extended.end(), {20U,150U,7U,8U});
-    if (!nexverse::protocol::parse_particle_system(extended) ||
-        nexverse::protocol::parse_particle_system(extended)->end_glow !=
-            150.0f / 255.0f)
+    const auto extended_ps =
+        nexverse::protocol::parse_particle_system(extended);
+    if (!extended_ps ||
+        extended_ps->end_glow != 150.0f / 255.0f ||
+        extended_ps->blend_source != 7U ||
+        extended_ps->blend_destination != 8U)
     {
         std::cerr << "Glow/blend extended PSBlock decode failed\n";
         return 101;
     }
+    extended.back() = 255U;
+    if (nexverse::protocol::parse_particle_system(extended))
+    {
+        std::cerr << "Invalid particle blend enum accepted\n";
+        return 103;
+    }
+    extended.back() = 8U;
     extended[72U] = 25U; // invalid size (must be <=22)
     if (nexverse::protocol::parse_particle_system(extended))
     {

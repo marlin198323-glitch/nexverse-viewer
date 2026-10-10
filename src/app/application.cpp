@@ -4752,7 +4752,8 @@ int Application::run(bool enable_developer_modules)
                         dist,
                         {{world_position.x, world_position.y, world_position.z},
                          {light.red, light.green, light.blue},
-                         light.intensity, light.radius, light.falloff}});
+                         light.intensity, light.radius, light.falloff,
+                         light.cutoff}});
                 }
                 constexpr std::size_t max_frame_point_lights = 8U;
                 if (light_candidates.size() > max_frame_point_lights)
@@ -4803,6 +4804,54 @@ int Application::run(bool enable_developer_modules)
                     if (!std::isfinite(distance_squared) ||
                         distance_squared > 192.0f * 192.0f) continue;
                     const auto& ps = *object.particle_system;
+                    protocol::Vec3 target_position{};
+                    bool target_available = false;
+                    if (!ps.target_id.empty() &&
+                        ps.target_id !=
+                            "00000000-0000-0000-0000-000000000000")
+                    {
+                        for (const auto& [other_id, other] :
+                             world_model.objects())
+                        {
+                            (void)other_id;
+                            if (other.id == ps.target_id)
+                            {
+                                target_position = other.position;
+                                target_available = true;
+                                if (other.parent_id != 0U)
+                                {
+                                    if (const auto parent =
+                                            world_model.objects().find(
+                                                other.parent_id);
+                                        parent != world_model.objects().end())
+                                    {
+                                        target_position.x +=
+                                            parent->second.position.x;
+                                        target_position.y +=
+                                            parent->second.position.y;
+                                        target_position.z +=
+                                            parent->second.position.z;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        if (!target_available)
+                        {
+                            if (const auto avatar =
+                                    world_model.avatars().find(ps.target_id);
+                                avatar != world_model.avatars().end())
+                            {
+                                target_position = avatar->second.position;
+                                target_available = true;
+                            }
+                            else if (ps.target_id == render_agent.agent_id)
+                            {
+                                target_position = render_agent.position;
+                                target_available = true;
+                            }
+                        }
+                    }
                     emitter_candidates.push_back({
                         distance_squared,
                         {local_id,
@@ -4814,7 +4863,11 @@ int Application::run(bool enable_developer_modules)
                          ps.speed_min,ps.speed_max,
                          ps.particle_max_age,
                          ps.start_scale,ps.end_scale,
-                         ps.burst_count,ps.pattern,ps.particle_flags}});
+                         ps.burst_count,ps.pattern,ps.particle_flags,
+                         target_available,
+                         {target_position.x, target_position.y,
+                          target_position.z},
+                         ps.blend_source,ps.blend_destination}});
                 }
                 constexpr std::size_t emitter_budget = 32U;
                 if (emitter_candidates.size() > emitter_budget)
