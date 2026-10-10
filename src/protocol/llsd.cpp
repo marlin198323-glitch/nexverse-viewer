@@ -110,6 +110,10 @@ void append_xml_value(XMLDocument& document, XMLElement* parent, const LlsdValue
             element = document.NewElement("uri");
             element->SetText(value.string_value.c_str());
             break;
+        case LlsdType::date:
+            element = document.NewElement("date");
+            element->SetText(value.string_value.c_str());
+            break;
         case LlsdType::binary:
         {
             element = document.NewElement("binary");
@@ -238,6 +242,15 @@ LlsdParseResult parse_xml_value(const XMLElement* element)
     if (name == "uri")
     {
         return {LlsdValue::uri(text_of(element)), {}};
+    }
+    if (name == "date")
+    {
+        // An LLSD date is metadata, not an instruction. Preserve its
+        // lexical UTC representation exactly (including fractions).
+        const std::string value = text_of(element);
+        if (value.size() > 128U)
+            return {std::nullopt, "LLSD date exceeds size limit"};
+        return {LlsdValue::date(value), {}};
     }
     if (name == "binary")
     {
@@ -419,6 +432,11 @@ void append_binary_value(std::vector<std::uint8_t>& out, const LlsdValue& value)
             }
             break;
         }
+        case LlsdType::date:
+            // Binary LLSD dates are big-endian IEEE754 seconds since epoch.
+            out.push_back(static_cast<std::uint8_t>('d'));
+            append_be_double(out, value.real_value);
+            break;
         case LlsdType::string:
         case LlsdType::uri:
         {
@@ -492,6 +510,13 @@ LlsdParseResult parse_binary_value(
             const auto value = read_be_double(bytes, offset);
             if (!value.has_value()) return {std::nullopt, "LLSD binary real truncated"};
             return {LlsdValue::real(*value), {}};
+        }
+        case 'd':
+        {
+            const auto value = read_be_double(bytes, offset);
+            if (!value.has_value() || !std::isfinite(*value))
+                return {std::nullopt, "LLSD binary date invalid or truncated"};
+            return {LlsdValue::date_seconds(*value), {}};
         }
         case 'u':
         {
@@ -578,10 +603,15 @@ LlsdParseResult parse_binary_value(
             return {LlsdValue::map(std::move(values)), {}};
         }
         default:
-            return {
-                std::nullopt,
-                "Unknown LLSD binary marker: " +
-                    std::string{1, static_cast<char>(marker)}};
+        {
+            constexpr char hex[] = "0123456789abcdef";
+            std::string shown{"0x"};
+            shown.push_back(hex[(marker >> 4U) & 0x0FU]);
+            shown.push_back(hex[marker & 0x0FU]);
+            return {std::nullopt,
+                "Unknown LLSD binary marker " + shown +
+                " at offset " + std::to_string(offset - 1U)};
+        }
     }
 }
 }
@@ -633,6 +663,22 @@ LlsdValue LlsdValue::uri(std::string value)
     LlsdValue result;
     result.type = LlsdType::uri;
     result.string_value = std::move(value);
+    return result;
+}
+
+LlsdValue LlsdValue::date(std::string value)
+{
+    LlsdValue result;
+    result.type = LlsdType::date;
+    result.string_value = std::move(value);
+    return result;
+}
+
+LlsdValue LlsdValue::date_seconds(double value)
+{
+    LlsdValue result;
+    result.type = LlsdType::date;
+    result.real_value = value;
     return result;
 }
 

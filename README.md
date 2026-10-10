@@ -6,12 +6,21 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.48`
+- Version: `0.2.0-alpha.49`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 24/24 Tests grün; neuer OpenGL-Starttest für alpha.48 wird separat ausgewertet
-- aktueller Entwicklungsblock: **LLSD XML-Integer-Robustheit sowie erste native OpenSim-Mesh-Pipeline: SculptExtraParams/UUID, GetMesh/GetMesh2, LOD-zlib/LLSD, Face-Geometrie und OpenGL-Upload; Live-Sichtabnahme und Compressed-ObjectUpdate folgen**
+- letzter vollständig geprüfter Stand: 24/24 Tests grün; GUI-Smoke alpha.49 separat geprüft
+- aktueller Entwicklungsblock: **LLSD XML/Binary-Datum, robustere Mesh-UVs, Teil-Face-Recovery und alternativer GetMesh-CAPS-Fetch; echter Live-Retest der verbleibenden 208 Mesh-Headerfälle folgt**
+
+Der aktuelle Mesh-Decoder erhält zusätzliche Kompatibilität für
+optionale TexCoord0Domain-Felder, bewahrt valide Faces bei defekten
+Submeshes und versucht bei fehlerhaften Assets auch die zweite,
+regionsgebundene Mesh-Capability (falls angeboten).
+Unbekannte binäre Header werden als Hex-Präfix, Länge und
+Marker-Offset protokolliert – eine automatische Reparatur der
+208 zuvor unbekannten Header **ist damit noch nicht bestätigt**.
+Der LLSD-Parser verarbeitet jetzt auch `<date>` und binäre 'd'-Daten.
 
 Die erste OpenSim-Mesh-Pipeline dekodiert Mesh-Asset-Dateien über
 GetMesh/GetMesh2 (falls angeboten), und übernimmt Mesh-Faces als echte

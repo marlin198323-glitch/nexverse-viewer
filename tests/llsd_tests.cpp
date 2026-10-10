@@ -36,6 +36,41 @@ int main()
 
     using namespace nexverse::protocol;
 
+    constexpr std::string_view event_with_date =
+        "<llsd><map><key>id</key><integer>7</integer>"
+        "<key>timestamp</key><date>2026-10-10T08:04:03.125Z</date>"
+        "</map></llsd>";
+    const auto dated_event = parse_llsd_xml(event_with_date);
+    if (!dated_event.ok() || !dated_event.value->is_map() ||
+        !dated_event.value->find("timestamp") ||
+        dated_event.value->find("timestamp")->type != LlsdType::date ||
+        dated_event.value->find("timestamp")->string_value !=
+            "2026-10-10T08:04:03.125Z" ||
+        serialize_llsd_xml(*dated_event.value).find("<date>") ==
+            std::string::npos)
+    {
+        std::cerr << "OpenSim EventQueue date XML compatibility failed\n";
+        return 92;
+    }
+    const auto binary_date = serialize_llsd_binary(
+        LlsdValue::map({{"date", LlsdValue::date_seconds(1712345678.5)}}));
+    const auto decoded_date = parse_llsd_binary(binary_date);
+    if (!decoded_date.ok() || !decoded_date.value->find("date") ||
+        decoded_date.value->find("date")->type != LlsdType::date ||
+        decoded_date.value->find("date")->real_value != 1712345678.5)
+    {
+        std::cerr << "Mesh LLSD date binary compatibility failed\n";
+        return 93;
+    }
+    std::vector<std::uint8_t> truncated_date{'d', 0x40U};
+    if (parse_llsd_binary(truncated_date).ok() ||
+        parse_llsd_xml("<llsd><date>" +
+            std::string(160U, 'x') + "</date></llsd>").ok())
+    {
+        std::cerr << "Malformed LLSD date accepted\n";
+        return 94;
+    }
+
     LlsdValue root = LlsdValue::map({
         {"name", LlsdValue::string("NexVerse")},
         {"enabled", LlsdValue::boolean(true)},

@@ -58,3 +58,17 @@ Seed-Capability**. Ein Regions-/Teleportwechsel kann die alte
 EventQueue nicht automatisch durch die Queue einer anderen Region
 ersetzen. Dieser vollständige Circuit-/Queue-Wechsel kommt im
 separaten Teleport-Lifecycle-Block.
+
+
+## LLSD-Date-Kompatibilität (0.2.0-alpha.49)
+
+Live alpha.48: Ein HTTP-200-EventQueue-Paket enthielt ein
+`<date>`-Feld; der XML-Parser verwarf deshalb den gesamten Batch.
+Der LLSD-Typ `date` ist nun im XML- und im Binary-Pfad
+('d' plus 8-Byte-Zeitstempel) unterstützt. Das gilt auch für die
+optionalen Datumseinträge in Mesh-Asset-Headern. Regressionstests
+decken echte Datumswerte, XML-Re-Serialisierung sowie
+trunkierte/überlange Werte ab.
+
+Der erste Live-Retest mit alpha.49 muss das Ausbleiben der
+`Unsupported LLSD XML type: date`-Meldung bestätigen.

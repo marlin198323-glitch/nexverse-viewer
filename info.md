@@ -1144,3 +1144,40 @@ Details: `docs/CAPS.md`.
   Teleport-Circuit-Wechsel bleiben eigenständige Blöcke.
 
 Weitere Details: `docs/MESH.md`.
+
+
+## Phase 8/9 – LLSD-Datum / Mesh-Fehlerbehandlung · 10.10.2026 · alpha.49
+
+**Verbindlicher Ausgangsbefund aus alpha.48:**
+- 232 echte Mesh-Uploads an OpenGL, 216 fehlgeschlagen.
+- Davon 208 identische Headerfehler `Unknown LLSD binary marker`,
+  sieben ungültige Submeshes, ein Mesh HTTP404.
+- Objekttexturen 287 erfolgreich/9 fehlend; Terraintexturen 4/4.
+- EventQueue HTTP502 normal, ein HTTP200-LLSD-Parsefehler
+  `Unsupported LLSD XML type: date`, danach Recovery.
+
+**Geliefert:**
+- LLSD XML `date` und binäres `d` im Parser/Serializer.
+- Bei unbekanntem Binärtyp Hex-Marker und Byteposition;
+  bei defektem Mesh-Header 8 erste Asset-Bytes in Hex und
+  Gesamtzahl der Bytes als sichere, begrenzte Diagnostik.
+- Default UV [0,1] bei fehlender optionaler TexCoord0Domain.
+- Einzelne ungültige Submesh-Faces können übersprungen werden
+  (Rollback partieller Indizes/Vertices; gültige Faces bleiben).
+- GetMesh2 vor GetMesh, alternativer Mesh-CAP-Abruf bei Fehlschlag,
+  begrenzt auf einmalige Wiederholung; epochengeschützter Cache.
+- Tests mit Datumsfeldern, optionalen UV-Domains,
+  alternativen Capabilities und teilweise beschädigten Mesh-Faces
+  erweitern die 24 vorhandenen CTests.
+
+**Abnahme und Prioritäten:**
+- Offline-/Build-/GUI-Abnahme separat dokumentieren.
+- Kein echter Server-Mesh-Retest dieser Version erfolgt: **208
+  Headerfehler nicht als behoben ausgeben**. Nach Login die neuen
+  `prefix_hex`-`at offset`-Fehler auslesen und deren Ursache
+  anhand des tatsächlichen Binärformats angehen.
+- Dann `ObjectUpdateCompressed` Mesh-ExtraParams, Mesh-LOD-
+  Streaming, Skinned/Animesh, Avatar und vollständige Texturen
+  separat bearbeiten.
+
+Details `docs/MESH.md` und `docs/CAPS.md`.

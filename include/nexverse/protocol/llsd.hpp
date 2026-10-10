@@ -23,6 +23,7 @@ enum class LlsdType
     string,
     uuid,
     uri,
+    date,
     binary,
     array,
     map
@@ -45,6 +46,8 @@ struct LlsdValue
     static LlsdValue string(std::string value);
     static LlsdValue uuid(std::string value);
     static LlsdValue uri(std::string value);
+    static LlsdValue date(std::string value);
+    static LlsdValue date_seconds(double value);
     static LlsdValue binary(std::vector<std::uint8_t> value);
     static LlsdValue array(std::vector<LlsdValue> value = {});
     static LlsdValue map(std::map<std::string, LlsdValue, std::less<>> value = {});

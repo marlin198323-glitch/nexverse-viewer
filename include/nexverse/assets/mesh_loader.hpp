@@ -53,7 +53,8 @@ public:
     explicit MeshAssetLoader(std::shared_ptr<net::IHttpTransport> transport);
     [[nodiscard]] MeshAssetResult fetch(
         std::string_view get_mesh_capability,
-        std::string_view mesh_id) const;
+        std::string_view mesh_id,
+        std::string_view fallback_mesh_capability = {}) const;
 
 private:
     std::shared_ptr<net::IHttpTransport> transport_;

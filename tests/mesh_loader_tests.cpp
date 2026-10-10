@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -14,7 +15,8 @@ namespace
 {
 using nexverse::protocol::LlsdValue;
 
-std::string small_mesh()
+std::string small_mesh(bool with_uv_domain = true,
+                       bool invalid_first_face = false)
 {
     const std::vector<std::uint8_t> positions{
         0U, 0U, 0U, 0U, 0U, 0U,
@@ -32,12 +34,18 @@ std::string small_mesh()
         {"Max", LlsdValue::array({
             LlsdValue::real(1.0), LlsdValue::real(1.0)})}});
 
+    std::map<std::string, LlsdValue, std::less<>> part{
+        {"Position", LlsdValue::binary(positions)},
+        {"TriangleList", LlsdValue::binary(triangles)},
+        {"TexCoord0", LlsdValue::binary(uv)}};
+    if (with_uv_domain) part.emplace("TexCoord0Domain", domain);
+    std::vector<LlsdValue> faces;
+    if (invalid_first_face)
+        faces.push_back(LlsdValue::map({
+            {"Position", LlsdValue::binary({0U, 0U})}}));
+    faces.push_back(LlsdValue::map(std::move(part)));
     const auto lod = nexverse::protocol::serialize_llsd_binary(
-        LlsdValue::array({LlsdValue::map({
-            {"Position", LlsdValue::binary(positions)},
-            {"TriangleList", LlsdValue::binary(triangles)},
-            {"TexCoord0", LlsdValue::binary(uv)},
-            {"TexCoord0Domain", domain}})}), false);
+        LlsdValue::array(std::move(faces)), false);
 
     std::vector<std::uint8_t> zipped(compressBound(
         static_cast<uLong>(lod.size())));
@@ -51,6 +59,7 @@ std::string small_mesh()
     const auto header = nexverse::protocol::serialize_llsd_binary(
         LlsdValue::map({
             {"version", LlsdValue::integer(1)},
+            {"date", LlsdValue::date_seconds(1712345678.5)},
             {"high_lod", LlsdValue::map({
                 {"offset", LlsdValue::integer(0)},
                 {"size", LlsdValue::integer(
@@ -68,12 +77,16 @@ public:
     std::string body;
     std::string last_url;
     int code = 200;
+    std::string bad_getmesh2;
 
     nexverse::net::HttpResponse get(
         std::string_view url, std::size_t,
         std::chrono::milliseconds, std::chrono::milliseconds) override
     {
         last_url.assign(url);
+        if (!bad_getmesh2.empty() &&
+            url.find("GetMesh2") != std::string_view::npos)
+            return {200, bad_getmesh2, {}};
         if (code != 200)
             return {code, {}, "HTTP server returned status " +
                 std::to_string(code)};
@@ -140,6 +153,43 @@ int main()
         std::cerr << "GetMesh fetch failed: " << fetched.message << '\n';
         return 3;
     }
+
+    const auto omitted_domain = decode_mesh_asset(id, small_mesh(false));
+    if (!omitted_domain.success ||
+        omitted_domain.geometry.indices.size() != 3U)
+    {
+        std::cerr << "Mesh missing optional UV domain was rejected: "
+                  << omitted_domain.message << '\n';
+        return 7;
+    }
+
+    const auto partially_valid = decode_mesh_asset(id, small_mesh(true, true));
+    if (!partially_valid.success ||
+        partially_valid.geometry.indices.size() != 3U ||
+        partially_valid.geometry.faces.size() != 1U ||
+        partially_valid.geometry.faces[0].face != 1U ||
+        partially_valid.message.find("skipped_invalid_faces=1") ==
+            std::string::npos)
+    {
+        std::cerr << "Valid faces not preserved after damaged submesh: "
+                  << partially_valid.message << '\n';
+        return 9;
+    }
+
+    transport->bad_getmesh2 = "invalid";
+    const auto alternate = loader.fetch(
+        "https://caps.example.test/GetMesh2", id,
+        "https://caps.example.test/GetMesh");
+    if (!alternate.success ||
+        transport->last_url.find("GetMesh?mesh_id=") ==
+            std::string::npos ||
+        alternate.message.find("alternate GetMesh") == std::string::npos)
+    {
+        std::cerr << "Secondary Mesh capability recovery failed: "
+                  << alternate.message << '\n';
+        return 8;
+    }
+    transport->bad_getmesh2.clear();
 
     transport->code = 404;
     const auto unavailable = loader.fetch(

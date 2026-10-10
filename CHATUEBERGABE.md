@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.48`
+Version: `0.2.0-alpha.49`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -369,3 +369,35 @@ Live-Beobachtung 0.2.0-alpha.45 (2026-10-10 00:13 bis 00:18):
   und kompletter Teleport-Reconnect sind **noch offen**.
 - Projektplan verbindlich, Details `docs/MESH.md`.
 - GitHub Handoff: `develop-current`, lokaler Branch entsprechend.
+
+
+## alpha.49 – LLSD-Date und Mesh-Diagnostik · 10.10.2026
+
+- Zuletzt bewiesene Live-Zahlen aus alpha.48:
+  448 Meshanforderungen; 232 Erfolge, 216 Fehler
+  (208 unbekannter LLSD-Binary-Marker, 7 Submeshes, 1 HTTP 404).
+  287 erfolgreiche Objekttexturen, 9 fehlende/defekte Texturen.
+  EventQueue HTTP502-Idle korrekt; einmaliger HTTP200-Fehler
+  `Unsupported LLSD XML type: date` wurde anschließend recovered.
+- Neu: `LlsdType::date`, XML `<date>` und Binary-Marker
+  `d` (8-Byte-Big-Endian-IEEE754 epoch seconds) dekodieren.
+  LLSD unknown-type Fehler melden jetzt `0xNN at offset N`,
+  statt unlesbarem Steuerzeichen.
+- Mesh-Asset-Fehlerprotokoll nennt sichere 8-Byte-Hex-Signatur,
+  Gesamtlänge und LLSD-Fehlerposition (keine URL/Token).
+- Optionales `TexCoord0Domain` erhält jetzt Standard-UV-Domain,
+  invalide Submesh-Faces werden mit Rollback übersprungen,
+  gültige restliche Faces bleiben renderbar.
+- `GetMesh2` wird bevorzugt, `GetMesh` bei Fehler als
+  einmaliger alternativer CAPS-Pfad versucht, solange getrennt
+  angeboten. Regions-Epochenabsicherung und GPU-Limits bleiben.
+- 24/24 Offline-Tests grün, echte In-World-Abnahme alpha.49 offen.
+  Die bisherigen 208 unbekannten Mesh-Header sind **noch nicht
+  als behoben bestätigt**; neue `prefix_hex`-/Offset-Logs
+  sind die Basis für die nächste formatgenaue Korrektur.
+- Ganz offene Funktionen: initiale SculptExtraParams in
+  ObjectUpdateCompressed, vollständige Mesh-LOD, Rigging/Animesh,
+  Teleport-Reconnect sowie 9 fehlerhafte/fehlende Servertexturen.
+- Verbindlich `projectplan.md`. Detail `docs/MESH.md`,
+  `docs/CAPS.md`. GitHub `develop-current`.
+- Live-Start: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl49-live.log`.

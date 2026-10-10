@@ -11,6 +11,8 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <iomanip>
+#include <sstream>
 #include <span>
 #include <string>
 #include <utility>
@@ -135,10 +137,15 @@ bool append_submesh(const LlsdValue& part,
     {
         if (uv->type != LlsdType::binary ||
             uv->binary_value.size() != count * 4U) return false;
-        auto mn = vector_domain(part.find("TexCoord0Domain"), "Min", 2U);
-        auto mx = vector_domain(part.find("TexCoord0Domain"), "Max", 2U);
-        if (!mn || !mx) return false;
-        umin = std::move(*mn); umax = std::move(*mx);
+        // TexCoord0Domain is optional in real uploaded mesh assets.
+        // Missing domains represent the canonical 0..1 UV interval.
+        if (const auto* domain = part.find("TexCoord0Domain"))
+        {
+            auto mn = vector_domain(domain, "Min", 2U);
+            auto mx = vector_domain(domain, "Max", 2U);
+            if (!mn || !mx) return false;
+            umin = std::move(*mn); umax = std::move(*mx);
+        }
     }
 
     const auto& pos = positions->binary_value;
@@ -233,7 +240,18 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
     if (!header.ok() || !header.value->is_map() ||
         header_size >= raw.size())
     {
-        result.message = "Mesh binary LLSD header invalid: " + header.error;
+        // Diagnostic only: never dump asset payloads, full CAPS URLs,
+        // credentials or private content to logs.
+        std::ostringstream signature;
+        for (std::size_t i = 0U; i < std::min<std::size_t>(8U, raw.size()); ++i)
+        {
+            if (i != 0U) signature << '-';
+            signature << std::hex << std::setfill('0') << std::setw(2)
+                      << static_cast<unsigned>(raw[i]);
+        }
+        result.message = "Mesh binary LLSD header invalid: " + header.error +
+            "; payload_bytes=" + std::to_string(raw.size()) +
+            "; prefix_hex=" + signature.str();
         return result;
     }
     const auto* lod = header.value->find("high_lod");
@@ -274,25 +292,38 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         return result;
     }
     MeshGeometry geometry;
+    std::size_t skipped_faces = 0U;
     for (std::size_t i = 0U; i < parsed.value->array_value.size(); ++i)
     {
+        // Individual uploaded faces can be malformed. Retain the other
+        // faces, but rollback partially appended triangles in a bad face.
+        const auto vertex_count = geometry.vertices.size();
+        const auto index_count = geometry.indices.size();
+        const auto face_count = geometry.faces.size();
         if (!append_submesh(parsed.value->array_value[i],
                             static_cast<std::uint32_t>(i), geometry))
         {
-            result.message = "Mesh submesh geometry invalid; face=" +
-                             std::to_string(i);
-            return result;
+            geometry.vertices.resize(vertex_count);
+            geometry.indices.resize(index_count);
+            geometry.faces.resize(face_count);
+            ++skipped_faces;
         }
     }
     if (!geometry.valid())
     {
-        result.message = "Mesh LOD contains no renderable triangles";
+        result.message = "Mesh LOD contains no valid renderable triangles" +
+            (skipped_faces > 0U
+                ? "; invalid_faces=" + std::to_string(skipped_faces)
+                : "");
         return result;
     }
     result.geometry = std::move(geometry);
     result.success = true;
     result.message = "Mesh high/medium LOD loaded; triangles=" +
                      std::to_string(result.geometry.indices.size() / 3U);
+    if (skipped_faces > 0U)
+        result.message += "; skipped_invalid_faces=" +
+                          std::to_string(skipped_faces);
     return result;
 }
 
@@ -303,25 +334,52 @@ MeshAssetLoader::MeshAssetLoader(
 }
 
 MeshAssetResult MeshAssetLoader::fetch(
-    std::string_view capability, std::string_view asset_id) const
+    std::string_view capability, std::string_view asset_id,
+    std::string_view fallback_capability) const
 {
     MeshAssetResult result;
     result.asset_id.assign(asset_id);
-    const std::string uri = build_get_mesh_uri(capability, asset_id);
-    if (!transport_ || uri.empty())
+    if (!transport_)
     {
-        result.message = "GetMesh transport or URI invalid";
+        result.message = "GetMesh HTTP transport unavailable";
         return result;
     }
-    const auto response = transport_->get(
-        uri, max_asset_bytes, std::chrono::seconds{8},
-        std::chrono::seconds{45});
-    if (!response.ok())
+    const auto load = [&](std::string_view cap) -> MeshAssetResult
     {
-        result.message = response.error.empty()
-            ? "GetMesh HTTP request failed" : response.error;
+        MeshAssetResult response_result;
+        response_result.asset_id.assign(asset_id);
+        const std::string uri = build_get_mesh_uri(cap, asset_id);
+        if (uri.empty())
+        {
+            response_result.message = "GetMesh URI invalid";
+            return response_result;
+        }
+        const auto response = transport_->get(
+            uri, max_asset_bytes, std::chrono::seconds{8},
+            std::chrono::seconds{45});
+        if (!response.ok())
+        {
+            response_result.message = response.error.empty()
+                ? "GetMesh HTTP request failed" : response.error;
+            return response_result;
+        }
+        return decode_mesh_asset(asset_id, response.body);
+    };
+
+    result = load(capability);
+    if (result.success || fallback_capability.empty() ||
+        fallback_capability == capability)
         return result;
+
+    const std::string first_cause = result.message;
+    auto alternative = load(fallback_capability);
+    if (alternative.success)
+    {
+        alternative.message += "; alternate GetMesh capability succeeded";
+        return alternative;
     }
-    return decode_mesh_asset(asset_id, response.body);
+    alternative.message = "primary: " + first_cause +
+                          "; alternate: " + alternative.message;
+    return alternative;
 }
 }

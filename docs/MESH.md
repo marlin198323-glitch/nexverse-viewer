@@ -69,3 +69,40 @@ CPU-Mesh → OpenGL-Vertex-/Indexbuffer und Face-Ranges ein.
 
 Formatreferenz: https://wiki.secondlife.com/wiki/Mesh/Mesh_Asset_Format
 und https://wiki.secondlife.com/wiki/ExtraParams
+
+
+## 0.2.0-alpha.49 – Formatfehlerdiagnose und Recovery (10.10.2026)
+
+**Live-Ausgangszustand alpha.48:** 448 Requests, 232 erfolgreich,
+216 fehlgeschlagen: 208x unbekannter binärer LLSD-Marker
+(vorher als Steuerzeichen dargestellt), 7x ungültiges Submesh,
+1x HTTP 404. Diese Zahlen sind **vor** alpha.49 ermittelt.
+
+- LLSD-Binary-Datum ('d' + IEEE754-64-Bit-UTC-Timestamp) und
+  XML-`date` werden jetzt protokollkonform eingelesen.
+- Fehlende `TexCoord0Domain` sind kein Fehler mehr;
+  die Standarddomain [0.0, 1.0] wird verwendet.
+- Fehlerhafte einzelne Faces werden aus der teilweise aufgebauten
+  Geometrie zurückgerollt; gültige weitere Faces bleiben renderbar,
+  `skipped_invalid_faces=N` kennzeichnet diese teilweise Rettung.
+- Seed-Discovery erfasst `GetMesh2` und `GetMesh`.
+  GetMesh2 wird bevorzugt, GetMesh als alternative URL genau einmal
+  bei Download-/Decoderfehler verwendet. Gleiche URLs verursachen
+  keinen doppelten Request.
+- Bei ungültigem LLSD-Header erscheinen Marker in Hex (`0x1d`),
+  Byteoffset, Gesamtgröße und die **ersten 8 Bytes als Hex-Präfix**.
+  Keine CAPS-URLs/Token und keine vollen Mesh-Assets loggen.
+- Die 208 Fälle sind damit besser diagnostizierbar und haben einen
+  alternativen Fetch-Weg, **aber eine erfolgreiche Live-Behebung ist
+  noch nicht nachgewiesen**. Insbesondere dürfen unbekannte Bytes
+  nicht geraten oder blind als gültige Geometrie interpretiert werden.
+- Binärer LLSD-Header folgt der öffentlichen Mesh-Spezifikation.
+  Clientseitig unbrauchbare Assetinhalte und HTTP 404 erfordern
+  bei Bedarf eine Prüfung der Server-Assets.
+
+Abnahme: `ctest --preset debug --output-on-failure` und
+`./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl49-live.log`.
+Bei erneuten Fehlern die Marker-Offsets/Hex-Präfixe und die
+Fehler je Capability prüfen, bevor zusätzliche Decoder-Fallbacks
+eingebaut werden. Vollständiges Compressed-ObjectUpdate, Animesh
+und Skinning bleiben offen.

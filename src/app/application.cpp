@@ -3261,6 +3261,7 @@ int Application::run(bool enable_developer_modules)
     std::string scoped_render_materials_uri;
     std::string scoped_get_texture_uri;
     std::string scoped_get_mesh_uri;
+    std::string scoped_get_mesh_alt_uri;
     std::future<assets::MeshAssetResult> mesh_asset_future;
     std::string mesh_asset_loading_id;
     std::uint64_t mesh_asset_request_epoch = 0U;
@@ -4381,6 +4382,7 @@ int Application::run(bool enable_developer_modules)
                 scoped_render_materials_uri.clear();
                 scoped_get_texture_uri.clear();
                 scoped_get_mesh_uri.clear();
+                scoped_get_mesh_alt_uri.clear();
                 scene_mesh_ids.clear();
                 mesh_asset_loaded_ids.clear();
                 mesh_asset_failed_ids.clear();
@@ -4427,15 +4429,17 @@ int Application::run(bool enable_developer_modules)
                                 it != discovery.capabilities.end())
                                 scoped_get_texture_uri = it->second;
                             if (const auto it =
-                                    discovery.capabilities.find("GetMesh");
+                                    discovery.capabilities.find("GetMesh2");
                                 it != discovery.capabilities.end())
                                 scoped_get_mesh_uri = it->second;
-                            if (scoped_get_mesh_uri.empty())
+                            if (const auto it =
+                                    discovery.capabilities.find("GetMesh");
+                                it != discovery.capabilities.end())
                             {
-                                if (const auto it =
-                                        discovery.capabilities.find("GetMesh2");
-                                    it != discovery.capabilities.end())
+                                if (scoped_get_mesh_uri.empty())
                                     scoped_get_mesh_uri = it->second;
+                                else if (it->second != scoped_get_mesh_uri)
+                                    scoped_get_mesh_alt_uri = it->second;
                             }
                             if (scoped_get_mesh_uri.empty())
                                 core::warning(
@@ -5365,11 +5369,13 @@ int Application::run(bool enable_developer_modules)
                     mesh_asset_loading_id = id;
                     mesh_asset_request_epoch = material_scope.epoch();
                     const std::string cap = scoped_get_mesh_uri;
+                    const std::string alt_cap = scoped_get_mesh_alt_uri;
                     mesh_asset_future = std::async(
                         std::launch::async,
-                        [transport, cap, id]()
+                        [transport, cap, alt_cap, id]()
                         {
-                            return assets::MeshAssetLoader{transport}.fetch(cap, id);
+                            return assets::MeshAssetLoader{transport}
+                                .fetch(cap, id, alt_cap);
                         });
                     core::info("GetMesh request started for " + id);
                     break;
