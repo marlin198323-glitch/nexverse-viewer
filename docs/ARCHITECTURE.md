@@ -133,3 +133,17 @@ Sprites per dynamischem VBO in einem GL-Drawcall.
 Die nächste Ausbaustufe ergänzt echte Textur-Assets,
 Target-/Ribbon- und weitere LSL-Verhaltensweisen.
 Siehe docs/PARTICLES.md.
+
+
+## Partikeltexturen / Asset-Sharing (alpha.55)
+
+Das durch PSBlock referenzierte Partikel-Asset geht durch
+dieselbe GetTexture-CAPS-Pipeline wie Objekt- und Meshtexturen.
+Die Priorisierung der nächsten Emitter erfolgt vor der
+Objekttextur-Warteschlange; die UUID-Cache-/Fehler-/Regions-
+Epochenprüfungen werden gemeinsam genutzt. Im OGL-Renderer
+referenzieren alle Draw-Batches bei identischer Asset-UUID
+dieselbe GL_TEXTURE4-Textur. Ohne GPU-Asset bleibt der
+Soft-Sprite-Fallback sichtbar. Es gilt weiterhin das
+gemeinsame 512-Asset-Limit und ein Partikelbudget von
+maximal 768 pro Frame. Details docs/PARTICLES.md.

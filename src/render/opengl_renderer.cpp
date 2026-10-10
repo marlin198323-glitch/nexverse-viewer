@@ -2120,15 +2120,20 @@ void main()
 constexpr const char* particle_fragment_shader_source = R"GLSL(
 #version 330 core
 in vec4 vParticleColor;
+uniform sampler2D uParticleTexture;
+uniform bool uParticleTextured;
 out vec4 FragColor;
 void main()
 {
     vec2 xy = gl_PointCoord - vec2(0.5);
     float r = length(xy) * 2.0;
     if (r >= 1.0) discard;
-    // Soft edges and core allow smooth smoke/fire/spark prototypes.
+    // The generated soft disc remains the fallback for missing assets.
     float soft = exp(-4.0 * r * r) * (1.0 - smoothstep(0.7, 1.0, r));
-    FragColor = vec4(vParticleColor.rgb, vParticleColor.a * soft);
+    vec4 sampleColor = uParticleTextured
+        ? texture(uParticleTexture, gl_PointCoord) : vec4(1.0);
+    FragColor = vec4(vParticleColor.rgb * sampleColor.rgb,
+        vParticleColor.a * sampleColor.a * soft);
 }
 )GLSL";
 
@@ -3958,9 +3963,10 @@ private:
         if (particle_emitters_.empty() || particle_program_ == 0U ||
             particle_vao_ == 0U || !std::isfinite(seconds))
             return;
-        std::vector<float> vertices;
+        // Collect vertices by image asset; bind each shared GPU texture
+        // once per batch. A missing texture maps to the soft-disc group.
+        std::unordered_map<std::string, std::vector<float>> batches;
         constexpr std::size_t max_particles = 768U;
-        vertices.reserve(max_particles * 8U);
         const auto hash01 = [](std::uint32_t seed)
         {
             seed ^= seed >> 16U;
@@ -3976,6 +3982,12 @@ private:
             if (count >= max_particles) break;
             if (emitter.max_age <= 0.0f || emitter.burst_rate <= 0.0f ||
                 emitter.burst_count == 0U) continue;
+            // Only reference a texture which has actually reached the GPU.
+            // Otherwise render the existing soft-circle fallback.
+            const auto it = object_textures_.find(emitter.texture_id);
+            const std::string texture_key =
+                it == object_textures_.end() ? "" : emitter.texture_id;
+            auto& vertices = batches[texture_key];
             const float interval = std::max(0.04f, emitter.burst_rate);
             const auto bursts = static_cast<std::size_t>(
                 std::clamp(std::ceil(emitter.max_age / interval),
@@ -4058,19 +4070,36 @@ private:
         glUniform1f(
             glGetUniformLocation(particle_program_, "uViewportHeight"),
             static_cast<float>(height_));
+        glUniform1i(
+            glGetUniformLocation(particle_program_, "uParticleTexture"), 4);
         glBindVertexArray(particle_vao_);
         glBindBuffer(GL_ARRAY_BUFFER, particle_vbo_);
-        glBufferData(GL_ARRAY_BUFFER,
-            static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
-            vertices.data(), GL_STREAM_DRAW);
-        glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(count));
+        glActiveTexture(GL_TEXTURE4);
+        for (const auto& [texture_id, vertices] : batches)
+        {
+            if (vertices.empty()) continue;
+            const auto found = object_textures_.find(texture_id);
+            const bool textured = !texture_id.empty() &&
+                found != object_textures_.end() && found->second != 0U;
+            glUniform1i(
+                glGetUniformLocation(particle_program_, "uParticleTextured"),
+                textured ? GL_TRUE : GL_FALSE);
+            glBindTexture(GL_TEXTURE_2D, textured ? found->second : 0U);
+            glBufferData(GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+                vertices.data(), GL_STREAM_DRAW);
+            glDrawArrays(GL_POINTS, 0,
+                static_cast<GLsizei>(vertices.size() / 8U));
+            ++diagnostics_.draw_calls;
+        }
+        glBindTexture(GL_TEXTURE_2D, 0U);
+        glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(0U);
         glBindBuffer(GL_ARRAY_BUFFER, 0U);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
         glDisable(GL_PROGRAM_POINT_SIZE);
         glUseProgram(program_);
-        diagnostics_.draw_calls++;
     }
 
     [[nodiscard]] Mat4 scene_pose(

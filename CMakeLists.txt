@@ -396,6 +396,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-residency-tests)
     add_test(NAME nexverse-mesh-residency-tests COMMAND nexverse-mesh-residency-tests)
 
+    add_executable(nexverse-texture-priority-tests tests/texture_priority_tests.cpp)
+    target_link_libraries(nexverse-texture-priority-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-priority-tests)
+    add_test(NAME nexverse-texture-priority-tests COMMAND nexverse-texture-priority-tests)
+
     add_executable(nexverse-movement-controls-tests tests/movement_controls_tests.cpp)
     target_link_libraries(nexverse-movement-controls-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-movement-controls-tests)

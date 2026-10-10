@@ -7,6 +7,7 @@
 #include "nexverse/app/application.hpp"
 
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/texture_request_priority.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/core/logger.hpp"
@@ -5555,37 +5556,29 @@ int Application::run(bool enable_developer_modules)
                 object_texture_loaded_ids.size() <
                     max_object_texture_assets)
             {
-                for (const auto& texture_id : scene_texture_ids)
+                // The same GetTexture cache serves object faces and the
+                // closest particle emitters. Share UUIDs and known failures.
+                std::vector<std::string> emitter_texture_ids;
+                emitter_texture_ids.reserve(scene_particle_emitters.size());
+                for (const auto& emitter : scene_particle_emitters)
+                    emitter_texture_ids.push_back(emitter.texture_id);
+                if (const auto texture_id = assets::next_texture_request(
+                        emitter_texture_ids, scene_texture_ids,
+                        object_texture_loaded_ids, object_texture_failed_ids))
                 {
-                    if (texture_id.empty() ||
-                        texture_id ==
-                            "00000000-0000-0000-0000-000000000000" ||
-                        object_texture_loaded_ids.contains(texture_id) ||
-                        object_texture_failed_ids.contains(texture_id))
-                    {
-                        continue;
-                    }
-
-                    object_texture_loading_id = texture_id;
+                    object_texture_loading_id = *texture_id;
                     object_texture_loading = true;
                     object_texture_request_epoch = material_scope.epoch();
-
-                    const std::string capability =
-                        texture_capability;
-                    const std::string requested_id =
-                        texture_id;
-
+                    const std::string capability = texture_capability;
+                    const std::string requested_id = *texture_id;
                     object_texture_future = std::async(
                         std::launch::async,
                         [transport, capability, requested_id]()
                         {
-                            assets::TextureAssetLoader loader{
-                                transport};
+                            assets::TextureAssetLoader loader{transport};
                             return loader.fetch_rgba(
-                                capability,
-                                requested_id);
+                                capability, requested_id);
                         });
-                    break;
                 }
             }
 

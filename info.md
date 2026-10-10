@@ -1412,3 +1412,52 @@ und GPU-Instancing. Danach Phase 8 weitere
 Material-/Licht-Effekte und Phase 9 Asset-Streaming.
 
 Live-Start: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl54-live.log
+
+
+## 0.2.0-alpha.55 – Phase 8: Partikeltexturen / GetTexture · 10.10.2026
+
+**Verbindlicher Kurs:** Umsetzung der Funktionen aus projectplan.md
+fortsetzen. Die bekannten Avatar-/WASD-/Mesh-/Texturfehler bleiben
+auf Nutzerwunsch für die spätere Fehlerphase zurückgestellt.
+
+**Neu:**
+- Die in OpenSim ParticleSystem/PSBlock enthaltene Particle
+  Texture-UUID wird nicht mehr nur gespeichert: Für sichtbare
+  Emitter (maximal 32 im Umkreis) wird die Textur im vorhandenen
+  GetTexture-Asset-Loader vor regulären Hintergrund-Objekttexturen
+  angefordert und als RGBA8/ggf. JPEG2000 dekodiert.
+- Emittierte Bilder teilen denselben 512-Assets-GPU-Cache mit
+  Object-TextureEntry; gleiche UUID wird nur einmal angefragt
+  und kann für Mesh/Prim und Partikel gleichzeitig genutzt werden.
+  Die bereits bekannte Epochen-Prüfung verhindert das Hochladen
+  veralteter GetTexture-Replies aus früheren Regionen.
+- Neuer Pure-Logic Asset-Priorisierer prüft null/Zero-UUIDs,
+  doppelte IDs, bereits geladene und zuvor fehlgeschlagene
+  Requests. Bei Bedarf wird auf Objekttexturen zurückgegriffen.
+  Eigener automatischer Regressionstest.
+- Der Particle-Fragmentshader übernimmt echte Textur-RGBA
+  über GL_TEXTURE4 (getrennt nach Textur-UUID gebatcht),
+  verrechnet sie mit Start-/End-Farbe und Soft-Mask-Alpha.
+  Bei nicht geladenem Asset nutzt er weiterhin die zuvor
+  existierende weiche Kreis-Sprite-Darstellung.
+- Maximal 768 Partikel/Frame, höchstens 32 Emitter; künftig
+  statt eines einzelnen bis zu einem Drawcall je
+  verwendeter Partikeltextur plus optional Fallback-Batch.
+  Keine eigenen GL-Texturduplikate, kein weiteres HTTP-Subsystem.
+- Neue Tests fuer priorisierte Assetwahl, gemeinsame Cache-
+  Nutzung, ungültige IDs, geladene und fehlgeschlagene Texturen.
+  **27/27 CTests**, CMake-Debug-Build sowie OpenGL-GUI-Smoke
+  auf NVIDIA RTX 4070 SUPER ohne Shaderfehler.
+- Echte In-World-Sichtabnahme steht noch aus; das vorhandene
+  Cachelimit von 512 Assets, transparenzabhängige Sortierung,
+  Partikeltextur-Orientierung, diskrete Simulation und
+  exakte OpenSim-Partikelmodi bleiben spätere Schritte.
+- Gesammelte Avatar-/Bewegungs-/Mesh-Fixphase ausdrücklich
+  nicht vorgezogen.
+
+Weitere Planblöcke: Wind-/Bounce-/Target-/Ribbon-Partikel,
+Effekt-Lebenszyklen/Blending und komplexere Materialbeleuchtung,
+danach Phase 9 Asset-Streaming und übrige Viewerfunktionen.
+Protokolldetails: docs/PARTICLES.md.
+
+Live-Log: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl55-live.log
