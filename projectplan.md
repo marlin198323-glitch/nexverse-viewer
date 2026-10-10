@@ -2709,3 +2709,32 @@ Weitere Details: `docs/MESH.md`.
   separat bearbeiten.
 
 Details `docs/MESH.md` und `docs/CAPS.md`.
+
+
+## alpha.50 – Compressed-ObjectUpdate und Mesh-Prims · 10.10.2026
+
+**Status:** Beim Start dieses Blocks gab es kein aktuelles
+/tmp/ogl49-live.log auf der Linux-Maschine. Die 208 vorherigen
+Mesh-Headerfehler sind deshalb weiterhin unbestätigt.
+
+**Implementiert:**
+- Vollständige ObjectUpdateCompressed-Pakete mit CompressedFlags,
+  Owner UUID, optionalen Feldern AngularVelocity, Parent,
+  ScratchPad, Text, MediaURL, Particles, Sound und NameValues.
+- SculptExtraParams Typ 0x30 nach den optionalen Feldern;
+  Mesh-UUID und Sculpt-Typ werden ins WorldModel übernommen.
+- Vollständige 23-Byte-Prim-Form und TextureEntry-Daten mit
+  32-Bit-Längenfeld und Face-Textur sowie Skalierung/Parent-ID.
+- Bounds-Checks und Ablehnung abgeschnittener Compressed-Daten.
+- Test: synthetisches vollständiges komprimiertes Mesh-Prim
+  samt Scale/Parent/TextureEntry, plus Truncation-Test.
+- Formatbeleg: OpenMetaverse ObjectManager.cs,
+  ObjectUpdateCompressedHandler:
+  https://github.com/openmetaversefoundation/libopenmetaverse/blob/master/OpenMetaverse/ObjectManager.cs
+
+**Noch offen:** echter NexVerse-Live-Test; 208 vorherige
+Headerfehler über prefix_hex / Byteoffset analysieren;
+Mesh-LOD, Rigging/Animesh, Teleport-Regionswechsel und
+fehlende Servertexturen.
+
+Logstart: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl50-live.log

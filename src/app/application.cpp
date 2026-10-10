@@ -2955,19 +2955,31 @@ int Application::run(bool enable_developer_modules)
                 object.position = entry.position;
                 object.rotation = entry.rotation;
 
-                if (const auto existing =
-                        world_model.objects().find(entry.local_id);
-                    existing != world_model.objects().end())
+                if (entry.has_complete_prim_data)
+                {
+                    object.parent_id = entry.parent_id;
+                    object.scale = entry.scale;
+                    object.shape = entry.shape;
+                    object.sculpt_asset_id = entry.sculpt_asset_id;
+                    object.sculpt_type = entry.sculpt_type;
+                    object.texture_entry = entry.texture_entry;
+                    object.parsed_texture_entry =
+                        entry.parsed_texture_entry;
+                    object.default_texture = entry.default_texture;
+                }
+                else if (const auto existing =
+                             world_model.objects().find(entry.local_id);
+                         existing != world_model.objects().end())
                 {
                     object.parent_id = existing->second.parent_id;
                     object.scale = existing->second.scale;
                     object.shape = existing->second.shape;
                     object.sculpt_asset_id = existing->second.sculpt_asset_id;
                     object.sculpt_type = existing->second.sculpt_type;
-                    object.texture_entry =
-                        existing->second.texture_entry;
-                    object.default_texture =
-                        existing->second.default_texture;
+                    object.texture_entry = existing->second.texture_entry;
+                    object.parsed_texture_entry =
+                        existing->second.parsed_texture_entry;
+                    object.default_texture = existing->second.default_texture;
                 }
 
                 world_model.upsert_object(std::move(object));

@@ -6,12 +6,12 @@ Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen auss
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.49`
+- Version: `0.2.0-alpha.50`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
 - letzter vollständig geprüfter Stand: 24/24 Tests grün; GUI-Smoke alpha.49 separat geprüft
-- aktueller Entwicklungsblock: **LLSD XML/Binary-Datum, robustere Mesh-UVs, Teil-Face-Recovery und alternativer GetMesh-CAPS-Fetch; echter Live-Retest der verbleibenden 208 Mesh-Headerfälle folgt**
+- aktueller Entwicklungsblock: **Mesh-ExtraParams und Shape-Daten aus ObjectUpdateCompressed; In-World-Abnahme steht aus**
 
 Der aktuelle Mesh-Decoder erhält zusätzliche Kompatibilität für
 optionale TexCoord0Domain-Felder, bewahrt valide Faces bei defekten
@@ -24,9 +24,9 @@ Der LLSD-Parser verarbeitet jetzt auch `<date>` und binäre 'd'-Daten.
 
 Die erste OpenSim-Mesh-Pipeline dekodiert Mesh-Asset-Dateien über
 GetMesh/GetMesh2 (falls angeboten), und übernimmt Mesh-Faces als echte
-OpenGL-Dreiecke. Aktuell gilt dieser Weg für vollständige ObjectUpdate-
-Pakete; der Mesh-Block in ObjectUpdateCompressed sowie
-Skinning/Animesh, lokale OBJ-/DAE-Imports und LOD-Streaming folgen.
+OpenGL-Dreiecke. Komplette ObjectUpdateCompressed-Pakete werden nun ebenfalls mit
+Mesh-UUID, Scale, Parent-ID, Prim-Form und TextureEntry gelesen.
+Skinning/Animesh, OBJ/DAE-Import und LOD-Streaming bleiben offen.
 Technik und Grenzen: `docs/MESH.md`.
 
 Die EventQueue toleriert OpenSims erwartete HTTP-502-Leerantworten; 80-Sekunden-

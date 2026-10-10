@@ -415,6 +415,72 @@ int main()
         return 14;
     }
 
+    // A complete ObjectUpdateCompressed must read variable ExtraParams
+    // before 23-byte prim shape and 32-bit TextureEntry length.
+    std::vector<std::uint8_t> mesh_data = compressed_data;
+    mesh_data.resize(84U, 0U); // compressed flags + owner UUID
+    put_f32(mesh_data, 28U, 2.0f);
+    put_f32(mesh_data, 32U, 3.0f);
+    put_f32(mesh_data, 36U, 4.0f);
+    put_u32(mesh_data, 64U, 0x20U); // HasParent
+    append_u32_vec(mesh_data, 123U);
+    mesh_data.push_back(1U); // one ExtraParam
+    mesh_data.insert(mesh_data.end(), {0x30U, 0U}); // Sculpt type
+    append_u32_vec(mesh_data, 17U);
+    const auto mesh_asset_id =
+        uuid_to_bytes("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    mesh_data.insert(
+        mesh_data.end(), mesh_asset_id->begin(), mesh_asset_id->end());
+    mesh_data.push_back(0x05U); // mesh sculpt type
+    std::vector<std::uint8_t> compressed_shape(23U, 0U);
+    compressed_shape[0U] = 0x10U; // straight-path profile
+    compressed_shape[16U] = 0x01U; // square profile
+    mesh_data.insert(
+        mesh_data.end(), compressed_shape.begin(), compressed_shape.end());
+    append_u32_vec(mesh_data,
+        static_cast<std::uint32_t>(object_texture_entry.size()));
+    mesh_data.insert(
+        mesh_data.end(), object_texture_entry.begin(), object_texture_entry.end());
+
+    std::vector<std::uint8_t> compressed_mesh_payload{
+        0x88U,0x77U,0x66U,0x55U,0x44U,0x33U,0x22U,0x11U,
+        0x34U,0x12U,1U};
+    append_u32_vec(compressed_mesh_payload, 0U);
+    compressed_mesh_payload.push_back(
+        static_cast<std::uint8_t>(mesh_data.size() & 0xFFU));
+    compressed_mesh_payload.push_back(
+        static_cast<std::uint8_t>((mesh_data.size() >> 8U) & 0xFFU));
+    compressed_mesh_payload.insert(
+        compressed_mesh_payload.end(), mesh_data.begin(), mesh_data.end());
+
+    const auto mesh_update =
+        decode_object_update_compressed(compressed_mesh_payload);
+    if (!mesh_update || mesh_update->objects.size() != 1U ||
+        !mesh_update->objects[0].has_complete_prim_data ||
+        !mesh_update->objects[0].is_mesh() ||
+        mesh_update->objects[0].sculpt_asset_id !=
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" ||
+        mesh_update->objects[0].parent_id != 123U ||
+        mesh_update->objects[0].scale.x != 2.0f ||
+        mesh_update->objects[0].scale.y != 3.0f ||
+        mesh_update->objects[0].scale.z != 4.0f ||
+        mesh_update->objects[0].shape.path_curve != 0x10U ||
+        mesh_update->objects[0].shape.profile_shape() != 0x01U ||
+        !mesh_update->objects[0].default_texture ||
+        mesh_update->objects[0].default_texture->texture_id !=
+            "89556747-24cb-43ed-920b-47caed15465f")
+    {
+        std::cerr << "Full compressed mesh object decode failed\n";
+        return 93;
+    }
+    auto truncated_compressed_mesh = compressed_mesh_payload;
+    truncated_compressed_mesh.pop_back();
+    if (decode_object_update_compressed(truncated_compressed_mesh))
+    {
+        std::cerr << "Truncated compressed mesh object accepted\n";
+        return 94;
+    }
+
     std::vector<std::uint8_t> cached_payload{
         0x88U,0x77U,0x66U,0x55U,0x44U,0x33U,0x22U,0x11U,
         0x34U,0x12U,1U};

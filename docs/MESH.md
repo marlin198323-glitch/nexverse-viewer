@@ -44,11 +44,8 @@ CPU-Mesh → OpenGL-Vertex-/Indexbuffer und Face-Ranges ein.
   werden nicht in GPU-Buffers kopiert.
 - Kein vollständiges LOD-Streaming, keine Rigging-Boneweights,
   kein Animesh oder lokale OBJ-/DAE-Datei-Importfunktion.
-- *Wichtig*: Ein Teil der Serverobjekte kommt über
-  `ObjectUpdateCompressed`; initiale Sculpt-/Mesh-Extraparams
-  aus diesem Format fehlen noch. Der erste Ausbau deckt
-  `ObjectUpdate` vollständig und bereits bekannte Mesh-IDs
-  während Partial-Updates ab. Das ist kein Firestorm-Funktionsumfang.
+- Ab alpha.50 werden auch initiale Mesh-Daten im
+  ObjectUpdateCompressed erfasst. Live-Test offen.
 - Kein permanenter Mesh-Diskcache, keine Distance-LOD, keine
   physikalischen Collision-Meshes und kein vollständiges
   PBR/glTF-Materialsystem.
@@ -106,3 +103,32 @@ Bei erneuten Fehlern die Marker-Offsets/Hex-Präfixe und die
 Fehler je Capability prüfen, bevor zusätzliche Decoder-Fallbacks
 eingebaut werden. Vollständiges Compressed-ObjectUpdate, Animesh
 und Skinning bleiben offen.
+
+
+## alpha.50 – Compressed-ObjectUpdate und Mesh-Prims · 10.10.2026
+
+**Status:** Beim Start dieses Blocks gab es kein aktuelles
+/tmp/ogl49-live.log auf der Linux-Maschine. Die 208 vorherigen
+Mesh-Headerfehler sind deshalb weiterhin unbestätigt.
+
+**Implementiert:**
+- Vollständige ObjectUpdateCompressed-Pakete mit CompressedFlags,
+  Owner UUID, optionalen Feldern AngularVelocity, Parent,
+  ScratchPad, Text, MediaURL, Particles, Sound und NameValues.
+- SculptExtraParams Typ 0x30 nach den optionalen Feldern;
+  Mesh-UUID und Sculpt-Typ werden ins WorldModel übernommen.
+- Vollständige 23-Byte-Prim-Form und TextureEntry-Daten mit
+  32-Bit-Längenfeld und Face-Textur sowie Skalierung/Parent-ID.
+- Bounds-Checks und Ablehnung abgeschnittener Compressed-Daten.
+- Test: synthetisches vollständiges komprimiertes Mesh-Prim
+  samt Scale/Parent/TextureEntry, plus Truncation-Test.
+- Formatbeleg: OpenMetaverse ObjectManager.cs,
+  ObjectUpdateCompressedHandler:
+  https://github.com/openmetaversefoundation/libopenmetaverse/blob/master/OpenMetaverse/ObjectManager.cs
+
+**Noch offen:** echter NexVerse-Live-Test; 208 vorherige
+Headerfehler über prefix_hex / Byteoffset analysieren;
+Mesh-LOD, Rigging/Animesh, Teleport-Regionswechsel und
+fehlende Servertexturen.
+
+Logstart: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl50-live.log

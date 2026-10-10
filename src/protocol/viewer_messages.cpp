@@ -705,6 +705,148 @@ decode_object_update_compressed(
             object.rotation.z * object.rotation.z);
         object.rotation.w = std::sqrt(ww);
 
+        // ObjectUpdateCompressed has optional chunks before the
+        // Sculpt/Mesh ExtraParams block and the prim's construction data.
+        if (data.size() > 64U)
+        {
+            std::size_t pos = 64U;
+            const auto need = [&](std::size_t n)
+            {
+                return n <= data.size() - pos;
+            };
+            const auto skip_cstring = [&]()
+            {
+                while (pos < data.size() && data[pos] != 0U) ++pos;
+                if (pos >= data.size()) return false;
+                ++pos;
+                return true;
+            };
+            if (!need(20U)) return std::nullopt;
+            const auto flags = read_le_u32(data, pos);
+            pos += 20U; // flags, owner UUID
+            if ((flags & 0x80U) != 0U)
+            {
+                if (!need(12U)) return std::nullopt;
+                pos += 12U;
+            }
+            if ((flags & 0x20U) != 0U)
+            {
+                if (!need(4U)) return std::nullopt;
+                object.parent_id = read_le_u32(data, pos);
+                pos += 4U;
+            }
+            if ((flags & 0x02U) != 0U)
+            {
+                if (!need(1U)) return std::nullopt;
+                ++pos;
+            }
+            else if ((flags & 0x01U) != 0U)
+            {
+                if (!need(1U)) return std::nullopt;
+                const auto n = data[pos++];
+                if (!need(n)) return std::nullopt;
+                pos += n;
+            }
+            if ((flags & 0x04U) != 0U)
+            {
+                if (!skip_cstring() || !need(4U)) return std::nullopt;
+                pos += 4U;
+            }
+            if ((flags & 0x200U) != 0U && !skip_cstring())
+                return std::nullopt;
+            if ((flags & 0x08U) != 0U)
+            {
+                if (!need(86U)) return std::nullopt;
+                pos += 86U;
+            }
+
+            const auto start = pos;
+            if (!need(1U)) return std::nullopt;
+            const auto extra_count = data[pos++];
+            if (extra_count > 64U) return std::nullopt;
+            for (std::size_t i = 0U; i < extra_count; ++i)
+            {
+                if (!need(6U)) return std::nullopt;
+                const auto n = read_le_u32(data, pos + 2U);
+                pos += 6U;
+                if (!need(n)) return std::nullopt;
+                pos += n;
+            }
+            if (const auto sculpt = parse_sculpt_extra_params(
+                    data.subspan(start, pos - start)))
+            {
+                object.sculpt_asset_id = sculpt->asset_id;
+                object.sculpt_type = sculpt->type;
+            }
+
+            if ((flags & 0x10U) != 0U)
+            {
+                if (!need(25U)) return std::nullopt;
+                pos += 25U;
+            }
+            if ((flags & 0x100U) != 0U && !skip_cstring())
+                return std::nullopt;
+
+            if (!need(23U + 4U)) return std::nullopt;
+            object.shape.path_curve = data[pos++];
+            object.shape.path_begin = read_le_u16(data, pos); pos += 2U;
+            object.shape.path_end = read_le_u16(data, pos); pos += 2U;
+            object.shape.path_scale_x = data[pos++];
+            object.shape.path_scale_y = data[pos++];
+            object.shape.path_shear_x = data[pos++];
+            object.shape.path_shear_y = data[pos++];
+            object.shape.path_twist = static_cast<std::int8_t>(data[pos++]);
+            object.shape.path_twist_begin =
+                static_cast<std::int8_t>(data[pos++]);
+            object.shape.path_radius_offset =
+                static_cast<std::int8_t>(data[pos++]);
+            object.shape.path_taper_x =
+                static_cast<std::int8_t>(data[pos++]);
+            object.shape.path_taper_y =
+                static_cast<std::int8_t>(data[pos++]);
+            object.shape.path_revolutions = data[pos++];
+            object.shape.path_skew = static_cast<std::int8_t>(data[pos++]);
+            object.shape.profile_curve = data[pos++];
+            object.shape.profile_begin = read_le_u16(data, pos); pos += 2U;
+            object.shape.profile_end = read_le_u16(data, pos); pos += 2U;
+            object.shape.profile_hollow = read_le_u16(data, pos); pos += 2U;
+
+            const auto texture_len = read_le_u32(data, pos);
+            pos += 4U;
+            if (!need(texture_len)) return std::nullopt;
+            object.texture_entry.assign(
+                data.begin() + static_cast<std::ptrdiff_t>(pos),
+                data.begin() + static_cast<std::ptrdiff_t>(pos + texture_len));
+            pos += texture_len;
+            if (!object.texture_entry.empty())
+            {
+                object.parsed_texture_entry =
+                    parse_texture_entry(object.texture_entry);
+                if (object.parsed_texture_entry)
+                    object.default_texture =
+                        object.parsed_texture_entry->default_face;
+            }
+            if ((flags & 0x40U) != 0U)
+            {
+                if (!need(4U)) return std::nullopt;
+                const auto n = read_le_u32(data, pos);
+                pos += 4U;
+                if (!need(n)) return std::nullopt;
+                pos += n;
+            }
+            object.scale = {
+                read_f32(data, 28U), read_f32(data, 32U),
+                read_f32(data, 36U)};
+            if (!std::isfinite(object.scale.x) ||
+                !std::isfinite(object.scale.y) ||
+                !std::isfinite(object.scale.z) ||
+                object.scale.x <= 0.0f ||
+                object.scale.y <= 0.0f ||
+                object.scale.z <= 0.0f)
+                return std::nullopt;
+            object.has_complete_prim_data = true;
+        }
+
         if (object.local_id == 0U || object.id.empty())
         {
             return std::nullopt;

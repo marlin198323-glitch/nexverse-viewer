@@ -241,8 +241,22 @@ struct ObjectUpdateCompressedEntry
     std::uint32_t local_id = 0U;
     std::string id;
     std::uint8_t pcode = 0U;
+    std::uint32_t parent_id = 0U;
     Vec3 position;
     Quaternion rotation;
+    Vec3 scale{1.0f, 1.0f, 1.0f};
+    PrimitiveShapeData shape;
+    std::string sculpt_asset_id;
+    std::uint8_t sculpt_type = 0U;
+    std::vector<std::uint8_t> texture_entry;
+    std::optional<TextureEntry> parsed_texture_entry;
+    std::optional<TextureEntryDefaultFace> default_texture;
+    bool has_complete_prim_data = false;
+    [[nodiscard]] bool is_mesh() const noexcept
+    {
+        return !sculpt_asset_id.empty() &&
+               (sculpt_type & 0x07U) == 0x05U;
+    }
 };
 
 struct ObjectUpdateCompressedMessage
