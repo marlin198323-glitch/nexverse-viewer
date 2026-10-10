@@ -406,6 +406,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-particle-motion-tests)
     add_test(NAME nexverse-particle-motion-tests COMMAND nexverse-particle-motion-tests)
 
+    add_executable(nexverse-particle-emission-tests tests/particle_emission_tests.cpp)
+    target_link_libraries(nexverse-particle-emission-tests PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-particle-emission-tests)
+    add_test(NAME nexverse-particle-emission-tests COMMAND nexverse-particle-emission-tests)
+
+    add_executable(nexverse-texture-residency-tests tests/texture_residency_tests.cpp)
+    target_link_libraries(nexverse-texture-residency-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-residency-tests)
+    add_test(NAME nexverse-texture-residency-tests COMMAND nexverse-texture-residency-tests)
+
     add_executable(nexverse-movement-controls-tests tests/movement_controls_tests.cpp)
     target_link_libraries(nexverse-movement-controls-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-movement-controls-tests)

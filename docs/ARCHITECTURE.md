@@ -161,3 +161,23 @@ prozedurale Beam-/Ribbon-Spuren und distanzgestaffelte
 Textur-/Blend-Batches. Der Legacy-Objektshader verarbeitet
 zusätzlich Point-Light-Cutoff und ein einfaches Specular.
 Die bekannten Avatar-/Bewegungsfehler bleiben separat.
+
+
+## Großrelease alpha.57: Lifecycle, Ribbon und Texture-Residency
+
+Partikel-Lebenszyklus, Partikelsystem-CRC und SourceMaxAge
+liegen im GPU-Renderer-Status. Das reine Modul
+render/particle_emission.hpp prüft Burst-Zeitfenster
+und Quaternions für ObjectRelative. render/ribbon_geometry.hpp
+erstellt einen durchgehenden Streifen aus kameraseitigen
+Triangles. Das GPU-Backend verwendet einen zweiten
+Texture-/Alpha-Shadermodulpfad für Ribbons und berücksichtigt
+begrenzte Start/EndGlow-Emissive-Materialwerte.
+
+Auf der Assetseite entscheidet assets/texture_residency.hpp
+über die Top-512 Texture-UUIDs und zu eviktierende Assets.
+OpenGL stellt explizite remove/clear-Operationen bereit.
+Der Viewer plant alle 750ms und nach Scene-Revisionsänderung
+die Residency, lädt Assetdaten weiter über GetTexture und
+verwirft stale/nonresident HTTP-Antworten.
+Siehe docs/PARTICLES.md und docs/ASSET_STREAMING.md.

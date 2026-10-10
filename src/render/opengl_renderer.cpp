@@ -7,6 +7,8 @@
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/material_pass.hpp"
 #include "nexverse/render/particle_motion.hpp"
+#include "nexverse/render/particle_emission.hpp"
+#include "nexverse/render/ribbon_geometry.hpp"
 
 #include "nexverse/core/logger.hpp"
 
@@ -24,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace
 {
@@ -2133,6 +2136,36 @@ void main()
 }
 )GLSL";
 
+constexpr const char* ribbon_vertex_shader_source = R"GLSL(
+#version 330 core
+layout(location=0) in vec3 aPosition;
+layout(location=1) in vec4 aColor;
+layout(location=2) in vec2 aUv;
+uniform mat4 uViewProjection;
+out vec4 vColor;
+out vec2 vUv;
+void main()
+{
+    gl_Position = uViewProjection * vec4(aPosition,1.0);
+    vColor = aColor;
+    vUv = aUv;
+}
+)GLSL";
+constexpr const char* ribbon_fragment_shader_source = R"GLSL(
+#version 330 core
+in vec4 vColor;
+in vec2 vUv;
+uniform bool uTextured;
+uniform sampler2D uRibbonTexture;
+out vec4 FragColor;
+void main()
+{
+    vec4 image = uTextured ? texture(uRibbonTexture,vUv) : vec4(1.0);
+    float edge = 1.0-smoothstep(0.72,1.0,abs(vUv.x*2.0-1.0));
+    FragColor = vec4(vColor.rgb*image.rgb,vColor.a*image.a*edge);
+}
+)GLSL";
+
 constexpr const char* particle_fragment_shader_source = R"GLSL(
 #version 330 core
 in vec4 vParticleColor;
@@ -2352,8 +2385,11 @@ public:
         particle_program_ = create_program_from(
             particle_vertex_shader_source,
             particle_fragment_shader_source);
+        ribbon_program_ = create_program_from(
+            ribbon_vertex_shader_source,
+            ribbon_fragment_shader_source);
         if (program_ == 0U || sky_program_ == 0U ||
-            particle_program_ == 0U)
+            particle_program_ == 0U || ribbon_program_ == 0U)
         {
             return false;
         }
@@ -2374,6 +2410,22 @@ public:
         glBindVertexArray(0U);
         glBindBuffer(GL_ARRAY_BUFFER, 0U);
 
+        glGenVertexArrays(1, &ribbon_vao_);
+        glGenBuffers(1, &ribbon_vbo_);
+        glBindVertexArray(ribbon_vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, ribbon_vbo_);
+        constexpr GLsizei ribbon_stride = 9*
+            static_cast<GLsizei>(sizeof(float));
+        glVertexAttribPointer(0U,3,GL_FLOAT,GL_FALSE,ribbon_stride,nullptr);
+        glEnableVertexAttribArray(0U);
+        glVertexAttribPointer(1U,4,GL_FLOAT,GL_FALSE,ribbon_stride,
+            reinterpret_cast<void*>(3U*sizeof(float)));
+        glEnableVertexAttribArray(1U);
+        glVertexAttribPointer(2U,2,GL_FLOAT,GL_FALSE,ribbon_stride,
+            reinterpret_cast<void*>(7U*sizeof(float)));
+        glEnableVertexAttribArray(2U);
+        glBindVertexArray(0U);
+        glBindBuffer(GL_ARRAY_BUFFER,0U);
         glGenVertexArrays(1, &sky_vao_);
 
         constexpr std::array<float, 48> vertices{
@@ -2737,6 +2789,24 @@ public:
         }
     }
 
+    void remove_object_texture(const std::string& id) override
+    {
+        const auto it=object_textures_.find(id);
+        if(it==object_textures_.end())return;
+        if(it->second!=0U)glDeleteTextures(1,&it->second);
+        object_textures_.erase(it);
+        object_texture_alpha_.erase(id);
+    }
+    void clear_object_textures() override
+    {
+        for(auto& [id,texture]:object_textures_)
+        {
+            (void)id;
+            if(texture!=0U)glDeleteTextures(1,&texture);
+        }
+        object_textures_.clear();
+        object_texture_alpha_.clear();
+    }
     void set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) override
@@ -2889,6 +2959,23 @@ public:
         particle_emitters_.assign(emitters.begin(),
             emitters.begin() + static_cast<std::ptrdiff_t>(
                 std::min(emitters.size(), max_emitters)));
+        std::unordered_set<std::uint32_t> active;
+        for (const auto& emitter : particle_emitters_)
+        {
+            active.insert(emitter.local_id);
+            auto it = particle_start_times_.find(emitter.local_id);
+            if (it != particle_start_times_.end() &&
+                it->second.first != emitter.crc)
+                particle_start_times_.erase(it);
+        }
+        for (auto it = particle_start_times_.begin();
+             it != particle_start_times_.end();)
+        {
+            if (!active.contains(it->first))
+                it = particle_start_times_.erase(it);
+            else
+                ++it;
+        }
     }
 
     void set_point_lights(
@@ -3857,6 +3944,15 @@ public:
 
     void shutdown() override
     {
+        if (ribbon_vbo_ != 0U)
+            glDeleteBuffers(1, &ribbon_vbo_);
+        if (ribbon_vao_ != 0U)
+            glDeleteVertexArrays(1, &ribbon_vao_);
+        if (ribbon_program_ != 0U)
+            glDeleteProgram(ribbon_program_);
+        ribbon_vbo_=0U;
+        ribbon_vao_=0U;
+        ribbon_program_=0U;
         if (particle_vbo_ != 0U)
             glDeleteBuffers(1, &particle_vbo_);
         if (particle_vao_ != 0U)
@@ -3888,16 +3984,7 @@ public:
 
         clear_mesh_assets();
 
-        for (auto& [id, texture] : object_textures_)
-        {
-            (void)id;
-            if (texture != 0U)
-            {
-                glDeleteTextures(1, &texture);
-            }
-        }
-        object_textures_.clear();
-        object_texture_alpha_.clear();
+        clear_object_textures();
 
         if (terrain_textures_[0] != 0U)
         {
@@ -4006,12 +4093,83 @@ private:
             std::sin(static_cast<float>(seconds) * 0.13f) * 1.2f,
             std::cos(static_cast<float>(seconds) * 0.09f) * 0.75f,
             0.0f};
+        struct RibbonDraw
+        {
+            std::string texture_id;
+            std::uint8_t src=7U;
+            std::uint8_t dst=9U;
+            std::vector<float> vertices;
+        };
+        std::vector<RibbonDraw> ribbons;
         std::size_t count = 0U;
         for (const auto& emitter : particle_emitters_)
         {
             if (count >= max_particles) break;
             if (emitter.max_age <= 0.0f || emitter.burst_rate <= 0.0f ||
                 emitter.burst_count == 0U) continue;
+            auto [state, inserted] = particle_start_times_.try_emplace(
+                emitter.local_id, emitter.crc, seconds);
+            (void)inserted;
+            const float elapsed = static_cast<float>(
+                std::max(0.0, seconds - state->second.second));
+            if ((emitter.flags & (particle_ribbon|particle_beam)) != 0U)
+            {
+                std::vector<RenderVec3> points;
+                constexpr std::size_t segments = 15U;
+                points.reserve(segments+1U);
+                const bool beam = (emitter.flags & particle_beam) != 0U &&
+                    emitter.target_available;
+                const float limit = std::min(elapsed,emitter.max_age);
+                if (beam || limit >= 0.05f)
+                {
+                    for(std::size_t j=0U;j<=segments;++j)
+                    {
+                        const float t=static_cast<float>(j)/
+                            static_cast<float>(segments);
+                        if(beam)
+                        {
+                            points.push_back({
+                                std::lerp(emitter.position.x,emitter.target_position.x,t),
+                                std::lerp(emitter.position.y,emitter.target_position.y,t),
+                                std::lerp(emitter.position.z,emitter.target_position.z,t)});
+                        }
+                        else
+                        {
+                            RenderVec3 acceleration=emitter.acceleration;
+                            RenderVec3 velocity{0.0f,0.0f,
+                                0.5f*(emitter.speed_min+emitter.speed_max)};
+                            if ((emitter.source_flags & 0x01U)!=0U)
+                            {
+                                acceleration=rotate_particle_vector(
+                                    emitter.rotation,acceleration);
+                                velocity=rotate_particle_vector(
+                                    emitter.rotation,velocity);
+                            }
+                            const auto sample=sample_particle_motion(
+                                emitter.position,velocity,acceleration,
+                                local_wind,limit*t,emitter.max_age,emitter.flags,
+                                emitter.target_available,emitter.target_position);
+                            points.push_back(sample.position);
+                        }
+                    }
+                    auto ribbon_color=emitter.start_color;
+                    const float glow=std::clamp(emitter.start_glow,0.0f,1.0f);
+                    for (std::size_t c=0U;c<3U;++c)
+                        ribbon_color[c]=std::min(1.0f,
+                            ribbon_color[c]*(1.0f+glow*0.65f));
+                    const auto triangles=build_ribbon_triangles(
+                        points,camera_.position,
+                        std::clamp(emitter.start_scale,0.02f,2.0f),
+                        ribbon_color);
+                    if (!triangles.empty() && ribbons.size()<32U)
+                        ribbons.push_back({emitter.texture_id,
+                            emitter.blend_source,emitter.blend_destination,
+                            triangles});
+                    if (!triangles.empty())
+                        continue; // connected ribbon replaces point sprites
+                }
+            }
+
             const auto found = object_textures_.find(emitter.texture_id);
             const std::string texture_key =
                 found == object_textures_.end() ? "" : emitter.texture_id;
@@ -4024,11 +4182,11 @@ private:
             for (std::size_t burst = 0U; burst < bursts; ++burst)
             {
                 if (count >= max_particles) break;
-                const float phase = static_cast<float>(
-                    std::fmod(std::max(0.0, seconds), interval));
-                const float age = phase +
-                    static_cast<float>(burst) * interval;
-                if (age >= emitter.max_age) continue;
+                const auto burst_age = particle_burst_age(
+                    elapsed, interval, emitter.max_age,
+                    emitter.source_max_age, burst);
+                if (!burst_age.has_value()) continue;
+                const float age = *burst_age;
                 for (std::size_t n = 0U; n < per_burst; ++n)
                 {
                     if (count >= max_particles) break;
@@ -4067,11 +4225,21 @@ private:
                         particle_age = std::max(0.0f, age -
                             0.045f * static_cast<float>(n));
                     }
-                    const RenderVec3 velocity{
+                    RenderVec3 velocity{
                         speed * dir.x, speed * dir.y, speed * dir.z};
+                    RenderVec3 acceleration = emitter.acceleration;
+                    if ((emitter.source_flags & 0x01U) != 0U)
+                    {
+                        // ObjectRelative lives in system flags (bit 0);
+                        // data flags represent particle behavior.
+                        velocity = rotate_particle_vector(
+                            emitter.rotation, velocity);
+                        acceleration = rotate_particle_vector(
+                            emitter.rotation, acceleration);
+                    }
                     const auto sample = sample_particle_motion(
                         emitter.position, velocity,
-                        emitter.acceleration, local_wind,
+                        acceleration, local_wind,
                         particle_age, emitter.max_age, emitter.flags,
                         emitter.target_available,
                         emitter.target_position);
@@ -4098,12 +4266,19 @@ private:
                         (emitter.flags & particle_interp_color) != 0U;
                     const bool lerp_scale =
                         (emitter.flags & particle_interp_scale) != 0U;
+                    const float glow=std::clamp(std::lerp(
+                        emitter.start_glow,emitter.end_glow,t),
+                        0.0f,1.0f);
                     const auto lerped_color = [&](std::size_t channel)
                     {
-                        return lerp_color
+                        const float base=lerp_color
                             ? std::lerp(emitter.start_color[channel],
                                 emitter.end_color[channel], t)
                             : emitter.start_color[channel];
+                        // Legacy emissive particles retain their own
+                        // brightness without full HDR/PBR.
+                        return channel==3U ? base :
+                            std::min(1.0f,base*(1.0f+glow*0.65f));
                     };
                     const float size = std::clamp(
                         lerp_scale ? std::lerp(
@@ -4133,7 +4308,7 @@ private:
                 }
             }
         }
-        if (count == 0U) return;
+        if (count == 0U && ribbons.empty()) return;
 
         constexpr std::array<GLenum, 10U> blend_modes{{
             GL_ONE, GL_ZERO, GL_DST_COLOR, GL_SRC_COLOR,
@@ -4186,6 +4361,42 @@ private:
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(0U);
         glBindBuffer(GL_ARRAY_BUFFER, 0U);
+        if (!ribbons.empty() && ribbon_program_ != 0U)
+        {
+            glActiveTexture(GL_TEXTURE4);
+            glUseProgram(ribbon_program_);
+            glUniformMatrix4fv(
+                glGetUniformLocation(ribbon_program_,"uViewProjection"),
+                1,GL_FALSE,view_projection.value.data());
+            glUniform1i(
+                glGetUniformLocation(ribbon_program_,"uRibbonTexture"),4);
+            glBindVertexArray(ribbon_vao_);
+            glBindBuffer(GL_ARRAY_BUFFER,ribbon_vbo_);
+            for(const auto& ribbon:ribbons)
+            {
+                if(ribbon.src>=blend_modes.size() ||
+                   ribbon.dst>=blend_modes.size())continue;
+                glBlendFunc(blend_modes[ribbon.src],blend_modes[ribbon.dst]);
+                const auto it=object_textures_.find(ribbon.texture_id);
+                const bool textured=it!=object_textures_.end() &&
+                    it->second!=0U;
+                glUniform1i(
+                    glGetUniformLocation(ribbon_program_,"uTextured"),
+                    textured ? GL_TRUE:GL_FALSE);
+                glBindTexture(GL_TEXTURE_2D,textured?it->second:0U);
+                glBufferData(GL_ARRAY_BUFFER,
+                    static_cast<GLsizeiptr>(ribbon.vertices.size()*sizeof(float)),
+                    ribbon.vertices.data(),GL_STREAM_DRAW);
+                glDrawArrays(GL_TRIANGLES,0,
+                    static_cast<GLsizei>(ribbon.vertices.size()/9U));
+                ++diagnostics_.draw_calls;
+                diagnostics_.triangles+=ribbon.vertices.size()/27U;
+            }
+            glBindTexture(GL_TEXTURE_2D,0U);
+            glActiveTexture(GL_TEXTURE0);
+            glBindVertexArray(0U);
+            glBindBuffer(GL_ARRAY_BUFFER,0U);
+        }
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
@@ -4435,9 +4646,14 @@ private:
     std::vector<RenderAvatarProxy> avatar_proxies_;
     std::vector<RenderPointLight> point_lights_;
     std::vector<RenderParticleEmitter> particle_emitters_;
+    std::unordered_map<std::uint32_t,
+        std::pair<std::uint32_t, double>> particle_start_times_;
     GLuint particle_program_ = 0U;
     GLuint particle_vao_ = 0U;
     GLuint particle_vbo_ = 0U;
+    GLuint ribbon_program_ = 0U;
+    GLuint ribbon_vao_ = 0U;
+    GLuint ribbon_vbo_ = 0U;
     std::unordered_map<std::uint32_t, std::size_t> scene_object_index_;
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;

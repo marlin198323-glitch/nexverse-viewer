@@ -1533,3 +1533,72 @@ Die Reihenfolge bleibt an projectplan.md gebunden.
 
 Live-Abnahme:
 ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl56-live.log
+
+
+## 0.2.0-alpha.57 – Großrelease: vier zusammenhängende Funktionsblöcke · 10.10.2026
+
+**Block 1 – Emitter-Lebenszyklus / ObjectRelative**
+- Emitterstart auf Renderer-Zeitbasis (nicht mehr globaler Partikelphase).
+  CRC-Wechsel startet ein emittierendes Prim neu; entfernte Emitter
+  werden aus dem Laufzeitstatus entfernt.
+- SourceMaxAge stoppt neue Bursts, lässt bereits gestartete Partikel
+  innerhalb ihrer eigenen PartMaxAge-Zeit auslaufen.
+- Rotationskompatibilität: bei OpenSim SourceFlags ObjectRelative
+  (Bit 0) werden die Quellbeschleunigung und Initialgeschwindigkeit
+  durch die Objekt-Quaternion transformiert.
+- Offene Details: vollständige LSL-Start/Stop- und SimTime-Synchronisation,
+  Quelle mit ParentRotation, Simulator-Wind statt synthetischem Wind.
+
+**Block 2 – durchgehende Beam-/Ribbon-Geometrie**
+- Neuer Kameraseiten-ausgerichteter Ribbon-Generator mit
+  verbundenen Dreiecken statt einer bloßen Punktfolge.
+  Separater OpenGL-3.3-Triangle-Shader/-VAO/-VBO, UVs,
+  transparente Soft-Edges sowie geteilte GetTexture-Assets.
+- Beam folgt dem bekannten Zielpunkt; Ribbons folgen
+  einer auf Basis der Partikelkinematik erzeugten Spur.
+  Begrenzung 32 Emitter/je 16 Samples und 15 Segmente.
+- Offene Details: echte bewegungsabhängige kontinuierliche
+  Emitter-Historie, native Ribbon-Rotation und robuste
+  Transparenzsortierung aller überlappenden Flächen.
+
+**Block 3 – Partikelmaterial / Glow**
+- In Extended PSBlock vorhandener Start/EndGlow wird an den
+  GPU-Renderer durchgegeben und für Sprites und Ribbon-Material
+  als begrenzte RGB-Aufhellung berücksichtigt; nicht als
+  echtes physikalisches HDR- oder PBR-Emissive ausgegeben.
+- OpenSim-Blend-Enums 0..9 aus alpha.56 bleiben aktiv.
+
+**Block 4 – Phase 9: wiederverwendbarer Texture-Asset-Cache**
+- Frühere harte 512-GPU-Texturen-Grenze wird durch ein
+  dynamisches Residency-Budget ersetzt; unbenutzte Texturen
+  werden als GL-Texturen freigegeben, höchstens 8 pro
+  Planungsrunde (750ms).
+- Reihenfolge: nahe Partikelemitter, anschließend Prim-/
+  Meshmaterialien; letztere erhalten eine Objekt-Distanz-
+  priorisierte Ordnung beim Aufbau der Scene-Revision.
+- Neue Region leert den GPU-Objekttexturcache; veraltete
+  HTTP-Replies außerhalb von Region/Epoche/Residency werden
+  verworfen. Gemeinsames GetTexture-Ladesystem bleibt.
+- Grenzen: noch kein persistentes CPU-/Disk-Texture-Cache,
+  keine Texture-LOD-/Mip-Streaming-Stufen, keine Occlusion,
+  UI/Textur-Distanz-Neusortierung nur bei Scene-Update;
+  beim Zurückkehren eviktierter Texturen erneut HTTP möglich.
+
+**Tests:** 30/30 CTests inklusive Lifecycle, Quaternion,
+Ribbon-Triangles, Cache-Umschichtung. C++23-Debug-Build
+und OpenGL-3.3-Starttest auf NVIDIA RTX 4070 SUPER
+ohne gemeldeten Shaderfehler. Der 7-Sekunden-Exit 124
+ist der absichtliche Timeout, kein Crash.
+**NexVerse In-World-Darstellung bleibt ungeprüft.**
+
+**Auf Nutzerwunsch zurückgestellt:** Avatar-LocalID/
+serverbestätigte Bewegung, echte Avatar-Appearance,
+defekte/missing Mesh-/Texture-Assets und Teleport.
+Kein dieser Fehlerbereiche wird als behoben ausgegeben.
+
+Nächster Großrelease-Block: Asset-Caching-Disk/CPU,
+LOD/Prioritätsstufen und weitere OpenSim-Renderer-
+Kompatibilität. projectplan.md bleibt verbindlich.
+
+Live-Befehl:
+./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl57-live.log

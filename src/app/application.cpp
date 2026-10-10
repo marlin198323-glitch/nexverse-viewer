@@ -8,6 +8,7 @@
 
 #include "nexverse/assets/texture_loader.hpp"
 #include "nexverse/assets/texture_request_priority.hpp"
+#include "nexverse/assets/texture_residency.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3376,6 +3377,8 @@ int Application::run(bool enable_developer_modules)
     std::unordered_set<std::string> object_texture_loaded_ids;
     std::unordered_set<std::string> object_texture_failed_ids;
     std::vector<std::string> scene_texture_ids;
+    assets::TextureResidencyPlan texture_residency;
+    std::chrono::steady_clock::time_point last_texture_residency_plan{};
 
     {
         auto world_renderer = render::create_legacy_opengl_renderer();
@@ -4503,6 +4506,9 @@ int Application::run(bool enable_developer_modules)
                 material_request_attempts.clear();
                 render_materials_in_flight.clear();
                 scene_texture_ids.clear();
+                texture_residency = {};
+                last_texture_residency_plan = {};
+                world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_failed_ids.clear();
                 terrain_texture_request_generation =
@@ -4854,17 +4860,20 @@ int Application::run(bool enable_developer_modules)
                     }
                     emitter_candidates.push_back({
                         distance_squared,
-                        {local_id,
+                        {local_id, ps.crc,
                          {world_position.x,world_position.y,world_position.z},
+                         {object.rotation.x, object.rotation.y,
+                          object.rotation.z, object.rotation.w},
                          {ps.acceleration.x,ps.acceleration.y,ps.acceleration.z},
                          ps.texture_id,
                          ps.start_color,ps.end_color,
                          ps.burst_rate,ps.burst_radius,
                          ps.speed_min,ps.speed_max,
-                         ps.particle_max_age,
+                         ps.particle_max_age,ps.source_max_age,
+                         ps.start_glow,ps.end_glow,
                          ps.start_scale,ps.end_scale,
                          ps.burst_count,ps.pattern,ps.particle_flags,
-                         target_available,
+                         ps.flags, target_available,
                          {target_position.x, target_position.y,
                           target_position.z},
                          ps.blend_source,ps.blend_destination}});
@@ -5353,6 +5362,34 @@ int Application::run(bool enable_developer_modules)
                             material_ids_pending.insert(face->material_id);
                     }
                 }
+                std::unordered_map<std::string,float> texture_distances;
+                for (const auto& object:scene_object_update)
+                {
+                    const float dx=object.position.x-render_agent.position.x;
+                    const float dy=object.position.y-render_agent.position.y;
+                    const float dz=object.position.z-render_agent.position.z;
+                    const float distance=dx*dx+dy*dy+dz*dz;
+                    if(!std::isfinite(distance))continue;
+                    const auto add=[&](const std::string& id)
+                    {
+                        if(id.empty())return;
+                        const auto it=texture_distances.find(id);
+                        if(it==texture_distances.end())
+                            texture_distances.emplace(id,distance);
+                        else if(distance<it->second)
+                            it->second=distance;
+                    };
+                    add(object.texture_id);
+                    add(object.legacy.normal.texture_id);
+                    add(object.legacy.specular.texture_id);
+                    for (const auto& face:object.face_materials)
+                        if(face.has_value())
+                        {
+                            add(face->texture_id);
+                            add(face->legacy.normal.texture_id);
+                            add(face->legacy.specular.texture_id);
+                        }
+                }
                 std::sort(
                     scene_texture_update.begin(),
                     scene_texture_update.end());
@@ -5361,6 +5398,20 @@ int Application::run(bool enable_developer_modules)
                         scene_texture_update.begin(),
                         scene_texture_update.end()),
                     scene_texture_update.end());
+                // Near material assets arrive before distant ones. This
+                // order feeds the bounded, reusable texture residency plan.
+                std::sort(scene_texture_update.begin(),
+                    scene_texture_update.end(),
+                    [&](const std::string& a,const std::string& b)
+                    {
+                        const auto it_a=texture_distances.find(a);
+                        const auto it_b=texture_distances.find(b);
+                        const float da=it_a==texture_distances.end()
+                            ?std::numeric_limits<float>::max():it_a->second;
+                        const float db=it_b==texture_distances.end()
+                            ?std::numeric_limits<float>::max():it_b->second;
+                        return da!=db?da<db:a<b;
+                    });
 
                 scene_texture_ids =
                     std::move(scene_texture_update);
@@ -5571,6 +5622,14 @@ int Application::run(bool enable_developer_modules)
                 }
                 else if (result.success &&
                     result.image.valid() &&
+                    !object_texture_loading_id.empty() &&
+                    !texture_residency.desired_ids.contains(
+                        object_texture_loading_id))
+                {
+                    core::info("Discarded nonresident GetTexture reply");
+                }
+                else if (result.success &&
+                    result.image.valid() &&
                     !object_texture_loading_id.empty())
                 {
                     render::RenderImageRgba8 image;
@@ -5604,19 +5663,41 @@ int Application::run(bool enable_developer_modules)
                 object_texture_loading_id.clear();
             }
 
+            // Capped texture streaming: prioritize nearby particle
+            // images and current scene material assets, evict unneeded
+            // GPU textures to keep the 512-slot cache reusable.
+            std::vector<std::string> emitter_texture_ids;
+            emitter_texture_ids.reserve(scene_particle_emitters.size());
+            for (const auto& emitter : scene_particle_emitters)
+                emitter_texture_ids.push_back(emitter.texture_id);
+            const auto texture_plan_now = std::chrono::steady_clock::now();
+            if (scene_objects_changed ||
+                texture_plan_now-last_texture_residency_plan >=
+                    std::chrono::milliseconds{750})
+            {
+                last_texture_residency_plan = texture_plan_now;
+                texture_residency = assets::plan_texture_residency(
+                    emitter_texture_ids, scene_texture_ids,
+                    object_texture_loaded_ids, max_object_texture_assets);
+                std::size_t evicted = 0U;
+                for (const auto& id:texture_residency.eviction_ids)
+                {
+                    if(evicted>=8U)break;
+                    world_renderer->remove_object_texture(id);
+                    object_texture_loaded_ids.erase(id);
+                    ++evicted;
+                }
+                if(evicted>0U)
+                    core::info("GetTexture GPU residency evicted=" +
+                        std::to_string(evicted));
+            }
             if (!object_texture_loading &&
                 !texture_capability.empty() &&
                 object_texture_loaded_ids.size() <
                     max_object_texture_assets)
             {
-                // The same GetTexture cache serves object faces and the
-                // closest particle emitters. Share UUIDs and known failures.
-                std::vector<std::string> emitter_texture_ids;
-                emitter_texture_ids.reserve(scene_particle_emitters.size());
-                for (const auto& emitter : scene_particle_emitters)
-                    emitter_texture_ids.push_back(emitter.texture_id);
                 if (const auto texture_id = assets::next_texture_request(
-                        emitter_texture_ids, scene_texture_ids,
+                        texture_residency.preferred_ids, {},
                         object_texture_loaded_ids, object_texture_failed_ids))
                 {
                     object_texture_loading_id = *texture_id;

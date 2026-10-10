@@ -113,7 +113,9 @@ struct RenderPointLight
 struct RenderParticleEmitter
 {
     std::uint32_t local_id = 0U;
+    std::uint32_t crc = 0U;
     RenderVec3 position;
+    RenderQuaternion rotation;
     RenderVec3 acceleration;
     std::string texture_id;
     std::array<float, 4> start_color{1.0f,1.0f,1.0f,1.0f};
@@ -123,11 +125,15 @@ struct RenderParticleEmitter
     float speed_min = 0.0f;
     float speed_max = 0.0f;
     float max_age = 0.0f;
+    float source_max_age = 0.0f;
+    float start_glow = 0.0f;
+    float end_glow = 0.0f;
     float start_scale = 0.2f;
     float end_scale = 0.2f;
     std::uint8_t burst_count = 0U;
     std::uint8_t pattern = 0U;
     std::uint32_t flags = 0U;
+    std::uint32_t source_flags = 0U;
     bool target_available = false;
     RenderVec3 target_position;
     std::uint8_t blend_source = 7U;
@@ -289,6 +295,8 @@ public:
     virtual void set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) = 0;
+    virtual void remove_object_texture(const std::string& texture_id) = 0;
+    virtual void clear_object_textures() = 0;
     // GPU uploads and removals must happen on the render thread.
     [[nodiscard]] virtual bool set_mesh_asset(
         const std::string& mesh_id,
