@@ -3099,6 +3099,7 @@ public:
         diagnostics_.scene_prim_draw_calls = 0U;
         diagnostics_.scene_opaque_draw_calls = 0U;
         diagnostics_.scene_alpha_draw_calls = 0U;
+        diagnostics_.scene_alpha_mask_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_objects = 0U;
         diagnostics_.scene_missing_mesh_triangles = 0U;
@@ -3620,8 +3621,8 @@ public:
                                 found_alpha != object_texture_alpha_.end() &&
                                 found_alpha->second;
                         }
-                        const bool transparent = face_requires_blending(
-                            alpha, loaded_texture_has_alpha && alpha_mode == 1U);
+                        const bool transparent = face_material_requires_blending(
+                            alpha,loaded_texture_has_alpha,alpha_mode);
                         if (transparent != (pass == 1U)) return;
 
                         glUniform3f(
@@ -3795,6 +3796,8 @@ public:
                         ++diagnostics_.scene_draw_calls;
                         if(pass==1U)++diagnostics_.scene_alpha_draw_calls;
                         else ++diagnostics_.scene_opaque_draw_calls;
+                        if(alpha_mode==2U)
+                            ++diagnostics_.scene_alpha_mask_draw_calls;
                         if(using_uploaded_mesh)
                             ++diagnostics_.scene_mesh_draw_calls;
                         else

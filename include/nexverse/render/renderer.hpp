@@ -287,6 +287,7 @@ struct RenderDiagnostics
     // Actual OpenGL draw routing: opaque/depth-writing vs alpha-blended.
     std::uint64_t scene_opaque_draw_calls = 0U;
     std::uint64_t scene_alpha_draw_calls = 0U;
+    std::uint64_t scene_alpha_mask_draw_calls = 0U;
     // Scene object requested a specific mesh UUID, but fallback primitive
     // geometry was drawn instead because the GPU mesh was not resident.
     std::uint64_t scene_missing_mesh_draw_calls = 0U;

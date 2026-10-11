@@ -89,6 +89,7 @@ struct AssetStreamingSnapshot
     std::uint64_t previous_frame_scene_prim_draw_calls=0U;
     std::uint64_t previous_frame_scene_opaque_draw_calls=0U;
     std::uint64_t previous_frame_scene_alpha_draw_calls=0U;
+    std::uint64_t previous_frame_scene_alpha_mask_draw_calls=0U;
     std::uint64_t previous_frame_scene_missing_mesh_draw_calls=0U;
     std::uint64_t previous_frame_scene_missing_mesh_objects=0U;
     std::uint64_t previous_frame_scene_missing_mesh_triangles=0U;
@@ -195,6 +196,8 @@ struct AssetStreamingSnapshot
             previous_frame_scene_opaque_draw_calls);
         field("previous_frame_scene_alpha_draw_calls",
             previous_frame_scene_alpha_draw_calls);
+        field("previous_frame_scene_alpha_mask_draw_calls",
+            previous_frame_scene_alpha_mask_draw_calls);
         field("previous_frame_scene_missing_mesh_draw_calls",
             previous_frame_scene_missing_mesh_draw_calls);
         field("previous_frame_scene_missing_mesh_objects",

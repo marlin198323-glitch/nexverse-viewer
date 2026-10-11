@@ -126,6 +126,7 @@ def read_report(path: Path) -> dict[str, Any]:
                     "previous_frame_scene_prim_draw_calls",
                     "previous_frame_scene_opaque_draw_calls",
                     "previous_frame_scene_alpha_draw_calls",
+                    "previous_frame_scene_alpha_mask_draw_calls",
                     "previous_frame_scene_missing_mesh_draw_calls",
                     "previous_frame_scene_missing_mesh_objects",
                     "previous_frame_scene_missing_mesh_triangles",
@@ -174,6 +175,11 @@ def read_report(path: Path) -> dict[str, Any]:
         if observed[-1]<observed[0]:
             return None
         return observed[-1]-observed[0]
+    def window_count(key,value):
+        observed=[sample[key] for sample in region_window if key in sample]
+        if len(observed)!=len(region_window) or not observed:
+            return None
+        return sum(1 for entry in observed if entry==value)
 
     return {
         "schema": "ogl.asset.log-report.v1",
@@ -202,6 +208,16 @@ def read_report(path: Path) -> dict[str, Any]:
             "texture_ram_hit_rate_pct"),
         "latest_region_min_mesh_ram_hit_rate_pct": window_min(
             "mesh_ram_hit_rate_pct"),
+        "latest_region_texture_ram_pressure_samples": window_count(
+            "texture_ram_pressure",1),
+        "latest_region_mesh_ram_pressure_samples": window_count(
+            "mesh_ram_pressure",1),
+        "latest_region_peak_alpha_draw_calls": window_max(
+            "previous_frame_scene_alpha_draw_calls"),
+        "latest_region_peak_alpha_mask_draw_calls": window_max(
+            "previous_frame_scene_alpha_mask_draw_calls"),
+        "latest_region_peak_gpu_upload_p95_us": window_max(
+            "gpu_upload_cpu_p95_us"),
         "last_snapshot_emitted_unix_ms": latest.get("emitted_unix_ms"),
         "last_snapshot_session_unix_ms": latest.get("session_started_unix_ms"),
         "date_first": first_date,

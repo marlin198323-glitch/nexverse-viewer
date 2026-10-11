@@ -10,8 +10,10 @@ int main()
     if(!p.under_pressure()||p.hit_pct()!=14U||
        p.interval_evictions()!=4U)return 2;
     p.observe({26,14,4,900,3});
-    if(p.under_pressure()||p.hit_pct()!=92U||
+    if(!p.under_pressure()||p.hit_pct()!=92U||
        p.interval_evictions()!=0U)return 3;
+    p.observe({30,14,4,900,3});
+    if(p.under_pressure()||p.hit_pct()!=100U)return 7;
     p.observe({0,0,0,0,0}); // fresh epoch/reset counters
     if(p.under_pressure()||p.hit_pct()!=100U)return 4;
     p.observe({100,2,0,100,3});

@@ -6847,6 +6847,8 @@ int Application::run(bool enable_developer_modules)
                     previous_render.scene_opaque_draw_calls;
                 snapshot.previous_frame_scene_alpha_draw_calls=
                     previous_render.scene_alpha_draw_calls;
+                snapshot.previous_frame_scene_alpha_mask_draw_calls=
+                    previous_render.scene_alpha_mask_draw_calls;
                 snapshot.previous_frame_scene_missing_mesh_draw_calls=
                     previous_render.scene_missing_mesh_draw_calls;
                 snapshot.previous_frame_scene_missing_mesh_objects=

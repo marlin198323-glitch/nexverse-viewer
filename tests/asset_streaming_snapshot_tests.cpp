@@ -56,6 +56,7 @@ int main()
     snapshot.previous_frame_scene_missing_mesh_draw_calls=3U;
     snapshot.previous_frame_scene_opaque_draw_calls=11U;
     snapshot.previous_frame_scene_alpha_draw_calls=12U;
+    snapshot.previous_frame_scene_alpha_mask_draw_calls=3U;
     snapshot.previous_frame_scene_missing_mesh_objects=2U;
     snapshot.previous_frame_scene_missing_mesh_triangles=36U;
     snapshot.texture_gpu_staging_deferrals=5U;
@@ -103,6 +104,7 @@ int main()
        json.find("\"previous_frame_scene_missing_mesh_draw_calls\":3")==std::string::npos ||
        json.find("\"previous_frame_scene_opaque_draw_calls\":11")==std::string::npos ||
        json.find("\"previous_frame_scene_alpha_draw_calls\":12")==std::string::npos ||
+       json.find("\"previous_frame_scene_alpha_mask_draw_calls\":3")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_objects\":2")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_triangles\":36")==std::string::npos ||
        json.find("\"texture_gpu_staging_deferrals\":5")==std::string::npos ||

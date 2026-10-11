@@ -451,6 +451,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-asset-missing-id-counter-tests
         COMMAND nexverse-asset-missing-id-counter-tests)
 
+    add_executable(nexverse-asset-cache-pressure-lru-tests
+        tests/asset_cache_pressure_lru_tests.cpp)
+    target_link_libraries(nexverse-asset-cache-pressure-lru-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-cache-pressure-lru-tests)
+    add_test(NAME nexverse-asset-cache-pressure-lru-tests
+        COMMAND nexverse-asset-cache-pressure-lru-tests)
+
     add_executable(nexverse-asset-cache-pressure-window-tests
         tests/asset_cache_pressure_window_tests.cpp)
     target_link_libraries(nexverse-asset-cache-pressure-window-tests

@@ -116,6 +116,12 @@ int main()
                         static_cast<float>(frame%11U)*0.11f;
                     first->texgen_planar=frame%3U==0U;
                     first->repeat_v=1.0f+static_cast<float>(face);
+                    if(face==2U)
+                    {
+                        first->diffuse_alpha_mode=2U;
+                        first->alpha_mask_cutoff=128U;
+                        first->color[3]=1.0f;
+                    }
                     second->color[3]=(frame+face)%3U?0.85f:0.25f;
                     second->fullbright=frame%2U==0U;
                     second->texture_id=face==1U?"alpha":"opaque";
@@ -130,6 +136,7 @@ int main()
                 if(diagnostics.scene_mesh_draw_calls!=6U ||
                    diagnostics.scene_opaque_draw_calls==0U ||
                    diagnostics.scene_alpha_draw_calls==0U ||
+                   diagnostics.scene_alpha_mask_draw_calls==0U ||
                    diagnostics.scene_opaque_draw_calls+
                        diagnostics.scene_alpha_draw_calls!=6U ||
                    diagnostics.scene_missing_mesh_objects!=0U ||

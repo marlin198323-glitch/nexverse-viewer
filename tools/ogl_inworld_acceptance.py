@@ -83,6 +83,14 @@ def assess(report: dict, min_snapshots: int = 3,
                 "latest_region_peak_texture_ram_pressure"),
             "region_peak_mesh_ram_pressure": report.get(
                 "latest_region_peak_mesh_ram_pressure"),
+            "region_texture_ram_pressure_samples": report.get(
+                "latest_region_texture_ram_pressure_samples"),
+            "region_mesh_ram_pressure_samples": report.get(
+                "latest_region_mesh_ram_pressure_samples"),
+            "region_peak_alpha_draw_calls": report.get(
+                "latest_region_peak_alpha_draw_calls"),
+            "region_peak_alpha_mask_draw_calls": report.get(
+                "latest_region_peak_alpha_mask_draw_calls"),
             "last_mesh_fallback_draw_calls": latest.get(
                 "previous_frame_scene_missing_mesh_draw_calls"),
             "last_missing_mesh_objects": latest.get(

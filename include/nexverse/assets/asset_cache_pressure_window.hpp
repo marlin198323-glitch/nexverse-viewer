@@ -24,6 +24,7 @@ public:
             hit_pct_=100U;
             evictions_=0U;
             pressure_=false;
+            healthy_windows_=0U;
             return;
         }
         const auto hits=current.hits-prior_.hits;
@@ -36,7 +37,23 @@ public:
                 static_cast<double>(hits)*100.0/
                 static_cast<double>(total))
             : 100U;
-        pressure_=misses>=8U && evictions_>=2U && hit_pct_<50U;
+        const bool stressed=misses>=8U && evictions_>=2U &&
+            hit_pct_<50U;
+        if(stressed)
+        {
+            pressure_=true;
+            healthy_windows_=0U;
+        }
+        else if(pressure_)
+        {
+            // Avoid 30-second on/off prefetch oscillation on a single
+            // quiet sampling interval after sustained RAM thrashing.
+            if(++healthy_windows_>=2U)
+            {
+                pressure_=false;
+                healthy_windows_=0U;
+            }
+        }
         prior_=current;
     }
     [[nodiscard]] bool under_pressure() const noexcept{return pressure_;}
@@ -49,5 +66,6 @@ private:
     bool pressure_=false;
     std::uint32_t hit_pct_=100U;
     std::size_t evictions_=0U;
+    unsigned healthy_windows_=0U;
 };
 }

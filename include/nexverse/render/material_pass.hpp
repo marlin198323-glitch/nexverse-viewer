@@ -15,6 +15,10 @@ namespace nexverse::render
 // The texture is only inspected once, on upload, never once per rendered face.
 [[nodiscard]] bool texture_has_alpha(const RenderImageRgba8& image) noexcept;
 [[nodiscard]] bool face_requires_blending(float tint_alpha, bool texture_alpha) noexcept;
+// Texture alpha contributes to blending only in mode 1; alpha-mask (mode 2)
+// discards fragments in the opaque pass rather than sorting a blended face.
+[[nodiscard]] bool face_material_requires_blending(
+    float tint_alpha,bool texture_alpha,unsigned diffuse_alpha_mode) noexcept;
 
 struct VisibleObjectDistance
 {

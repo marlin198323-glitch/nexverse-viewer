@@ -81,6 +81,9 @@ class RegionReportTests(unittest.TestCase):
             sample_data["mesh_missing_unique"]=i
             sample_data["texture_ram_pressure"]=1 if i==2 else 0
             sample_data["mesh_ram_pressure"]=0
+            sample_data["previous_frame_scene_alpha_draw_calls"]=2*i
+            sample_data["previous_frame_scene_alpha_mask_draw_calls"]=i
+            sample_data["gpu_upload_cpu_p95_us"]=1000*i
             sample_data["texture_ram_hit_rate_pct"]=55-i
             sample_data["mesh_ram_hit_rate_pct"]=70+i
             entries.append(json.dumps(sample_data))
@@ -90,6 +93,11 @@ class RegionReportTests(unittest.TestCase):
         self.assertEqual(data["latest_region_peak_missing_mesh_unique"],3)
         self.assertEqual(data["latest_region_peak_texture_ram_pressure"],1)
         self.assertEqual(data["latest_region_min_texture_ram_hit_rate_pct"],52)
+        self.assertEqual(data["latest_region_texture_ram_pressure_samples"],1)
+        self.assertEqual(data["latest_region_mesh_ram_pressure_samples"],0)
+        self.assertEqual(data["latest_region_peak_alpha_mask_draw_calls"],3)
+        self.assertEqual(data["latest_region_peak_alpha_draw_calls"],6)
+        self.assertEqual(data["latest_region_peak_gpu_upload_p95_us"],3000)
         self.assertNotIn("caps-token",str(data))
 
     def test_new_session_requires_own_three_samples(self):

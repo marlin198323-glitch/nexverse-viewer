@@ -31,6 +31,17 @@ int main()
     if (!check(face_requires_blending(std::numeric_limits<float>::quiet_NaN(), false),
                "Invalid alpha treated as opaque")) return 8;
 
+    if(!check(!face_material_requires_blending(1.0f,true,2U),
+              "Alpha-mask texture incorrectly sorted to blended pass"))return 10;
+    if(!check(face_material_requires_blending(1.0f,true,1U),
+              "Texture-blend alpha not routed to transparent pass"))return 11;
+    if(!check(!face_material_requires_blending(1.0f,true,0U),
+              "Alpha-none wrongly blended"))return 12;
+    if(!check(face_material_requires_blending(0.4f,true,2U),
+              "Transparent tint on alpha-mask face ignored"))return 13;
+    if(!check(!face_material_requires_blending(1.0f,true,3U),
+              "Emissive alpha mode incorrectly blended"))return 14;
+
     std::vector<VisibleObjectDistance> objects{{3U, 5.0f}, {1U, 25.0f}, {2U, 25.0f}, {4U, 9.0f}};
     sort_transparent_objects(objects);
     if (!check(objects[0].index == 1U && objects[1].index == 2U &&

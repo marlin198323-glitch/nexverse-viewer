@@ -4,6 +4,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <iostream>
 
 using namespace nexverse::assets;
@@ -51,6 +52,33 @@ int main()
             file.close();
             if (prefetch_texture_disk_to_memory(
                     id3,disk,ram,epoch,4U) || ram.contains(id3))error=8;
+        }
+        // Real async worker: disk read finishes AFTER new region
+        // activation; stale decoded pixels may not enter RAM.
+        std::promise<void> reader_started,release_reader;
+        auto release=release_reader.get_future();
+        auto old_region=std::async(std::launch::async,[&]
+        {
+            return prefetch_texture_disk_to_memory_scoped(id3,ram,
+                epoch,4U,[&]() -> std::optional<ImageRgba8>
+                {
+                    reader_started.set_value();
+                    release.wait();
+                    return image;
+                });
+        });
+        if(reader_started.get_future().wait_for(std::chrono::seconds{3})!=
+           std::future_status::ready)
+        {
+            release_reader.set_value();
+            (void)old_region.get();
+            error=10;
+        }
+        else
+        {
+            epoch.store(5U,std::memory_order_release);
+            release_reader.set_value();
+            if(old_region.get()||ram.contains(id3))error=11;
         }
         TexturePrefetchScope scope;
         scope.enter(4U);
