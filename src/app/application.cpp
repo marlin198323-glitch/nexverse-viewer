@@ -21,6 +21,7 @@
 #include "nexverse/assets/gpu_staging_budget.hpp"
 #include "nexverse/assets/gpu_staging_recovery.hpp"
 #include "nexverse/assets/asset_reuse_history.hpp"
+#include "nexverse/assets/asset_failure_telemetry.hpp"
 #include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
@@ -3389,6 +3390,7 @@ int Application::run(bool enable_developer_modules)
     assets::AssetRetrySchedule mesh_asset_retries;
     std::size_t mesh_retry_dispatches = 0U;
     std::size_t mesh_failure_events = 0U;
+    assets::AssetFailureTelemetry mesh_failure_categories;
     std::size_t mesh_stale_results = 0U;
     std::size_t mesh_ram_hits = 0U;
     std::size_t mesh_disk_hits = 0U;
@@ -3461,6 +3463,7 @@ int Application::run(bool enable_developer_modules)
     assets::AssetRetrySchedule object_texture_retries;
     std::size_t texture_retry_dispatches = 0U;
     std::size_t texture_failure_events = 0U;
+    assets::AssetFailureTelemetry texture_failure_categories;
     std::size_t texture_stale_results = 0U;
     std::vector<std::string> scene_texture_ids;
     std::vector<assets::TextureDistanceSample> scene_texture_samples;
@@ -5872,6 +5875,7 @@ int Application::run(bool enable_developer_modules)
                                 type==render::GpuUploadFailure::unsupported_dimensions
                                 ? assets::AssetFailure::invalid
                                 : assets::AssetFailure::transient;
+                            texture_failure_categories.observe(kind);
                             const auto delay=object_texture_retries.failure(
                                 object_texture_loading_id,kind,
                                 gpu_submission_end);
@@ -5962,6 +5966,7 @@ int Application::run(bool enable_developer_modules)
                         object_texture_loading_id,kind,
                         std::chrono::steady_clock::now());
                     ++texture_failure_events;
+                    texture_failure_categories.observe(kind);
                     core::warning(
                         "GetTexture failed for " + object_texture_loading_id +
                         ": " + result.message +
@@ -6566,17 +6571,19 @@ int Application::run(bool enable_developer_modules)
                     }
                     else
                     {
-                        const auto delay = mesh_asset_retries.failure(
-                            mesh_asset_loading_id + "." +
-                                std::string(assets::mesh_lod_name(
-                                    mesh_asset_loading_lod)),
+                        const auto gpu_kind=
                             mesh_upload.failure==
                                 render::GpuUploadFailure::invalid_input ||
                             mesh_upload.failure==
                                 render::GpuUploadFailure::unsupported_dimensions
                                 ? assets::AssetFailure::invalid
-                                : assets::AssetFailure::transient,
-                            std::chrono::steady_clock::now());
+                                : assets::AssetFailure::transient;
+                        mesh_failure_categories.observe(gpu_kind);
+                        const auto delay = mesh_asset_retries.failure(
+                            mesh_asset_loading_id + "." +
+                                std::string(assets::mesh_lod_name(
+                                    mesh_asset_loading_lod)),
+                            gpu_kind,std::chrono::steady_clock::now());
                         ++mesh_failure_events;
                         ++mesh_gpu_upload_failures;
                         core::warning("GetMesh GPU upload failed for " +
@@ -6600,6 +6607,7 @@ int Application::run(bool enable_developer_modules)
                                 mesh_asset_loading_lod)),
                         kind,std::chrono::steady_clock::now());
                     ++mesh_failure_events;
+                    mesh_failure_categories.observe(kind);
                     core::warning(
                         "GetMesh failed for " + mesh_asset_loading_id +
                         ": " + result.message + "; failure=" +
@@ -6777,8 +6785,16 @@ int Application::run(bool enable_developer_modules)
                     object_texture_retries.ready_retry_count(mesh_plan_now);
                 snapshot.mesh_ready_retries=
                     mesh_asset_retries.ready_retry_count(mesh_plan_now);
-                snapshot.texture_ram_bytes=texture_memory_cache->bytes();
-                snapshot.mesh_ram_bytes=mesh_memory_cache->bytes();
+                const auto texture_ram_stats=texture_memory_cache->stats();
+                const auto mesh_ram_stats=mesh_memory_cache->stats();
+                snapshot.texture_ram_bytes=texture_ram_stats.bytes;
+                snapshot.mesh_ram_bytes=mesh_ram_stats.bytes;
+                snapshot.texture_ram_hits=texture_ram_stats.hits;
+                snapshot.texture_ram_misses=texture_ram_stats.misses;
+                snapshot.texture_ram_evictions=texture_ram_stats.evictions;
+                snapshot.mesh_ram_hits=mesh_ram_stats.hits;
+                snapshot.mesh_ram_misses=mesh_ram_stats.misses;
+                snapshot.mesh_ram_evictions=mesh_ram_stats.evictions;
                 snapshot.gpu_texture_bytes=texture_gpu_used_bytes;
                 snapshot.gpu_mesh_bytes=mesh_gpu_estimated_bytes;
                 snapshot.gpu_shared_budget_bytes=shared_gpu_budget_bytes;
@@ -6834,6 +6850,19 @@ int Application::run(bool enable_developer_modules)
                     mesh_cpu_reuse_history.evictions();
                 snapshot.mesh_gpu_upload_failures=
                     mesh_gpu_upload_failures;
+                snapshot.mesh_fail_missing=mesh_failure_categories.missing;
+                snapshot.mesh_fail_transient=mesh_failure_categories.transient;
+                snapshot.mesh_fail_invalid=mesh_failure_categories.invalid;
+                snapshot.mesh_fail_configuration=
+                    mesh_failure_categories.configuration;
+                snapshot.texture_fail_missing=
+                    texture_failure_categories.missing;
+                snapshot.texture_fail_transient=
+                    texture_failure_categories.transient;
+                snapshot.texture_fail_invalid=
+                    texture_failure_categories.invalid;
+                snapshot.texture_fail_configuration=
+                    texture_failure_categories.configuration;
                 snapshot.texture_priority_churn=
                     texture_priority_feedback.churn_events();
                 snapshot.mesh_priority_churn=

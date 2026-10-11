@@ -35,7 +35,8 @@ std::optional<ImageRgba8> TextureMemoryCache::load(std::string_view id)
     if(!uuid(id))return std::nullopt;
     std::lock_guard guard{mutex_};
     const auto it=entries_.find(canonical(id));
-    if(it==entries_.end())return std::nullopt;
+    if(it==entries_.end()){++misses_;return std::nullopt;}
+    ++hits_;
     age_.splice(age_.end(),age_,it->second.age);
     return it->second.image;
 }
@@ -66,6 +67,7 @@ bool TextureMemoryCache::store(std::string_view id,
         used_-=entries_.at(oldest).bytes;
         entries_.erase(oldest);
         age_.pop_front();
+        ++evictions_;
     }
     age_.push_back(key);
     entries_.emplace(key,Entry{image,size,std::prev(age_.end())});
@@ -81,5 +83,14 @@ std::size_t TextureMemoryCache::count() const
 {
     std::lock_guard guard{mutex_};
     return entries_.size();
+}
+}
+
+namespace nexverse::assets
+{
+AssetMemoryCacheStats TextureMemoryCache::stats() const
+{
+    std::lock_guard guard{mutex_};
+    return {hits_,misses_,evictions_,used_,entries_.size()};
 }
 }

@@ -98,6 +98,42 @@ int main()
                    restored.scene_missing_mesh_objects!=0U ||
                    glGetError()!=GL_NO_ERROR)error=7;
             }
+            // Repeated live-like material changes on two overlapping
+            // multi-face objects. Test draw routing, not pixel-perfect PBR.
+            RenderSceneObject overlay=obj;
+            overlay.local_id=201U;
+            overlay.position={0.0f,0.14f,0.0f};
+            for(unsigned frame=0U;frame<48U&&!error;++frame)
+            {
+                for(unsigned face=0U;face<3U;++face)
+                {
+                    auto& first=obj.face_materials[face];
+                    auto& second=overlay.face_materials[face];
+                    if(!first||!second){error=8;break;}
+                    first->color[3]=(frame+face)%2U?0.33f:1.0f;
+                    first->glow=static_cast<float>((frame+face)%5U)*0.1f;
+                    first->rotation=
+                        static_cast<float>(frame%11U)*0.11f;
+                    first->texgen_planar=frame%3U==0U;
+                    first->repeat_v=1.0f+static_cast<float>(face);
+                    second->color[3]=(frame+face)%3U?0.85f:0.25f;
+                    second->fullbright=frame%2U==0U;
+                    second->texture_id=face==1U?"alpha":"opaque";
+                    second->offset_u=static_cast<float>(frame%7U)*0.04f;
+                }
+                if(error)break;
+                renderer->set_scene_objects({obj,overlay});
+                renderer->begin_frame();
+                renderer->render_world(static_cast<double>(frame)*0.03);
+                renderer->end_frame();
+                const auto diagnostics=renderer->diagnostics();
+                if(diagnostics.scene_mesh_draw_calls!=6U ||
+                   diagnostics.scene_missing_mesh_objects!=0U ||
+                   diagnostics.scene_draw_calls!=
+                       diagnostics.scene_mesh_draw_calls+
+                           diagnostics.scene_prim_draw_calls ||
+                   glGetError()!=GL_NO_ERROR)error=9;
+            }
             renderer->set_scene_objects({});
             renderer->clear_mesh_assets();
             renderer->clear_object_textures();

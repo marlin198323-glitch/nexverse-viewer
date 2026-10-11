@@ -283,7 +283,8 @@ std::optional<MeshGeometry> MeshMemoryCache::load(std::string_view id, MeshLod l
     const auto key = cache_key(id,lod);
     std::lock_guard lock{mutex_};
     const auto it = items_.find(key);
-    if (it == items_.end()) return std::nullopt;
+    if (it == items_.end()) {++misses_;return std::nullopt;}
+    ++hits_;
     lru_.splice(lru_.end(),lru_,it->second.age);
     return it->second.mesh;
 }
@@ -306,6 +307,7 @@ bool MeshMemoryCache::store(std::string_view id, const MeshGeometry& geometry, M
         used_ -= items_.at(oldest).bytes;
         items_.erase(oldest);
         lru_.pop_front();
+        ++evictions_;
     }
     lru_.push_back(key);
     const auto age = std::prev(lru_.end());
@@ -322,6 +324,11 @@ std::size_t MeshMemoryCache::count() const
 {
     std::lock_guard lock{mutex_};
     return items_.size();
+}
+AssetMemoryCacheStats MeshMemoryCache::stats() const
+{
+    std::lock_guard lock{mutex_};
+    return {hits_,misses_,evictions_,used_,items_.size()};
 }
 CachedMeshResult load_mesh_cached(std::string_view id, MeshMemoryCache& memory,
     const MeshDiskCache& disk,

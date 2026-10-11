@@ -27,6 +27,12 @@ struct AssetStreamingSnapshot
     std::size_t mesh_ready_retries=0U;
     std::size_t texture_ram_bytes=0U;
     std::size_t mesh_ram_bytes=0U;
+    std::size_t texture_ram_hits=0U;
+    std::size_t texture_ram_misses=0U;
+    std::size_t texture_ram_evictions=0U;
+    std::size_t mesh_ram_hits=0U;
+    std::size_t mesh_ram_misses=0U;
+    std::size_t mesh_ram_evictions=0U;
     std::size_t gpu_texture_bytes=0U;
     std::size_t gpu_mesh_bytes=0U;
     std::size_t gpu_shared_budget_bytes=0U;
@@ -56,6 +62,14 @@ struct AssetStreamingSnapshot
     std::size_t texture_cpu_reuse_history_evictions=0U;
     std::size_t mesh_cpu_reuse_history_evictions=0U;
     std::size_t mesh_gpu_upload_failures=0U;
+    std::size_t mesh_fail_missing=0U;
+    std::size_t mesh_fail_transient=0U;
+    std::size_t mesh_fail_invalid=0U;
+    std::size_t mesh_fail_configuration=0U;
+    std::size_t texture_fail_missing=0U;
+    std::size_t texture_fail_transient=0U;
+    std::size_t texture_fail_invalid=0U;
+    std::size_t texture_fail_configuration=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
     std::uint64_t previous_frame_draw_calls=0U;
@@ -99,6 +113,12 @@ struct AssetStreamingSnapshot
         field("mesh_ready_retries",mesh_ready_retries);
         field("texture_ram_bytes",texture_ram_bytes);
         field("mesh_ram_bytes",mesh_ram_bytes);
+        field("texture_ram_hits",texture_ram_hits);
+        field("texture_ram_misses",texture_ram_misses);
+        field("texture_ram_evictions",texture_ram_evictions);
+        field("mesh_ram_hits",mesh_ram_hits);
+        field("mesh_ram_misses",mesh_ram_misses);
+        field("mesh_ram_evictions",mesh_ram_evictions);
         field("gpu_texture_bytes",gpu_texture_bytes);
         field("gpu_mesh_bytes",gpu_mesh_bytes);
         field("gpu_shared_budget_bytes",gpu_shared_budget_bytes);
@@ -130,6 +150,14 @@ struct AssetStreamingSnapshot
         field("mesh_cpu_reuse_history_evictions",
             mesh_cpu_reuse_history_evictions);
         field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
+        field("mesh_fail_missing",mesh_fail_missing);
+        field("mesh_fail_transient",mesh_fail_transient);
+        field("mesh_fail_invalid",mesh_fail_invalid);
+        field("mesh_fail_configuration",mesh_fail_configuration);
+        field("texture_fail_missing",texture_fail_missing);
+        field("texture_fail_transient",texture_fail_transient);
+        field("texture_fail_invalid",texture_fail_invalid);
+        field("texture_fail_configuration",texture_fail_configuration);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);
         field("previous_frame_draw_calls",previous_frame_draw_calls);

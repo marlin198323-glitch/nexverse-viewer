@@ -36,6 +36,9 @@ int main()
         });
     for(auto& t:workers)t.join();
     if(cache.bytes()>8U || cache.count()>2U)return 5;
+    const auto stats=cache.stats();
+    if(stats.entries!=cache.count()||stats.bytes!=cache.bytes() ||
+       stats.evictions==0U||stats.hits==0U||stats.misses==0U)return 6;
     std::cout<<"Texture decoded RAM LRU, validation and concurrency OK\n";
     return 0;
 }

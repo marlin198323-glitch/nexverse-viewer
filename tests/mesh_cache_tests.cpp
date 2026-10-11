@@ -92,6 +92,11 @@ int main()
         MeshMemoryCache tiny{bytes-1U};
         if (!error && (tiny.store(a,tri) || tiny.count()!=0U))
             error = 13;
+        const auto stats=ram.stats();
+        if (!error && (stats.hits==0U||stats.misses==0U||
+                       stats.evictions==0U||stats.bytes!=ram.bytes()||
+                       stats.entries!=ram.count()))
+            error=19;
     }
     if (!error)
     {

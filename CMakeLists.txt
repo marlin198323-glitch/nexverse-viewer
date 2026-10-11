@@ -427,6 +427,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-gpu-pressure-pipeline-tests)
     add_test(NAME nexverse-asset-gpu-pressure-pipeline-tests COMMAND nexverse-asset-gpu-pressure-pipeline-tests)
 
+    add_executable(nexverse-region-http-epoch-contract-tests
+        tests/region_http_epoch_contract_tests.cpp)
+    target_link_libraries(nexverse-region-http-epoch-contract-tests
+        PRIVATE NexVerse::Assets NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-region-http-epoch-contract-tests)
+    add_test(NAME nexverse-region-http-epoch-contract-tests
+        COMMAND nexverse-region-http-epoch-contract-tests)
+
+    add_executable(nexverse-asset-failure-telemetry-tests
+        tests/asset_failure_telemetry_tests.cpp)
+    target_link_libraries(nexverse-asset-failure-telemetry-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-failure-telemetry-tests)
+    add_test(NAME nexverse-asset-failure-telemetry-tests
+        COMMAND nexverse-asset-failure-telemetry-tests)
+
     add_executable(nexverse-asset-reuse-history-tests tests/asset_reuse_history_tests.cpp)
     target_link_libraries(nexverse-asset-reuse-history-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-reuse-history-tests)

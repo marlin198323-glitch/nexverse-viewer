@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. */
 #pragma once
+#include "nexverse/assets/asset_memory_cache_stats.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -46,6 +47,7 @@ public:
         MeshLod lod = MeshLod::high);
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] std::size_t count() const;
+    [[nodiscard]] AssetMemoryCacheStats stats() const;
 private:
     struct Entry
     {
@@ -55,6 +57,7 @@ private:
     };
     std::size_t budget_;
     std::size_t used_ = 0U;
+    std::size_t hits_=0U,misses_=0U,evictions_=0U;
     mutable std::mutex mutex_;
     std::list<std::string> lru_;
     std::unordered_map<std::string, Entry> items_;

@@ -32,6 +32,16 @@ int main()
     snapshot.texture_cpu_cached_lod_reuse=6U;
     snapshot.mesh_cpu_cached_region_reuse=7U;
     snapshot.mesh_cpu_cached_lod_reuse=8U;
+    snapshot.texture_ram_hits=41U;
+    snapshot.texture_ram_misses=21U;
+    snapshot.texture_ram_evictions=7U;
+    snapshot.mesh_ram_hits=31U;
+    snapshot.mesh_ram_misses=11U;
+    snapshot.mesh_ram_evictions=5U;
+    snapshot.mesh_fail_missing=6U;
+    snapshot.mesh_fail_transient=7U;
+    snapshot.mesh_fail_invalid=8U;
+    snapshot.mesh_fail_configuration=9U;
     snapshot.texture_cpu_cached_region_ram=9U;
     snapshot.texture_cpu_cached_region_disk=10U;
     snapshot.mesh_cpu_cached_lod_ram=11U;
@@ -66,6 +76,12 @@ int main()
        json.find("\"mesh_gpu_budget_released\":4")==std::string::npos ||
        json.find("\"texture_cpu_cached_region_reuse\":5")==std::string::npos ||
        json.find("\"mesh_cpu_cached_lod_reuse\":8")==std::string::npos ||
+       json.find("\"texture_ram_hits\":41")==std::string::npos ||
+       json.find("\"texture_ram_evictions\":7")==std::string::npos ||
+       json.find("\"mesh_ram_misses\":11")==std::string::npos ||
+       json.find("\"mesh_ram_evictions\":5")==std::string::npos ||
+       json.find("\"mesh_fail_missing\":6")==std::string::npos ||
+       json.find("\"mesh_fail_configuration\":9")==std::string::npos ||
        json.find("\"texture_cpu_cached_region_ram\":9")==std::string::npos ||
        json.find("\"texture_cpu_cached_region_disk\":10")==std::string::npos ||
        json.find("\"mesh_cpu_cached_lod_ram\":11")==std::string::npos ||

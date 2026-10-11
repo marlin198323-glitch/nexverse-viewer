@@ -80,6 +80,9 @@ def read_report(path: Path) -> dict[str, Any]:
                     "meshes_wanted", "meshes_resident", "meshes_pending",
                     "mesh_coverage_pct", "texture_retry_blocked",
                     "mesh_retry_blocked", "gpu_texture_bytes",
+                    "texture_ram_hits", "texture_ram_misses",
+                    "texture_ram_evictions", "mesh_ram_hits",
+                    "mesh_ram_misses", "mesh_ram_evictions",
                     "gpu_mesh_bytes", "gpu_shared_budget_bytes",
                     "gpu_upload_cpu_samples", "gpu_upload_cpu_avg_us",
                     "gpu_upload_cpu_p95_us", "gpu_upload_cpu_max_us",
@@ -87,6 +90,10 @@ def read_report(path: Path) -> dict[str, Any]:
                     "mesh_priority_churn",
                     "texture_gpu_upload_failures",
                     "mesh_gpu_upload_failures",
+                    "mesh_fail_missing", "mesh_fail_transient",
+                    "mesh_fail_invalid", "mesh_fail_configuration",
+                    "texture_fail_missing", "texture_fail_transient",
+                    "texture_fail_invalid", "texture_fail_configuration",
                     "texture_gpu_staging_deferrals",
                     "texture_gpu_staging_waiting",
                     "texture_gpu_staging_released",
@@ -205,6 +212,18 @@ def read_report(path: Path) -> dict[str, Any]:
         "max_mesh_gpu_budget_waiting": max(
             (s["mesh_gpu_budget_waiting"] for s in snapshots
              if "mesh_gpu_budget_waiting" in s), default=None),
+        "peak_texture_ram_evictions": max(
+            (s["texture_ram_evictions"] for s in snapshots
+             if "texture_ram_evictions" in s), default=None),
+        "max_mesh_missing_events": max(
+            (s["mesh_fail_missing"] for s in snapshots
+             if "mesh_fail_missing" in s), default=None),
+        "max_mesh_transient_events": max(
+            (s["mesh_fail_transient"] for s in snapshots
+             if "mesh_fail_transient" in s), default=None),
+        "peak_mesh_ram_evictions": max(
+            (s["mesh_ram_evictions"] for s in snapshots
+             if "mesh_ram_evictions" in s), default=None),
         "max_mesh_gpu_budget_released": max(
             (s["mesh_gpu_budget_released"] for s in snapshots
              if "mesh_gpu_budget_released" in s), default=None),
