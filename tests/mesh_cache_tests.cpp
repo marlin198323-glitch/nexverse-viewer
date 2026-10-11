@@ -140,6 +140,37 @@ int main()
             disk.load("44444444-4444-4444-4444-444444444444")))
             error = 16;
     }
+    if (!error)
+    {
+        // Cancel before HTTP; a stale region may not populate the cache.
+        const std::string id = "55555555-5555-5555-5555-555555555555";
+        MeshMemoryCache ram{bytes*2U};
+        MeshDiskCache disk{root};
+        int downloads=0;
+        bool active=false;
+        const auto fetch=[&] {
+            ++downloads;
+            return MeshAssetResult{true,id,tri,"downloaded"};
+        };
+        const auto skipped=load_mesh_cached(id,ram,disk,fetch,
+            MeshLod::high,[&]{return active;});
+        if(skipped.asset.success || downloads!=0 || disk.load(id))
+            error=18;
+        active=true;
+        const auto finish_after_expiry=load_mesh_cached(id,ram,disk,
+            [&] {
+                ++downloads;
+                active=false;
+                return MeshAssetResult{true,id,tri,"slow response"};
+            },MeshLod::high,[&]{return active;});
+        if(!error && (finish_after_expiry.asset.success ||
+            downloads!=1 || disk.load(id) || ram.load(id)))error=19;
+        active=true;
+        const auto success=load_mesh_cached(id,ram,disk,fetch,
+            MeshLod::high,[&]{return active;});
+        if(!error && (!success.asset.success || downloads!=2 ||
+            !disk.load(id) || !ram.load(id)))error=20;
+    }
     std::error_code ec;
     fs::remove_all(root,ec);
     if (error)

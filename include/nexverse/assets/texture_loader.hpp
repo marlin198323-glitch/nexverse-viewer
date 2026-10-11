@@ -6,6 +6,7 @@
 
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/assets/asset_failure.hpp"
+#include "nexverse/assets/asset_cache_lookup.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -38,6 +39,9 @@ struct TextureAssetResult
     ImageRgba8 image;
     std::string message;
     AssetFailure failure = AssetFailure::none;
+    AssetCacheLookup disk_lookup = AssetCacheLookup::not_checked;
+    bool network_requested = false;
+    bool cancelled_before_download = false;
 };
 
 [[nodiscard]] std::string build_get_texture_uri(

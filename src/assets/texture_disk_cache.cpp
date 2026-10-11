@@ -94,12 +94,21 @@ std::filesystem::path TextureDiskCache::default_directory()
             "opengenesislink"/"textures-v1";
     return {};
 }
-std::optional<ImageRgba8> TextureDiskCache::load(std::string_view id) const
+std::optional<ImageRgba8> TextureDiskCache::load(
+    std::string_view id,AssetCacheLookup* status) const
 {
-    if(!safe_uuid(id)||directory_.empty())return std::nullopt;
+    if(status)*status=AssetCacheLookup::miss;
+    if(!safe_uuid(id))
+    {
+        if(status)*status=AssetCacheLookup::corrupt;
+        return std::nullopt;
+    }
+    if(directory_.empty())return std::nullopt;
     try
     {
         const auto path=file_for(directory_,id);
+        if(!std::filesystem::exists(path)) return std::nullopt;
+        if(status)*status=AssetCacheLookup::corrupt;
         if(!std::filesystem::is_regular_file(path) ||
            std::filesystem::file_size(path)>max_image_bytes+24U)
             return std::nullopt;
@@ -128,12 +137,19 @@ std::optional<ImageRgba8> TextureDiskCache::load(std::string_view id) const
         std::error_code error;
         std::filesystem::last_write_time(path,
             std::filesystem::file_time_type::clock::now(),error);
+        if(status)*status=AssetCacheLookup::hit;
         return image;
     }
     catch(const std::filesystem::filesystem_error&)
-    {return std::nullopt;}
+    {
+        if(status)*status=AssetCacheLookup::io_error;
+        return std::nullopt;
+    }
     catch(const std::ios_base::failure&)
-    {return std::nullopt;}
+    {
+        if(status)*status=AssetCacheLookup::io_error;
+        return std::nullopt;
+    }
 }
 bool TextureDiskCache::store(std::string_view id,const ImageRgba8& image) const
 {

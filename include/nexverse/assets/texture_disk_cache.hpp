@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/asset_cache_lookup.hpp"
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -16,7 +17,8 @@ class TextureDiskCache
 public:
     explicit TextureDiskCache(std::filesystem::path directory,
         std::uint64_t budget_bytes = 256ULL * 1024ULL * 1024ULL);
-    [[nodiscard]] std::optional<ImageRgba8> load(std::string_view uuid) const;
+    [[nodiscard]] std::optional<ImageRgba8> load(std::string_view uuid,
+        AssetCacheLookup* status = nullptr) const;
     [[nodiscard]] bool store(std::string_view uuid, const ImageRgba8& image) const;
     [[nodiscard]] std::size_t prune() const;
     [[nodiscard]] static std::filesystem::path default_directory();

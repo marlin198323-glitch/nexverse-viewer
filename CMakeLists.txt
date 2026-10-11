@@ -410,6 +410,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-asset-scene-coverage-tests tests/asset_scene_coverage_tests.cpp)
+    target_link_libraries(nexverse-asset-scene-coverage-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-scene-coverage-tests)
+    add_test(NAME nexverse-asset-scene-coverage-tests COMMAND nexverse-asset-scene-coverage-tests)
+
     add_executable(nexverse-asset-failure-tests tests/asset_failure_tests.cpp)
     target_link_libraries(nexverse-asset-failure-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-failure-tests)

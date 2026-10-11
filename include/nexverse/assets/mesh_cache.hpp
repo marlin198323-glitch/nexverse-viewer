@@ -72,5 +72,6 @@ struct CachedMeshResult
 [[nodiscard]] CachedMeshResult load_mesh_cached(
     std::string_view id, MeshMemoryCache& memory, const MeshDiskCache& disk,
     const std::function<MeshAssetResult()>& downloader,
-    MeshLod preferred_lod = MeshLod::high);
+    MeshLod preferred_lod = MeshLod::high,
+    const std::function<bool()>& accept = {});
 }

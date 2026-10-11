@@ -326,13 +326,18 @@ std::size_t MeshMemoryCache::count() const
 CachedMeshResult load_mesh_cached(std::string_view id, MeshMemoryCache& memory,
     const MeshDiskCache& disk,
     const std::function<MeshAssetResult()>& downloader,
-    MeshLod preferred_lod)
+    MeshLod preferred_lod,const std::function<bool()>& accept)
 {
     CachedMeshResult result;
     result.asset.asset_id = std::string{id};
     if (!safe_uuid(id))
     {
         result.asset.message = "Invalid mesh asset identifier";
+        return result;
+    }
+    if (accept && !accept())
+    {
+        result.asset.message = "Old region mesh job cancelled before cache lookup";
         return result;
     }
     if (auto hit = memory.load(id,preferred_lod))
@@ -351,10 +356,23 @@ CachedMeshResult load_mesh_cached(std::string_view id, MeshMemoryCache& memory,
         result.asset.geometry = std::move(*hit);
         result.asset.message = "Disk mesh cache hit";
         result.asset.decoded_lod = preferred_lod;
-        (void)memory.store(id,result.asset.geometry,preferred_lod);
+        if (!accept || accept())
+            (void)memory.store(id,result.asset.geometry,preferred_lod);
+        return result;
+    }
+    if (accept && !accept())
+    {
+        result.asset.message = "Old region mesh job cancelled before HTTP";
         return result;
     }
     result.asset = downloader();
+    if (accept && !accept())
+    {
+        result.asset.success = false;
+        result.asset.geometry = {};
+        result.asset.message = "Old region mesh job discarded after HTTP";
+        return result;
+    }
     if (result.asset.success && cacheable_mesh(result.asset.geometry) &&
         canonical(result.asset.asset_id) == canonical(id))
     {

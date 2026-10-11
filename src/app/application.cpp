@@ -18,6 +18,7 @@
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
+#include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3449,7 +3450,16 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point texture_request_started{};
     std::size_t texture_cache_hits = 0U;
     std::size_t texture_http_loads = 0U;
+    std::size_t texture_disk_misses = 0U;
+    std::size_t texture_disk_corrupt = 0U;
+    std::size_t texture_disk_io_errors = 0U;
+    std::size_t texture_aborted_before_http = 0U;
+    std::size_t texture_discarded_after_http = 0U;
+    std::size_t mesh_aborted_before_http = 0U;
+    std::size_t mesh_discarded_after_http = 0U;
+    std::size_t texture_network_attempts = 0U;
     std::size_t texture_gpu_evictions = 0U;
+    std::chrono::steady_clock::time_point last_world_asset_health_log{};
     std::chrono::steady_clock::time_point last_texture_telemetry{};
 
     {
@@ -4587,6 +4597,7 @@ int Application::run(bool enable_developer_modules)
                 scene_texture_samples.clear();
                 texture_residency = {};
                 last_texture_residency_plan = {};
+                last_world_asset_health_log = {};
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_retries.enter(material_scope.epoch());
@@ -5684,6 +5695,19 @@ int Application::run(bool enable_developer_modules)
                 assets::TextureAssetResult result =
                     object_texture_future.get();
                 object_texture_loading = false;
+                switch(result.disk_lookup)
+                {
+                case assets::AssetCacheLookup::miss:
+                    ++texture_disk_misses;break;
+                case assets::AssetCacheLookup::corrupt:
+                    ++texture_disk_corrupt;break;
+                case assets::AssetCacheLookup::io_error:
+                    ++texture_disk_io_errors;break;
+                default:break;
+                }
+                if (result.network_requested) ++texture_network_attempts;
+                if (result.cancelled_before_download)
+                    ++texture_aborted_before_http;
                 if (texture_request_started.time_since_epoch().count()!=0)
                 {
                     ++texture_worker_completions;
@@ -5695,6 +5719,8 @@ int Application::run(bool enable_developer_modules)
 
                 if (!material_scope.matches(object_texture_request_epoch))
                 {
+                    if (result.network_requested)
+                        ++texture_discarded_after_http;
                     ++texture_stale_results;
                     core::info("Discarded stale GetTexture object reply");
                 }
@@ -5931,11 +5957,25 @@ int Application::run(bool enable_developer_modules)
                     object_texture_future = std::async(
                         std::launch::async,
                         [transport, capability, requested_id,
-                         mip=object_texture_loading_mip, texture_memory_cache]()
+                         mip=object_texture_loading_mip, texture_memory_cache,
+                         live_epoch=texture_prefetch_live_epoch,
+                         expected_epoch=object_texture_request_epoch]()
                         {
+                            const auto active = [&]()
+                            {
+                                return live_epoch->load(
+                                    std::memory_order_acquire)==expected_epoch;
+                            };
+                            assets::TextureAssetResult result;
+                            result.asset_id=requested_id;
+                            if (!active())
+                            {
+                                result.message="Old region GetTexture job skipped";
+                                result.cancelled_before_download=true;
+                                return result;
+                            }
                             assets::TextureDiskCache disk{
                                 assets::TextureDiskCache::default_directory()};
-                            assets::TextureAssetResult result;
                             if (const auto cached =
                                     texture_memory_cache->load(requested_id))
                             {
@@ -5944,19 +5984,37 @@ int Application::run(bool enable_developer_modules)
                                 result.image = std::move(*cached);
                                 result.message = "RAM texture cache hit";
                             }
-                            else if (const auto disk_cached = disk.load(requested_id))
+                            else if (const auto disk_cached =
+                                disk.load(requested_id,&result.disk_lookup))
                             {
                                 result.success = true;
                                 result.asset_id = requested_id;
                                 result.image = *disk_cached;
                                 result.message = "Disk texture cache hit";
-                                (void)texture_memory_cache->store(
-                                    requested_id,result.image);
+                                if(active())
+                                    (void)texture_memory_cache->store(
+                                        requested_id,result.image);
                             }
                             else
                             {
+                                if (!active())
+                                {
+                                    result.message="Old region GetTexture job skipped before HTTP";
+                                    result.cancelled_before_download=true;
+                                    return result;
+                                }
+                                const auto disk_status = result.disk_lookup;
                                 assets::TextureAssetLoader loader{transport};
                                 result=loader.fetch_rgba(capability,requested_id);
+                                result.disk_lookup=disk_status;
+                                result.network_requested=true;
+                                if (!active())
+                                {
+                                    result.success=false;
+                                    result.image={};
+                                    result.message="Old region GetTexture result discarded";
+                                    return result;
+                                }
                                 // Both tiers store full decoded image, never
                                 // the reduced GPU upload mip.
                                 if(result.success && result.image.valid())
@@ -5975,7 +6033,14 @@ int Application::run(bool enable_developer_modules)
                                 {
                                     result.success=false;
                                     result.message="Texture mip reduction failed";
+                                    result.failure=assets::AssetFailure::invalid;
                                 }
+                            }
+                            if (!active())
+                            {
+                                result.success=false;
+                                result.image={};
+                                result.message="Old region GetTexture result discarded";
                             }
                             return result;
                         });
@@ -6076,6 +6141,14 @@ int Application::run(bool enable_developer_modules)
                         ? texture_worker_elapsed_ms/texture_worker_completions
                         : 0U) +
                     " disk_hits=" + std::to_string(texture_cache_hits) +
+                    " disk_misses=" + std::to_string(texture_disk_misses) +
+                    " disk_corrupt=" + std::to_string(texture_disk_corrupt) +
+                    " disk_io_errors=" + std::to_string(texture_disk_io_errors) +
+                    " http_attempts=" + std::to_string(texture_network_attempts) +
+                    " skipped_before_http=" +
+                    std::to_string(texture_aborted_before_http) +
+                    " stale_after_http=" +
+                    std::to_string(texture_discarded_after_http) +
                     " network_loads=" + std::to_string(texture_http_loads) +
                     " gpu_evictions=" + std::to_string(texture_gpu_evictions) +
                     " mip_swaps=" +
@@ -6168,6 +6241,10 @@ int Application::run(bool enable_developer_modules)
                 if (!material_scope.matches(mesh_asset_request_epoch))
                 {
                     ++mesh_stale_results;
+                    if (result.message.find("before ")!=std::string::npos)
+                        ++mesh_aborted_before_http;
+                    else if (result.message.find("after HTTP")!=std::string::npos)
+                        ++mesh_discarded_after_http;
                     core::info("Discarded stale GetMesh response");
                 }
                 else if (!mesh_residency.desired_ids.contains(
@@ -6318,8 +6395,15 @@ int Application::run(bool enable_developer_modules)
                     const std::string alt_cap = scoped_get_mesh_alt_uri;
                     mesh_asset_future = std::async(
                         std::launch::async,
-                        [transport, cap, alt_cap, id, lod, mesh_memory_cache]()
+                        [transport, cap, alt_cap, id, lod, mesh_memory_cache,
+                         live_epoch=texture_prefetch_live_epoch,
+                         expected_epoch=mesh_asset_request_epoch]()
                         {
+                            const auto active=[&]()
+                            {
+                                return live_epoch->load(
+                                    std::memory_order_acquire)==expected_epoch;
+                            };
                             assets::MeshDiskCache disk{
                                 assets::MeshDiskCache::default_directory()};
                             return assets::load_mesh_cached(id,
@@ -6328,7 +6412,7 @@ int Application::run(bool enable_developer_modules)
                                 {
                                     return assets::MeshAssetLoader{transport}
                                         .fetch(cap,id,alt_cap,lod);
-                                },lod);
+                                },lod,active);
                         });
                     core::info("GetMesh request started for " + id +
                         "; requested_lod=" + std::string(assets::mesh_lod_name(lod)));
@@ -6370,6 +6454,10 @@ int Application::run(bool enable_developer_modules)
                         assets::AssetFailure::transient)) +
                     " stale_results=" +
                     std::to_string(mesh_stale_results) +
+                    " skipped_before_http=" +
+                    std::to_string(mesh_aborted_before_http) +
+                    " stale_after_http=" +
+                    std::to_string(mesh_discarded_after_http) +
                     " worker_completions=" +
                     std::to_string(mesh_worker_completions) +
                     " avg_worker_elapsed_ms=" +
@@ -6380,6 +6468,48 @@ int Application::run(bool enable_developer_modules)
                     " gpu_budget=" + std::to_string(mesh_gpu_asset_budget));
             }
 
+            if (simulation_ready &&
+                (last_world_asset_health_log.time_since_epoch().count()==0 ||
+                 mesh_plan_now-last_world_asset_health_log >=
+                    std::chrono::seconds{30}))
+            {
+                last_world_asset_health_log=mesh_plan_now;
+                const auto texture_coverage=assets::asset_scene_coverage(
+                    texture_residency.preferred_ids,object_texture_loaded_ids);
+                const auto mesh_coverage=assets::asset_scene_coverage(
+                    mesh_residency.prioritized_ids,mesh_asset_loaded_ids);
+                core::info("InWorld asset health: epoch=" +
+                    std::to_string(material_scope.epoch()) +
+                    " scene_texture_samples=" +
+                    std::to_string(scene_texture_samples.size()) +
+                    " scene_mesh_samples=" +
+                    std::to_string(scene_mesh_samples.size()) +
+                    " textures_loaded=" +
+                    std::to_string(texture_coverage.resident) +
+                    "/" + std::to_string(texture_coverage.requested) +
+                    " texture_coverage_pct=" +
+                    std::to_string(texture_coverage.percentage()) +
+                    " textures_pending=" +
+                    std::to_string(texture_coverage.pending) +
+                    " meshes_loaded=" +
+                    std::to_string(mesh_coverage.resident) +
+                    "/" + std::to_string(mesh_coverage.requested) +
+                    " mesh_coverage_pct=" +
+                    std::to_string(mesh_coverage.percentage()) +
+                    " meshes_pending=" +
+                    std::to_string(mesh_coverage.pending) +
+                    " texture_in_flight=" +
+                    std::to_string(object_texture_loading?1U:0U) +
+                    " mesh_in_flight=" +
+                    std::to_string(mesh_asset_future.valid()?1U:0U) +
+                    " texture_failures_tracked=" +
+                    std::to_string(object_texture_retries.count()) +
+                    " mesh_failures_tracked=" +
+                    std::to_string(mesh_asset_retries.count()) +
+                    " gpu_asset_estimated_bytes=" +
+                    std::to_string(texture_gpu_used_bytes+
+                        mesh_gpu_estimated_bytes));
+            }
             world_renderer->set_point_lights(scene_point_lights);
             world_renderer->set_particle_emitters(scene_particle_emitters);
             world_renderer->set_avatar_proxies(avatar_proxy_update);

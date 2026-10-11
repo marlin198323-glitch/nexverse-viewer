@@ -5,6 +5,7 @@
 #include <iostream>
 
 using nexverse::assets::TextureDiskCache;
+using nexverse::assets::AssetCacheLookup;
 using nexverse::assets::ImageRgba8;
 int main()
 {
@@ -18,18 +19,28 @@ int main()
     int error=0;
     {
         TextureDiskCache cache{root,128U};
-        if(!cache.store(a,red)) error=1;
-        else if(const auto got=cache.load(a);
-                !got || got->pixels!=red.pixels)error=2;
-        else if(cache.load("../escape"))error=3;
-        else if(!cache.store(b,blue))error=4;
+        AssetCacheLookup status=AssetCacheLookup::not_checked;
+        if(cache.load(a,&status) || status!=AssetCacheLookup::miss)error=10;
+        if(!error && !cache.store(a,red)) error=1;
+        else if(!error)
+        {
+            const auto got=cache.load(a,&status);
+            if(!got || got->pixels!=red.pixels ||
+               status!=AssetCacheLookup::hit)error=2;
+        }
+        if(!error && cache.load("../escape"))error=3;
+        if(!error && !cache.store(b,blue))error=4;
         if(!error)
         {
             std::ofstream f{root/(std::string{a}+".rgba"),
                 std::ios::binary|std::ios::app};
             f.put('X'); // Wrong size must reject, never read unchecked.
         }
-        if(!error && cache.load(a))error=5;
+        if(!error)
+        {
+            if(cache.load(a,&status) ||
+               status!=AssetCacheLookup::corrupt)error=5;
+        }
     }
     // The same directory is readable by a brand new cache instance.
     if(!error)
