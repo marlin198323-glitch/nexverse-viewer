@@ -410,6 +410,18 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-asset-full-residency-tests tests/asset_full_residency_tests.cpp)
+    target_link_libraries(nexverse-asset-full-residency-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-full-residency-tests)
+    add_test(NAME nexverse-asset-full-residency-tests COMMAND nexverse-asset-full-residency-tests)
+
+    add_executable(nexverse-renderer-gpu-pressure-tests tests/renderer_gpu_pressure_tests.cpp)
+    target_link_libraries(nexverse-renderer-gpu-pressure-tests PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-gpu-pressure-tests)
+    add_test(NAME nexverse-renderer-gpu-pressure-tests COMMAND nexverse-renderer-gpu-pressure-tests)
+    set_tests_properties(nexverse-renderer-gpu-pressure-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-asset-upload-telemetry-tests tests/asset_upload_telemetry_tests.cpp)
     target_link_libraries(nexverse-asset-upload-telemetry-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-upload-telemetry-tests)

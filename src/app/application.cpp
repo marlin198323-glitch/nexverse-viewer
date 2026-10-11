@@ -3474,6 +3474,8 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_discarded_after_http = 0U;
     std::size_t texture_network_attempts = 0U;
     std::size_t texture_gpu_evictions = 0U;
+    std::size_t texture_gpu_upload_failures = 0U;
+    std::size_t mesh_gpu_upload_failures = 0U;
     std::chrono::steady_clock::time_point last_world_asset_health_log{};
     std::chrono::steady_clock::time_point last_texture_telemetry{};
 
@@ -5822,8 +5824,9 @@ int Application::run(bool enable_developer_modules)
                         image.pixels = std::move(result.image.pixels);
                         const auto gpu_submission_started =
                             std::chrono::steady_clock::now();
-                        world_renderer->set_object_texture(
-                            object_texture_loading_id, image);
+                        const bool texture_uploaded =
+                            world_renderer->set_object_texture(
+                                object_texture_loading_id, image);
                         const auto gpu_submission_end =
                             std::chrono::steady_clock::now();
                         const auto submission_cpu_time =
@@ -5831,6 +5834,23 @@ int Application::run(bool enable_developer_modules)
                                 std::chrono::microseconds>(
                                 gpu_submission_end-gpu_submission_started);
                         asset_gpu_upload_telemetry.observe(submission_cpu_time);
+                        if (!texture_uploaded)
+                        {
+                            ++texture_gpu_upload_failures;
+                            ++texture_failure_events;
+                            const auto delay=object_texture_retries.failure(
+                                object_texture_loading_id,
+                                assets::AssetFailure::transient,
+                                gpu_submission_end);
+                            core::warning(
+                                "GetTexture GPU upload rejected for " +
+                                object_texture_loading_id +
+                                "; retry_delay_ms=" +
+                                std::to_string(delay.count()) +
+                                "; residency not marked as loaded");
+                        }
+                        else
+                        {
                         asset_gpu_upload_gate.uploaded(
                             gpu_submission_end,next_bytes,
                             submission_cpu_time);
@@ -5866,6 +5886,7 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_gpu_used_bytes) +
                             "; cached=" +
                             std::to_string(object_texture_loaded_ids.size()));
+                        }
                     }
                 }
                 else if (!object_texture_loading_id.empty())
@@ -6209,6 +6230,8 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_lod_dwell.waiting()) +
                     " slot_priority_evictions=" +
                     std::to_string(texture_slot_replacements) +
+                    " gpu_upload_failures=" +
+                    std::to_string(texture_gpu_upload_failures) +
                     " gpu_uploads=" +
                     std::to_string(asset_gpu_upload_gate.count()) +
                     " gpu_uploaded_bytes=" +
@@ -6423,9 +6446,10 @@ int Application::run(bool enable_developer_modules)
                             mesh_asset_loading_id + "." +
                                 std::string(assets::mesh_lod_name(
                                     mesh_asset_loading_lod)),
-                            assets::AssetFailure::invalid,
+                            assets::AssetFailure::transient,
                             std::chrono::steady_clock::now());
                         ++mesh_failure_events;
+                        ++mesh_gpu_upload_failures;
                         core::warning("GetMesh GPU upload failed for " +
                             mesh_asset_loading_id + "; retry_delay_ms=" +
                             std::to_string(delay.count()));
@@ -6537,6 +6561,8 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(mesh_lod_dwell.waiting()) +
                     " mesh_priority_churn=" +
                     std::to_string(mesh_priority_feedback.churn_events()) +
+                    " gpu_upload_failures=" +
+                    std::to_string(mesh_gpu_upload_failures) +
                     " gpu_estimated_bytes=" + std::to_string(mesh_gpu_estimated_bytes) +
                     " shared_gpu_estimated_bytes=" +
                     std::to_string(mesh_gpu_estimated_bytes +
@@ -6619,6 +6645,10 @@ int Application::run(bool enable_developer_modules)
                     asset_gpu_upload_telemetry.recent_max_us();
                 snapshot.gpu_upload_pacing_ms=static_cast<std::size_t>(
                     asset_gpu_upload_gate.effective_interval().count());
+                snapshot.texture_gpu_upload_failures=
+                    texture_gpu_upload_failures;
+                snapshot.mesh_gpu_upload_failures=
+                    mesh_gpu_upload_failures;
                 snapshot.texture_priority_churn=
                     texture_priority_feedback.churn_events();
                 snapshot.mesh_priority_churn=

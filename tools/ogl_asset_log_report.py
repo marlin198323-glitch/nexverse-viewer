@@ -83,6 +83,8 @@ def read_report(path: Path) -> dict[str, Any]:
                     "gpu_upload_cpu_p95_us", "gpu_upload_cpu_max_us",
                     "gpu_upload_pacing_ms", "texture_priority_churn",
                     "mesh_priority_churn",
+                    "texture_gpu_upload_failures",
+                    "mesh_gpu_upload_failures",
                 )
                 sanitized = {
                     key: data[key] for key in fields
@@ -116,6 +118,12 @@ def read_report(path: Path) -> dict[str, Any]:
         "peak_mesh_priority_churn": max(
             (s["mesh_priority_churn"] for s in snapshots
              if "mesh_priority_churn" in s), default=None),
+        "max_texture_gpu_upload_failures": max(
+            (s["texture_gpu_upload_failures"] for s in snapshots
+             if "texture_gpu_upload_failures" in s), default=None),
+        "max_mesh_gpu_upload_failures": max(
+            (s["mesh_gpu_upload_failures"] for s in snapshots
+             if "mesh_gpu_upload_failures" in s), default=None),
     }
 
 

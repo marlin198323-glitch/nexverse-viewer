@@ -1691,6 +1691,7 @@ bool upload_mesh(
         return false;
     }
 
+    for(int i=0;i<8 && glGetError()!=GL_NO_ERROR;++i) {}
     glGenVertexArrays(1, &target.vao);
     glGenBuffers(1, &target.vbo);
     glGenBuffers(1, &target.ebo);
@@ -1745,6 +1746,19 @@ bool upload_mesh(
     target.index_count =
         static_cast<GLsizei>(source.indices.size());
     target.face_ranges = source.face_ranges;
+    const auto upload_error=glGetError();
+    if(upload_error!=GL_NO_ERROR ||
+        target.vao==0U || target.vbo==0U || target.ebo==0U)
+    {
+        if(target.ebo!=0U)glDeleteBuffers(1,&target.ebo);
+        if(target.vbo!=0U)glDeleteBuffers(1,&target.vbo);
+        if(target.vao!=0U)glDeleteVertexArrays(1,&target.vao);
+        target={};
+        nexverse::core::warning(
+            "OGLRender mesh GPU upload failed; gl_error="+
+            std::to_string(upload_error));
+        return false;
+    }
     return true;
 }
 
@@ -2826,77 +2840,74 @@ public:
         object_textures_.clear();
         object_texture_alpha_.clear();
     }
-    void set_object_texture(
+    [[nodiscard]] bool set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) override
     {
         if (texture_id.empty() || !image.valid())
-        {
-            return;
-        }
-
+            return false;
         constexpr std::size_t max_object_textures = 512U;
-
-        auto found = object_textures_.find(texture_id);
+        const auto found = object_textures_.find(texture_id);
         if (found == object_textures_.end() &&
             object_textures_.size() >= max_object_textures)
-        {
-            return;
-        }
+            return false;
 
-        GLuint texture = 0U;
+        GLint max_side = 0;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_side);
+        if (max_side <= 0 ||
+            image.width > static_cast<std::uint32_t>(max_side) ||
+            image.height > static_cast<std::uint32_t>(max_side))
+            return false;
+
+        // Allocate a new name for *every* upload. This makes a failed
+        // mip/replacement transactional: the previous texture stays valid.
+        for (int i=0;i<8 && glGetError()!=GL_NO_ERROR;++i) {}
+        GLuint candidate=0U;
+        glGenTextures(1,&candidate);
+        if (candidate==0U)
+            return false;
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D,candidate);
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,
+            GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        if (texture_anisotropy_>1.0f)
+            glTexParameterf(GL_TEXTURE_2D,0x84FEU,texture_anisotropy_);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,
+            static_cast<GLsizei>(image.width),
+            static_cast<GLsizei>(image.height),0,GL_RGBA,
+            GL_UNSIGNED_BYTE,image.pixels.data());
+        if (glGetError()!=GL_NO_ERROR)
+        {
+            glBindTexture(GL_TEXTURE_2D,0U);
+            glActiveTexture(GL_TEXTURE0);
+            glDeleteTextures(1,&candidate);
+            return false;
+        }
+        glGenerateMipmap(GL_TEXTURE_2D);
+        const GLenum upload_error=glGetError();
+        glBindTexture(GL_TEXTURE_2D,0U);
+        glActiveTexture(GL_TEXTURE0);
+        if (upload_error!=GL_NO_ERROR)
+        {
+            glDeleteTextures(1,&candidate);
+            nexverse::core::warning(
+                "OGLRender object texture GPU mip upload failed; gl_error="+
+                std::to_string(upload_error));
+            return false;
+        }
         if (found != object_textures_.end())
         {
-            texture = found->second;
+            const GLuint previous=found->second;
+            found->second=candidate;
+            if(previous!=0U)glDeleteTextures(1,&previous);
         }
-        else
-        {
-            glGenTextures(1, &texture);
-            if (texture == 0U)
-            {
-                return;
-            }
-            object_textures_.emplace(texture_id, texture);
-        }
-
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_WRAP_S,
-            GL_REPEAT);
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_WRAP_T,
-            GL_REPEAT);
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MIN_FILTER,
-            GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(
-            GL_TEXTURE_2D,
-            GL_TEXTURE_MAG_FILTER,
-            GL_LINEAR);
-        if (texture_anisotropy_ > 1.0f)
-            glTexParameterf(GL_TEXTURE_2D,0x84FEU,texture_anisotropy_);
-
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGBA8,
-            static_cast<GLsizei>(image.width),
-            static_cast<GLsizei>(image.height),
-            0,
-            GL_RGBA,
-            GL_UNSIGNED_BYTE,
-            image.pixels.data());
-        glGenerateMipmap(GL_TEXTURE_2D);
-        object_texture_alpha_[texture_id] = texture_has_alpha(image);
-
-        glBindTexture(GL_TEXTURE_2D, 0U);
-        glActiveTexture(GL_TEXTURE0);
+        else object_textures_.emplace(texture_id,candidate);
+        object_texture_alpha_[texture_id]=texture_has_alpha(image);
+        return true;
     }
 
     [[nodiscard]] bool set_mesh_asset(
@@ -2904,7 +2915,21 @@ public:
         const RenderMeshGeometry& geometry) override
     {
         if (mesh_id.empty() || geometry.vertices.empty() ||
-            geometry.indices.empty() || geometry.vertices.size() % 8U != 0U)
+            geometry.indices.empty() || geometry.vertices.size()%8U!=0U ||
+            geometry.indices.size()%3U!=0U)
+            return false;
+        const auto vertex_count=geometry.vertices.size()/8U;
+        if (std::any_of(geometry.indices.begin(),geometry.indices.end(),
+                [vertex_count](std::uint32_t index)
+                {return index>=vertex_count;}))
+            return false;
+        if (std::any_of(geometry.faces.begin(),geometry.faces.end(),
+                [&geometry](const RenderMeshFace& face)
+                {
+                    return face.first_index>geometry.indices.size() ||
+                        face.index_count >
+                            geometry.indices.size()-face.first_index;
+                }))
             return false;
         const auto old = mesh_assets_.find(mesh_id);
         if (old == mesh_assets_.end() && mesh_assets_.size() >= 256U)

@@ -39,11 +39,14 @@ int main()
             RenderImageRgba8 image{2U,2U,{
                 255,0,0,255, 0,255,0,255,
                 0,0,255,255, 255,255,0,255}};
-            renderer->set_object_texture("synthetic-texture",image);
+            if(!renderer->set_object_texture("synthetic-texture",image))
+                failed=9;
             image.pixels[0]=100U;
-            renderer->set_object_texture("synthetic-texture",image);
+            if(!renderer->set_object_texture("synthetic-texture",image))
+                failed=9;
             renderer->remove_object_texture("synthetic-texture");
-            renderer->set_object_texture("synthetic-texture",image);
+            if(!renderer->set_object_texture("synthetic-texture",image))
+                failed=9;
             RenderMeshGeometry geometry{
                 {3.0f,-1.0f,-1.0f, 1.0f,0.0f,0.0f, 0.0f,0.0f,
                  3.0f,1.0f,-1.0f,  1.0f,0.0f,0.0f, 1.0f,0.0f,

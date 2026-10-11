@@ -292,7 +292,9 @@ public:
     virtual void set_terrain(const RenderTerrain& terrain) = 0;
     virtual void set_terrain_textures(
         const RenderTerrainTextures& textures) = 0;
-    virtual void set_object_texture(
+    // True only after the GPU accepted this texture. A failed replacement
+    // must preserve the previously resident texture for that UUID.
+    [[nodiscard]] virtual bool set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) = 0;
     virtual void remove_object_texture(const std::string& texture_id) = 0;

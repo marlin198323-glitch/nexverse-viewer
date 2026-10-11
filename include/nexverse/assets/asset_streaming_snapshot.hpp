@@ -32,6 +32,8 @@ struct AssetStreamingSnapshot
     std::uint64_t gpu_upload_cpu_p95_us=0U;
     std::uint64_t gpu_upload_cpu_max_us=0U;
     std::size_t gpu_upload_pacing_ms=0U;
+    std::size_t texture_gpu_upload_failures=0U;
+    std::size_t mesh_gpu_upload_failures=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
 
@@ -72,6 +74,8 @@ struct AssetStreamingSnapshot
         field("gpu_upload_cpu_p95_us",gpu_upload_cpu_p95_us);
         field("gpu_upload_cpu_max_us",gpu_upload_cpu_max_us);
         field("gpu_upload_pacing_ms",gpu_upload_pacing_ms);
+        field("texture_gpu_upload_failures",texture_gpu_upload_failures);
+        field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);
         out+="}";

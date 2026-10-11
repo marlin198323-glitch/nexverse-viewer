@@ -22,7 +22,9 @@ class AssetLogReportTest(unittest.TestCase):
                 '"texture_coverage_pct":50,"mesh_coverage_pct":25,'
                 '"region_epoch":12,"secret":"caps://sensitive",'
                 '"textures_pending":3,"gpu_upload_cpu_p95_us":4900,'
-                '"texture_priority_churn":4}\n'
+                '"texture_priority_churn":4,'
+                '"texture_gpu_upload_failures":2,'
+                '"mesh_gpu_upload_failures":3}\n'
                 '2026-10-11 11:00:02 [INFO] InWorldAssetSnapshot broken\n'
                 '2026-10-11 11:00:03 [INFO] GetMesh streaming metrics: ram_hits=1\n'
             )
@@ -39,6 +41,8 @@ class AssetLogReportTest(unittest.TestCase):
             self.assertEqual(summary["peak_gpu_upload_cpu_p95_us"], 4900)
             self.assertEqual(summary["peak_texture_priority_churn"], 4)
             self.assertIsNone(summary["peak_mesh_priority_churn"])
+            self.assertEqual(summary["max_texture_gpu_upload_failures"], 2)
+            self.assertEqual(summary["max_mesh_gpu_upload_failures"], 3)
             self.assertEqual(summary["date_last"], "2026-10-11")
             self.assertNotIn("secret", str(summary))
             self.assertNotIn("aaaaaaaa-", str(summary))
