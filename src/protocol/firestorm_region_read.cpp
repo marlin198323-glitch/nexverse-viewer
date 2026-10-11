@@ -55,10 +55,54 @@ parse_experience_profiles(const LlsdValue& response)
     }
     return result;
 }
+std::map<std::string,ExperienceProfile,std::less<>>
+parse_experience_profile_details(const LlsdValue& response)
+{
+    std::map<std::string,ExperienceProfile,std::less<>> details;
+    if(!response.is_map())return details;
+    const auto* rows=response.find("experience_keys");
+    if(!rows||!rows->is_array()||rows->array_value.size()>128U)
+        return details;
+    for(const auto& row:rows->array_value)
+    {
+        if(!row.is_map())continue;
+        const auto* id=row.find("public_id");
+        const auto* name=row.find("name");
+        if(!id||!name||!uuid_to_bytes(id->as_string())||
+           name->type!=LlsdType::string ||
+           name->string_value.empty()||name->string_value.size()>128U)
+            continue;
+        const auto clean=[](std::string_view value,std::size_t max)
+        {
+            if(value.size()>max)return false;
+            return std::none_of(value.begin(),value.end(),
+                [](unsigned char c){return c<32U||c==127U;});
+        };
+        if(!clean(name->string_value,128U))continue;
+        ExperienceProfile profile;
+        profile.name=name->string_value;
+        if(const auto* desc=row.find("description");
+           desc&&desc->type==LlsdType::string &&
+           clean(desc->string_value,4096U))
+            profile.description=desc->string_value.substr(0U,160U);
+        if(const auto* maturity=row.find("maturity");
+           maturity&&maturity->type==LlsdType::integer &&
+           (maturity->integer_value==13 ||maturity->integer_value==21 ||
+            maturity->integer_value==42))
+            profile.maturity=static_cast<std::int32_t>(maturity->integer_value);
+        if(const auto* properties=row.find("properties");
+           properties&&properties->type==LlsdType::integer)
+            profile.enabled=(properties->integer_value&64)==0;
+        details.emplace(std::string{id->as_string()},std::move(profile));
+    }
+    return details;
+}
 FirestormRegionRead fetch_firestorm_region(
     const std::shared_ptr<net::IHttpTransport>& transport,
     std::string_view seed,std::uint64_t issued_epoch,
-    const FirestormRegionLease& lease)
+    const FirestormRegionLease& lease,
+    std::string_view agent_id,
+    const std::vector<OutfitGalleryFolder>& outfits)
 {
     FirestormRegionRead result;
     result.issued_epoch=issued_epoch;
@@ -67,10 +111,13 @@ FirestormRegionRead fetch_firestorm_region(
     const auto caps=client.discover(seed,{
         "AgentExperiences","GetExperiences","GetExperienceInfo",
         "FetchInventory2","FetchInventoryDescendents2",
-        "InventoryThumbnailUpload"});
+        "InventoryThumbnailUpload","GetTexture"});
     if(!caps.success ||!lease.matches(issued_epoch))return result;
     result.discovered=true;
     result.available=firestorm_caps_availability(caps.capabilities);
+    if(const auto it=caps.capabilities.find("GetTexture");
+       it!=caps.capabilities.end())
+        result.get_texture_uri=it->second;
     if(const auto it=caps.capabilities.find("AgentExperiences");
        it!=caps.capabilities.end() &&lease.matches(issued_epoch))
     {
@@ -109,8 +156,19 @@ FirestormRegionRead fetch_firestorm_region(
             const auto reply=client.fetch_llsd(*url);
             if(!lease.matches(issued_epoch))return {};
             if(reply.success)
+            {
                 result.display_names=parse_experience_profiles(reply.value);
+                result.profiles=parse_experience_profile_details(reply.value);
+            }
         }
+    }
+    if(const auto it=caps.capabilities.find("FetchInventoryDescendents2");
+       it!=caps.capabilities.end() &&!agent_id.empty()&&
+       !outfits.empty()&&lease.matches(issued_epoch))
+    {
+        result.outfit_inventory=fetch_outfit_descendents(
+            transport,it->second,agent_id,outfits,issued_epoch,lease);
+        if(!lease.matches(issued_epoch))return {};
     }
     return result;
 }

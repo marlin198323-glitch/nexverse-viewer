@@ -157,6 +157,18 @@ struct CapsRuntimeState
     std::vector<std::string> allowed_ids;
     std::vector<std::string> blocked_ids;
     std::map<std::string,std::string,std::less<>> experience_names;
+    std::map<std::string,nexverse::protocol::ExperienceProfile,std::less<>>
+        experience_profiles;
+    bool outfit_inventory_read=false;
+    std::size_t outfit_folders_read=0U;
+    std::map<std::string,std::string,std::less<>> outfit_thumbnail_assets;
+};
+struct GalleryTextureReply
+{
+    std::uint64_t epoch=0U;
+    std::string folder_id;
+    std::string asset_id;
+    nexverse::assets::ImageRgba8 image;
 };
 
 struct FrameMetrics
@@ -486,6 +498,10 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                 ui.select(nexverse::protocol::ExperienceUiState::Tab::allowed);
             else if(key==GLFW_KEY_3)
                 ui.select(nexverse::protocol::ExperienceUiState::Tab::blocked);
+            else if(key==GLFW_KEY_DOWN)
+                ui.choose(ui.selected_index+1U);
+            else if(key==GLFW_KEY_UP)
+                ui.choose(ui.selected_index>0U?ui.selected_index-1U:0U);
             return;
         }
     }
@@ -605,6 +621,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                 {
                     context->experience->select(
                         static_cast<nexverse::protocol::ExperienceUiState::Tab>(i));
+                    break;
+                }
+            const float list_y=panel_y+174.0f*scale;
+            const auto offset=context->experience->selected_index>5U
+                ? context->experience->selected_index-5U:0U;
+            for(std::size_t i=0;i<6U;++i)
+                if(point_inside(px,py,panel_x+22.0f*scale,
+                      list_y+static_cast<float>(i)*31.0f*scale,
+                      panel_w-44.0f*scale,28.0f*scale))
+                {
+                    context->experience->choose(offset+i);
                     break;
                 }
         }
@@ -1545,7 +1572,10 @@ void render_world_hud(
 // not a made-up placeholder, and outfit editing remains disabled.
 void render_outfit_gallery(
     UiRenderer& renderer,int width,int height,
-    const std::vector<nexverse::protocol::OutfitGalleryFolder>& folders)
+    const std::vector<nexverse::protocol::OutfitGalleryFolder>& folders,
+    const CapsRuntimeState& caps,
+    const std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>&
+        image_textures)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -1573,11 +1603,22 @@ void render_outfit_gallery(
                       5.0f*scale);
         renderer.text(x+31.0f*scale,yy+7.0f*scale,
                       9.5f*scale,folders[i].name,theme::text);
-        renderer.text(x+pw-115.0f*scale,yy+7.0f*scale,
-                      7.5f*scale,"Vorschau -",theme::text_muted);
+        if(const auto image=image_textures.find(folders[i].id);
+           image!=image_textures.end() &&
+           caps.outfit_thumbnail_assets.contains(folders[i].id) &&
+           caps.outfit_thumbnail_assets.at(folders[i].id)==image->second.first)
+            renderer.image(image->second.second,
+                           x+pw-62.0f*scale,yy+1.5f*scale,
+                           24.0f*scale,24.0f*scale,1.0f);
+        else
+            renderer.text(x+pw-118.0f*scale,yy+7.0f*scale,
+                          7.5f*scale,"Vorschau -",theme::text_muted);
     }
     renderer.text(x+22.0f*scale,y+ph-44.0f*scale,
-                  8.4f*scale,"Thumbnails und Tragen erfordern Inventar-Asset-Fetch",
+                  8.4f*scale,
+                  caps.outfit_inventory_read
+                    ? "Inventar gelesen; Tragen/Bearbeiten noch gesperrt"
+                    : "Inventar-CAP-Antwort nicht verfuegbar",
                   theme::warning);
     renderer.text(x+22.0f*scale,y+ph-24.0f*scale,
                   8.3f*scale,"F9 / ESC schließen",theme::text_muted);
@@ -1641,17 +1682,18 @@ void render_experience_floater(
                   state,ready?theme::text:theme::warning);
     if(ready)
     {
-        for(std::size_t i=0U;i<std::min(ids.size(),std::size_t{9U});++i)
+        const auto active=std::min(ui.selected_index,
+                                   ids.empty()?0U:ids.size()-1U);
+        const auto offset=active>=6U?active-5U:0U;
+        for(std::size_t i=offset;i<std::min(ids.size(),offset+6U);++i)
         {
-            renderer.rect(x+22.0f*scale,y+
-                          (174.0f+static_cast<float>(i)*31.0f)*scale,
+            const float yy=(174.0f+static_cast<float>(i-offset)*31.0f)*scale;
+            renderer.rect(x+22.0f*scale,y+yy,
                           pw-44.0f*scale,28.0f*scale,
-                          Color{0.020f,0.051f,0.083f,0.94f},
+                          i==active?Color{0.060f,0.21f,0.29f,0.96f}
+                                   :Color{0.020f,0.051f,0.083f,0.94f},
                           5.0f*scale);
-            // The list CAP supplies UUIDs, not user-facing names. Display
-            // an explicit short ID instead of fabricating Experience names.
-            renderer.text(x+32.0f*scale,y+
-                          (181.0f+static_cast<float>(i)*31.0f)*scale,
+            renderer.text(x+32.0f*scale,y+yy+7.0f*scale,
                           9.2f*scale,
                           std::to_string(i+1U)+". "+
                           (caps.experience_names.contains(ids[i])
@@ -1659,6 +1701,27 @@ void render_experience_floater(
                               : ("ID "+ids[i].substr(0U,8U)+
                                  " (Name nicht geladen)")),
                           theme::text_muted);
+        }
+        if(!ids.empty())
+        {
+            if(const auto found=caps.experience_profiles.find(ids[active]);
+               found!=caps.experience_profiles.end())
+            {
+                const auto& profile=found->second;
+                const std::string maturity=profile.maturity==42?"Adult":
+                    profile.maturity==21?"Moderate":"General";
+                renderer.text(x+27.0f*scale,y+372.0f*scale,9.5f*scale,
+                    profile.name+" | "+maturity+
+                    (profile.enabled?" | Aktiv":" | Deaktiviert"),
+                    theme::cyan);
+                renderer.text(x+27.0f*scale,y+400.0f*scale,8.5f*scale,
+                    profile.description.substr(0U,90U),
+                    theme::text_muted);
+            }
+            else
+                renderer.text(x+27.0f*scale,y+380.0f*scale,9.0f*scale,
+                    "Profildetails vom Simulator nicht verfuegbar",
+                    theme::text_muted);
         }
     }
     renderer.text(x+22.0f*scale,y+ph-47.0f*scale,
@@ -3601,6 +3664,11 @@ int Application::run(bool enable_developer_modules)
     std::vector<std::future<protocol::FirestormRegionRead>>
         firestorm_region_read_futures;
     std::uint64_t firestorm_region_read_started_epoch=0U;
+    std::string gallery_texture_cap;
+    std::vector<std::future<GalleryTextureReply>> gallery_image_futures;
+    std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>
+        gallery_gpu_textures;
+    std::map<std::string,std::string,std::less<>> gallery_image_requested;
     protocol::RegionMaterialScope material_scope;
     std::future<protocol::CapabilityDiscoveryResult> region_material_discovery_future;
     std::uint64_t region_material_discovery_epoch = 0U;
@@ -4985,6 +5053,19 @@ int Application::run(bool enable_developer_modules)
                 caps_state.allowed_ids.clear();
                 caps_state.blocked_ids.clear();
                 caps_state.experience_names.clear();
+                caps_state.experience_profiles.clear();
+                caps_state.outfit_inventory_read=false;
+                caps_state.outfit_folders_read=0U;
+                caps_state.outfit_thumbnail_assets.clear();
+                gallery_texture_cap.clear();
+                gallery_image_requested.clear();
+                for(const auto& [folder,image]:gallery_gpu_textures)
+                {
+                    (void)folder;
+                    renderer.destroy_texture(image.second);
+                }
+                gallery_gpu_textures.clear();
+                outfit_gallery_open=false;
                 experience_ui.close();
             }
             // Region-specific Firestorm read CAPS. The existing login
@@ -5029,6 +5110,18 @@ int Application::run(bool enable_developer_modules)
                                 caps_state.resident_experiences_read=true;
                             }
                             caps_state.experience_names=std::move(reply.display_names);
+                            caps_state.experience_profiles=std::move(reply.profiles);
+                            caps_state.outfit_inventory_read=
+                                reply.outfit_inventory.valid;
+                            caps_state.outfit_folders_read=
+                                reply.outfit_inventory.returned_folders;
+                            caps_state.outfit_thumbnail_assets.clear();
+                            for(const auto& [folder,meta]:
+                                reply.outfit_inventory.thumbnails)
+                                if(meta.asset_id)
+                                    caps_state.outfit_thumbnail_assets.emplace(
+                                        folder,*meta.asset_id);
+                            gallery_texture_cap=std::move(reply.get_texture_uri);
                         }
                     }
                 }
@@ -5050,12 +5143,91 @@ int Application::run(bool enable_developer_modules)
                 firestorm_region_read_futures.emplace_back(
                     std::async(std::launch::async,
                         [transport,seed=current_region_seed,
+                         agent=active_session
+                             ? active_session->agent_id : std::string{},
+                         outfits=active_session
+                             ? protocol::outfits_from_login_skeleton(
+                                   active_session->inventory_skeleton)
+                             : std::vector<protocol::OutfitGalleryFolder>{},
+                         issued=current_firestorm_epoch,
+                         &firestorm_region_lease]() mutable
+                        {
+                            if(outfits.size()>16U)outfits.resize(16U);
+                            return protocol::fetch_firestorm_region(
+                                transport,seed,issued,firestorm_region_lease,
+                                agent,outfits);
+                        }));
+            }
+            // Completed optional outfit thumbnail decodes become UI GPU
+            // textures exclusively on this OpenGL thread. Never upload a
+            // stale region response or mismatch a replaced folder asset.
+            for(auto it=gallery_image_futures.begin();
+                it!=gallery_image_futures.end();)
+            {
+                if(it->wait_for(std::chrono::milliseconds{0})!=
+                   std::future_status::ready){++it;continue;}
+                try
+                {
+                    auto image=it->get();
+                    if(firestorm_region_lease.matches(image.epoch) &&
+                       image.image.valid()&&image.image.width<=1024U &&
+                       image.image.height<=1024U &&
+                       caps_state.outfit_thumbnail_assets.contains(image.folder_id) &&
+                       caps_state.outfit_thumbnail_assets.at(image.folder_id)==image.asset_id)
+                    {
+                        const auto handle=renderer.create_rgba_texture(
+                            static_cast<int>(image.image.width),
+                            static_cast<int>(image.image.height),
+                            image.image.pixels.data());
+                        if(handle!=0U)
+                        {
+                            if(const auto old=gallery_gpu_textures.find(
+                                image.folder_id);old!=gallery_gpu_textures.end())
+                                renderer.destroy_texture(old->second.second);
+                            gallery_gpu_textures.insert_or_assign(image.folder_id,
+                                std::make_pair(std::move(image.asset_id),handle));
+                        }
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Outfit thumbnail optional decode failed");
+                }
+                it=gallery_image_futures.erase(it);
+            }
+            if(!gallery_texture_cap.empty() &&
+               firestorm_region_lease.matches(current_firestorm_epoch) &&
+               gallery_image_requested.size()<8U &&
+               gallery_image_futures.size()<3U)
+            {
+                for(const auto& [folder,asset]:
+                    caps_state.outfit_thumbnail_assets)
+                {
+                    if(gallery_image_futures.size()>=3U||
+                       gallery_image_requested.size()>=8U)break;
+                    if(gallery_image_requested.contains(folder))continue;
+                    gallery_image_requested.emplace(folder,asset);
+                    gallery_image_futures.emplace_back(std::async(
+                        std::launch::async,
+                        [transport,cap=gallery_texture_cap,folder,asset,
                          issued=current_firestorm_epoch,
                          &firestorm_region_lease]()
                         {
-                            return protocol::fetch_firestorm_region(
-                                transport,seed,issued,firestorm_region_lease);
+                            GalleryTextureReply result;
+                            result.epoch=issued;
+                            result.folder_id=folder;
+                            result.asset_id=asset;
+                            if(firestorm_region_lease.matches(issued))
+                            {
+                                assets::TextureAssetLoader loader{transport};
+                                auto loaded=loader.fetch_rgba(cap,asset);
+                                if(firestorm_region_lease.matches(issued) &&
+                                   loaded.success)
+                                    result.image=std::move(loaded.image);
+                            }
+                            return result;
                         }));
+                }
             }
             if (material_scope.update(
                     current_region_handle,
@@ -7426,7 +7598,8 @@ int Application::run(bool enable_developer_modules)
                 if(outfit_gallery_open &&active_session)
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
-                            active_session->inventory_skeleton));
+                            active_session->inventory_skeleton),
+                        caps_snapshot,gallery_gpu_textures);
                 render_experience_floater(renderer,window_width,window_height,
                                           experience_ui,caps_snapshot);
             }
@@ -7435,6 +7608,12 @@ int Application::run(bool enable_developer_modules)
         }
 
         renderer.destroy_texture(welcome_texture);
+        for(const auto& [folder,image]:gallery_gpu_textures)
+        {
+            (void)folder;
+            renderer.destroy_texture(image.second);
+        }
+        gallery_gpu_textures.clear();
         world_renderer->shutdown();
     }
 

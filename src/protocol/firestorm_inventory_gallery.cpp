@@ -19,6 +19,7 @@ std::vector<OutfitGalleryFolder> outfits_from_login_skeleton(
     for(const auto& folder:skeleton)
     {
         if(!uuid_to_bytes(folder.folder_id)||
+           !uuid_to_bytes(folder.parent_id)||
            !seen.insert(folder.folder_id).second)
             continue;
         if(folder.type_default!=47 &&
@@ -30,7 +31,8 @@ std::vector<OutfitGalleryFolder> outfits_from_login_skeleton(
         title.erase(std::remove_if(title.begin(),title.end(),
             [](unsigned char c){return c<32U ||c==127U;}),title.end());
         if(title.empty())title="Unbenanntes Outfit";
-        result.push_back({folder.folder_id,title,folder.version});
+        result.push_back({folder.folder_id,title,folder.version,
+                          folder.parent_id});
         if(result.size()>=256U)break;
     }
     return result;

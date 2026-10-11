@@ -13,7 +13,8 @@ int main()
         {a,r,"Casual\nTest",0,13},
         {b,"", "Normal Textures",0,2},
         {o,r,"Duplicate",47,90},
-        {"bad",r,"Malformed",47,1}
+        {"bad",r,"Malformed",47,1},
+        {"55555555-5555-5555-5555-555555555555","invalid","Bad Parent",47,1}
     };
     const auto gallery=outfits_from_login_skeleton(skeleton);
     if(gallery.size()!=2U ||gallery[0].id!=o ||

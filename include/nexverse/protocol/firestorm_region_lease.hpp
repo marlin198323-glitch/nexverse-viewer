@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. */
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <string>
@@ -49,12 +50,20 @@ struct ExperienceUiState
     enum class Tab { owned, allowed, blocked };
     bool open=false;
     Tab tab=Tab::owned;
+    std::size_t selected_index=0U;
     void toggle(bool logged_in,bool region_ready) noexcept
     {
         if(!logged_in || !region_ready){open=false;return;}
         open=!open;
     }
     void close() noexcept {open=false;}
-    void select(Tab next) noexcept {if(open)tab=next;}
+    void select(Tab next) noexcept
+    {
+        if(open){tab=next;selected_index=0U;}
+    }
+    void choose(std::size_t index) noexcept
+    {
+        if(open)selected_index=index;
+    }
 };
 }

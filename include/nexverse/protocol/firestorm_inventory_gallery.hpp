@@ -14,6 +14,7 @@ struct OutfitGalleryFolder
     std::string id;
     std::string name;
     std::int32_t version=0;
+    std::string parent_id;
 };
 [[nodiscard]] std::vector<OutfitGalleryFolder> outfits_from_login_skeleton(
     const std::vector<InventoryFolder>& skeleton);

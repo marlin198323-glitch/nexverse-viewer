@@ -119,6 +119,7 @@ add_library(nexverse-protocol
     src/protocol/firestorm_compat.cpp
     src/protocol/firestorm_region_read.cpp
     src/protocol/firestorm_inventory_gallery.cpp
+    src/protocol/firestorm_inventory_fetch.cpp
     src/protocol/caps_event_dispatcher.cpp
     src/protocol/caps_world_events.cpp
     src/protocol/environment_settings.cpp
@@ -357,6 +358,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
+
+    add_executable(nexverse-firestorm-inventory-fetch-tests
+        tests/firestorm_inventory_fetch_tests.cpp)
+    target_link_libraries(nexverse-firestorm-inventory-fetch-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-inventory-fetch-tests)
+    add_test(NAME nexverse-firestorm-inventory-fetch-tests
+        COMMAND nexverse-firestorm-inventory-fetch-tests)
 
     add_executable(nexverse-firestorm-inventory-gallery-tests
         tests/firestorm_inventory_gallery_tests.cpp)
