@@ -3882,3 +3882,99 @@ Readback-Invalidierung anbinden; COF-/Wearables-/Attachments und
 Meshes/Skeleton bis zum echten Avatar-Live-Readback vervollständigen;
 anschließend weitere Firestorm-Parität nach projectplan.md.
 Branch develop-current, OGL-Repository marlin198323-glitch/nexverse-viewer.
+
+
+## 0.2.0-alpha.89 – echtes AgentUpdate-Quaternion, WASD/Avatar-Abnahme und Asset-Readback · 11.10.2026
+
+**Block 1 – entscheidender OpenSim-WASD-Protokollfix:** Die aktuelle,
+live angemeldete Alpha.88 hatte korrekt erkannte ControlFlags 1/2,
+aber neun identische Simulator-Positionsantworten auf
+(151.568924,193.071442,22.558577). Ursache im Viewer-Quellcode:
+encode_agent_update serialisierte BodyRotation UND HeadRotation mit
+je 16 Byte statt dem Linden-Message-Template-Typ LLQuaternion mit
+je 12 Byte. Dadurch standen State, Camera-Vektoren und ControlFlags
+auf dem Wire um zusammen acht Bytes versetzt; OpenSim konnte den
+Tastenbits nicht das beabsichtigte ControlFlags-Feld zuordnen.
+AgentUpdate High 4 hat jetzt genau 114 Byte Nutzdaten; ControlFlags
+LE-U32 liegt bei Offset 109, Flags beim letzten Byte. Ein
+bytegenauer Regressionstest prüft die Zielbytes und verhindet einen
+künftigen stillen Offset-Regression. Die lokale Tastenerkennung
+(WASD, Pfeiltasten, Shift, F) bleibt unverändert. Ob OpenSim danach
+wirklich Positionsänderungen meldet, ist ohne eine frische
+authentifizierte Sitzung **noch nicht live_verified**.
+
+**Block 2 – Regionswechsel READY repariert:** Alpha.88 prüfte
+world_model.region().simulator_ip/port irrtümlich weiter gegen
+active_session->simulator_ip/port von der initialen Login-Region.
+Das führte nach erfolgreichem Destination-Circuit zu einer
+permanenten SIMULATION-NOT-READY-Sperre. Jetzt prüft
+region_circuit_ready explizit den aktiven
+circuit_target_ip/port und den Stop-Status. Die Unit-Tests prüfen
+die Destination nach Wechsel, noch gestoppte und fremde Circuits.
+
+**Block 3 – sichtbarer Avatar-Proxy als echte GPU-Aktivität
+nachweisbar:** OGLRenderer zeichnete bereits eine klar provisorische
+7-Teile-Selbstavatarfigur, zählte diese aber nie getrennt.
+RenderDiagnostics enthält jetzt avatar_proxy_draw_calls und
+self_avatar_proxy_draw_calls für tatsächlich ausgeführte
+glDrawElements, über Frame-Reset abgesichert. Eine echte
+GL3.3/GPU-Regression prüft sieben Self-Drawcalls, null nach
+Entfernen und unveränderte Mesh-Szenezähler. Die laufende
+InWorld-Anwendung meldet einmal pro Region erst nach
+tatsächlichem Self-Proxy-Renderdraw eine Diagnose, deutlich
+markiert als **KEIN** gebackener/skinnierter Firestorm-Avatar.
+Die frühere WorldModel-Zeile avatars=0 betrifft allein die
+Liste anderer Avatare, nicht die SelfAvatar-ID.
+
+**Block 4 – Asset-Live-Auswertung und warmes Szenenfenster:**
+Die echte Alpha.88-Sitzung am 11.10.2026 enthält 7
+zusammenhängende InWorldAssetSnapshots. Letzter Snapshot:
+252/256 Mesh-Assets (98%), 286/295 Texturen (96%),
+vier fehlgeschlagene Meshes (1 missing, 3 invalid),
+neun fehlgeschlagene Texturen (6 missing, 3 invalid);
+keine GPU-Upload-Failures, dafür bei 200 Objekten noch
+964 Fallback-Mesh-Drawcalls. Der Decoder versucht bereits
+die anderen verfügbaren LODs und den alternativen GetMesh-CAP,
+deshalb sind die echten Defekte/HTTP404 derzeit NICHT mit
+synthetischen Geometrien zu überdecken. Vor dem Live-Grid-Abgleich
+bleiben diese Assets serverseitig zu prüfen.
+
+Der bestehende Acceptance-Prüfer benutzte bisher für die
+Steady-State-Assetabnahme das Minimum der GESAMTEN Regionsepoche,
+einschließlich der anfänglichen 2%-Downloadphase. Nun verwendet
+er bei unveränderter Session-/Regions-/Sequenz-/Zeitvalidierung
+genau die letzten konfigurierten N (normalerweise 3)
+aufeinanderfolgenden, aktuellsten Numerik-Snapshots und verlangt
+innerhalb dieses Fensters alle Draw-, Coverage- und
+Fallback-Grenzen. Frühere Peaks bleiben im historischen Report.
+Der Log-Report gibt dafür ausschließlich eine begrenzte,
+numerische (max. 64), datensparsame Snapshot-Reihe aus. 15
+Python-Regressionstests inklusive Warm-up, Stale-Sample,
+fehlende GPU-Draws und unvollständige Fallback-Serien erfolgreich.
+Die alte Alpha.88-Session bleibt mangels Frische und aufgrund
+tatsächlich fehlender Meshes **not_verified**.
+
+**Quellen:** Linden AgentUpdate Message-Layout:
+https://wiki.secondlife.com/wiki/AgentUpdate;
+LLQuaternion Wire 12 statt 16 Byte:
+https://wiki.secondlife.com/wiki/Message_Layout;
+offizieller Firestorm Releasebranch Firestorm_7.2.4
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
+OpenGenesisLINK Server main
+16d219f142926c7e00327e4ca91ecb1f8fc213e6.
+Die letzte Server-Änderung modifizierte LSL/Economy,
+nicht das AgentUpdate-Wire-Format.
+
+**Weiter offen:** Eine neue echte Alpha.89-Login-Session
+muss Bewegung anhand sich ändernder Serverposition,
+sichtbaren SelfAvatar-Proxy im Live-Renderer sowie
+aktualisierte Textur/Mesh-Asset-Readbacks nachweisen.
+Skinned Avatare, Appearance/Bake, COF/Wearables/Attachments,
+Regionen-Teleport End-to-End bleiben unvollständig.
+Firestorm-Funktionsumfang weiterhin verbindliche Baseline;
+eigene C++23-Viewer-Implementierung weiterhin kein
+Firestorm-Quellcodefork.
+
+GitHub Branch: develop-current; Repo:
+marlin198323-glitch/nexverse-viewer. Bei Folgeturn
+CHATUEBERGABE.md vor dem Projektplan lesen.

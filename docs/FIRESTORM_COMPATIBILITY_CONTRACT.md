@@ -204,3 +204,20 @@ und Login-Environment-CAPS-Antworten dürfen die neue Welt nicht
 überschreiben. Dies ist derzeit nur fixture-validiert, nicht
 auf realen NexVerse-Teleports abgenommen. OpenGenesisLINK Server
 f9ee61580a1b6aaf1d420b545ffce883b3dade0c.
+
+
+## Alpha.89 – AgentUpdate-Linden-Wire und Renderer-Beweislage
+
+AgentUpdate High 4, NotTrusted Zerocoded: AgentData = AgentID
+LLUUID 16 + SessionID LLUUID 16 + BodyRotation LLQuaternion 12 +
+HeadRotation LLQuaternion 12 + State U8 1 + CameraCenter/At/Left/Up
+je LLVector3 12 + Far F32 4 + ControlFlags U32 4 + Flags U8 1.
+Gesamt 114 Byte Nutzdaten, ControlFlags bei Offset 109.
+LLQuaternion ist eine normierte Vierkomponenten-Quaternion,
+aber das Simulatorprotokoll überträgt nur x/y/z.
+OpenSim-Bewegung bleibt serverautoritativ; ein kontrollierter
+InWorld-Live-Test ist für die reale Positionsänderung erforderlich.
+Der GL-Self-Avatar-Proxy ist nur eine Ersatzgeometrie; die
+Firestorm-Bake-/Appearance-/Rigging-Kette bleibt noch offen.
+Quellen: wiki.secondlife.com/wiki/AgentUpdate und
+wiki.secondlife.com/wiki/Message_Layout.

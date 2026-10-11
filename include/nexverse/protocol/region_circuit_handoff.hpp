@@ -29,6 +29,17 @@ enum class RegionHandoffAction
         ?RegionHandoffAction::launch_new_worker
         :RegionHandoffAction::wait_for_old_worker;
 }
+// Readiness depends on the active circuit target, not the original
+// login region. A successful cross-region handshake must unlock the
+// destination's WorldModel and controls.
+[[nodiscard]] constexpr bool region_circuit_ready(
+    std::string_view circuit_ip,std::uint16_t circuit_port,
+    std::string_view region_ip,std::uint16_t region_port,
+    bool circuit_active,bool stop_requested) noexcept
+{
+    return circuit_active&&!stop_requested&&circuit_port!=0U &&
+        circuit_ip==region_ip && circuit_port==region_port;
+}
 [[nodiscard]] constexpr bool region_packet_matches(
     std::string_view packet_source_ip,std::uint16_t packet_source_port,
     std::string_view region_ip,std::uint16_t region_port,

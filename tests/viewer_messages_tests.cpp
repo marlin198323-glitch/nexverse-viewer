@@ -184,10 +184,28 @@ int main()
     const auto decoded_agent = decode_lludp_packet(agent_packet);
     if (!decoded_agent.ok() ||
         decoded_agent.packet->header.message != msg_agent_update ||
-        decoded_agent.packet->payload.size() != 122U)
+        decoded_agent.packet->payload.size() != 114U)
     {
         std::cerr << "AgentUpdate encoding failed\n";
         return 1;
+    }
+
+    // AgentUpdate High 4: 2*UUID=32, 2*LLQuaternion=24,
+    // State=1, four LLVector3=48, Far=4, ControlFlags=4, Flags=1.
+    // Catch byte alignment bugs that would make server-side motion
+    // remain static even though WASD key events are emitted locally.
+    const auto& data=decoded_agent.packet->payload;
+    const auto control_offset=109U;
+    const std::uint32_t flags=
+        static_cast<std::uint32_t>(data[control_offset]) |
+        (static_cast<std::uint32_t>(data[control_offset+1U])<<8U) |
+        (static_cast<std::uint32_t>(data[control_offset+2U])<<16U) |
+        (static_cast<std::uint32_t>(data[control_offset+3U])<<24U);
+    if(flags!=(control_at_pos|control_fly) || data[56U]!=0U ||
+       data[113U]!=0U)
+    {
+        std::cerr<<"AgentUpdate quaternion layout shifted ControlFlags\n";
+        return 104;
     }
 
     LocalChatMessage outgoing;

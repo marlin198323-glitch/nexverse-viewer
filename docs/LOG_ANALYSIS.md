@@ -248,3 +248,16 @@ Zusätzliche rein numerische Felder: `previous_frame_scene_alpha_mask_draw_calls
 CLI auf autorisiertem Linux-Desktop: `cmake --preset debug && cmake --build --preset debug -j2 && env DISPLAY=:0 ctest --preset debug --output-on-failure`; Live-Check: `python3 tools/ogl_inworld_acceptance.py "$HOME/.local/state/opengenesislink/viewer.log"`. Repository `marlin198323-glitch/nexverse-viewer`, Branch ausschließlich `develop-current`.
 
 `tools/ogl_inworld_acceptance.py` stellt im bekannten v2-JSON neben `status`, `checks` und rein numerischen `observations` die festen Felder `failure_codes` und `next_check` bereit. Unbekannte UUID/CAPS-URLs werden weiterhin aus dem Healthbericht entfernt; aktuelles echtes Viewerlog `no_current_region_snapshots`, Exit 2. Kein künstlicher Test gilt als autentifizierter Weltbeweis.
+
+## Alpha.89 – protokollierter echter Alpha.88-Regioneintritt
+
+Die 11.10.2026-Session aus ~/.local/state/opengenesislink/viewer.log
+hat eine serverbestätigte Anmeldung und echten Simulatorstreams
+geliefert. 7 konsekutive InWorldAssetSnapshots (Regionsepoche 2)
+mit abschließenden 96% Textur- und 98% Mesh-Residency; jedoch neun
+fehlerhafte Texturen, vier fehlerhafte Meshes und 964 Placeholder-
+Mesh-Drawcalls. Der wesentliche Avatarsteuerungsfehler ist das
+AgentUpdate-LLQuaternion-Wire-Format: zuvor 16 statt 12 Byte.
+Alpha.89 korrigiert dieses Format. Die InWorld-Abnahme mit einer
+neu gestarteten Alpha.89-Sitzung bleibt offen. Details und
+Abgrenzung: docs/ALPHA89_LIVE_LOG_FINDINGS.md.

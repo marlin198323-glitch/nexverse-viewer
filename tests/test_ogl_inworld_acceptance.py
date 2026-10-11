@@ -58,6 +58,28 @@ class InWorldAcceptanceTests(unittest.TestCase):
         self.assertEqual(result["failure_codes"],[])
         self.assertIn("No failed",result["next_check"])
 
+    def test_warmup_does_not_permanently_fail_new_steady_state(self):
+        import json
+        samples=[]
+        for index in range(1,6):
+            record=json.loads(snapshot(index,issued=NOW-(6-index)*30_000))
+            if index<=2:
+                record["texture_coverage_pct"]=2
+                record["mesh_coverage_pct"]=0
+                record["previous_frame_scene_mesh_draw_calls"]=0
+                record["previous_frame_scene_missing_mesh_draw_calls"]=9
+            samples.append(json.dumps(record))
+        report=report_from(samples)
+        self.assertEqual(report["latest_epoch_snapshots"],5)
+        self.assertEqual(report["latest_region_min_texture_coverage_pct"],2)
+        self.assertEqual(report["latest_region_min_mesh_coverage_pct"],0)
+        recent=assess(report,now_unix_ms=NOW)
+        self.assertEqual(recent["status"],"evidence_pass")
+        strict=assess(report,now_unix_ms=NOW,min_snapshots=5)
+        self.assertEqual(strict["status"],"not_verified")
+        self.assertIn("texture_residency_incomplete",strict["failure_codes"])
+        self.assertNotIn("secret",str(report["latest_region_recent_samples"]))
+
     def test_session_epoch_and_sequence_boundaries(self):
         for samples in (
             [snapshot(1), snapshot(2), snapshot(3, epoch=18)],

@@ -75,6 +75,23 @@ int main()
                    first.scene_missing_mesh_objects!=0U ||
                    glGetError()!=GL_NO_ERROR)error=4;
             }
+            // The self avatar is a provisional humanoid proxy, not a
+            // real baked/skinned appearance. Verify actual GL draw calls.
+            if(!error)
+            {
+                renderer->set_avatar_proxies({{
+                    {3.0f,0.0f,0.0f},{0.0f,0.0f,0.0f,1.0f},true}});
+                const auto with_avatar=render();
+                if(with_avatar.avatar_proxy_draw_calls!=7U||
+                   with_avatar.self_avatar_proxy_draw_calls!=7U ||
+                   with_avatar.scene_mesh_draw_calls!=3U||
+                   glGetError()!=GL_NO_ERROR)error=18;
+                renderer->set_avatar_proxies({});
+                const auto cleared_avatar=render();
+                if(cleared_avatar.avatar_proxy_draw_calls!=0U ||
+                   cleared_avatar.self_avatar_proxy_draw_calls!=0U||
+                   glGetError()!=GL_NO_ERROR)error=19;
+            }
             // Region transition: old GPU resources must not leak into the
             // next region even if the immutable asset UUID is repeated.
             renderer->clear_mesh_assets();

@@ -25,12 +25,21 @@ def assess(report: dict, min_snapshots: int = 3,
     emitted = latest.get("emitted_unix_ms", 0)
     session = latest.get("session_started_unix_ms", 0)
     age = now_unix_ms - emitted if emitted else None
-    # Require healthy evidence throughout the latest consecutive window,
-    # not only in the most recent frame after earlier missing textures.
-    window_texture=report.get("latest_region_min_texture_coverage_pct")
-    window_mesh=report.get("latest_region_min_mesh_coverage_pct")
-    window_draws=report.get("latest_region_min_mesh_draw_calls")
-    window_missing=report.get("latest_region_max_missing_mesh_fallback_draws")
+    # Accept only a complete, consecutive, recent *last N* sample
+    # window. Cold-start samples at 2% residency must not permanently
+    # fail a warm and now fully resident scene. Earlier intervals remain
+    # available in separate whole-region historical peak/min metrics.
+    recent=report.get("latest_region_recent_samples") or []
+    last_n=recent[-min_snapshots:] if len(recent)>=min_snapshots else []
+    def observed(key,aggregate):
+        values=[sample.get(key) for sample in last_n]
+        if not last_n or any(type(value) is not int for value in values):
+            return None
+        return aggregate(values)
+    window_texture=observed("texture_coverage_pct",min)
+    window_mesh=observed("mesh_coverage_pct",min)
+    window_draws=observed("previous_frame_scene_mesh_draw_calls",min)
+    window_missing=observed("previous_frame_scene_missing_mesh_draw_calls",max)
     checks = {
         "session_and_epoch": (latest.get("region_epoch", 0) > 0 and
                               session > 0 and emitted >= session and

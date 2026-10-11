@@ -293,6 +293,10 @@ struct RenderDiagnostics
     std::uint64_t scene_missing_mesh_draw_calls = 0U;
     std::uint64_t scene_missing_mesh_objects = 0U;
     std::uint64_t scene_missing_mesh_triangles = 0U;
+    // Actual GL proxy draw calls, separate from skinned avatar support
+    // and separate from world-object scene mesh draw accounting.
+    std::uint64_t avatar_proxy_draw_calls = 0U;
+    std::uint64_t self_avatar_proxy_draw_calls = 0U;
 };
 
 enum class GpuUploadFailure

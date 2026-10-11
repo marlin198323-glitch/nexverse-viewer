@@ -3103,6 +3103,8 @@ public:
         diagnostics_.scene_missing_mesh_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_objects = 0U;
         diagnostics_.scene_missing_mesh_triangles = 0U;
+        diagnostics_.avatar_proxy_draw_calls = 0U;
+        diagnostics_.self_avatar_proxy_draw_calls = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -4005,6 +4007,9 @@ public:
                         GL_TRIANGLES, gpu.index_count,
                         GL_UNSIGNED_INT, nullptr);
                     diagnostics_.draw_calls++;
+                    ++diagnostics_.avatar_proxy_draw_calls;
+                    if(avatar.is_self)
+                        ++diagnostics_.self_avatar_proxy_draw_calls;
                     diagnostics_.triangles +=
                         static_cast<std::uint64_t>(gpu.index_count / 3);
                 }

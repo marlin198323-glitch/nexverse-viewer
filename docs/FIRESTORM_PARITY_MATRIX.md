@@ -243,3 +243,17 @@ Firestorm Firestorm_7.2.4 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
 Offizieller Firestorm Branch Firestorm_7.2.4
 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
 OpenGenesisLINK main f9ee61580a1b6aaf1d420b545ffce883b3dade0c.
+
+
+## Alpha.89 – WASD-Wire und Avatar-Proxy, reale Live-Log-Belege
+
+| Firestorm-Funktion | OGL-Änderung | Akzeptanz |
+|---|---|---|
+| AgentUpdate und WASD | LLQuaternion 12 Byte; vollständige 114-Byte-Payload, U32-ControlFlags Offset 109 | tested_synthetic; echte Bewegung nach Neustart noch offen |
+| Regionswechsel READY | Aktueller LLUDP Circuit-Zielendpunkt statt initialem Login-Simulator | tested_synthetic; echter Teleport offen |
+| Self-Avatar Rendern | Physische OpenGL-Self-Proxy-Draws separat gezählt und GPU-getestet | tested_gpu; skinned Appearance weiterhin fehlt |
+| Mesh/Textur Readback | Tatsächlicher Assetstatus aus sieben vorherigen InWorld-Snapshots | live_logged in Alpha.88, verbleibende Fehlassets |
+| InWorld-Abnahme | Last-N-konsekutives Steady-State-Fenster ohne Cold-Start-Verzerrung | tested_fixture; reales vollständiges Acceptance weiterhin not_verified |
+
+Referenz Firestorm Firestorm_7.2.4 @ 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d,
+OpenGenesisLINK main @ 16d219f142926c7e00327e4ca91ecb1f8fc213e6.

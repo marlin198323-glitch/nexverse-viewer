@@ -3395,6 +3395,7 @@ int Application::run(bool enable_developer_modules)
     std::atomic_bool terrain_live_logged{false};
     std::atomic_bool parcel_live_logged{false};
     bool world_ready_logged = false;
+    bool self_avatar_proxy_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
@@ -5381,11 +5382,12 @@ int Application::run(bool enable_developer_modules)
 
                 std::scoped_lock lock{world_mutex};
                 const world::RegionState region_snapshot = world_model.region();
-                const bool circuit_matches_region =
-                    region_snapshot.simulator_ip == active_session->simulator_ip &&
-                    region_snapshot.simulator_port == active_session->simulator_port;
                 const bool region_circuit_active =
-                    circuit_active && circuit_matches_region;
+                    protocol::region_circuit_ready(
+                        circuit_target_ip,circuit_target_port,
+                        region_snapshot.simulator_ip,
+                        region_snapshot.simulator_port,
+                        circuit_active,circuit_stop.load());
 
                 world_model.apply_region({
                     region_snapshot.handle,
@@ -5669,6 +5671,7 @@ int Application::run(bool enable_developer_modules)
                 }
                 gallery_gpu_textures.clear();
                 outfit_gallery_open=false;
+                self_avatar_proxy_gl_logged=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
                 inventory_folder_contents.clear();
@@ -8666,6 +8669,15 @@ int Application::run(bool enable_developer_modules)
 
             const render::RenderDiagnostics render_diagnostics =
                 world_renderer->diagnostics();
+            if(simulation_ready&&!self_avatar_proxy_gl_logged &&
+               render_diagnostics.self_avatar_proxy_draw_calls>0U)
+            {
+                self_avatar_proxy_gl_logged=true;
+                core::info(
+                    "Avatar SELF placeholder geometry actually submitted to OpenGL; "
+                    "this is NOT a baked Firestorm avatar appearance; draws="+
+                    std::to_string(render_diagnostics.self_avatar_proxy_draw_calls));
+            }
             const core::SystemMemoryMetrics memory_metrics =
                 core::system_memory_metrics();
 

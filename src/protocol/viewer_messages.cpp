@@ -50,10 +50,12 @@ void append_quaternion(
     std::vector<std::uint8_t>& out,
     const nexverse::protocol::Quaternion& value)
 {
+    // LLQuaternion in AgentUpdate is a 12-byte unit quaternion: only
+    // x/y/z are serialized; the simulator reconstructs w. A fourth
+    // float shifts State/Camera/ControlFlags and makes WASD unreadable.
     append_f32(out, value.x);
     append_f32(out, value.y);
     append_f32(out, value.z);
-    append_f32(out, value.w);
 }
 
 bool append_uuid(std::vector<std::uint8_t>& out, std::string_view uuid)
@@ -272,7 +274,7 @@ std::vector<std::uint8_t> encode_agent_update(
     const AgentUpdateData& update)
 {
     std::vector<std::uint8_t> payload;
-    payload.reserve(137U);
+    payload.reserve(114U);
 
     if (!append_uuid(payload, session.agent_id) ||
         !append_uuid(payload, session.session_id))

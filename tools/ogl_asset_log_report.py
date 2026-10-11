@@ -184,6 +184,18 @@ def read_report(path: Path) -> dict[str, Any]:
     return {
         "schema": "ogl.asset.log-report.v1",
         "latest_epoch_snapshots": latest_epoch_snapshots,
+        # Numeric-only, bounded consecutive region samples. A cold start's
+        # 0-2 % asset residency must not permanently invalidate a later
+        # steady state after the scene finishes streaming. Consumers MUST
+        # still validate session, epoch, timing, and the last-N samples.
+        "latest_region_recent_samples": [
+            {key: entry[key] for key in (
+                "texture_coverage_pct", "mesh_coverage_pct",
+                "previous_frame_scene_mesh_draw_calls",
+                "previous_frame_scene_missing_mesh_draw_calls")
+             if key in entry}
+            for entry in region_window[-64:]
+        ],
         "latest_region_min_texture_coverage_pct": window_min(
             "texture_coverage_pct"),
         "latest_region_min_mesh_coverage_pct": window_min(

@@ -26,6 +26,16 @@ int main()
        "127.0.0.2",9000,true))return 9;
     if(region_packet_matches("127.0.0.2",9000,
        "127.0.0.2",8000,false))return 10;
+    // After a successful new circuit to region B, the original
+    // login-region endpoint A must no longer gate simulation READY.
+    if(!region_circuit_ready("127.0.0.2",9001,
+          "127.0.0.2",9001,true,false))return 11;
+    if(region_circuit_ready("127.0.0.1",9000,
+          "127.0.0.2",9001,true,false))return 12;
+    if(region_circuit_ready("127.0.0.2",9001,
+          "127.0.0.2",9001,false,false))return 13;
+    if(region_circuit_ready("127.0.0.2",9001,
+          "127.0.0.2",9001,true,true))return 14;
     std::cout<<"LLUDP region handoff policy and stale-source guards passed\n";
     return 0;
 }
