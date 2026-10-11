@@ -187,3 +187,20 @@ der serverautorisierte CAPS-GET/POST liefert den eigentlichen Zustand.
 FetchInventory2 liest im F10 zusätzlich die parent_id. Der Viewer
 führt keine automatische Inventory- oder COF-Mutation aus; ein neuer
 Region-Circuit/EventQueue-Wiederaufbau bleibt noch unvollständig.
+
+
+## Alpha.88 – LLUDP/CAPS Region-Handoff
+
+Die vom aktuellen Server ausgelieferten CrossedRegion/TeleportFinish-
+WorldModel-Ziele binden neue simulator_ip/port und seed_capability.
+Ein neues LLUDP CircuitConnection-Handshake mit dem bereits
+authentifizierten Agent und CircuitCode darf erst erfolgen, wenn
+der alte Socket/Worker vollständig beendet ist. Sobald die neue
+LLUDP-Session ACTIVE ist, darf EventQueueGet ausschließlich über
+das Seed-CAP derselben aktuellen Region entdeckt werden. EventQueue-
+ack gilt pro tatsächlichem EventQueueGet-Endpunkt, nach 404 und
+neu entdecktem URI wieder ohne alte ack. Stale Epoch-/UDP-Pakete
+und Login-Environment-CAPS-Antworten dürfen die neue Welt nicht
+überschreiben. Dies ist derzeit nur fixture-validiert, nicht
+auf realen NexVerse-Teleports abgenommen. OpenGenesisLINK Server
+f9ee61580a1b6aaf1d420b545ffce883b3dade0c.

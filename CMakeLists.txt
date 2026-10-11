@@ -122,6 +122,7 @@ add_library(nexverse-protocol
     src/protocol/firestorm_inventory_items.cpp
     src/protocol/firestorm_inventory_tree.cpp
     src/protocol/firestorm_inventory_events.cpp
+    src/protocol/region_event_queue.cpp
     src/protocol/firestorm_outfit_wear_preflight.cpp
     src/protocol/firestorm_inventory_gallery.cpp
     src/protocol/firestorm_inventory_fetch.cpp
@@ -371,6 +372,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-firestorm-inventory-tree-wear-tests)
     add_test(NAME nexverse-firestorm-inventory-tree-wear-tests
         COMMAND nexverse-firestorm-inventory-tree-wear-tests)
+
+    add_executable(nexverse-region-circuit-handoff-tests
+        tests/region_circuit_handoff_tests.cpp)
+    target_link_libraries(nexverse-region-circuit-handoff-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-region-circuit-handoff-tests)
+    add_test(NAME nexverse-region-circuit-handoff-tests
+        COMMAND nexverse-region-circuit-handoff-tests)
+
+    add_executable(nexverse-region-event-queue-tests
+        tests/region_event_queue_tests.cpp)
+    target_link_libraries(nexverse-region-event-queue-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-region-event-queue-tests)
+    add_test(NAME nexverse-region-event-queue-tests
+        COMMAND nexverse-region-event-queue-tests)
 
     add_executable(nexverse-firestorm-inventory-events-tests
         tests/firestorm_inventory_events_tests.cpp)

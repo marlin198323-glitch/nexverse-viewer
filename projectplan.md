@@ -3807,3 +3807,78 @@ und Löschpfade; COF-/Wearables-/Attachment-Protokoll mit tatsächlichen
 Serverrechten und einem Avatar-Appearance-Readback. Projektplan
 und Firestorm-Paritätsmatrix bleiben verbindlich.
 GitHub Branch: develop-current (nicht develop).
+
+
+## 0.2.0-alpha.88 – Region-Handoff, LLUDP/CAPS EventQueue · 11.10.2026
+
+**Block 1 – Firestorm/OpenSim Region LLUDP handoff:** Die vorher nur mit
+der Loginregion verbundene CircuitConnection wird beim Wechsel von
+simulator_ip/port aus einem geprüften TeleportFinish-/CrossedRegion-
+WorldModel-Ziel gestoppt. Nur nach Abschluss des bisherigen
+Circuit-Futures werden der gemeinsame Outbound-Command-Queue und
+lokale Movement-/Avatar-Identitäten zurückgesetzt und eine neue
+CircuitConnection zum Ziel mit unverändert authentifizierter
+AgentID/SessionID/CircuitCode gestartet. Neue Verbindung führt
+UseCircuitCode, CompleteAgentMovement und RegionHandshake erneut aus.
+Dabei läuft absichtlich nur EIN LLUDP-Worker zur gleichen Zeit;
+Routen mit ungültigem Port/IP bleiben gesperrt. Ohne bestätigtes
+AgentMovementComplete bleibt die Welt nicht SIMULATION READY.
+
+**Block 2 – neue, regiongebundene EventQueueGet:** Der vorherige
+Login-EventQueue-Worker beendet sein Polling, sobald WorldModel-
+Regionhandle/Seed oder die FirestormRegionLease nicht mehr passen.
+region_event_queue.cpp entdeckt den vom ZIELSIMULATOR über dessen
+Seed-CAP angebotenen EventQueueGet-Endpunkt erst nach aktiver
+passender LLUDP-Verbindung. Der Worker führt OpenSim-Long-Polling mit
+separater ack-Sequenz, HTTP-502-Idle-Behandlung, Retry-/404-Seed-
+Wiederabfrage und Ack-Reset nur bei neuer Endpunkt-URL aus. Nur
+aktuelle Epoch-Events gehen an CapsEventDispatcher und die
+ownergebundene Inventar-Inbox. In-flight alte Polls laufen aus und
+werden ohne UI-Thread-Join am Frame-Ende entsorgt. Maximal vier
+neue EQ-Futures gleichzeitig; beim Shutdown gejoint.
+
+**Block 3 – Schutz gegen alte Regionen-Pakete und HTTP-Rückläufer:**
+Der UDP-Paketcallback prüft nun vor jedem WorldModel-Dispatch die
+aktuelle WorldModel-simulator_ip/port gegen die tatsächlich benutzte
+CircuitConnection sowie das Stop-Flag. Stale UDP-Daten aus der
+alten Region verändern somit nach Teleport nicht die aktuelle Welt.
+Der Login-CAPS-Worker verwirft nach Regionswechsel alte Pollergebnisse,
+einschließlich späte EnvironmentSettings/ExtEnvironment-Änderungen.
+Bei LLUDP-Neustart werden Avatar-LocalID/RegionHandle unter
+WorldModel-Mutex und Movement-Controller zurückgesetzt; alte
+Outbound-Befehle werden nicht an den neuen Simulator gesendet.
+
+**Block 4 – reproduzierbare Ablauf-/Protokolltests:** Neuer
+RegionCircuitHandoff-Vertrag mit Aktionen unchanged, wait, launch,
+invalid_destination sowie source-gebundener Packet-Guard.
+Neue CTests region-circuit-handoff-tests und
+region-event-queue-tests mit einer synthetischen CAPS-HTTP-Fixture
+prüfen SeedCAP, ack, Duplicate-Batch, HTTP404-CAP-Refresh mit
+eigenständigem ack, sowie Epoch-/Stop-Invalidierung. Zusätzlich
+werden sämtliche bisherigen CTests samt realen GPU-Tests bei
+DISPLAY=:0 und ein GUI-Welcome-Smoke durchgeführt.
+
+Quellreferenzen am 11.10.2026 neu verglichen:
+OpenGenesisLINK Server main:
+f9ee61580a1b6aaf1d420b545ffce883b3dade0c,
+seit Alpha.87 nur Wirtschaft/Hypergrid-Bank-Payout, keine
+Änderung an Region-Caps/EventQueueGetHandlers.cs;
+offizieller Firestorm Releasebranch Firestorm_7.2.4:
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+
+**Grenzen:** Der neue mehrregionale UDP/CAPS-Lifecycle ist
+tested_synthetic und gebaut; ein realer Teleport zu einem
+zweiten NexVerse-Simulator, aktueller Avatar, WASD, Mesh-Skinning,
+Inventar-Mutationen und COF-Wear sind weiterhin not_live_verified.
+Firestorm bleibt vollständige Funktionsbaseline; OGL nutzt bislang
+eigene C++23-Module und ist noch kein Firestorm-Codefork.
+Eine EventQueue-Bestätigung allein ist noch keine Authentifizierung
+einer vollständigen Avatar-Appearance.
+
+**Nächste Blöcke:** Live-Login/Teleport und Avatar-Render/Movement
+auf dem laufenden NexVerse/OpenGenesisLINK-Grid abnehmen; LLUDP-
+Inventar-RemoveInventoryItem/RemoveInventoryFolder als serverseitige
+Readback-Invalidierung anbinden; COF-/Wearables-/Attachments und
+Meshes/Skeleton bis zum echten Avatar-Live-Readback vervollständigen;
+anschließend weitere Firestorm-Parität nach projectplan.md.
+Branch develop-current, OGL-Repository marlin198323-glitch/nexverse-viewer.

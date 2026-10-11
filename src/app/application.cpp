@@ -48,6 +48,8 @@
 #include "nexverse/protocol/firestorm_inventory_items.hpp"
 #include "nexverse/protocol/firestorm_inventory_tree.hpp"
 #include "nexverse/protocol/firestorm_inventory_events.hpp"
+#include "nexverse/protocol/region_event_queue.hpp"
+#include "nexverse/protocol/region_circuit_handoff.hpp"
 #include "nexverse/protocol/firestorm_outfit_wear_preflight.hpp"
 #include "nexverse/protocol/firestorm_experience_permissions.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
@@ -4105,6 +4107,10 @@ int Application::run(bool enable_developer_modules)
 
     std::atomic_bool caps_stop{false};
     std::future<void> caps_future;
+    std::uint64_t login_caps_epoch=0U;
+    std::vector<std::future<protocol::RegionEventQueueStats>>
+        region_event_queue_futures;
+    std::uint64_t region_event_started_epoch=0U;
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
     protocol::FirestormRegionLease firestorm_region_lease;
@@ -4203,6 +4209,95 @@ int Application::run(bool enable_developer_modules)
     std::map<std::string, unsigned, std::less<>> material_request_attempts;
     std::optional<protocol::LlsdValue> ext_environment_payload;
     bool caps_started = false;
+    // Only one LLUDP transport worker exists at a time. On a new
+    // destination, its old reliable stream is stopped before another
+    // UseCircuitCode/CompleteAgentMovement handshake is attempted.
+    std::string circuit_target_ip;
+    std::uint16_t circuit_target_port=0U;
+    auto launch_circuit=[&](protocol::LoginSession circuit_session)
+    {
+        circuit_future = std::async(
+            std::launch::async,
+            [circuit_session = std::move(circuit_session),
+                                 &circuit_stop,
+                                 &circuit_mutex,
+                                 &circuit_status,
+                                 &packet_dispatcher,
+                                 &outbound_queue,
+                                 &world_model,&world_mutex]() mutable
+                                {
+                                    protocol::CircuitStatus final_status;
+                                    protocol::CircuitState last_reported_state =
+                                        protocol::CircuitState::disconnected;
+                                    constexpr int max_attempts = 3;
+
+                                    for (int attempt = 1;
+                                         attempt <= max_attempts && !circuit_stop.load();
+                                         ++attempt)
+                                    {
+                                        protocol::CircuitConnection connection{circuit_session};
+                                        final_status = connection.run(
+                                            circuit_stop,
+                                            [&circuit_mutex,
+                                             &circuit_status,
+                                             &last_reported_state](
+                                                const protocol::CircuitStatus& update)
+                                            {
+                                                {
+                                                    std::scoped_lock lock{circuit_mutex};
+                                                    circuit_status = update;
+                                                }
+
+                                                if (update.state != last_reported_state)
+                                                {
+                                                    last_reported_state = update.state;
+                                                    core::info(
+                                                        std::string{"LLUDP state: "} +
+                                                        std::string{circuit_state_label(update.state)} +
+                                                        " - " + update.message);
+                                                }
+                                            },
+                                            [&packet_dispatcher,
+                                             &world_model,&world_mutex,
+                                             &circuit_stop,
+                                             &circuit_session](
+                                                const protocol::DecodedPacket& packet)
+                                            {
+                                                if(circuit_stop.load())return;
+                                                {
+                                                    std::scoped_lock lock{world_mutex};
+                                                    if(!protocol::region_packet_matches(
+                                                           circuit_session.simulator_ip,
+                                                           circuit_session.simulator_port,
+                                                           world_model.region().simulator_ip,
+                                                           world_model.region().simulator_port,
+                                                           circuit_stop.load()))
+                                                        return;
+                                                }
+                                                (void)packet_dispatcher.dispatch(packet);
+                                            },
+                                            &outbound_queue);
+
+                                        if (circuit_stop.load() ||
+                                            final_status.state != protocol::CircuitState::failed)
+                                        {
+                                            break;
+                                        }
+
+                                        if (attempt < max_attempts)
+                                        {
+                                            {
+                                                std::scoped_lock lock{circuit_mutex};
+                                                circuit_status.message =
+                                                    "LLUDP reconnect scheduled";
+                                            }
+                                            std::this_thread::sleep_for(std::chrono::seconds{1});
+                                        }
+                                    }
+
+                                    return final_status;
+                                });
+    };
 
     using TerrainTextureResults =
         std::array<assets::TextureAssetResult, 4>;
@@ -4561,6 +4656,7 @@ int Application::run(bool enable_developer_modules)
                                 firestorm_region_lease.enter(
                                     initial_handle,initial_generation,
                                     seed_capability);
+                            login_caps_epoch=firestorm_issued_epoch;
 
                             caps_future = std::async(
                                 std::launch::async,
@@ -4783,10 +4879,16 @@ int Application::run(bool enable_developer_modules)
                                     }
 
                                     auto apply_environment =
-                                        [&world_model, &world_mutex](
+                                        [&world_model,&world_mutex,
+                                         &firestorm_region_lease,
+                                         firestorm_issued_epoch](
                                             const protocol::WindLightEnvironment& parsed)
                                         {
+                                            if(!firestorm_region_lease.matches(
+                                                   firestorm_issued_epoch))return;
                                             std::scoped_lock lock{world_mutex};
+                                            if(!firestorm_region_lease.matches(
+                                                   firestorm_issued_epoch))return;
                                             world::EnvironmentState state =
                                                 world_model.environment();
                                             ++state.revision;
@@ -4966,7 +5068,7 @@ int Application::run(bool enable_developer_modules)
                                             acknowledgement,
                                             false);
 
-                                        if (caps_stop.load())
+                                        if (caps_stop.load()||!still_origin())
                                         {
                                             break;
                                         }
@@ -5124,73 +5226,9 @@ int Application::run(bool enable_developer_modules)
                         if (!circuit_started && active_session.has_value())
                         {
                             circuit_started = true;
-                            protocol::LoginSession circuit_session = *active_session;
-
-                            circuit_future = std::async(
-                                std::launch::async,
-                                [circuit_session = std::move(circuit_session),
-                                 &circuit_stop,
-                                 &circuit_mutex,
-                                 &circuit_status,
-                                 &packet_dispatcher,
-                                 &outbound_queue]() mutable
-                                {
-                                    protocol::CircuitStatus final_status;
-                                    protocol::CircuitState last_reported_state =
-                                        protocol::CircuitState::disconnected;
-                                    constexpr int max_attempts = 3;
-
-                                    for (int attempt = 1;
-                                         attempt <= max_attempts && !circuit_stop.load();
-                                         ++attempt)
-                                    {
-                                        protocol::CircuitConnection connection{circuit_session};
-                                        final_status = connection.run(
-                                            circuit_stop,
-                                            [&circuit_mutex,
-                                             &circuit_status,
-                                             &last_reported_state](
-                                                const protocol::CircuitStatus& update)
-                                            {
-                                                {
-                                                    std::scoped_lock lock{circuit_mutex};
-                                                    circuit_status = update;
-                                                }
-
-                                                if (update.state != last_reported_state)
-                                                {
-                                                    last_reported_state = update.state;
-                                                    core::info(
-                                                        std::string{"LLUDP state: "} +
-                                                        std::string{circuit_state_label(update.state)} +
-                                                        " - " + update.message);
-                                                }
-                                            },
-                                            [&packet_dispatcher](const protocol::DecodedPacket& packet)
-                                            {
-                                                (void)packet_dispatcher.dispatch(packet);
-                                            },
-                                            &outbound_queue);
-
-                                        if (circuit_stop.load() ||
-                                            final_status.state != protocol::CircuitState::failed)
-                                        {
-                                            break;
-                                        }
-
-                                        if (attempt < max_attempts)
-                                        {
-                                            {
-                                                std::scoped_lock lock{circuit_mutex};
-                                                circuit_status.message =
-                                                    "LLUDP reconnect scheduled";
-                                            }
-                                            std::this_thread::sleep_for(std::chrono::seconds{1});
-                                        }
-                                    }
-
-                                    return final_status;
-                                });
+                            circuit_target_ip=active_session->simulator_ip;
+                            circuit_target_port=active_session->simulator_port;
+                            launch_circuit(*active_session);
                         }
                     }
                     else
@@ -5274,6 +5312,58 @@ int Application::run(bool enable_developer_modules)
 
                                 return result;
                             });
+                    }
+                }
+            }
+
+            // TeleportFinish/CrossedRegion updates the WorldModel with
+            // the destination simulator. Reconnect LLUDP to that simulator
+            // without ever allowing simultaneous circuit workers to use
+            // the shared packet dispatcher or command queue.
+            if(circuit_started && active_session)
+            {
+                std::string destination_ip;
+                std::uint16_t destination_port=0U;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    destination_ip=world_model.region().simulator_ip;
+                    destination_port=world_model.region().simulator_port;
+                }
+                const bool old_finished=!circuit_future.valid() ||
+                    circuit_future.wait_for(std::chrono::seconds{0})==
+                        std::future_status::ready;
+                const auto handoff=protocol::region_handoff_action(
+                    circuit_target_ip,circuit_target_port,
+                    destination_ip,destination_port,old_finished);
+                if(handoff==protocol::RegionHandoffAction::wait_for_old_worker ||
+                   handoff==protocol::RegionHandoffAction::launch_new_worker)
+                {
+                    // Drain an old UDP transport and queued movement/chat
+                    // commands before opening the destination socket.
+                    circuit_stop.store(true);
+                    if(handoff==protocol::RegionHandoffAction::launch_new_worker)
+                    {
+                        if(circuit_future.valid())
+                            (void)circuit_future.get();
+                        outbound_queue.clear();
+                        movement_controller.reset();
+                        movement_heading_initialized=false;
+                        last_reported_control_flags=0U;
+                        {
+                            std::scoped_lock lock{world_mutex};
+                            self_avatar_local_id=0U;
+                            self_avatar_region_handle=0U;
+                        }
+                        circuit_target_ip=destination_ip;
+                        circuit_target_port=destination_port;
+                        protocol::LoginSession next=*active_session;
+                        next.simulator_ip=destination_ip;
+                        next.simulator_port=destination_port;
+                        circuit_stop.store(false);
+                        launch_circuit(std::move(next));
+                        core::info(
+                            "LLUDP region destination changed; a new "
+                            "UseCircuitCode/CompleteAgentMovement handshake started");
                     }
                 }
             }
@@ -5516,12 +5606,16 @@ int Application::run(bool enable_developer_modules)
             std::uint64_t current_region_handle = 0U;
             std::uint32_t current_region_generation = 0U;
             std::string current_region_seed;
+            std::string current_region_simulator_ip;
+            std::uint16_t current_region_simulator_port=0U;
             {
                 std::scoped_lock lock{world_mutex};
                 const auto& active_region = world_model.region();
                 current_region_handle = active_region.handle;
                 current_region_generation = active_region.generation;
                 current_region_seed = active_region.seed_capability;
+                current_region_simulator_ip=active_region.simulator_ip;
+                current_region_simulator_port=active_region.simulator_port;
             }
             const auto previous_firestorm_epoch=firestorm_region_lease.epoch();
             const auto current_firestorm_epoch=firestorm_region_lease.enter(
@@ -5626,6 +5720,83 @@ int Application::run(bool enable_developer_modules)
                 core::info("Firestorm inventory change hint accepted; folders="+
                     std::to_string(dirty.folders.size())+
                     (dirty.full_refresh?"; full resync":"; targeted refresh"));
+            }
+            // After a simulator crossing, the original login seed is
+            // revoked. Only the destination's new seed may provide a
+            // replacement CAPS EventQueueGet endpoint. The replacement
+            // starts when its LLUDP circuit has become active.
+            for(auto it=region_event_queue_futures.begin();
+                it!=region_event_queue_futures.end();)
+            {
+                if(it->wait_for(std::chrono::seconds{0})!=
+                   std::future_status::ready){++it;continue;}
+                try
+                {
+                    const auto result=it->get();
+                    core::info("Region EventQueue worker stopped; events="+
+                        std::to_string(result.accepted_events)+
+                        "; endpoint="+
+                        (result.advertised?"advertised":"unavailable"));
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Region EventQueue task failed");
+                }
+                it=region_event_queue_futures.erase(it);
+            }
+            protocol::CircuitState live_circuit_state;
+            {
+                std::scoped_lock lock{circuit_mutex};
+                live_circuit_state=circuit_status.state;
+            }
+            const bool destination_circuit_active=
+                live_circuit_state==protocol::CircuitState::active &&
+                !circuit_stop.load() &&
+                !current_region_seed.empty() &&
+                current_region_simulator_ip==circuit_target_ip &&
+                current_region_simulator_port==circuit_target_port &&
+                current_region_handle!=0U &&active_session.has_value();
+            if(destination_circuit_active&&
+               current_firestorm_epoch!=0U &&
+               current_firestorm_epoch!=login_caps_epoch &&
+               current_firestorm_epoch!=region_event_started_epoch &&
+               region_event_queue_futures.size()<4U)
+            {
+                region_event_started_epoch=current_firestorm_epoch;
+                region_event_queue_futures.emplace_back(
+                    std::async(std::launch::async,
+                        [transport,seed=current_region_seed,
+                         owner=active_session->agent_id,
+                         epoch=current_firestorm_epoch,
+                         &firestorm_region_lease,&caps_stop,
+                         &caps_event_dispatcher,&inventory_events,
+                         &caps_mutex,&caps_state]()
+                        {
+                            auto receive=[&](const protocol::EventQueueEvent& event)
+                            {
+                                if(caps_stop.load()||
+                                   !firestorm_region_lease.matches(epoch))
+                                    return;
+                                if(event.message=="BulkUpdateInventory")
+                                    (void)inventory_events.enqueue(
+                                        event,owner,epoch,
+                                        firestorm_region_lease);
+                                (void)caps_event_dispatcher.dispatch(event);
+                                if(firestorm_region_lease.matches(epoch))
+                                {
+                                    std::scoped_lock lock{caps_mutex};
+                                    if(firestorm_region_lease.matches(epoch))
+                                    {
+                                        ++caps_state.event_count;
+                                        caps_state.status="CAPS LIVE";
+                                    }
+                                }
+                            };
+                            return protocol::poll_region_event_queue(
+                                transport,seed,epoch,firestorm_region_lease,
+                                caps_stop,receive);
+                        }));
+                core::info("New region CAPS EventQueue discovery started");
             }
             // Region-specific Firestorm read CAPS. The existing login
             // EventQueue remains independent and is never joined here.
@@ -8593,6 +8764,8 @@ int Application::run(bool enable_developer_modules)
     {
         caps_future.wait();
     }
+    for(auto& pending:region_event_queue_futures)
+        pending.wait();
 
     glfwSetWindowUserPointer(window, nullptr);
     core::info("OpenGenesisLINK Viewer shutdown");

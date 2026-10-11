@@ -227,3 +227,19 @@ Firestorm Releasebranch Firestorm_7.2.4
 
 Quellen: OpenGenesisLINK main ed37b9db720924c1d7105ea499a8c96430e9b7ea;
 Firestorm Firestorm_7.2.4 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+
+
+## Alpha.88 – Region-Circuit und EventQueue-Handoff
+
+| Firestorm-Einzelfunktion | OGL-Implementierung | Abnahme |
+|---|---|---|
+| Teleport/CrossedRegion: Destination LLUDP | Alter Circuit-Stop, Future-Join vor neuer UseCircuitCode/CompleteAgentMovement-Sequenz | tested_synthetic; echter Regionswechsel fehlt |
+| Regionsbezogenes EventQueueGet | Ziel-CAP-Discovery erst nach aktivem LLUDP, Ack-/Idle-/404-/Retry-Lifecycle | tested_synthetic; echte neue EventQueue noch unbestätigt |
+| Alte Regionen-Pakete nach Übergang | Aktueller Simulator-Endpunkt und Stop-Flag vor WorldModel-Paketdispatch | tested_synthetic |
+| Stale Login-Environment-HTTP | Epoch-Prüfung vor Render-WorldModel-Schreibzugriff | tested_synthetic |
+| OGL-Simulator-UI nach Handoff | WorldModel READY nur bei passender aktiver Circuit-Verbindung | code path vorhanden, live nicht bestätigt |
+| Meshes, Avatar/WASD und vollwertige Wearables | kein Full Firestorm-Live-Beleg | not_live_verified |
+
+Offizieller Firestorm Branch Firestorm_7.2.4
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
+OpenGenesisLINK main f9ee61580a1b6aaf1d420b545ffce883b3dade0c.
