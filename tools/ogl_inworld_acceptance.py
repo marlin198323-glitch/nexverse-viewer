@@ -1,55 +1,70 @@
 #!/usr/bin/env python3
-"""Check a REAL viewer log against the in-world acceptance gate.
+"""Validate recent real-world rendering evidence from OpenGenesisLINK logs.
 
-Exit 0: sufficient observed in-world coverage/draw evidence.
-Exit 2: insufficient or missing evidence.
-Never interprets synthetic GL test output as a real OpenSim login.
+Exit 0 = sufficient recent session-specific asset/draw evidence.
+Exit 2 = absent/stale/inconclusive evidence. This does NOT test movement,
+avatar appearance, visual fidelity, teleport or EventQueue.
 """
 from __future__ import annotations
-
 import argparse
 import json
+import time
 from pathlib import Path
 from ogl_asset_log_report import read_report
 
 
 def assess(report: dict, min_snapshots: int = 3,
-           min_coverage_pct: int = 75) -> dict:
-    counts = report.get("snapshots_valid", 0)
-    consecutive = report.get("latest_epoch_snapshots", 0)
+           min_coverage_pct: int = 75,
+           now_unix_ms: int | None = None,
+           max_age_ms: int = 180_000) -> dict:
+    if now_unix_ms is None:
+        now_unix_ms = time.time_ns() // 1_000_000
     latest = report.get("latest_snapshot") or {}
-    observations = {
-        "snapshots": counts,
-        "consecutive_snapshots_in_latest_region": consecutive,
-        "last_region_epoch": latest.get("region_epoch"),
-        "last_textures_wanted": latest.get("textures_wanted"),
-        "last_meshes_wanted": latest.get("meshes_wanted"),
-        "last_scene_draw_calls": latest.get("previous_frame_scene_draw_calls"),
-        "last_mesh_draw_calls": latest.get(
-            "previous_frame_scene_mesh_draw_calls"),
-    }
+    count = report.get("latest_epoch_snapshots", 0)
+    emitted = latest.get("emitted_unix_ms", 0)
+    session = latest.get("session_started_unix_ms", 0)
+    age = now_unix_ms - emitted if emitted else None
     checks = {
-        "multiple_live_snapshots": consecutive >= min_snapshots,
-        "active_region_epoch": latest.get("region_epoch", 0) > 0,
+        "session_and_epoch": (latest.get("region_epoch", 0) > 0 and
+                              session > 0 and emitted >= session and
+                              latest.get("sequence", 0) > 0),
+        "recent_snapshot": age is not None and
+                           -10_000 <= age <= max_age_ms,
+        "consecutive_timed_snapshots": count >= min_snapshots,
         "nonempty_texture_scene": latest.get("textures_wanted", 0) > 0,
         "nonempty_mesh_scene": latest.get("meshes_wanted", 0) > 0,
         "texture_coverage": latest.get("texture_coverage_pct", 0)
-            >= min_coverage_pct,
+                            >= min_coverage_pct,
         "mesh_coverage": latest.get("mesh_coverage_pct", 0)
-            >= min_coverage_pct,
+                         >= min_coverage_pct,
         "actual_scene_draw_calls": latest.get(
             "previous_frame_scene_draw_calls", 0) > 0,
         "actual_uploaded_mesh_draw_calls": latest.get(
             "previous_frame_scene_mesh_draw_calls", 0) > 0,
     }
-    passing = all(checks.values())
     return {
-        "schema": "ogl.inworld.acceptance.v1",
-        "status": "evidence_pass" if passing else "not_verified",
+        "schema": "ogl.inworld.acceptance.v2",
+        "status": "evidence_pass" if all(checks.values()) else "not_verified",
         "checks": checks,
-        "observations": observations,
-        "caveat": "Asset residency and OpenGL draw evidence do not establish "
-                  "avatar movement, EventQueue, teleport or visual correctness.",
+        "observations": {
+            "snapshots": report.get("snapshots_valid", 0),
+            "consecutive_snapshots_in_latest_region": count,
+            "last_region_epoch": latest.get("region_epoch"),
+            "last_session_unix_ms": latest.get("session_started_unix_ms"),
+            "last_sample_unix_ms": latest.get("emitted_unix_ms"),
+            "age_ms": age,
+            "last_textures_wanted": latest.get("textures_wanted"),
+            "last_meshes_wanted": latest.get("meshes_wanted"),
+            "last_scene_draw_calls": latest.get(
+                "previous_frame_scene_draw_calls"),
+            "last_mesh_draw_calls": latest.get(
+                "previous_frame_scene_mesh_draw_calls"),
+            "last_mesh_fallback_draw_calls": latest.get(
+                "previous_frame_scene_missing_mesh_draw_calls"),
+        },
+        "caveat": "Evidence of recent OpenGL scene draws/asset residency "
+                  "cannot establish avatar appearance, movement, "
+                  "visual correctness, teleport or EventQueue.",
     }
 
 
@@ -58,13 +73,16 @@ def main() -> int:
     parser.add_argument("logfile", type=Path)
     parser.add_argument("--min-snapshots", type=int, default=3)
     parser.add_argument("--min-coverage", type=int, default=75)
+    parser.add_argument("--max-age-seconds", type=int, default=180)
     args = parser.parse_args()
-    if args.min_snapshots < 1 or not 0 <= args.min_coverage <= 100:
+    if (args.min_snapshots < 1 or not 0 <= args.min_coverage <= 100
+            or not 1 <= args.max_age_seconds <= 3600):
         parser.error("Invalid acceptance thresholds")
     if not args.logfile.is_file():
         parser.error("Viewer log not found")
     result = assess(read_report(args.logfile),
-                    args.min_snapshots, args.min_coverage)
+                    args.min_snapshots, args.min_coverage,
+                    max_age_ms=args.max_age_seconds * 1000)
     print(json.dumps(result, sort_keys=True, indent=2))
     return 0 if result["status"] == "evidence_pass" else 2
 

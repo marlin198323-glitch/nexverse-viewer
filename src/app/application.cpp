@@ -19,6 +19,7 @@
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/assets/gpu_staging_budget.hpp"
+#include "nexverse/assets/gpu_staging_recovery.hpp"
 #include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
@@ -3449,6 +3450,7 @@ int Application::run(bool enable_developer_modules)
     constexpr std::size_t texture_gpu_budget_bytes =
         256U * 1024U * 1024U;
     std::unordered_set<std::string> texture_budget_deferred_ids;
+    assets::GpuStagingRecovery texture_gpu_staging_recovery;
     std::size_t texture_mip_swaps = 0U;
     std::size_t texture_budget_rejections = 0U;
     std::unordered_set<std::string> object_texture_loaded_ids;
@@ -3479,6 +3481,10 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_gpu_upload_failures = 0U;
     std::size_t texture_gpu_staging_deferrals = 0U;
     std::chrono::steady_clock::time_point last_world_asset_health_log{};
+    const auto inworld_session_started_ms=static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+    std::uint64_t inworld_snapshot_sequence=0U;
     std::chrono::steady_clock::time_point last_texture_telemetry{};
 
     {
@@ -4632,6 +4638,7 @@ int Application::run(bool enable_developer_modules)
                 texture_gpu_bytes.clear();
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
+                texture_gpu_staging_recovery.reset();
                 texture_request_pacer.reset();
                 texture_request_fairness.reset();
                 texture_prefetch_pacer.reset();
@@ -5794,6 +5801,10 @@ int Application::run(bool enable_developer_modules)
                         ++texture_gpu_staging_deferrals;
                         texture_budget_deferred_ids.insert(
                             object_texture_loading_id);
+                        texture_gpu_staging_recovery.defer(
+                            object_texture_loading_id,
+                            std::chrono::steady_clock::now(),
+                            texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
                         core::warning(
                             "Deferred GetTexture transactional GPU staging: "
                             "peak estimate exceeds reserve-adjusted budget;"
@@ -5907,6 +5918,8 @@ int Application::run(bool enable_developer_modules)
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
                         object_texture_retries.success(object_texture_loading_id);
+                        texture_gpu_staging_recovery.resolved(
+                            object_texture_loading_id);
                         if (was_loaded) ++texture_mip_swaps;
                         if (result.message == "RAM texture cache hit")
                             ++texture_ram_hits;
@@ -5952,6 +5965,14 @@ int Application::run(bool enable_developer_modules)
             for (const auto& emitter : scene_particle_emitters)
                 emitter_texture_ids.push_back(emitter.texture_id);
             const auto texture_plan_now = std::chrono::steady_clock::now();
+            for(const auto& ready_id:texture_gpu_staging_recovery.ready(
+                    texture_plan_now,texture_gpu_used_bytes,
+                    mesh_gpu_estimated_bytes))
+            {
+                texture_budget_deferred_ids.erase(ready_id);
+                core::info("GetTexture staging retry eligible; "
+                    "current residency permits re-evaluation");
+            }
             if (scene_objects_changed ||
                 texture_plan_now-last_texture_residency_plan >=
                     std::chrono::milliseconds{750})
@@ -5990,6 +6011,7 @@ int Application::run(bool enable_developer_modules)
                     texture_residency.preferred_ids)
                     texture_budget_deferred_ids.clear();
                 texture_residency = std::move(updated_residency);
+                texture_gpu_staging_recovery.prune(texture_residency.desired_ids);
                 texture_priority_feedback.observe(texture_residency.desired_ids);
                 std::size_t evicted = 0U;
                 for (const auto& id:texture_residency.eviction_ids)
@@ -6269,6 +6291,10 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_gpu_upload_failures) +
                     " gpu_staging_deferrals=" +
                     std::to_string(texture_gpu_staging_deferrals) +
+                    " gpu_staging_waiting=" +
+                    std::to_string(texture_gpu_staging_recovery.pending()) +
+                    " gpu_staging_released=" +
+                    std::to_string(texture_gpu_staging_recovery.released()) +
                     " gpu_uploads=" +
                     std::to_string(asset_gpu_upload_gate.count()) +
                     " gpu_uploaded_bytes=" +
@@ -6664,6 +6690,11 @@ int Application::run(bool enable_developer_modules)
                     mesh_residency.prioritized_ids,mesh_asset_loaded_ids);
                 assets::AssetStreamingSnapshot snapshot;
                 snapshot.region_epoch=material_scope.epoch();
+                snapshot.session_started_unix_ms=inworld_session_started_ms;
+                snapshot.emitted_unix_ms=static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count());
+                snapshot.sequence=++inworld_snapshot_sequence;
                 snapshot.texture_scene_samples=scene_texture_samples.size();
                 snapshot.mesh_scene_samples=scene_mesh_samples.size();
                 snapshot.textures=texture_coverage;
@@ -6697,6 +6728,10 @@ int Application::run(bool enable_developer_modules)
                     texture_gpu_upload_failures;
                 snapshot.texture_gpu_staging_deferrals=
                     texture_gpu_staging_deferrals;
+                snapshot.texture_gpu_staging_waiting=
+                    texture_gpu_staging_recovery.pending();
+                snapshot.texture_gpu_staging_released=
+                    texture_gpu_staging_recovery.released();
                 snapshot.mesh_gpu_upload_failures=
                     mesh_gpu_upload_failures;
                 snapshot.texture_priority_churn=
@@ -6713,6 +6748,8 @@ int Application::run(bool enable_developer_modules)
                     previous_render.scene_mesh_draw_calls;
                 snapshot.previous_frame_scene_prim_draw_calls=
                     previous_render.scene_prim_draw_calls;
+                snapshot.previous_frame_scene_missing_mesh_draw_calls=
+                    previous_render.scene_missing_mesh_draw_calls;
                 core::info("InWorldAssetSnapshot " + snapshot.json());
                 core::info("InWorld asset health: epoch=" +
                     std::to_string(material_scope.epoch()) +

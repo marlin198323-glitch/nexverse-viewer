@@ -3097,6 +3097,7 @@ public:
         diagnostics_.scene_draw_calls = 0U;
         diagnostics_.scene_mesh_draw_calls = 0U;
         diagnostics_.scene_prim_draw_calls = 0U;
+        diagnostics_.scene_missing_mesh_draw_calls = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -3790,7 +3791,11 @@ public:
                         if(using_uploaded_mesh)
                             ++diagnostics_.scene_mesh_draw_calls;
                         else
+                        {
                             ++diagnostics_.scene_prim_draw_calls;
+                            if(!object.mesh_id.empty())
+                                ++diagnostics_.scene_missing_mesh_draw_calls;
+                        }
                         diagnostics_.triangles +=
                             static_cast<std::uint64_t>(
                                 count / 3);

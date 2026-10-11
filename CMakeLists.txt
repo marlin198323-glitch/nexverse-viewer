@@ -410,6 +410,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-gpu-staging-recovery-tests tests/gpu_staging_recovery_tests.cpp)
+    target_link_libraries(nexverse-gpu-staging-recovery-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-gpu-staging-recovery-tests)
+    add_test(NAME nexverse-gpu-staging-recovery-tests
+        COMMAND nexverse-gpu-staging-recovery-tests)
+
     add_executable(nexverse-gpu-staging-budget-tests tests/gpu_staging_budget_tests.cpp)
     target_link_libraries(nexverse-gpu-staging-budget-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-gpu-staging-budget-tests)

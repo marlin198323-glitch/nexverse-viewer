@@ -12,6 +12,9 @@ namespace nexverse::assets
 struct AssetStreamingSnapshot
 {
     std::uint64_t region_epoch=0U;
+    std::uint64_t session_started_unix_ms=0U;
+    std::uint64_t emitted_unix_ms=0U;
+    std::uint64_t sequence=0U;
     std::size_t texture_scene_samples=0U;
     std::size_t mesh_scene_samples=0U;
     AssetSceneCoverage textures{};
@@ -34,6 +37,8 @@ struct AssetStreamingSnapshot
     std::size_t gpu_upload_pacing_ms=0U;
     std::size_t texture_gpu_upload_failures=0U;
     std::size_t texture_gpu_staging_deferrals=0U;
+    std::size_t texture_gpu_staging_waiting=0U;
+    std::size_t texture_gpu_staging_released=0U;
     std::size_t mesh_gpu_upload_failures=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
@@ -42,6 +47,7 @@ struct AssetStreamingSnapshot
     std::uint64_t previous_frame_scene_draw_calls=0U;
     std::uint64_t previous_frame_scene_mesh_draw_calls=0U;
     std::uint64_t previous_frame_scene_prim_draw_calls=0U;
+    std::uint64_t previous_frame_scene_missing_mesh_draw_calls=0U;
 
     [[nodiscard]] std::string json() const
     {
@@ -54,6 +60,9 @@ struct AssetStreamingSnapshot
             out+=std::to_string(value);
         };
         field("region_epoch",region_epoch);
+        field("session_started_unix_ms",session_started_unix_ms);
+        field("emitted_unix_ms",emitted_unix_ms);
+        field("sequence",sequence);
         field("texture_scene_samples",texture_scene_samples);
         field("mesh_scene_samples",mesh_scene_samples);
         field("textures_wanted",textures.requested);
@@ -82,6 +91,8 @@ struct AssetStreamingSnapshot
         field("gpu_upload_pacing_ms",gpu_upload_pacing_ms);
         field("texture_gpu_upload_failures",texture_gpu_upload_failures);
         field("texture_gpu_staging_deferrals",texture_gpu_staging_deferrals);
+        field("texture_gpu_staging_waiting",texture_gpu_staging_waiting);
+        field("texture_gpu_staging_released",texture_gpu_staging_released);
         field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);
@@ -94,6 +105,8 @@ struct AssetStreamingSnapshot
             previous_frame_scene_mesh_draw_calls);
         field("previous_frame_scene_prim_draw_calls",
             previous_frame_scene_prim_draw_calls);
+        field("previous_frame_scene_missing_mesh_draw_calls",
+            previous_frame_scene_missing_mesh_draw_calls);
         out+="}";
         return out;
     }

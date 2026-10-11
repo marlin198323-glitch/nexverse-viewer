@@ -50,8 +50,10 @@ int main()
             RenderMeshGeometry geometry{
                 {3.0f,-1.0f,-1.0f, 1.0f,0.0f,0.0f, 0.0f,0.0f,
                  3.0f,1.0f,-1.0f,  1.0f,0.0f,0.0f, 1.0f,0.0f,
-                 3.0f,0.0f,1.0f,   1.0f,0.0f,0.0f, 0.5f,1.0f},
-                {0U,1U,2U},{{0U,0U,3U}}};
+                 3.0f,0.0f,1.0f,   1.0f,0.0f,0.0f, 0.5f,1.0f,
+                 3.0f,0.0f,0.0f,   1.0f,0.0f,0.0f, 0.5f,0.5f},
+                {0U,1U,3U, 0U,3U,2U},
+                {{0U,0U,3U},{1U,3U,3U}}};
             if(!renderer->set_mesh_asset("synthetic-mesh",geometry))failed=3;
             if(!failed)
             {
@@ -71,7 +73,11 @@ int main()
             prim.local_id=101U;
             prim.mesh_id.clear();
             prim.position={0.0f,0.4f,0.0f};
-            renderer->set_scene_objects({scene,prim});
+            RenderSceneObject unresolved=scene;
+            unresolved.local_id=102U;
+            unresolved.mesh_id="not-uploaded-mesh";
+            unresolved.position={0.0f,-0.4f,0.0f};
+            renderer->set_scene_objects({scene,prim,unresolved});
             renderer->set_camera({{0.0f,0.0f,0.0f},
                 {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f},
                 {0.0f,0.0f,1.0f},60.0f,0.1f,50.0f});
@@ -82,8 +88,9 @@ int main()
             if(!failed && info.backend.empty())failed=6;
             if(!failed && info.visible_objects==0U)
                 failed=8; // Synthetic mesh object must reach the renderer.
-            if(!failed && (info.scene_mesh_draw_calls==0U ||
+            if(!failed && (info.scene_mesh_draw_calls!=2U ||
                 info.scene_prim_draw_calls==0U ||
+                info.scene_missing_mesh_draw_calls==0U ||
                 info.scene_draw_calls!=
                     info.scene_mesh_draw_calls+info.scene_prim_draw_calls))
                 failed=10;
@@ -94,6 +101,14 @@ int main()
                 failed=7;
             }
             renderer->remove_mesh_asset("synthetic-mesh");
+            renderer->begin_frame();
+            renderer->render_world(0.3);
+            renderer->end_frame();
+            const auto no_mesh=renderer->diagnostics();
+            if(!failed && (no_mesh.scene_mesh_draw_calls!=0U ||
+               no_mesh.scene_missing_mesh_draw_calls<
+                   info.scene_missing_mesh_draw_calls))
+                failed=11; // Frame counters reset and missing mesh falls back.
             renderer->clear_mesh_assets();
             renderer->clear_object_textures();
             renderer->shutdown();

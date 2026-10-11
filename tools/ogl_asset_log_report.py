@@ -73,7 +73,9 @@ def read_report(path: Path) -> dict[str, Any]:
                 # Explicit numeric allowlist: never output UUIDs or URLs from
                 # an accidentally extended producer schema.
                 fields = (
-                    "region_epoch", "textures_wanted", "textures_resident",
+                    "region_epoch", "session_started_unix_ms",
+                    "emitted_unix_ms", "sequence",
+                    "textures_wanted", "textures_resident",
                     "textures_pending", "texture_coverage_pct",
                     "meshes_wanted", "meshes_resident", "meshes_pending",
                     "mesh_coverage_pct", "texture_retry_blocked",
@@ -86,11 +88,14 @@ def read_report(path: Path) -> dict[str, Any]:
                     "texture_gpu_upload_failures",
                     "mesh_gpu_upload_failures",
                     "texture_gpu_staging_deferrals",
+                    "texture_gpu_staging_waiting",
+                    "texture_gpu_staging_released",
                     "previous_frame_draw_calls",
                     "previous_frame_visible_objects",
                     "previous_frame_scene_draw_calls",
                     "previous_frame_scene_mesh_draw_calls",
                     "previous_frame_scene_prim_draw_calls",
+                    "previous_frame_scene_missing_mesh_draw_calls",
                 )
                 sanitized = {
                     key: data[key] for key in fields
@@ -100,18 +105,33 @@ def read_report(path: Path) -> dict[str, Any]:
                 }
                 snapshots.append(sanitized)
 
-    # Separate sessions/regions: an acceptance gate must never combine
-    # several old snapshots with one new region's first render frame.
-    latest_epoch = snapshots[-1].get("region_epoch") if snapshots else None
+    # Only *consecutive*, monotonic real sample intervals from the most
+    # recent session AND region count towards acceptance.
     latest_epoch_snapshots = 0
-    for snap in reversed(snapshots):
-        if latest_epoch is None or snap.get("region_epoch") != latest_epoch:
-            break
-        latest_epoch_snapshots += 1
+    latest = snapshots[-1] if snapshots else {}
+    current=latest
+    if (current.get("session_started_unix_ms",0)>0 and
+            current.get("emitted_unix_ms",0)>0 and
+            current.get("sequence",0)>0 and
+            current.get("region_epoch",0)>0):
+        latest_epoch_snapshots=1
+        for prior in reversed(snapshots[:-1]):
+            expected=current.get("emitted_unix_ms",0)-prior.get(
+                "emitted_unix_ms",0)
+            if (prior.get("session_started_unix_ms") !=
+                    current.get("session_started_unix_ms") or
+                prior.get("region_epoch")!=current.get("region_epoch") or
+                prior.get("sequence",0)+1!=current.get("sequence") or
+                not 15_000<=expected<=90_000):
+                break
+            latest_epoch_snapshots+=1
+            current=prior
 
     return {
         "schema": "ogl.asset.log-report.v1",
         "latest_epoch_snapshots": latest_epoch_snapshots,
+        "last_snapshot_emitted_unix_ms": latest.get("emitted_unix_ms"),
+        "last_snapshot_session_unix_ms": latest.get("session_started_unix_ms"),
         "date_first": first_date,
         "date_last": last_date,
         "event_counts": dict(sorted(counts.items())),
@@ -140,6 +160,17 @@ def read_report(path: Path) -> dict[str, Any]:
         "max_mesh_gpu_upload_failures": max(
             (s["mesh_gpu_upload_failures"] for s in snapshots
              if "mesh_gpu_upload_failures" in s), default=None),
+        "max_texture_gpu_staging_waiting": max(
+            (s["texture_gpu_staging_waiting"] for s in snapshots
+             if "texture_gpu_staging_waiting" in s), default=None),
+        "max_texture_gpu_staging_released": max(
+            (s["texture_gpu_staging_released"] for s in snapshots
+             if "texture_gpu_staging_released" in s), default=None),
+        "peak_missing_mesh_fallback_draws": max(
+            (s["previous_frame_scene_missing_mesh_draw_calls"]
+             for s in snapshots
+             if "previous_frame_scene_missing_mesh_draw_calls" in s),
+            default=None),
     }
 
 
