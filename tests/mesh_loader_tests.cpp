@@ -253,12 +253,19 @@ int main()
     transport->code = 404;
     const auto unavailable = loader.fetch(
         "https://caps.example.test/GetMesh", id);
-    if (unavailable.success ||
+    if (unavailable.success || unavailable.failure != AssetFailure::missing ||
         unavailable.message.find("404") == std::string::npos)
     {
         std::cerr << "GetMesh HTTP 404 not propagated\n";
         return 4;
     }
+    transport->code = 503;
+    const auto unavailable_temporarily = loader.fetch(
+        "https://caps.example.test/GetMesh",id);
+    if (unavailable_temporarily.success ||
+        unavailable_temporarily.failure != AssetFailure::transient)
+        return 13;
+    transport->code = 200;
     if (decode_mesh_asset(id, "invalid").success ||
         decode_mesh_asset(id, bytes.substr(0U, 30U)).success ||
         decode_mesh_asset(id, bytes.substr(0U, bytes.size() - 5U)).success)

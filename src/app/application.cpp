@@ -3368,7 +3368,10 @@ int Application::run(bool enable_developer_modules)
     auto last_mesh_residency_plan = std::chrono::steady_clock::time_point{};
     constexpr std::size_t mesh_gpu_asset_budget = 256U;
     std::unordered_set<std::string> mesh_asset_loaded_ids;
-    std::unordered_set<std::string> mesh_asset_failed_ids;
+    assets::AssetRetrySchedule mesh_asset_retries;
+    std::size_t mesh_retry_dispatches = 0U;
+    std::size_t mesh_failure_events = 0U;
+    std::size_t mesh_stale_results = 0U;
     std::size_t mesh_ram_hits = 0U;
     std::size_t mesh_disk_hits = 0U;
     std::size_t mesh_network_loads = 0U;
@@ -3432,7 +3435,10 @@ int Application::run(bool enable_developer_modules)
     std::size_t texture_mip_swaps = 0U;
     std::size_t texture_budget_rejections = 0U;
     std::unordered_set<std::string> object_texture_loaded_ids;
-    std::unordered_set<std::string> object_texture_failed_ids;
+    assets::AssetRetrySchedule object_texture_retries;
+    std::size_t texture_retry_dispatches = 0U;
+    std::size_t texture_failure_events = 0U;
+    std::size_t texture_stale_results = 0U;
     std::vector<std::string> scene_texture_ids;
     std::vector<assets::TextureDistanceSample> scene_texture_samples;
     assets::TextureResidencyPlan texture_residency;
@@ -4562,7 +4568,7 @@ int Application::run(bool enable_developer_modules)
                 last_mesh_residency_plan = {};
                 world_renderer->clear_mesh_assets();
                 mesh_asset_loaded_ids.clear();
-                mesh_asset_failed_ids.clear();
+                mesh_asset_retries.enter(material_scope.epoch());
                 mesh_desired_lods.clear();
                 mesh_gpu_lods.clear();
                 mesh_gpu_asset_bytes.clear();
@@ -4583,7 +4589,7 @@ int Application::run(bool enable_developer_modules)
                 last_texture_residency_plan = {};
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
-                object_texture_failed_ids.clear();
+                object_texture_retries.enter(material_scope.epoch());
                 texture_desired_mips.clear();
                 texture_gpu_mips.clear();
                 texture_gpu_bytes.clear();
@@ -5689,6 +5695,7 @@ int Application::run(bool enable_developer_modules)
 
                 if (!material_scope.matches(object_texture_request_epoch))
                 {
+                    ++texture_stale_results;
                     core::info("Discarded stale GetTexture object reply");
                 }
                 else if (result.success &&
@@ -5779,6 +5786,7 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
+                        object_texture_retries.success(object_texture_loading_id);
                         if (was_loaded) ++texture_mip_swaps;
                         if (result.message == "RAM texture cache hit")
                             ++texture_ram_hits;
@@ -5797,11 +5805,18 @@ int Application::run(bool enable_developer_modules)
                 }
                 else if (!object_texture_loading_id.empty())
                 {
-                    object_texture_failed_ids.insert(
-                        object_texture_loading_id);
+                    const auto kind = result.failure == assets::AssetFailure::none
+                        ? assets::AssetFailure::invalid : result.failure;
+                    const auto delay = object_texture_retries.failure(
+                        object_texture_loading_id,kind,
+                        std::chrono::steady_clock::now());
+                    ++texture_failure_events;
                     core::warning(
                         "GetTexture failed for " + object_texture_loading_id +
                         ": " + result.message +
+                        "; failure=" +
+                        std::string(assets::asset_failure_name(kind)) +
+                        "; retry_delay_ms=" + std::to_string(delay.count()) +
                         "; material fallback remains active");
                 }
 
@@ -5880,9 +5895,10 @@ int Application::run(bool enable_developer_modules)
                         ? level == 0U : level == target->second)
                         satisfied.insert(id);
                 }
-                auto unavailable = object_texture_failed_ids;
-                unavailable.insert(texture_budget_deferred_ids.begin(),
-                                   texture_budget_deferred_ids.end());
+                auto unavailable = texture_budget_deferred_ids;
+                for (const auto& id : texture_residency.preferred_ids)
+                    if (!object_texture_retries.ready(id,texture_plan_now))
+                        unavailable.insert(id);
                 if (const auto texture_id = assets::next_texture_request(
                         texture_residency.preferred_ids, {},
                         satisfied, unavailable))
@@ -5898,6 +5914,8 @@ int Application::run(bool enable_developer_modules)
                     }
                     else
                     {
+                    if (object_texture_retries.failed(*texture_id))
+                        ++texture_retry_dispatches;
                     object_texture_loading_id = *texture_id;
                     const auto desired_mip = texture_desired_mips.find(*texture_id);
                     object_texture_loading_mip =
@@ -5986,9 +6004,13 @@ int Application::run(bool enable_developer_modules)
                 texture_prefetch_scope.attempted() < 48U &&
                 texture_prefetch_pacer.ready(texture_plan_now))
             {
+                std::unordered_set<std::string> temporarily_unavailable;
+                for (const auto& id : texture_residency.preferred_ids)
+                    if (!object_texture_retries.ready(id,texture_plan_now))
+                        temporarily_unavailable.insert(id);
                 const auto pending = texture_prefetch_scope.candidates(
                     texture_residency.preferred_ids,
-                    object_texture_loaded_ids,object_texture_failed_ids,4U);
+                    object_texture_loaded_ids,temporarily_unavailable,4U);
                 for (const auto& id : pending)
                 {
                     if (texture_memory_cache->contains(id))
@@ -6028,6 +6050,17 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_memory_cache->bytes()) +
                     " demand_dispatches=" +
                     std::to_string(texture_request_dispatches) +
+                    " retry_dispatches=" +
+                    std::to_string(texture_retry_dispatches) +
+                    " failure_events=" +
+                    std::to_string(texture_failure_events) +
+                    " backoff_assets=" +
+                    std::to_string(object_texture_retries.count()) +
+                    " transient_failures=" +
+                    std::to_string(object_texture_retries.count_kind(
+                        assets::AssetFailure::transient)) +
+                    " stale_results=" +
+                    std::to_string(texture_stale_results) +
                     " prefetch_probes=" +
                     std::to_string(texture_prefetch_attempts) +
                     " prefetch_warmed=" +
@@ -6134,6 +6167,7 @@ int Application::run(bool enable_developer_modules)
                 assets::MeshAssetResult result = std::move(completed_mesh.asset);
                 if (!material_scope.matches(mesh_asset_request_epoch))
                 {
+                    ++mesh_stale_results;
                     core::info("Discarded stale GetMesh response");
                 }
                 else if (!mesh_residency.desired_ids.contains(
@@ -6187,6 +6221,9 @@ int Application::run(bool enable_developer_modules)
                             mesh_asset_loading_id, geometry))
                     {
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
+                        mesh_asset_retries.success(mesh_asset_loading_id+"."+
+                            std::string(assets::mesh_lod_name(
+                                mesh_asset_loading_lod)));
                         if (replacement) ++mesh_lod_swaps;
                         if (const auto old = mesh_gpu_asset_bytes.find(
                                 mesh_asset_loading_id);
@@ -6214,20 +6251,34 @@ int Application::run(bool enable_developer_modules)
                     }
                     else
                     {
-                        mesh_asset_failed_ids.insert(mesh_asset_loading_id +
-                            "." + std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
+                        const auto delay = mesh_asset_retries.failure(
+                            mesh_asset_loading_id + "." +
+                                std::string(assets::mesh_lod_name(
+                                    mesh_asset_loading_lod)),
+                            assets::AssetFailure::invalid,
+                            std::chrono::steady_clock::now());
+                        ++mesh_failure_events;
                         core::warning("GetMesh GPU upload failed for " +
-                            mesh_asset_loading_id);
+                            mesh_asset_loading_id + "; retry_delay_ms=" +
+                            std::to_string(delay.count()));
                     }
                     }
                 }
                 else
                 {
-                    mesh_asset_failed_ids.insert(mesh_asset_loading_id +
-                        "." + std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
+                    const auto kind = result.failure == assets::AssetFailure::none
+                        ? assets::AssetFailure::invalid : result.failure;
+                    const auto delay = mesh_asset_retries.failure(
+                        mesh_asset_loading_id + "." +
+                            std::string(assets::mesh_lod_name(
+                                mesh_asset_loading_lod)),
+                        kind,std::chrono::steady_clock::now());
+                    ++mesh_failure_events;
                     core::warning(
                         "GetMesh failed for " + mesh_asset_loading_id +
-                        ": " + result.message +
+                        ": " + result.message + "; failure=" +
+                        std::string(assets::asset_failure_name(kind)) +
+                        "; retry_delay_ms=" + std::to_string(delay.count()) +
                         "; placeholder remains visible");
                 }
                 mesh_asset_loading_id.clear();
@@ -6250,10 +6301,13 @@ int Application::run(bool enable_developer_modules)
                     if (!mesh_asset_loaded_ids.contains(id) &&
                         mesh_asset_loaded_ids.size() >= mesh_gpu_asset_budget)
                         continue;
-                    if (mesh_asset_failed_ids.contains(id + "." +
-                        std::string(assets::mesh_lod_name(lod))) ||
-                        mesh_gpu_budget_deferred_ids.contains(id + "." +
-                        std::string(assets::mesh_lod_name(lod)))) continue;
+                    const auto retry_key = id + "." +
+                        std::string(assets::mesh_lod_name(lod));
+                    if (!mesh_asset_retries.ready(retry_key,mesh_plan_now) ||
+                        mesh_gpu_budget_deferred_ids.contains(retry_key))
+                        continue;
+                    if (mesh_asset_retries.failed(retry_key))
+                        ++mesh_retry_dispatches;
                     mesh_asset_loading_id = id;
                     mesh_request_started = std::chrono::steady_clock::now();
                     mesh_request_pacer.dispatched(mesh_request_started);
@@ -6305,6 +6359,17 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(mesh_gpu_budget_deferrals) +
                     " demand_dispatches=" +
                     std::to_string(mesh_request_dispatches) +
+                    " retry_dispatches=" +
+                    std::to_string(mesh_retry_dispatches) +
+                    " failure_events=" +
+                    std::to_string(mesh_failure_events) +
+                    " backoff_assets=" +
+                    std::to_string(mesh_asset_retries.count()) +
+                    " transient_failures=" +
+                    std::to_string(mesh_asset_retries.count_kind(
+                        assets::AssetFailure::transient)) +
+                    " stale_results=" +
+                    std::to_string(mesh_stale_results) +
                     " worker_completions=" +
                     std::to_string(mesh_worker_completions) +
                     " avg_worker_elapsed_ms=" +

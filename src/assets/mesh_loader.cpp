@@ -357,6 +357,7 @@ MeshAssetResult MeshAssetLoader::fetch(
     if (!transport_)
     {
         result.message = "GetMesh HTTP transport unavailable";
+        result.failure = AssetFailure::configuration;
         return result;
     }
     const auto load = [&](std::string_view cap) -> MeshAssetResult
@@ -367,6 +368,7 @@ MeshAssetResult MeshAssetLoader::fetch(
         if (uri.empty())
         {
             response_result.message = "GetMesh URI invalid";
+            response_result.failure = AssetFailure::configuration;
             return response_result;
         }
         const auto response = transport_->get(
@@ -376,9 +378,12 @@ MeshAssetResult MeshAssetLoader::fetch(
         {
             response_result.message = response.error.empty()
                 ? "GetMesh HTTP request failed" : response.error;
+            response_result.failure = classify_http_asset_failure(response);
             return response_result;
         }
-        return decode_mesh_asset(asset_id, response.body, preferred_lod);
+        auto decoded = decode_mesh_asset(asset_id,response.body,preferred_lod);
+        if (!decoded.success) decoded.failure = AssetFailure::invalid;
+        return decoded;
     };
 
     result = load(capability);
@@ -387,6 +392,7 @@ MeshAssetResult MeshAssetLoader::fetch(
         return result;
 
     const std::string first_cause = result.message;
+    const AssetFailure first_failure = result.failure;
     auto alternative = load(fallback_capability);
     if (alternative.success)
     {
@@ -395,6 +401,8 @@ MeshAssetResult MeshAssetLoader::fetch(
     }
     alternative.message = "primary: " + first_cause +
                           "; alternate: " + alternative.message;
+    alternative.failure = merge_asset_failure(
+        first_failure,alternative.failure);
     return alternative;
 }
 }

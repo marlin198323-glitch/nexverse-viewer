@@ -5,6 +5,7 @@
 #pragma once
 
 #include "nexverse/net/http_transport.hpp"
+#include "nexverse/assets/asset_failure.hpp"
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -53,6 +54,7 @@ struct MeshAssetResult
     MeshGeometry geometry;
     std::string message;
     MeshLod decoded_lod = MeshLod::high;
+    AssetFailure failure = AssetFailure::none;
 };
 
 [[nodiscard]] std::string build_get_mesh_uri(

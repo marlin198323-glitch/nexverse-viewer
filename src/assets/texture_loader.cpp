@@ -201,6 +201,7 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     if (transport_ == nullptr)
     {
         result.message = "HTTP transport unavailable";
+        result.failure = AssetFailure::configuration;
         return result;
     }
 
@@ -214,6 +215,7 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     if (png_uri.empty() || j2c_uri.empty())
     {
         result.message = "GetTexture URI could not be constructed";
+        result.failure = AssetFailure::configuration;
         return result;
     }
 
@@ -221,11 +223,13 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
         png_uri, max_texture_download_bytes,
         connect_timeout, total_timeout);
     std::string png_error;
+    AssetFailure png_failure = classify_http_asset_failure(png_response);
     if (png_response.ok())
     {
         result = decode_png_texture(texture_id, png_response.body);
         if (result.success) return result;
         png_error = result.message;
+        png_failure = AssetFailure::invalid;
     }
     else
     {
@@ -238,6 +242,7 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     const auto j2c_response = transport_->get(
         j2c_uri, max_texture_download_bytes,
         connect_timeout, total_timeout);
+    AssetFailure j2c_failure = classify_http_asset_failure(j2c_response);
     if (j2c_response.ok())
     {
         result = decode_jpeg2000_texture(texture_id, j2c_response.body);
@@ -246,6 +251,7 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
             result.message = "GetTexture x-j2c fallback succeeded";
             return result;
         }
+        j2c_failure = AssetFailure::invalid;
         result.message = "png: " + png_error +
                          "; x-j2c decode: " + result.message;
     }
@@ -256,6 +262,7 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
         result.message = "png: " + png_error +
                          "; x-j2c: " + j2c_error;
     }
+    result.failure = merge_asset_failure(png_failure,j2c_failure);
     return result;
 }
 }

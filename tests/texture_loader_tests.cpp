@@ -19,7 +19,8 @@ public:
         png_ok,
         png_missing,
         png_invalid,
-        both_missing
+        both_missing,
+        both_unavailable
     };
     Mode mode = Mode::png_ok;
     std::string body;
@@ -32,6 +33,8 @@ public:
         std::chrono::milliseconds) override
     {
         requests.emplace_back(url);
+        if (mode == Mode::both_unavailable)
+            return {503,{}, "HTTP server returned status 503"};
         if (url.find("format=png") != std::string_view::npos)
         {
             if (mode == Mode::png_missing || mode == Mode::both_missing)
@@ -195,7 +198,9 @@ int main()
     transport->requests.clear();
     transport->mode = MockTransport::Mode::both_missing;
     const auto missing = loader.fetch_rgba("https://caps.example/GetTexture/", id);
-    if (missing.success || transport->requests.size() != 2U ||
+    if (missing.success ||
+        missing.failure != AssetFailure::missing ||
+        transport->requests.size() != 2U ||
         missing.message.find("png:") == std::string::npos ||
         missing.message.find("x-j2c:") == std::string::npos ||
         missing.message.find("404") == std::string::npos)
@@ -203,6 +208,15 @@ int main()
         std::cerr << "Dual GetTexture failure diagnostics missing\n";
         return 9;
     }
+
+    transport->mode = MockTransport::Mode::both_unavailable;
+    const auto unavailable = loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if (unavailable.success ||
+        unavailable.failure != AssetFailure::transient ||
+        unavailable.message.find("503") == std::string::npos)
+        return 12;
+    transport->mode = MockTransport::Mode::png_ok;
 
     if (decode_jpeg2000_texture(id, "invalid").success ||
         decode_jpeg2000_texture(id, j2c.substr(0U, 22U)).success ||
