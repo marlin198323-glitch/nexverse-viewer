@@ -415,6 +415,21 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-scene-coverage-tests)
     add_test(NAME nexverse-asset-scene-coverage-tests COMMAND nexverse-asset-scene-coverage-tests)
 
+    add_executable(nexverse-asset-request-fairness-tests tests/asset_request_fairness_tests.cpp)
+    target_link_libraries(nexverse-asset-request-fairness-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-request-fairness-tests)
+    add_test(NAME nexverse-asset-request-fairness-tests COMMAND nexverse-asset-request-fairness-tests)
+
+    add_executable(nexverse-asset-streaming-snapshot-tests tests/asset_streaming_snapshot_tests.cpp)
+    target_link_libraries(nexverse-asset-streaming-snapshot-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-streaming-snapshot-tests)
+    add_test(NAME nexverse-asset-streaming-snapshot-tests COMMAND nexverse-asset-streaming-snapshot-tests)
+
+    add_executable(nexverse-asset-stream-integration-tests tests/asset_stream_integration_tests.cpp)
+    target_link_libraries(nexverse-asset-stream-integration-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-stream-integration-tests)
+    add_test(NAME nexverse-asset-stream-integration-tests COMMAND nexverse-asset-stream-integration-tests)
+
     add_executable(nexverse-asset-failure-tests tests/asset_failure_tests.cpp)
     target_link_libraries(nexverse-asset-failure-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-failure-tests)

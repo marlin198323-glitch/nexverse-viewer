@@ -1,0 +1,67 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. */
+#pragma once
+#include "nexverse/assets/asset_scene_coverage.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <string>
+namespace nexverse::assets
+{
+// Fixed, numeric-only JSON schema: safe to parse in a log collector.
+// GPU coverage means UUID residency only, not verified visual completeness.
+struct AssetStreamingSnapshot
+{
+    std::uint64_t region_epoch=0U;
+    std::size_t texture_scene_samples=0U;
+    std::size_t mesh_scene_samples=0U;
+    AssetSceneCoverage textures{};
+    AssetSceneCoverage meshes{};
+    std::size_t texture_in_flight=0U;
+    std::size_t mesh_in_flight=0U;
+    std::size_t texture_retry_blocked=0U;
+    std::size_t mesh_retry_blocked=0U;
+    std::size_t texture_ready_retries=0U;
+    std::size_t mesh_ready_retries=0U;
+    std::size_t texture_ram_bytes=0U;
+    std::size_t mesh_ram_bytes=0U;
+    std::size_t gpu_texture_bytes=0U;
+    std::size_t gpu_mesh_bytes=0U;
+    std::size_t gpu_shared_budget_bytes=0U;
+
+    [[nodiscard]] std::string json() const
+    {
+        std::string out=R"({"schema":"ogl.asset.streaming.v1")";
+        const auto field=[&](const char* key,std::uint64_t value)
+        {
+            out+=",\"";
+            out+=key;
+            out+="\":";
+            out+=std::to_string(value);
+        };
+        field("region_epoch",region_epoch);
+        field("texture_scene_samples",texture_scene_samples);
+        field("mesh_scene_samples",mesh_scene_samples);
+        field("textures_wanted",textures.requested);
+        field("textures_resident",textures.resident);
+        field("textures_pending",textures.pending);
+        field("texture_coverage_pct",textures.percentage());
+        field("meshes_wanted",meshes.requested);
+        field("meshes_resident",meshes.resident);
+        field("meshes_pending",meshes.pending);
+        field("mesh_coverage_pct",meshes.percentage());
+        field("texture_in_flight",texture_in_flight);
+        field("mesh_in_flight",mesh_in_flight);
+        field("texture_retry_blocked",texture_retry_blocked);
+        field("mesh_retry_blocked",mesh_retry_blocked);
+        field("texture_ready_retries",texture_ready_retries);
+        field("mesh_ready_retries",mesh_ready_retries);
+        field("texture_ram_bytes",texture_ram_bytes);
+        field("mesh_ram_bytes",mesh_ram_bytes);
+        field("gpu_texture_bytes",gpu_texture_bytes);
+        field("gpu_mesh_bytes",gpu_mesh_bytes);
+        field("gpu_shared_budget_bytes",gpu_shared_budget_bytes);
+        out+="}";
+        return out;
+    }
+};
+}

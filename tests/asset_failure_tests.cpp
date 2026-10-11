@@ -48,6 +48,21 @@ int main()
         return 11;
     if(schedule.failure("a",AssetFailure::missing,start)!=minutes{10})
         return 12;
+    if(schedule.blocked_count(start)!=1U ||
+       schedule.ready_retry_count(start)!=0U ||
+       schedule.ready_retry_count(start+minutes{11})!=1U)
+        return 13;
+    // Stress the bounded retry table: an overflowing scene must not
+    // erase all previously tracked backoff states.
+    schedule.enter(17U);
+    for(int i=0;i<4098;++i)
+    {
+        (void)schedule.failure("id"+std::to_string(i),
+            AssetFailure::transient,start);
+    }
+    if(schedule.count()!=4096U ||
+       schedule.blocked_count(start)!=4096U)
+        return 14;
     std::cout<<"Asset HTTP failure classification and epoch-local backoff OK\n";
     return 0;
 }

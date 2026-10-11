@@ -99,7 +99,16 @@ public:
         }
         if (failures_.size()>=4096U &&
             !failures_.contains(std::string{key}))
-            failures_.clear(); // bound memory in large/churning scenes
+        {
+            // Evict just one earliest-expiring entry; do not reset all
+            // circuit-breakers during a burst of newly seen assets.
+            const auto oldest=std::min_element(failures_.begin(),
+                failures_.end(),[](const auto& a,const auto& b)
+                {
+                    return a.second.next<b.second.next;
+                });
+            if(oldest!=failures_.end())failures_.erase(oldest);
+        }
         auto& entry=failures_[std::string{key}];
         if (entry.kind != reason) entry.consecutive=0U;
         entry.kind=reason;
@@ -125,6 +134,20 @@ public:
     [[nodiscard]] std::size_t count() const noexcept
     {
         return failures_.size();
+    }
+    [[nodiscard]] std::size_t blocked_count(Clock::time_point now) const noexcept
+    {
+        std::size_t n=0U;
+        for(const auto& [key,entry]:failures_)
+        {
+            (void)key;
+            if(now<entry.next)++n;
+        }
+        return n;
+    }
+    [[nodiscard]] std::size_t ready_retry_count(Clock::time_point now) const noexcept
+    {
+        return failures_.size()-blocked_count(now);
     }
     [[nodiscard]] std::size_t count_kind(AssetFailure kind) const noexcept
     {

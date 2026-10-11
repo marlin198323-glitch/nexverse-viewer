@@ -18,7 +18,9 @@
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
+#include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
+#include "nexverse/assets/asset_streaming_snapshot.hpp"
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3379,6 +3381,7 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_gpu_evictions = 0U;
     assets::AssetRequestPacer mesh_request_pacer{
         std::chrono::milliseconds{180}};
+    assets::AssetRequestFairness mesh_request_fairness;
     std::size_t mesh_request_dispatches = 0U;
     std::chrono::steady_clock::time_point last_mesh_telemetry{};
     std::future<protocol::RenderMaterialsResult> render_materials_future;
@@ -3420,6 +3423,7 @@ int Application::run(bool enable_developer_modules)
         std::chrono::milliseconds{650}};
     assets::AssetRequestPacer texture_request_pacer{
         std::chrono::milliseconds{125}};
+    assets::AssetRequestFairness texture_request_fairness;
     std::size_t texture_request_dispatches = 0U;
     std::future<assets::TextureAssetResult> object_texture_future;
     bool object_texture_loading = false;
@@ -4585,6 +4589,7 @@ int Application::run(bool enable_developer_modules)
                 mesh_gpu_estimated_bytes = 0U;
                 mesh_gpu_budget_deferred_ids.clear();
                 mesh_request_pacer.reset();
+                mesh_request_fairness.reset();
                 region_material_discovery_started = false;
                 render_materials_started = false;
                 render_materials_get_complete = false;
@@ -4607,6 +4612,7 @@ int Application::run(bool enable_developer_modules)
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
                 texture_request_pacer.reset();
+                texture_request_fairness.reset();
                 texture_prefetch_pacer.reset();
                 texture_prefetch_scope.enter(material_scope.epoch());
                 texture_prefetch_live_epoch->store(
@@ -5921,39 +5927,39 @@ int Application::run(bool enable_developer_modules)
                         ? level == 0U : level == target->second)
                         satisfied.insert(id);
                 }
-                auto unavailable = texture_budget_deferred_ids;
-                for (const auto& id : texture_residency.preferred_ids)
-                    if (!object_texture_retries.ready(id,texture_plan_now))
-                        unavailable.insert(id);
-                if (const auto texture_id = assets::next_texture_request(
-                        texture_residency.preferred_ids, {},
-                        satisfied, unavailable))
+                const auto request_choice=texture_request_fairness.choose(
+                    texture_residency.preferred_ids,satisfied,
+                    texture_budget_deferred_ids,object_texture_retries,
+                    texture_plan_now);
+                if (request_choice)
                 {
+                    const std::string& texture_id=request_choice->id;
                     const bool new_asset =
-                        !object_texture_loaded_ids.contains(*texture_id);
+                        !object_texture_loaded_ids.contains(texture_id);
                     if (new_asset &&
                         object_texture_loaded_ids.size() >=
                             max_object_texture_assets)
                     {
-                        texture_budget_deferred_ids.insert(*texture_id);
+                        texture_budget_deferred_ids.insert(texture_id);
                         ++texture_budget_rejections;
                     }
                     else
                     {
-                    if (object_texture_retries.failed(*texture_id))
+                    if (request_choice->is_retry)
                         ++texture_retry_dispatches;
-                    object_texture_loading_id = *texture_id;
-                    const auto desired_mip = texture_desired_mips.find(*texture_id);
+                    object_texture_loading_id = texture_id;
+                    const auto desired_mip = texture_desired_mips.find(texture_id);
                     object_texture_loading_mip =
                         desired_mip == texture_desired_mips.end()
                             ? 0U : desired_mip->second;
                     object_texture_loading = true;
                     texture_request_started = std::chrono::steady_clock::now();
                     texture_request_pacer.dispatched(texture_request_started);
+                    texture_request_fairness.dispatched();
                     ++texture_request_dispatches;
                     object_texture_request_epoch = material_scope.epoch();
                     const std::string capability = texture_capability;
-                    const std::string requested_id = *texture_id;
+                    const std::string requested_id = texture_id;
                     object_texture_future = std::async(
                         std::launch::async,
                         [transport, capability, requested_id,
@@ -6121,6 +6127,12 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_failure_events) +
                     " backoff_assets=" +
                     std::to_string(object_texture_retries.count()) +
+                    " currently_blocked=" +
+                    std::to_string(object_texture_retries.blocked_count(
+                        texture_plan_now)) +
+                    " ready_retries=" +
+                    std::to_string(object_texture_retries.ready_retry_count(
+                        texture_plan_now)) +
                     " transient_failures=" +
                     std::to_string(object_texture_retries.count_kind(
                         assets::AssetFailure::transient)) +
@@ -6364,30 +6376,40 @@ int Application::run(bool enable_developer_modules)
                 !scoped_get_mesh_uri.empty() &&
                 mesh_request_pacer.ready(mesh_plan_now))
             {
-                // Prefer near meshes, not lexicographic UUID order.
-                for (const auto& id : mesh_residency.prioritized_ids)
+                // Keep original view/distance ranking inside each class,
+                // but permit ready retries to run after a burst of new assets.
+                const auto request_choice=mesh_request_fairness.choose(
+                    mesh_residency.prioritized_ids,{},
+                    mesh_gpu_budget_deferred_ids,mesh_asset_retries,
+                    mesh_plan_now,
+                    [&](const std::string& id)
+                    {
+                        const auto desired=mesh_desired_lods.find(id);
+                        if(desired==mesh_desired_lods.end())
+                            return std::string{};
+                        return id+"."+
+                            std::string(assets::mesh_lod_name(desired->second));
+                    },
+                    [&](const std::string& id)
+                    {
+                        const auto desired=mesh_desired_lods.find(id);
+                        if(desired==mesh_desired_lods.end())return false;
+                        const auto existing=mesh_gpu_lods.find(id);
+                        if(existing!=mesh_gpu_lods.end() &&
+                           existing->second==desired->second)return false;
+                        return mesh_asset_loaded_ids.contains(id) ||
+                            mesh_asset_loaded_ids.size()<mesh_gpu_asset_budget;
+                    });
+                if (request_choice)
                 {
-                    const auto desired = mesh_desired_lods.find(id);
-                    if (desired == mesh_desired_lods.end()) continue;
-                    const auto lod = desired->second;
-                    if (const auto existing = mesh_gpu_lods.find(id);
-                        existing != mesh_gpu_lods.end() &&
-                        existing->second == lod) continue;
-                    // Allow upgrades/downgrades even when the GPU's count
-                    // budget is full; renderer swaps the existing asset.
-                    if (!mesh_asset_loaded_ids.contains(id) &&
-                        mesh_asset_loaded_ids.size() >= mesh_gpu_asset_budget)
-                        continue;
-                    const auto retry_key = id + "." +
-                        std::string(assets::mesh_lod_name(lod));
-                    if (!mesh_asset_retries.ready(retry_key,mesh_plan_now) ||
-                        mesh_gpu_budget_deferred_ids.contains(retry_key))
-                        continue;
-                    if (mesh_asset_retries.failed(retry_key))
+                    const auto& id=request_choice->id;
+                    const auto lod=mesh_desired_lods.at(id);
+                    if (request_choice->is_retry)
                         ++mesh_retry_dispatches;
                     mesh_asset_loading_id = id;
                     mesh_request_started = std::chrono::steady_clock::now();
                     mesh_request_pacer.dispatched(mesh_request_started);
+                    mesh_request_fairness.dispatched();
                     ++mesh_request_dispatches;
                     mesh_asset_loading_lod = lod;
                     mesh_asset_request_epoch = material_scope.epoch();
@@ -6416,7 +6438,6 @@ int Application::run(bool enable_developer_modules)
                         });
                     core::info("GetMesh request started for " + id +
                         "; requested_lod=" + std::string(assets::mesh_lod_name(lod)));
-                    break;
                 }
             }
 
@@ -6449,6 +6470,12 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(mesh_failure_events) +
                     " backoff_assets=" +
                     std::to_string(mesh_asset_retries.count()) +
+                    " currently_blocked=" +
+                    std::to_string(mesh_asset_retries.blocked_count(
+                        mesh_plan_now)) +
+                    " ready_retries=" +
+                    std::to_string(mesh_asset_retries.ready_retry_count(
+                        mesh_plan_now)) +
                     " transient_failures=" +
                     std::to_string(mesh_asset_retries.count_kind(
                         assets::AssetFailure::transient)) +
@@ -6478,6 +6505,28 @@ int Application::run(bool enable_developer_modules)
                     texture_residency.preferred_ids,object_texture_loaded_ids);
                 const auto mesh_coverage=assets::asset_scene_coverage(
                     mesh_residency.prioritized_ids,mesh_asset_loaded_ids);
+                assets::AssetStreamingSnapshot snapshot;
+                snapshot.region_epoch=material_scope.epoch();
+                snapshot.texture_scene_samples=scene_texture_samples.size();
+                snapshot.mesh_scene_samples=scene_mesh_samples.size();
+                snapshot.textures=texture_coverage;
+                snapshot.meshes=mesh_coverage;
+                snapshot.texture_in_flight=object_texture_loading?1U:0U;
+                snapshot.mesh_in_flight=mesh_asset_future.valid()?1U:0U;
+                snapshot.texture_retry_blocked=
+                    object_texture_retries.blocked_count(mesh_plan_now);
+                snapshot.mesh_retry_blocked=
+                    mesh_asset_retries.blocked_count(mesh_plan_now);
+                snapshot.texture_ready_retries=
+                    object_texture_retries.ready_retry_count(mesh_plan_now);
+                snapshot.mesh_ready_retries=
+                    mesh_asset_retries.ready_retry_count(mesh_plan_now);
+                snapshot.texture_ram_bytes=texture_memory_cache->bytes();
+                snapshot.mesh_ram_bytes=mesh_memory_cache->bytes();
+                snapshot.gpu_texture_bytes=texture_gpu_used_bytes;
+                snapshot.gpu_mesh_bytes=mesh_gpu_estimated_bytes;
+                snapshot.gpu_shared_budget_bytes=shared_gpu_budget_bytes;
+                core::info("InWorldAssetSnapshot " + snapshot.json());
                 core::info("InWorld asset health: epoch=" +
                     std::to_string(material_scope.epoch()) +
                     " scene_texture_samples=" +
