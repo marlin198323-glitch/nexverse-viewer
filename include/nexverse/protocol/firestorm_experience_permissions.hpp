@@ -11,7 +11,7 @@
 
 namespace nexverse::protocol
 {
-enum class ExperiencePermissionDecision { allow, block };
+enum class ExperiencePermissionDecision { allow, block, forget };
 struct ExperiencePermissionRequest
 {
     std::uint64_t epoch=0U;

@@ -37,6 +37,8 @@ std::optional<std::string> build_experience_permission_request(
     const ExperiencePermissionRequest& request)
 {
     const auto bytes=uuid_to_bytes(request.experience_id);
+    if(request.decision==ExperiencePermissionDecision::forget)
+        return std::nullopt;
     if(request.epoch==0U ||!bytes ||
        std::all_of(bytes->begin(),bytes->end(),
           [](std::uint8_t byte){return byte==0U;}))
@@ -60,15 +62,40 @@ ExperiencePermissionResponse write_experience_permission(
        uri.empty()||uri.size()>4096U||
        uri.find('#')!=std::string_view::npos||!is_valid_http_uri(uri))
         return result;
-    const auto body=build_experience_permission_request(request);
-    if(!body)return result;
-    const auto response=transport->put(uri,"application/llsd+xml",*body,
-        64U*1024U,std::chrono::seconds{4},std::chrono::seconds{12});
+    net::HttpResponse response;
+    if(request.decision==ExperiencePermissionDecision::forget)
+    {
+        if(uri.find('?')!=std::string_view::npos)return result;
+        const auto uuid=uuid_to_bytes(request.experience_id);
+        if(!uuid ||std::all_of(uuid->begin(),uuid->end(),
+            [](std::uint8_t b){return b==0U;}))return result;
+        response=transport->remove(std::string{uri}+"?"+
+            request.experience_id,64U*1024U,
+            std::chrono::seconds{4},std::chrono::seconds{12});
+    }
+    else
+    {
+        const auto body=build_experience_permission_request(request);
+        if(!body)return result;
+        response=transport->put(uri,"application/llsd+xml",*body,
+            64U*1024U,std::chrono::seconds{4},std::chrono::seconds{12});
+    }
     if(!lease.matches(request.epoch)||!response.ok())return result;
     const auto parsed=parse_llsd_xml(response.body);
     if(!parsed.ok())return result;
     result.resident=parse_resident_experiences(*parsed.value);
     if(!result.resident)return result;
+    if(request.decision==ExperiencePermissionDecision::forget)
+    {
+        result.confirmed=
+            std::find(result.resident->allowed.begin(),
+                      result.resident->allowed.end(),
+                      request.experience_id)==result.resident->allowed.end() &&
+            std::find(result.resident->blocked.begin(),
+                      result.resident->blocked.end(),
+                      request.experience_id)==result.resident->blocked.end();
+        return result;
+    }
     const auto& list=request.decision==ExperiencePermissionDecision::allow
         ?result.resident->allowed:result.resident->blocked;
     const auto& opposite=request.decision==ExperiencePermissionDecision::allow

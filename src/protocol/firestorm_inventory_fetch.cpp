@@ -135,22 +135,46 @@ OutfitInventoryRead parse_outfit_descendents(
             const auto* id=child.find("category_id");
             const auto* parent=child.find("parent_id");
             if(!id||!parent||!uuid_to_bytes(id->as_string())||
-               parent->as_string()!=folder_id->as_string()||
-               !wanted.contains(std::string{id->as_string()}))
+               parent->as_string()!=folder_id->as_string())
+                continue;
+            // Keep genuinely returned child-folder metadata for the
+            // Firestorm inventory tree, without trusting unqueried parents.
+            const auto* title=child.find("name");
+            const auto* folder_type=child.find("type_default");
+            const auto* child_version=child.find("version");
+            if(title && title->type==LlsdType::string &&
+               title->string_value.size()<=128U &&folder_type &&
+               folder_type->type==LlsdType::integer &&
+               child_version &&child_version->type==LlsdType::integer &&
+               child_version->integer_value>=0)
+            {
+                std::string name=title->string_value;
+                name.erase(std::remove_if(name.begin(),name.end(),
+                    [](unsigned char c){return c<32U||c==127U;}),
+                    name.end());
+                if(!name.empty())
+                    result.categories.insert_or_assign(
+                        std::string{id->as_string()},InventoryFolder{
+                        std::string{id->as_string()},
+                        std::string{parent->as_string()},std::move(name),
+                        static_cast<std::int32_t>(folder_type->integer_value),
+                        static_cast<std::int32_t>(child_version->integer_value)});
+            }
+            if(!wanted.contains(std::string{id->as_string()}))
                 continue;
             const auto meta=parse_inventory_thumbnail_metadata(child);
             if(meta)
             {
                 result.thumbnails.insert_or_assign(
                     std::string{id->as_string()},*meta);
-                if(const auto* child_version=child.find("version");
-                   child_version &&
-                   child_version->type==LlsdType::integer &&
-                   child_version->integer_value>=0)
+                if(const auto* thumbnail_version=child.find("version");
+                   thumbnail_version &&
+                   thumbnail_version->type==LlsdType::integer &&
+                   thumbnail_version->integer_value>=0)
                     result.versions.insert_or_assign(
                         std::string{id->as_string()},
                         static_cast<std::uint64_t>(
-                            child_version->integer_value));
+                            thumbnail_version->integer_value));
             }
         }
     }

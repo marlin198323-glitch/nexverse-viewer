@@ -52,6 +52,12 @@ public:
     {
         return {0, {}, "HTTP PUT unsupported by transport"};
     }
+    virtual HttpResponse remove(
+        std::string_view,std::size_t,std::chrono::milliseconds,
+        std::chrono::milliseconds)
+    {
+        return {0, {}, "HTTP DELETE unsupported by transport"};
+    }
 };
 
 class CurlHttpTransport final : public IHttpTransport
@@ -75,6 +81,10 @@ public:
         std::string_view content_type,
         std::string_view body,
         std::size_t max_bytes,
+        std::chrono::milliseconds connect_timeout,
+        std::chrono::milliseconds total_timeout) override;
+    HttpResponse remove(
+        std::string_view url,std::size_t max_bytes,
         std::chrono::milliseconds connect_timeout,
         std::chrono::milliseconds total_timeout) override;
 };

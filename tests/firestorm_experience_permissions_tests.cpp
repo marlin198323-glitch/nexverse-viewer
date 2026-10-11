@@ -12,6 +12,18 @@ class Fixture : public nexverse::net::IHttpTransport
 public:
     int writes=0;
     bool contradictory=false;
+    int forgets=0;
+    nexverse::net::HttpResponse remove(std::string_view uri,
+        std::size_t,std::chrono::milliseconds,std::chrono::milliseconds) override
+    {
+        if(uri!=std::string{"https://caps.test/permissions?"}+ID)
+            return {400,{},"unexpected DELETE"};
+        ++forgets;
+        return {200,serialize_llsd_xml(LlsdValue::map({
+            {"experiences",LlsdValue::array({})},
+            {"blocked",LlsdValue::array({})}
+        })),{}};
+    }
     nexverse::net::HttpResponse get(std::string_view,std::size_t,
         std::chrono::milliseconds,std::chrono::milliseconds) override
     {return {404,{},"not available"};}
@@ -92,6 +104,27 @@ int main()
     if(!block||!write_experience_permission(transport,
         "https://caps.test/permissions",*block,lease).confirmed)
         return 16;
+    if(!prompt.propose(ID,ExperiencePermissionDecision::forget,
+                       lease.epoch(),true))return 17;
+    prompt.cancel();
+    if(transport->forgets!=0)return 18;
+    if(!prompt.propose(ID,ExperiencePermissionDecision::forget,
+                       lease.epoch(),true))return 19;
+    const auto forgetting=prompt.confirm(lease.epoch());
+    if(!forgetting ||build_experience_permission_request(*forgetting))
+        return 20;
+    if(!write_experience_permission(transport,
+        "https://caps.test/permissions",*forgetting,lease).confirmed ||
+       transport->forgets!=1)return 21;
+    if(write_experience_permission(transport,
+        "https://caps.test/permissions?token=secret",
+        *forgetting,lease).confirmed||transport->forgets!=1)
+        return 22;
+    const auto new_epoch=lease.enter(3U,1U,"https://caps.test/seed");
+    (void)new_epoch;
+    if(write_experience_permission(transport,
+        "https://caps.test/permissions",*forgetting,lease).confirmed ||
+       transport->forgets!=1)return 23;
     std::cout<<"Explicit 2-step Experience consent: verified PUT LLSD,"
                 " server readback, stale epoch and cancellation OK\n";
     return 0;

@@ -35,6 +35,7 @@ struct FirestormRegionRead
     // Secret CAPS URI: runtime-only. Never serialize or log.
     std::string get_texture_uri;
     std::string inventory_folder_uri;
+    std::string inventory_items_uri;
     std::string experience_permissions_uri;
 };
 [[nodiscard]] std::optional<std::string> experience_profile_query(

@@ -56,7 +56,7 @@ long timeout_ms(std::chrono::milliseconds value)
     return static_cast<long>(bounded);
 }
 
-enum class RequestMethod { get, post, put };
+enum class RequestMethod { get, post, put, remove };
 nexverse::net::HttpResponse perform_request(
     std::string_view url,
     std::string_view content_type,
@@ -91,7 +91,8 @@ nexverse::net::HttpResponse perform_request(
     // Mutating PUT must not forward an authenticated capability on
     // redirects, which could carry a request to a different origin.
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
-                     method==RequestMethod::put?0L:1L);
+                     (method==RequestMethod::put||
+                      method==RequestMethod::remove)?0L:1L);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms(connect_timeout));
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms(total_timeout));
@@ -116,6 +117,8 @@ nexverse::net::HttpResponse perform_request(
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
     }
 
+    if(method==RequestMethod::remove)
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
     const CURLcode result = curl_easy_perform(curl);
 
     long status_code = 0;
@@ -179,6 +182,14 @@ HttpResponse CurlHttpTransport::put(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(url,content_type,body,RequestMethod::put,
+                           max_bytes,connect_timeout,total_timeout);
+}
+HttpResponse CurlHttpTransport::remove(
+    std::string_view url,std::size_t max_bytes,
+    std::chrono::milliseconds connect_timeout,
+    std::chrono::milliseconds total_timeout)
+{
+    return perform_request(url,{}, {},RequestMethod::remove,
                            max_bytes,connect_timeout,total_timeout);
 }
 }

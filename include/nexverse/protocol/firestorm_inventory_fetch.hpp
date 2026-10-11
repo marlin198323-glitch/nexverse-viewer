@@ -29,6 +29,7 @@ struct OutfitInventoryRead
     std::map<std::string,InventoryThumbnailMetadata,std::less<>> thumbnails;
     std::map<std::string,std::uint64_t,std::less<>> versions;
     std::map<std::string,std::vector<OutfitInventoryItem>,std::less<>> items;
+    std::map<std::string,InventoryFolder,std::less<>> categories;
     std::size_t returned_folders=0U;
     bool valid=false;
 };

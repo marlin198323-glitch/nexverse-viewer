@@ -45,6 +45,9 @@
 #include "nexverse/protocol/firestorm_region_read.hpp"
 #include "nexverse/protocol/firestorm_inventory_gallery.hpp"
 #include "nexverse/protocol/firestorm_inventory_sync.hpp"
+#include "nexverse/protocol/firestorm_inventory_items.hpp"
+#include "nexverse/protocol/firestorm_inventory_tree.hpp"
+#include "nexverse/protocol/firestorm_outfit_wear_preflight.hpp"
 #include "nexverse/protocol/firestorm_experience_permissions.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/event_queue_recovery.hpp"
@@ -167,6 +170,11 @@ struct CapsRuntimeState
     std::map<std::string,std::vector<nexverse::protocol::OutfitInventoryItem>,
              std::less<>> outfit_folder_items;
     std::string current_outfit_folder;
+    std::map<std::string,nexverse::protocol::InventoryFolder,std::less<>>
+        inventory_dynamic_folders;
+    std::vector<nexverse::protocol::OutfitInventoryItem>
+        resolved_outfit_items;
+    std::string resolved_outfit_folder;
     std::string experience_permission_status;
 };
 struct GalleryTextureReply
@@ -378,6 +386,10 @@ struct InputContext
     nexverse::protocol::ExperienceUiState* experience = nullptr;
     bool* outfits = nullptr;
     std::size_t* outfit_selection = nullptr;
+    bool* inventory_open=nullptr;
+    std::string* inventory_parent=nullptr;
+    std::size_t* inventory_selection=nullptr;
+    nexverse::protocol::InventoryTreeSnapshot* inventory_tree=nullptr;
     bool* simulation_ready = nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
@@ -484,6 +496,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             context->experience->close();
         else if(context && context->outfits && *context->outfits)
             *context->outfits=false;
+        else if(context &&context->inventory_open&&*context->inventory_open)
+            *context->inventory_open=false;
         else
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         return;
@@ -495,7 +509,11 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         {
             ui.toggle(context->login && context->login->authenticated,
                       context->simulation_ready && *context->simulation_ready);
+            if(!ui.open &&context->permission_consent)
+                context->permission_consent->cancel();
             if(ui.open &&context->outfits)*context->outfits=false;
+            if(ui.open &&context->inventory_open)
+                *context->inventory_open=false;
             return;
         }
         if(key==GLFW_KEY_F9 &&context->outfits)
@@ -507,8 +525,60 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                 if(*context->outfits)
                 {
                     ui.close();
+                    if(context->permission_consent)
+                        context->permission_consent->cancel();
+                    if(context->inventory_open)*context->inventory_open=false;
                     if(context->outfit_selection)
                         *context->outfit_selection=0U;
+                }
+            }
+            return;
+        }
+        if(key==GLFW_KEY_F10 &&context->inventory_open &&
+           context->inventory_parent&&context->inventory_selection &&
+           context->inventory_tree)
+        {
+            if(context->login &&context->login->authenticated &&
+               context->simulation_ready &&*context->simulation_ready)
+            {
+                *context->inventory_open=!*context->inventory_open;
+                if(*context->inventory_open)
+                {
+                    ui.close();
+                    if(context->permission_consent)
+                        context->permission_consent->cancel();
+                    if(context->outfits)*context->outfits=false;
+                    *context->inventory_selection=0U;
+                }
+            }
+            return;
+        }
+        if(context->inventory_open &&*context->inventory_open &&
+           context->inventory_parent&&context->inventory_selection &&
+           context->inventory_tree)
+        {
+            auto& folder=*context->inventory_parent;
+            auto& selected=*context->inventory_selection;
+            std::vector<std::string> children;
+            for(const auto& [id,node]:context->inventory_tree->folders)
+                if(node.parent_id==folder)children.push_back(id);
+            if(key==GLFW_KEY_DOWN&&!children.empty())
+                selected=std::min(selected+1U,children.size()-1U);
+            else if(key==GLFW_KEY_UP&&selected>0U)--selected;
+            else if((key==GLFW_KEY_RIGHT||key==GLFW_KEY_ENTER)&&
+                    selected<children.size())
+            {
+                folder=children[selected];
+                selected=0U;
+            }
+            else if(key==GLFW_KEY_LEFT||key==GLFW_KEY_BACKSPACE)
+            {
+                const auto it=context->inventory_tree->folders.find(folder);
+                if(it!=context->inventory_tree->folders.end()&&
+                   !it->second.parent_id.empty())
+                {
+                    folder=it->second.parent_id;
+                    selected=0U;
                 }
             }
             return;
@@ -537,7 +607,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                         context->region_lease->epoch());
                 return;
             }
-            if((key==GLFW_KEY_A||key==GLFW_KEY_B) &&
+            if((key==GLFW_KEY_A||key==GLFW_KEY_B||
+                key==GLFW_KEY_X) &&
                context->caps &&context->caps_mutex &&
                context->permission_consent &&
                context->region_lease &&context->permission_cap &&
@@ -557,7 +628,9 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                         ids[ui.selected_index],
                         key==GLFW_KEY_A
                             ?nexverse::protocol::ExperiencePermissionDecision::allow
-                            :nexverse::protocol::ExperiencePermissionDecision::block,
+                            :key==GLFW_KEY_B
+                            ?nexverse::protocol::ExperiencePermissionDecision::block
+                            :nexverse::protocol::ExperiencePermissionDecision::forget,
                         context->region_lease->epoch(),
                         caps.firestorm_caps.experience_permissions);
                 }
@@ -737,6 +810,27 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
             const auto index=static_cast<std::size_t>(
                 (py-(y+115.0f*scale))/(30.0f*scale));
             *context->outfit_selection=std::min(index,std::size_t{9U});
+        }
+        return;
+    }
+    if(context&&context->inventory_open&&*context->inventory_open &&
+       context->inventory_tree&&context->inventory_parent&&
+       context->inventory_selection)
+    {
+        int ww=0,hh=0;glfwGetWindowSize(window,&ww,&hh);
+        double mx=0,my=0;glfwGetCursorPos(window,&mx,&my);
+        const float sc=std::clamp(static_cast<float>(hh)/1080.0f,0.75f,1.5f);
+        const float pw=std::min(690.0f*sc,static_cast<float>(ww)-32.0f);
+        const float xx=(static_cast<float>(ww)-pw)*0.5f;
+        const float yy=std::max(30.0f,(static_cast<float>(hh)-520.0f*sc)*0.5f);
+        if(point_inside(mx,my,xx+23.0f*sc,yy+145.0f*sc,
+                        pw-46.0f*sc,297.0f*sc))
+        {
+            const auto row=static_cast<std::size_t>(
+                (my-yy-145.0f*sc)/(27.0f*sc));
+            const auto offset=*context->inventory_selection>10U
+                ?*context->inventory_selection-10U:0U;
+            *context->inventory_selection=offset+row;
         }
         return;
     }
@@ -1620,7 +1714,7 @@ void render_world_hud(
     renderer.text(card_x+12.0f*scale,
                   rail_y+rail_h-24.0f*scale,
                   8.0f*scale,
-                  "Erlebnisse [F8]   Outfits [F9]",
+                  "Erlebnisse [F8]   Outfits [F9]   Inventar [F10]",
                   theme::text_muted);
 
     // Bottom action bar, visually aligned with the original NexVerse UI.
@@ -1745,6 +1839,34 @@ void render_outfit_gallery(
         else
             renderer.text(x+477.0f*scale,y+177.0f*scale,
                 8.4f*scale,"Inhalt noch nicht geladen",theme::text_muted);
+        const auto cof=caps.outfit_folder_items.find(
+            caps.current_outfit_folder);
+        const std::vector<nexverse::protocol::OutfitInventoryItem> unresolved;
+        const auto& resolved=caps.resolved_outfit_folder==selected.id
+            ?caps.resolved_outfit_items:unresolved;
+        const auto preview=nexverse::protocol::check_firestorm_outfit_preflight(
+            selected.id,caps.current_outfit_folder,
+            it==caps.outfit_folder_items.end()?nullptr:&it->second,
+            cof==caps.outfit_folder_items.end()?nullptr:&cof->second,
+            resolved);
+        const std::string readiness=
+            preview.readiness==nexverse::protocol::OutfitWearReadiness::no_inventory
+              ?"Outfit-Inventar noch nicht geladen"
+            :preview.readiness==nexverse::protocol::OutfitWearReadiness::empty_outfit
+              ?"Outfit-Ordner ist leer"
+            :preview.readiness==nexverse::protocol::OutfitWearReadiness::missing_cof
+              ?"COF ist noch nicht geladen"
+            :preview.readiness==nexverse::protocol::OutfitWearReadiness::unresolved_links
+              ?"Link-Ziele/Anhaenge nicht aufgeloest"
+            :"Wearables/Avatar-Appearance noch nicht bereit";
+        renderer.text(x+477.0f*scale,y+390.0f*scale,
+                      8.0f*scale,readiness,theme::warning);
+        if(caps.resolved_outfit_folder==selected.id)
+            renderer.text(x+477.0f*scale,y+370.0f*scale,
+                7.8f*scale,
+                std::to_string(caps.resolved_outfit_items.size())+
+                " Items durch FetchInventory2 geprueft",
+                theme::text_muted);
     }
     if(!caps.current_outfit_folder.empty())
     {
@@ -1765,6 +1887,60 @@ void render_outfit_gallery(
                   theme::warning);
     renderer.text(x+22.0f*scale,y+ph-24.0f*scale,
                   8.3f*scale,"F9 / ESC schließen",theme::text_muted);
+}
+
+void render_inventory_tree(
+    UiRenderer& renderer,int width,int height,
+    const nexverse::protocol::InventoryTreeSnapshot& tree,
+    std::string_view current_parent,std::size_t selected_index)
+{
+    const float w=static_cast<float>(std::max(width,1));
+    const float h=static_cast<float>(std::max(height,1));
+    const float scale=std::clamp(h/1080.0f,0.75f,1.5f);
+    const float pw=std::min(690.0f*scale,w-32.0f);
+    const float ph=520.0f*scale;
+    const float x=(w-pw)*0.5f,y=std::max(30.0f,(h-ph)*0.5f);
+    renderer.rect(0,0,w,h,Color{0,0.009f,0.025f,0.57f},0.0f);
+    renderer.rect(x,y,pw,ph,Color{0.014f,0.032f,0.057f,0.99f},11.0f*scale);
+    renderer.text(x+23.0f*scale,y+25.0f*scale,
+        18.0f*scale,"Inventar / Inventory",theme::text);
+    renderer.text(x+23.0f*scale,y+60.0f*scale,
+        9.0f*scale,"Firestorm-Struktur aus authentifiziertem Login und CAPS",
+        theme::cyan);
+    const auto parent=tree.folders.find(current_parent);
+    renderer.text(x+23.0f*scale,y+89.0f*scale,10.0f*scale,
+        parent==tree.folders.end()?"Inventar-Wurzel":
+            parent->second.name.substr(0U,52U),theme::text);
+    std::vector<const nexverse::protocol::InventoryFolderNode*> children;
+    for(const auto& [id,node]:tree.folders)
+    {
+        (void)id;
+        if(node.parent_id==current_parent)
+            children.push_back(&node);
+    }
+    renderer.text(x+23.0f*scale,y+114.0f*scale,8.4f*scale,
+        std::to_string(children.size())+" Ordner / "+
+        std::to_string(tree.count())+" im Inventarmodell",
+        theme::text_muted);
+    const auto offset=selected_index>10U?selected_index-10U:0U;
+    for(std::size_t i=offset;i<std::min(children.size(),offset+11U);++i)
+    {
+        const float yy=y+(145.0f+static_cast<float>(i-offset)*27.0f)*scale;
+        renderer.rect(x+23.0f*scale,yy,pw-46.0f*scale,25.0f*scale,
+            i==selected_index?Color{0.07f,0.20f,0.29f,0.96f}:
+                              Color{0.023f,0.052f,0.078f,0.96f},
+            5.0f*scale);
+        renderer.text(x+33.0f*scale,yy+5.0f*scale,9.2f*scale,
+            children[i]->name.substr(0U,65U),theme::text);
+        renderer.text(x+pw-100.0f*scale,yy+6.0f*scale,8.0f*scale,
+            "Typ "+std::to_string(children[i]->type),theme::text_muted);
+    }
+    renderer.text(x+23.0f*scale,y+ph-55.0f*scale,8.5f*scale,
+        "Auf/Ab markieren | Rechts/Enter Ordner | Links/Backspace zurueck",
+        theme::cyan);
+    renderer.text(x+23.0f*scale,y+ph-32.0f*scale,8.0f*scale,
+        "F10/ESC schliessen | Nur lesend; COF/Wear nicht automatisch geaendert",
+        theme::text_muted);
 }
 
 void render_experience_floater(
@@ -1871,17 +2047,20 @@ void render_experience_floater(
     const std::string action_note=permission_consent.pending()
         ? (permission_consent.pending()->decision==
             nexverse::protocol::ExperiencePermissionDecision::allow
-              ?"Erlauben vorbereiten | ENTER bestaetigen, ESC abbrechen"
-              :"Blockieren vorbereiten | ENTER bestaetigen, ESC abbrechen")
+              ?"Erlauben: ENTER bestaetigen, ESC abbrechen"
+              :permission_consent.pending()->decision==
+                nexverse::protocol::ExperiencePermissionDecision::block
+              ?"Blockieren: ENTER bestaetigen, ESC abbrechen"
+              :"Vergessen: ENTER bestaetigen, ESC abbrechen")
         :caps.firestorm_caps.experience_permissions
-          ?"A Erlauben | B Blockieren (jeweils ENTER bestaetigen)"
+          ?"A Erlauben | B Blockieren | X Vergessen (ENTER bestaetigen)"
           :"Keine Berechtigungs-CAP | Nur Anzeige";
     renderer.text(x+22.0f*scale,y+ph-63.0f*scale,
                   8.6f*scale,action_note,theme::warning);
     renderer.text(x+22.0f*scale,y+ph-43.0f*scale,
                   8.0f*scale,
                   caps.experience_permission_status.empty()
-                      ?"Kaufen, Experience-Editor und Forget: gesperrt"
+                      ?"Kaufen und Experience-Editor: gesperrt"
                       :caps.experience_permission_status,
                   theme::text_muted);
     renderer.text(x+22.0f*scale,y+ph-25.0f*scale,
@@ -2959,6 +3138,12 @@ int Application::run(bool enable_developer_modules)
     bool experience_permission_busy=false;
     bool outfit_gallery_open=false;
     std::size_t outfit_selection=0U;
+    bool inventory_tree_open=false;
+    protocol::InventoryTreeSnapshot inventory_tree;
+    std::string inventory_parent;
+    std::size_t inventory_selection=0U;
+    std::future<protocol::InventoryFolderRead> inventory_folder_future;
+    std::set<std::string> inventory_fetched_folders;
     InputContext input_context{&login_ui};
     glfwSetWindowUserPointer(window, &input_context);
     glfwSetCharCallback(window, character_callback);
@@ -2993,6 +3178,10 @@ int Application::run(bool enable_developer_modules)
     input_context.experience=&experience_ui;
     input_context.outfits=&outfit_gallery_open;
     input_context.outfit_selection=&outfit_selection;
+    input_context.inventory_open=&inventory_tree_open;
+    input_context.inventory_parent=&inventory_parent;
+    input_context.inventory_selection=&inventory_selection;
+    input_context.inventory_tree=&inventory_tree;
     input_context.permission_consent=&experience_consent;
     input_context.approved_permission=&approved_experience_permission;
     input_context.permission_busy=&experience_permission_busy;
@@ -3839,6 +4028,11 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t firestorm_region_read_started_epoch=0U;
     std::string gallery_texture_cap;
     std::string gallery_inventory_cap;
+    std::string gallery_inventory_items_cap;
+    std::future<protocol::InventoryItemFetch> gallery_item_fetch_future;
+    std::uint64_t gallery_item_fetch_epoch=0U;
+    std::string gallery_item_fetch_folder;
+    std::string gallery_item_fetch_completed_folder;
     protocol::FirestormInventorySync gallery_inventory_sync;
     std::future<protocol::OutfitInventoryRead> gallery_sync_future;
     std::uint64_t gallery_sync_issued_epoch=0U;
@@ -5057,7 +5251,7 @@ int Application::run(bool enable_developer_modules)
                 const auto pressed = [&](int key)
                 {
                     return focused &&!experience_ui.open &&
-                           !outfit_gallery_open &&
+                           !outfit_gallery_open&&!inventory_tree_open &&
                            glfwGetKey(window, key) == GLFW_PRESS;
                 };
                 protocol::MovementKeys keys;
@@ -5217,6 +5411,12 @@ int Application::run(bool enable_developer_modules)
                 current_region_handle,current_region_generation,
                 current_region_seed);
             gallery_inventory_sync.enter(current_firestorm_epoch);
+            if(active_session&&inventory_tree.count()==0U)
+            {
+                inventory_tree=protocol::inventory_tree_from_login(
+                    active_session->inventory_skeleton);
+                inventory_parent=active_session->inventory_root_id;
+            }
             if(current_firestorm_epoch!=previous_firestorm_epoch &&
                previous_firestorm_epoch!=0U)
             {
@@ -5238,6 +5438,12 @@ int Application::run(bool enable_developer_modules)
                 caps_state.outfit_thumbnail_assets.clear();
                 caps_state.outfit_folder_items.clear();
                 caps_state.current_outfit_folder.clear();
+                caps_state.inventory_dynamic_folders.clear();
+                caps_state.resolved_outfit_items.clear();
+                caps_state.resolved_outfit_folder.clear();
+                gallery_item_fetch_folder.clear();
+                gallery_item_fetch_completed_folder.clear();
+                gallery_inventory_items_cap.clear();
                 caps_state.experience_permission_status.clear();
                 experience_permission_cap.clear();
                 experience_consent.cancel();
@@ -5252,6 +5458,14 @@ int Application::run(bool enable_developer_modules)
                 }
                 gallery_gpu_textures.clear();
                 outfit_gallery_open=false;
+                inventory_tree_open=false;
+                inventory_fetched_folders.clear();
+                if(active_session)
+                {
+                    inventory_tree=protocol::inventory_tree_from_login(
+                        active_session->inventory_skeleton);
+                    inventory_parent=active_session->inventory_root_id;
+                }
                 experience_ui.close();
             }
             // Region-specific Firestorm read CAPS. The existing login
@@ -5305,6 +5519,16 @@ int Application::run(bool enable_developer_modules)
                                 reply.outfit_inventory.returned_folders;
                             caps_state.outfit_folder_items=
                                 gallery_inventory_sync.items();
+                            caps_state.inventory_dynamic_folders=
+                                reply.outfit_inventory.categories;
+                            if(inventory_tree.count()==0 &&active_session)
+                            {
+                                inventory_tree=protocol::inventory_tree_from_login(
+                                    active_session->inventory_skeleton);
+                                inventory_parent=active_session->inventory_root_id;
+                            }
+                            (void)protocol::merge_inventory_categories(
+                                inventory_tree,reply.outfit_inventory);
                             caps_state.outfit_thumbnail_assets.clear();
                             for(const auto& [folder,asset]:
                                 gallery_inventory_sync.thumbnails())
@@ -5318,6 +5542,8 @@ int Application::run(bool enable_developer_modules)
                             gallery_texture_cap=std::move(reply.get_texture_uri);
                             gallery_inventory_cap=std::move(
                                 reply.inventory_folder_uri);
+                            gallery_inventory_items_cap=std::move(
+                                reply.inventory_items_uri);
                             experience_permission_cap=std::move(
                                 reply.experience_permissions_uri);
                             last_gallery_sync=std::chrono::steady_clock::now();
@@ -5451,6 +5677,15 @@ int Application::run(bool enable_developer_modules)
                         {
                             caps_state.outfit_folder_items=
                                 gallery_inventory_sync.items();
+                            for(const auto& [id,folder]:update.categories)
+                                caps_state.inventory_dynamic_folders.insert_or_assign(
+                                    id,folder);
+                            (void)protocol::merge_inventory_categories(
+                                inventory_tree,update);
+                            gallery_item_fetch_completed_folder.clear();
+                            gallery_item_fetch_folder.clear();
+                            caps_state.resolved_outfit_items.clear();
+                            caps_state.resolved_outfit_folder.clear();
                             caps_state.outfit_thumbnail_assets.clear();
                             for(const auto& [folder,asset]:
                                 gallery_inventory_sync.thumbnails())
@@ -5511,6 +5746,126 @@ int Application::run(bool enable_developer_modules)
                         return protocol::fetch_outfit_descendents(
                             transport,cap,agent,outfits,epoch,
                             firestorm_region_lease,cof);
+                    });
+            }
+            // FetchInventory2 resolves selected outfit's actual item
+            // records on demand. All results remain current-epoch and
+            // avatar-owner bound. Never mutate COF here.
+            if(gallery_item_fetch_future.valid() &&
+               gallery_item_fetch_future.wait_for(
+                   std::chrono::milliseconds{0})==std::future_status::ready)
+            {
+                try
+                {
+                    auto fetched=gallery_item_fetch_future.get();
+                    if(firestorm_region_lease.matches(
+                        gallery_item_fetch_epoch)&&fetched.valid)
+                    {
+                        std::scoped_lock lock{caps_mutex};
+                        caps_state.resolved_outfit_items=std::move(fetched.items);
+                        caps_state.resolved_outfit_folder=
+                            gallery_item_fetch_folder;
+                        gallery_item_fetch_completed_folder=
+                            gallery_item_fetch_folder;
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Firestorm FetchInventory2 on-demand failed");
+                }
+            }
+            if(outfit_gallery_open&&active_session&&
+               !gallery_inventory_items_cap.empty()&&
+               !gallery_item_fetch_future.valid()&&
+               firestorm_region_lease.matches(current_firestorm_epoch))
+            {
+                const auto outfits=protocol::outfits_from_login_skeleton(
+                    active_session->inventory_skeleton);
+                if(outfit_selection<outfits.size())
+                {
+                    const auto& folder=outfits[outfit_selection].id;
+                    if(folder!=gallery_item_fetch_completed_folder &&
+                       folder!=gallery_item_fetch_folder)
+                    {
+                        const auto entries=caps_state.outfit_folder_items.find(folder);
+                        if(entries!=caps_state.outfit_folder_items.end() &&
+                           !entries->second.empty())
+                        {
+                            std::vector<std::string> ids;
+                            for(const auto& item:entries->second)
+                            {
+                                if(ids.size()>=32U)break;
+                                ids.push_back(item.item_id);
+                            }
+                            gallery_item_fetch_folder=folder;
+                            gallery_item_fetch_epoch=current_firestorm_epoch;
+                            gallery_item_fetch_future=std::async(
+                                std::launch::async,
+                                [transport,cap=gallery_inventory_items_cap,
+                                 owner=active_session->agent_id,
+                                 ids=std::move(ids),
+                                 epoch=current_firestorm_epoch,
+                                 &firestorm_region_lease]()
+                                {
+                                    return protocol::fetch_inventory2(
+                                        transport,cap,owner,ids,epoch,
+                                        firestorm_region_lease);
+                                });
+                        }
+                    }
+                }
+            }
+            // F10 expands one arbitrary inventoried folder on demand.
+            // It is read-only and only the current simulator CAPS owner
+            // can contribute categories. No recursive unbounded fetches.
+            if(inventory_folder_future.valid() &&
+               inventory_folder_future.wait_for(
+                   std::chrono::milliseconds{0})==std::future_status::ready)
+            {
+                try
+                {
+                    auto reply=inventory_folder_future.get();
+                    if(firestorm_region_lease.matches(reply.epoch))
+                    {
+                        // Cache failed/unsupported capability attempts for
+                        // this epoch too: avoid tight HTTP retry loops.
+                        inventory_fetched_folders.insert(reply.folder_id);
+                    }
+                    if(firestorm_region_lease.matches(reply.epoch)&&reply.valid)
+                    {
+                        for(const auto& [id,node]:reply.tree.folders)
+                        {
+                            const auto it=inventory_tree.folders.find(id);
+                            if(it==inventory_tree.folders.end()||
+                               node.version>=it->second.version)
+                                inventory_tree.folders.insert_or_assign(id,node);
+                        }
+                        inventory_fetched_folders.insert(reply.folder_id);
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Firestorm Inventory folder read failed");
+                }
+            }
+            if(inventory_tree_open &&active_session &&
+               !gallery_inventory_cap.empty() &&
+               !inventory_parent.empty() &&
+               inventory_fetched_folders.size()<256U &&
+               !inventory_fetched_folders.contains(inventory_parent)&&
+               !inventory_folder_future.valid() &&
+               firestorm_region_lease.matches(current_firestorm_epoch))
+            {
+                inventory_folder_future=std::async(std::launch::async,
+                    [transport,cap=gallery_inventory_cap,
+                     owner=active_session->agent_id,
+                     parent=inventory_parent,
+                     issued=current_firestorm_epoch,
+                     &firestorm_region_lease]()
+                    {
+                        return protocol::fetch_inventory_folder_children(
+                            transport,cap,owner,parent,issued,
+                            firestorm_region_lease);
                     });
             }
             // Completed optional outfit thumbnail decodes become UI GPU
@@ -7955,6 +8310,10 @@ int Application::run(bool enable_developer_modules)
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
                         caps_snapshot,gallery_gpu_textures,outfit_selection);
+                if(inventory_tree_open)
+                    render_inventory_tree(renderer,window_width,window_height,
+                                          inventory_tree,inventory_parent,
+                                          inventory_selection);
                 render_experience_floater(renderer,window_width,window_height,
                     experience_ui,caps_snapshot,experience_consent);
             }

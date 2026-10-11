@@ -126,6 +126,9 @@ FirestormRegionRead fetch_firestorm_region(
     if(const auto it=caps.capabilities.find("FetchInventoryDescendents2");
        it!=caps.capabilities.end())
         result.inventory_folder_uri=it->second;
+    if(const auto it=caps.capabilities.find("FetchInventory2");
+       it!=caps.capabilities.end())
+        result.inventory_items_uri=it->second;
     if(const auto it=caps.capabilities.find("AgentExperiences");
        it!=caps.capabilities.end() &&lease.matches(issued_epoch))
     {
