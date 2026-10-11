@@ -44,6 +44,9 @@ class InWorldAcceptanceTests(unittest.TestCase):
         result = assess(report_from([]), now_unix_ms=NOW)
         self.assertEqual(result["status"], "not_verified")
         self.assertFalse(result["checks"]["recent_snapshot"])
+        self.assertEqual(result["failure_codes"],
+                         ["no_current_region_snapshots"])
+        self.assertIn("Log into a simulator region",result["next_check"])
 
     def test_consecutive_live_like_fixture(self):
         report=report_from([snapshot(i) for i in (1,2,3)])
@@ -52,6 +55,8 @@ class InWorldAcceptanceTests(unittest.TestCase):
         result=assess(report, now_unix_ms=NOW)
         self.assertEqual(result["status"], "evidence_pass")
         self.assertTrue(all(result["checks"].values()))
+        self.assertEqual(result["failure_codes"],[])
+        self.assertIn("No failed",result["next_check"])
 
     def test_session_epoch_and_sequence_boundaries(self):
         for samples in (
@@ -76,6 +81,7 @@ class InWorldAcceptanceTests(unittest.TestCase):
         result=assess(report_from(entries),now_unix_ms=NOW)
         self.assertEqual(result["status"],"not_verified")
         self.assertFalse(result["checks"]["missing_mesh_fallback_within_limit"])
+        self.assertIn("mesh_fallback_still_drawn",result["failure_codes"])
         relaxed=assess(report_from(entries),now_unix_ms=NOW,
                       max_missing_mesh_draws=3)
         self.assertEqual(relaxed["status"],"evidence_pass")
@@ -88,6 +94,8 @@ class InWorldAcceptanceTests(unittest.TestCase):
         missing=report_from([snapshot(i,mesh_draws=0) for i in (1,2,3)])
         result=assess(missing,now_unix_ms=NOW)
         self.assertFalse(result["checks"]["actual_uploaded_mesh_draw_calls"])
+        self.assertIn("gpu_mesh_draws_missing",result["failure_codes"])
+        self.assertNotIn("private.caps.example",str(result))
 
 if __name__=="__main__":
     unittest.main()

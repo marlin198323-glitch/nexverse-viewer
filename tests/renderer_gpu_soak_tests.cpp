@@ -76,9 +76,37 @@ int main()
             const auto t=GpuStagingRecovery::Clock::time_point{
                 std::chrono::seconds{100}};
             const auto start=std::chrono::steady_clock::now();
-            unsigned staged=0U,committed=0U;
+            unsigned staged=0U,committed=0U,region_cycles=0U;
             for(unsigned frame=0U;frame<160U&&!fail;++frame)
             {
+                if(frame>0U && frame%40U==0U)
+                {
+                    // Region switch while the renderer has both mesh
+                    // and texture residency and the staging controller
+                    // has processed retries. GPU state must be empty.
+                    renderer->clear_mesh_assets();
+                    renderer->clear_object_textures();
+                    recovery.reset();
+                    renderer->set_scene_objects(objects);
+                    renderer->begin_frame();
+                    renderer->render_world(static_cast<double>(frame)*0.016);
+                    renderer->end_frame();
+                    const auto empty=renderer->diagnostics();
+                    if(empty.scene_mesh_draw_calls!=0U ||
+                       empty.scene_missing_mesh_objects!=24U ||
+                       recovery.pending()!=0U)
+                    {fail=12;break;}
+                    for(const auto& obj:objects)
+                        if(obj.mesh_id!="never-resident-mesh" &&
+                           !renderer->set_mesh_asset(obj.mesh_id,geometry))
+                        {fail=13;break;}
+                    for(unsigned i=0U;i<8U&&!fail;++i)
+                        if(!renderer->set_object_texture(
+                            "soak-texture-"+std::to_string(i),image))
+                            fail=14;
+                    if(fail)break;
+                    ++region_cycles;
+                }
                 image.pixels[0]=static_cast<std::uint8_t>(frame);
                 for(std::size_t px=3U;px<image.pixels.size();px+=4U)
                     image.pixels[px]=frame%2U==0U?255U:110U;
@@ -146,8 +174,9 @@ int main()
                 std::chrono::milliseconds>(
                     std::chrono::steady_clock::now()-start).count();
             if(!fail && (staged!=40U ||committed!=160U ||
-                recovery.pending()!=0U))fail=11;
-            std::cout<<"GL_SOAK frames=160 staging_events="<<staged
+                region_cycles!=3U ||recovery.pending()!=0U))fail=11;
+            std::cout<<"GL_SOAK frames=160 region_resets="<<region_cycles
+                <<" staging_events="<<staged
                 <<" uploaded="<<committed<<" cpu_total_ms="<<elapsed<<'\n';
             renderer->clear_mesh_assets();
             renderer->clear_object_textures();

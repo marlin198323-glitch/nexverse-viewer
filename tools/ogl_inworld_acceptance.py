@@ -52,9 +52,50 @@ def assess(report: dict, min_snapshots: int = 3,
             window_missing is not None and
             window_missing<=max_missing_mesh_draws),
     }
+    # All codes are hardcoded and safe for support tickets. Never place
+    # UUIDs, player data, CAPS URLs, HTTP bodies, or raw log text here.
+    codes = {
+        "session_and_epoch": "no_valid_region_session",
+        "recent_snapshot": "missing_or_stale_snapshot",
+        "consecutive_timed_snapshots": "insufficient_region_samples",
+        "nonempty_texture_scene": "texture_demand_missing",
+        "nonempty_mesh_scene": "mesh_demand_missing",
+        "texture_coverage": "texture_residency_incomplete",
+        "mesh_coverage": "mesh_residency_incomplete",
+        "actual_scene_draw_calls": "scene_draws_missing",
+        "actual_uploaded_mesh_draw_calls": "gpu_mesh_draws_missing",
+        "missing_mesh_fallback_within_limit": "mesh_fallback_still_drawn",
+    }
+    failures = ([codes[name] for name,passed in checks.items()
+                 if not passed] if latest else ["no_current_region_snapshots"])
+    if not failures:
+        next_check = "No failed asset/render evidence checks."
+    elif not latest:
+        next_check = ("Log into a simulator region and capture three "
+                      "consecutive InWorldAssetSnapshot records.")
+    elif not checks["recent_snapshot"]:
+        next_check = ("Capture recent in-world snapshots from the current "
+                      "viewer session; old logs cannot prove live rendering.")
+    elif not checks["consecutive_timed_snapshots"]:
+        next_check = ("Collect at least three uninterrupted 30-second "
+                      "snapshots from one session and region epoch.")
+    elif not checks["nonempty_mesh_scene"] or not checks["nonempty_texture_scene"]:
+        next_check = ("Check whether the region has emitted object, mesh "
+                      "and texture demand before evaluating GPU residency.")
+    elif not checks["texture_coverage"] or not checks["mesh_coverage"]:
+        next_check = ("Inspect sanitized GetMesh/GetTexture failure classes "
+                      "and RAM/GPU budget pressure in the active region.")
+    elif not checks["actual_uploaded_mesh_draw_calls"] or not checks["actual_scene_draw_calls"]:
+        next_check = ("Inspect actual world-object mesh draw counters and "
+                      "the renderer's missing GPU mesh fallback counters.")
+    else:
+        next_check = ("Inspect missing-mesh fallback counts; accepted mesh "
+                      "downloads alone do not establish actual mesh draws.")
     return {
         "schema": "ogl.inworld.acceptance.v2",
         "status": "evidence_pass" if all(checks.values()) else "not_verified",
+        "failure_codes": failures,
+        "next_check": next_check,
         "checks": checks,
         "observations": {
             "snapshots": report.get("snapshots_valid", 0),

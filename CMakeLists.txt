@@ -451,6 +451,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-asset-missing-id-counter-tests
         COMMAND nexverse-asset-missing-id-counter-tests)
 
+    add_executable(nexverse-asset-cache-capacity-profiles-tests
+        tests/asset_cache_capacity_profiles_tests.cpp)
+    target_link_libraries(nexverse-asset-cache-capacity-profiles-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-cache-capacity-profiles-tests)
+    add_test(NAME nexverse-asset-cache-capacity-profiles-tests
+        COMMAND nexverse-asset-cache-capacity-profiles-tests)
+
     add_executable(nexverse-asset-cache-pressure-lru-tests
         tests/asset_cache_pressure_lru_tests.cpp)
     target_link_libraries(nexverse-asset-cache-pressure-lru-tests
@@ -491,6 +499,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-renderer-gpu-profiles-tests
         COMMAND nexverse-renderer-gpu-profiles-tests)
     set_tests_properties(nexverse-renderer-gpu-profiles-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(nexverse-renderer-alpha-framebuffer-tests
+        tests/renderer_alpha_framebuffer_tests.cpp)
+    target_link_libraries(nexverse-renderer-alpha-framebuffer-tests
+        PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-alpha-framebuffer-tests)
+    add_test(NAME nexverse-renderer-alpha-framebuffer-tests
+        COMMAND nexverse-renderer-alpha-framebuffer-tests)
+    set_tests_properties(nexverse-renderer-alpha-framebuffer-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
     add_executable(nexverse-renderer-region-transition-tests
