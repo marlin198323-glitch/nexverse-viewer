@@ -440,7 +440,7 @@ Phase 7 gestartet:
 - Ursache der Blockschrift war vom World-Renderer deaktiviertes `GL_BLEND`, nicht fehlende Fontdaten
 - In-World-HUD wieder auf die ursprüngliche NexVerse-Designsprache zurückgeführt: Branding-Leiste oben, kompakte Navigation links, Statuskarten rechts, Aktionsleiste unten
 - 3D-Welt bleibt Hauptfläche; Seitenelemente sind transparent und bewusst kompakter als das ursprüngliche Dashboard
-- Firestorm dient ausschließlich als technische Referenz für Viewer-Verhalten, DPI/Scaling, Loading, Kamera und OpenSim-Funktionalität
+- Aktualisiert 11.10.2026: Firestorm dient als vollständige Funktions- und Implementierungsbaseline einschließlich Viewer-Verhalten, DPI/Scaling, Loading, Kamera und OpenSim-/OpenGenesisLINK-Kompatibilität (eigener aktueller Code noch ohne echten Firestorm-Source-Fork)
 - Firestorm-Skin/Style/XUI wird nicht übernommen; NexVerse-Design und Farben bleiben verbindlich
 - aktueller UI-Stand: `OpenGenesisLINK Viewer 0.2.0-alpha.17`
 - kompletter Debug-Build nach Schrift-/NexVerse-HUD-Fix: 16/16 Tests grün
@@ -678,11 +678,11 @@ Credentials dürfen niemals geloggt oder als Kommandozeilenparameter übernommen
 
 ## Verbindliche Funktionsbaseline
 
-Ab 05.10.2026 gilt Firestorm funktional als Mindestmaßstab für die üblichen Viewer-Kernfunktionen. OpenGenesisLINK bleibt technisch und gestalterisch eine eigenständige Implementierung.
+**Aktualisierung 11.10.2026:** Firestorm ist nicht mehr bloß Mindestmaßstab für übliche Kernfunktionen, sondern die verbindliche vollständige Feature-/Verhaltens- und Implementierungsreferenz des OGL Viewers. Serverseitige OpenGenesisLINK-/OpenSim-Funktionalität ist dabei autoritativ; neue OGL-Funktionen dürfen die vorhandene Firestorm-Funktionalität nur dokumentiert anpassen/ergänzen. Eigener C++23-Code ist noch kein Firestorm-Quellcode-Fork; Lizenz- und Portierstrategie bleibt explizit offen. Vollständige Regeln unter `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md`.
 
 Verbindlich eingeplant sind unter anderem Bewegung/Flug/Sitzen/Teleport, Kamera/Mouselook, Local Chat/IM/Gruppen, Freunde/Profile/Radar, Inventar, Attachments/Outfits/Gesten/AO, Karte/Minimap/Landmarks, Bauen/Object Edit, Parcel/Land, Media/Music/Voice, Environment sowie Diagnose-/Preferences-Funktionen.
 
-Spezielle Firestorm-Erweiterungen wie RLV/RLVa oder sehr spezielle Firestorm-Power-User-Werkzeuge sind nicht automatisch Teil der Mindestbaseline und werden nur bei Bedarf ergänzt.
+Auch spezielle Firestorm-Funktionen wie RLV/RLVa, erweiterte Phototools und Power-User-Werkzeuge gehören zur verbindlichen Inventur. Gründe für Zurückstellung oder fehlende Grid-Fähigkeiten werden je Funktion offen dokumentiert, nicht pauschal ausgeschlossen.
 
 
 ## Next-Gen Renderer Vorgabe

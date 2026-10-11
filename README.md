@@ -2,7 +2,7 @@
 
 OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-Viewer für NexVerse in C++23.
 
-Er ist **kein Firestorm-Fork**. Firestorm und der Second-Life-Viewer dienen ausschließlich als Funktions- und Qualitätsreferenz. Maßgeblich für Architektur und Reihenfolge ist `projectplan.md`.
+**Verbindliche Zielarchitektur (11.10.2026):** Firestorm bildet die **vollständige Funktions- und technische Implementierungsbaseline**, OpenGenesisLINK Server den autoritativen OpenSim-/Serverprotokollvertrag. Bestehende Firestorm-Funktionen werden funktionsgleich geplant und implementiert, an den Server angepasst; neue OGL-Funktionen ergänzen sie. Die **derzeitige C++23-Codebasis ist noch kein echter Firestorm-Quellcode-Fork**; eine Portierung/Migration von Firestorm-Code braucht eine gesonderte Lizenz- und Architekturprüfung. Maßgeblich: `projectplan.md`, `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md` und die offene `docs/FIRESTORM_PARITY_MATRIX.md`.
 
 ## Aktueller Stand
 

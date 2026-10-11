@@ -2,7 +2,7 @@
 
 ## Ziel
 
-Eigenständiger plattformübergreifender OpenSim/OpenGenesisLINK-Client in C++23. Kein Firestorm-Fork.
+Plattformübergreifender OpenSim/OpenGenesisLINK-Client in C++23. **Soll:** vollständige Firestorm-Funktionsparität unter dem tatsächlichen OpenGenesisLINK-Serververtrag. **Ist:** eigene C++23-Implementierung, noch kein Firestorm-Source-Fork. Eine gezielte lizenzkonforme Firestorm-Codeportierung/Forkentscheidung bleibt als Architekturarbeit offen. Vertragsdokument: `FIRESTORM_COMPATIBILITY_CONTRACT.md`.
 
 ## Schichtenmodell
 

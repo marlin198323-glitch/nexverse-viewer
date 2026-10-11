@@ -7,14 +7,18 @@ Stand: 11.10.2026
 - Produkt: **OpenGenesisLINK Viewer**
 - Zweck: eigener OpenSim/OpenGenesisLINK-Viewer für NexVerse
 - Sprache: C++23
-- kein Firestorm-Fork; Firestorm/Second Life nur Referenz
+- **Neuer verbindlicher Auftrag 11.10.2026:** Alle vorhandenen Firestorm-Funktionen als vollständige Funktions-/Implementierungsbaseline erfassen und für OpenGenesisLINK implementieren. Neue OGL-Funktionen nur als Ergänzung/gezielten Umbau; nichts stillschweigend weglassen
+- **Ist:** aktueller OGL-C++23-Code ist noch kein tatsächlicher Firestorm-Source-Fork. Quellcodeübernahme/Forkstrategie mit Lizenz-, Release-Branch- und Migrationsprüfung, keine falsche bereits-erledigt-Meldung
+- Autoritativer Server: https://github.com/opengenesislink/opengenesislinkserver , vor JEDEM künftigen Entwicklungsblock aktuelle `main`-HEAD-SHA neu prüfen und kompatible Server-CAPS/LLUDP-/API-Codepfade abgleichen
+- Firestorm Quell-/Feature-Referenz: https://github.com/FirestormViewer/phoenix-firestorm (offizielle Releasebranches, nicht Nightly); Details: `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md`
 - Repo: `marlin198323-glitch/nexverse-viewer`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - Hinweis: GitHub-`develop` besitzt eine ältere divergierende Historie; **nicht** als aktuellen Stand verwenden, bis sie bewusst reconciled wurde.
 - lokal: `/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer`
 - vcpkg: `/home/jam/vcpkg`
-- `projectplan.md` ist bindend
+- `projectplan.md` ist bindend; seit 11.10.2026 inklusive vollständiger Firestorm-Parität und aktueller OpenGenesisLINK-Server-HEAD-Referenz
+- `docs/FIRESTORM_PARITY_MATRIX.md` ist die offene Feature-Inventur; ältere Ausschlüsse von RLV/Phototools gelten nicht mehr
 
 ## 2. Neuer Chat – zuerst
 
@@ -25,7 +29,7 @@ git log -8 --oneline
 cat VERSION
 ```
 
-Wenn direkt über GitHub gearbeitet wird, zuerst Branch `develop-current` verwenden. Danach lesen: `CHATUEBERGABE.md`, `projectplan.md`, `info.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`.
+Wenn direkt über GitHub gearbeitet wird, zuerst Branch `develop-current` verwenden. Danach lesen: `CHATUEBERGABE.md`, `projectplan.md`, `info.md`, **`docs/FIRESTORM_COMPATIBILITY_CONTRACT.md`**, `docs/ARCHITECTURE.md`, `docs/DESIGN.md`. Zusätzlich vor jedem neuen Feature und Release aktuellen OpenGenesisLINK-Server-`main`-HEAD und dessen relevante Implementierungsdateien prüfen; der einmalige SHA vom 11.10.2026 ersetzt **keine** erneute Aktualitätsprüfung.
 
 Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 

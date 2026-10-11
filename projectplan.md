@@ -2,13 +2,17 @@
 
 Stand: 11.10.2026
 Repository: `marlin198323-glitch/nexverse-viewer`
-Ziel: Eigenständiger, plattformübergreifender OpenSim-Viewer in C++23 unter MPL 2.0.
+Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
 
 ---
 
 ## 1. Zielbild
 
-Der NexVerse Viewer wird kein Firestorm-Fork. Er wird als eigenständiger Viewer neu entwickelt und kommuniziert direkt mit OpenSimulator über das OpenSim/Linden-Viewer-Protokoll.
+**Vorrangige Nutzerentscheidung vom 11.10.2026:** Firestorm ist die vollständige Funktions-, Bedienungs- und Quellcode-/Implementierungsreferenz des OGL Viewers. ALLE in der offiziellen Firestorm-Releasebaseline verfügbaren Funktionen gehören in die Paritätsinventur, auch Power-User-Funktionen. Vorhandene Funktionen werden funktional übernommen/portiert und nur für OpenGenesisLINK-/OpenSim-Protokolle, Rechte, Sicherheit oder das eigene NexVerse-Design angepasst. Neue Features kommen ergänzend hinzu; kein stillschweigender Funktionsverlust.
+
+**Ist-/Soll-Abgrenzung:** Der gegenwärtige OGL-Code ist noch eine eigenständige C++23-Neuimplementierung, kein auf Firestorm-Source aufgebauter Fork. Ob Firestorm-Module direkt portiert oder eine Teilmigration vorgenommen werden, ist gesondert technisch und lizenzrechtlich zu bewerten. Der Ist-Zustand darf nicht als bereits vollständige Firestorm-Codebasis ausgegeben werden. Für Quellcodeübernahmen offizielle Firestorm-Releasebranches und deren LGPL-/Drittanbieterbedingungen beachten.
+
+**Verbindliche Source-of-Truth:** OpenGenesisLINK-Server `https://github.com/opengenesislink/opengenesislinkserver` auf aktuellem `main` ist der primäre Protokoll-, CAPS-, Datenmodell- und Berechtigungsvertrag. **Vor jedem Entwicklungsblock neu HEAD/Servercode prüfen** und die verglichene SHA dokumentieren. Firestorm als Funktions- und Client-Quellreferenz: `https://github.com/FirestormViewer/phoenix-firestorm`; nicht blind einen Nightly-Branch als Release implementieren. Details: `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md`.
 
 Die Architektur wird strikt getrennt:
 
@@ -79,11 +83,11 @@ Die konkrete Versionsnummer in `VERSION` wird bei jedem getesteten Entwicklungsb
 
 ---
 
-## 2.1 Firestorm-Funktionsbaseline – verbindlicher Mindestumfang
+## 2.1 Firestorm-Funktionsbaseline – verbindlicher vollständiger Zielkatalog
 
-OpenGenesisLINK Viewer bleibt eine eigenständige Neuimplementierung und wird kein Firestorm-Fork. Funktional soll der Viewer für den normalen NexVerse-Betrieb jedoch mindestens die üblichen Kernfunktionen eines modernen Firestorm/OpenSim-Viewers abdecken.
+**Neufassung vom 11.10.2026 mit Vorrang vor älteren Mindestumfangs-/Ausnahmeregeln:** Firestorm ist der verbindliche **vollständige Funktionskatalog**; nicht nur die üblichen Kernfunktionen. Bestehende Firestorm-Funktionen, einschließlich erweiterter Funktionen, werden aufgelistet und auf OGL übertragen, an OpenGenesisLINK-/OpenSim-Serververträge angepasst und erst danach durch eigene Funktionen erweitert. Ein Feature darf ausschließlich begründet auf `server_unsupported` oder `deferred_with_reason` stehen; es wird nicht stillschweigend weggelassen.
 
-Diese Liste ist verbindliche Produktanforderung und wird phasenweise umgesetzt.
+Das aktuelle C++23-Repository ist noch keine direkte Firestorm-Source-Migration. Quellcodeportierung/Forkstrategie bedarf eines separaten Lizenz- und Architekturchecks, ohne das Funktionsparitätsziel abzuschwächen. Die folgende historische Kernfunktionsliste bleibt als erste Untermenge erhalten; **maßgebend für den vollständigen Umfang ist `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md` und die einzeln nachzuweisende `docs/FIRESTORM_PARITY_MATRIX.md`.**
 
 ### Anmeldung, Grid und Session
 - fester NexVerse-Gridzugang
@@ -288,11 +292,11 @@ Diese Liste ist verbindliche Produktanforderung und wird phasenweise umgesetzt.
 - Reconnect
 - Crash-/Fehlerdiagnose ohne sensible Daten
 
-### Nicht automatisch Teil der Mindestbaseline
+### Firestorm-Erweiterungen sind Teil der Gesamtinventur
 
-Spezielle Firestorm-Power-User-Erweiterungen wie RLV/RLVa, sehr spezielle Phototools, Firestorm-spezifische Debug-Optionen oder proprietäre Service-Integrationen werden nicht automatisch übernommen. Solche Funktionen kommen nur hinzu, wenn sie für NexVerse ausdrücklich benötigt werden.
+Auch RLV/RLVa, Phototools, spezielle Kamera-/Debug-Werkzeuge und weitere Firestorm-Power-User-Funktionen müssen in die vollständige Paritätsmatrix aufgenommen und – soweit Rechte, Plattform, Protokoll und Lizenzen dies zulassen – implementiert werden. Serverseitig nicht bereitgestellte Funktionen bleiben als überprüfbar begründete Einschränkung sichtbar. Kein automatischer Ausschluss dieser Kategorien mehr.
 
-Die UI muss nicht wie Firestorm aussehen. Maßgeblich bleibt das definierte OpenGenesisLINK-/NexVerse-Zieldesign. Firestorm dient hier ausschließlich als funktionaler Referenzumfang.
+Das eigenständige OpenGenesisLINK-/NexVerse-UI-Design bleibt bestehen: Funktionsgleichheit bedeutet nicht die unveränderte Übernahme des Firestorm-Skins oder geschützter Marken-/Drittanbieterassets. Firestorm ist **Funktions- UND Implementierungsreferenz**.
 
 ---
 
@@ -800,7 +804,7 @@ Die vollständige Renderer-Anweisung wurde erneut gegen diesen Projektplan gepr�
 Dabei gelten zusätzlich ausdrücklich folgende Klarstellungen:
 
 - OpenGenesisLINK ist **kein einfacher Firestorm-Umbau** und der Renderer wird nicht als Firestorm-Renderer-Fork geführt.
-- Firestorm/Second Life dienen lediglich als Funktions- beziehungsweise Qualitätsreferenz; die Renderarchitektur bleibt eigenständig.
+- **Aktualisierte Priorität 11.10.2026:** Firestorm dient als vollständige Funktions- und Quellcode-/Implementierungsreferenz. Die aktuelle modulare OGL-Renderarchitektur bleibt bis zu einer dokumentierten Migrationsentscheidung getrennt; bestehende Firestorm-Funktionen dürfen bei der Modernisierung nicht verloren gehen.
 - `OGLRender` bezeichnet die Render-Abstraktionsschicht und die gemeinsame Scene-/Material-/Lighting-/Water-/Environment-Schnittstelle.
 - Vulkan bleibt das primäre moderne Backend.
 - Die neue Module Runtime darf Renderer-Backends später als austauschbare Module bereitstellen, ohne die `WorldModel -> Scene -> OGLRender`-Trennung aufzugeben.
@@ -1602,7 +1606,7 @@ Funktionen:
 - In-World-UI nur als kompakte transparente HUD-/Toolbar-Overlays
 - die visuelle Designsprache bleibt verbindlich NexVerse/OpenGenesisLINK: Schwarz/Dunkelblau, Cyan/Blau sowie Violett/Magenta
 - bestehendes NexVerse-Branding, Kartenstil, Statuschips, Navigation und Toolbar-Stil bleiben maßgebend
-- Firestorm darf nur als technische Funktionsreferenz verwendet werden; Firestorm-Skin/XUI/Design darf nicht übernommen werden
+- Firestorm dient als vollständige Funktions- und technische Quellcodereferenz (Lizenz-/Release-Branch-Vorbehalt); das eigens festgelegte OGL-/NexVerse-Design bleibt erhalten. Firestorm-Skin/XUI/Design muss nicht übernommen werden
 - UI-Skalierung muss den eigenen NexVerse-Stil auf 16:9, 21:9 und 32:9 erhalten
 
 ---
@@ -3586,4 +3590,12 @@ GitHub: `marlin198323-glitch/nexverse-viewer`, Branch `develop-current` (alten d
 
 **Nächste vier geplante Releaseblöcke Alpha.80:** Erweiterte Pixelreferenzen für Mehrfach-Overlays und AlphaSort, kontrollierter GPU-Rollback-/Uploadfehler-Regionswechsel, Cache-/Residency-Priorisierung nach messbarer Druckphase und tatsächliche In-World-Test-Protokollierung sobald erfolgreiche Authentifizierung/Regionsdaten vorliegen. Bekannte Avatar-/WASD-/Teleport-/CAPS-EventQueue-Probleme bleiben wie vereinbart bis zur späteren Integrations-/Bugfixphase zurückgestellt; `projectplan.md` bleibt maßgeblich.
 
-CLI auf autorisiertem Linux-Desktop: `cmake --preset debug && cmake --build --preset debug -j2 && env DISPLAY=:0 ctest --preset debug --output-on-failure`; Live-Check: `python3 tools/ogl_inworld_acceptance.py "$HOME/.local/state/opengenesislink/viewer.log"`. Repository `marlin198323-glitch/nexverse-viewer`, Branch ausschließlich `develop-current`.
+CLI auf autorisiertem Linux-Desktop: `cmake --preset debug && cmake --build --preset debug -j2 && env DISPLAY=:0 ctest --preset debug --output-on-failure`; Live-Check: `python3 tools/ogl_inworld_acceptance.py "$HOME/.local/state/opengenesislink/viewer.log"`. Repository `marlin198323-glitch/nexverse-viewer`, Branch ausschließlich `develop-current`.\n
+
+## Architekturpriorisierung ab 11.10.2026 – Firestorm-Parität vor unkoordinierten OGL-Sonderfunktionen
+
+Diese Neupriorisierung hat Vorrang vor älteren Passagen, die Firestorm nur als minimale Kernfunktionsreferenz oder besondere Firestorm-Werkzeuge als generell optional beschrieben. **Jedes Firestorm-Release-Feature wird einzeln inventarisiert**. Fehlende Server-CAPS/LLUDP-/LSL-Operationen müssen anhand des **aktuellen** OpenGenesisLINK-`main` nachgewiesen und als begrenzte Kompatibilität dokumentiert werden. Neue OGL-Plugins, Shader und UX-Erweiterungen dürfen die vollständige Firestorm-Baseline nur ergänzen oder gezielt umbauen.
+
+**Verbindliche Referenzdokumente:** `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md` (Regeln, Quellen und Parität), `docs/FIRESTORM_PARITY_MATRIX.md` (offene Feature-Matrix, Status, Serverabweichungen). **Nächster Block nach alpha.79:** zuerst Firestorm-Feature-/Quellinventur und Current-Server-CAPS-/Feature-Diff; danach geeignete Port-/Adapter-Strategie samt Lizenzprüfung und gezielte Implementierung fehlender Benutzerfunktionen. Der bisherige Alpha.80-Renderer-Plan bleibt bestehen, aber darf die Firestorm-/OpenGenesisLINK-Paritätsaufgaben nicht verdrängen.
+
+**Quellenprüfung dieser Entscheidung:** OpenGenesisLINK `main` bei `cb3ebb6ff05160bf9bdb20e78372a68d7b723512` am 11.10.2026; Stable `0.9.3.8`, Dev `0.9.3.10`. Dieser dokumentierte SHA ersetzt keine künftige HEAD-Abfrage. Offizieller Firestorm-Releasebranch als erste Inventurreferenz: `Firestorm_7.2.4`; neuere Releases vor den jeweiligen Umsetzungen prüfen. **Versionsnummer `0.2.0-alpha.79` bleibt bei dieser reinen Planungsänderung unverändert; kein falscher Release-Fortschritt.**
