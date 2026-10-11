@@ -14,6 +14,7 @@
 #include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
+#include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -3342,6 +3343,12 @@ int Application::run(bool enable_developer_modules)
     auto mesh_memory_cache = std::make_shared<assets::MeshMemoryCache>();
     std::future<assets::CachedMeshResult> mesh_asset_future;
     std::string mesh_asset_loading_id;
+    assets::MeshLod mesh_asset_loading_lod = assets::MeshLod::high;
+    std::unordered_map<std::string, assets::MeshLod> mesh_desired_lods;
+    std::unordered_map<std::string, assets::MeshLod> mesh_gpu_lods;
+    std::unordered_map<std::string, std::size_t> mesh_gpu_asset_bytes;
+    std::size_t mesh_gpu_estimated_bytes = 0U;
+    std::size_t mesh_lod_swaps = 0U;
     std::uint64_t mesh_asset_request_epoch = 0U;
     std::vector<assets::MeshDistanceSample> scene_mesh_samples;
     assets::MeshResidencyPlan mesh_residency;
@@ -4511,6 +4518,10 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->clear_mesh_assets();
                 mesh_asset_loaded_ids.clear();
                 mesh_asset_failed_ids.clear();
+                mesh_desired_lods.clear();
+                mesh_gpu_lods.clear();
+                mesh_gpu_asset_bytes.clear();
+                mesh_gpu_estimated_bytes = 0U;
                 region_material_discovery_started = false;
                 render_materials_started = false;
                 render_materials_get_complete = false;
@@ -5758,6 +5769,10 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::milliseconds{750})
             {
                 last_mesh_residency_plan = mesh_plan_now;
+                mesh_desired_lods = assets::plan_mesh_lods(
+                    scene_mesh_samples,
+                    render_agent.position.x, render_agent.position.y,
+                    render_agent.position.z, mesh_desired_lods);
                 mesh_residency = assets::plan_mesh_residency(
                     scene_mesh_samples,
                     render_agent.position.x,
@@ -5775,6 +5790,13 @@ int Application::run(bool enable_developer_modules)
                     if (evicted >= 8U) break;
                     world_renderer->remove_mesh_asset(id);
                     mesh_asset_loaded_ids.erase(id);
+                    mesh_gpu_lods.erase(id);
+                    if (const auto it = mesh_gpu_asset_bytes.find(id);
+                        it != mesh_gpu_asset_bytes.end())
+                    {
+                        mesh_gpu_estimated_bytes -= it->second;
+                        mesh_gpu_asset_bytes.erase(it);
+                    }
                     ++mesh_gpu_evictions;
                     ++evicted;
                 }
@@ -5803,8 +5825,20 @@ int Application::run(bool enable_developer_modules)
                 {
                     core::info("Discarded no-longer-prioritized GetMesh response");
                 }
+                else if (const auto it = mesh_desired_lods.find(
+                             mesh_asset_loading_id);
+                         it == mesh_desired_lods.end() ||
+                         it->second != mesh_asset_loading_lod)
+                {
+                    core::info("Discarded out-of-date GetMesh LOD response");
+                }
                 else if (result.success && result.geometry.valid())
                 {
+                    const std::size_t gpu_bytes =
+                        result.geometry.vertices.size()*sizeof(float) +
+                        result.geometry.indices.size()*sizeof(std::uint32_t);
+                    const bool replacement =
+                        mesh_gpu_lods.contains(mesh_asset_loading_id);
                     render::RenderMeshGeometry geometry;
                     geometry.vertices = std::move(result.geometry.vertices);
                     geometry.indices = std::move(result.geometry.indices);
@@ -5815,6 +5849,15 @@ int Application::run(bool enable_developer_modules)
                             mesh_asset_loading_id, geometry))
                     {
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
+                        if (replacement) ++mesh_lod_swaps;
+                        if (const auto old = mesh_gpu_asset_bytes.find(
+                                mesh_asset_loading_id);
+                            old != mesh_gpu_asset_bytes.end())
+                            mesh_gpu_estimated_bytes -= old->second;
+                        mesh_gpu_asset_bytes[mesh_asset_loading_id] = gpu_bytes;
+                        mesh_gpu_estimated_bytes += gpu_bytes;
+                        mesh_gpu_lods[mesh_asset_loading_id] =
+                            mesh_asset_loading_lod;
                         switch (completed_mesh.tier)
                         {
                         case assets::MeshCacheTier::memory: ++mesh_ram_hits; break;
@@ -5823,20 +5866,24 @@ int Application::run(bool enable_developer_modules)
                         }
                         core::info(
                             "GetMesh loaded " + mesh_asset_loading_id +
+                            "; requested_lod=" +
+                            std::string(assets::mesh_lod_name(mesh_asset_loading_lod)) +
                             "; " + result.message +
                             "; cached=" +
                             std::to_string(mesh_asset_loaded_ids.size()));
                     }
                     else
                     {
-                        mesh_asset_failed_ids.insert(mesh_asset_loading_id);
+                        mesh_asset_failed_ids.insert(mesh_asset_loading_id +
+                            "." + std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
                         core::warning("GetMesh GPU upload failed for " +
                             mesh_asset_loading_id);
                     }
                 }
                 else
                 {
-                    mesh_asset_failed_ids.insert(mesh_asset_loading_id);
+                    mesh_asset_failed_ids.insert(mesh_asset_loading_id +
+                        "." + std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
                     core::warning(
                         "GetMesh failed for " + mesh_asset_loading_id +
                         ": " + result.message +
@@ -5845,33 +5892,45 @@ int Application::run(bool enable_developer_modules)
                 mesh_asset_loading_id.clear();
             }
             if (!mesh_asset_future.valid() &&
-                !scoped_get_mesh_uri.empty() &&
-                mesh_asset_loaded_ids.size() < mesh_gpu_asset_budget)
+                !scoped_get_mesh_uri.empty())
             {
                 // Prefer near meshes, not lexicographic UUID order.
                 for (const auto& id : mesh_residency.prioritized_ids)
                 {
-                    if (mesh_asset_loaded_ids.contains(id) ||
-                        mesh_asset_failed_ids.contains(id)) continue;
+                    const auto desired = mesh_desired_lods.find(id);
+                    if (desired == mesh_desired_lods.end()) continue;
+                    const auto lod = desired->second;
+                    if (const auto existing = mesh_gpu_lods.find(id);
+                        existing != mesh_gpu_lods.end() &&
+                        existing->second == lod) continue;
+                    // Allow upgrades/downgrades even when the GPU's count
+                    // budget is full; renderer swaps the existing asset.
+                    if (!mesh_asset_loaded_ids.contains(id) &&
+                        mesh_asset_loaded_ids.size() >= mesh_gpu_asset_budget)
+                        continue;
+                    if (mesh_asset_failed_ids.contains(id + "." +
+                        std::string(assets::mesh_lod_name(lod)))) continue;
                     mesh_asset_loading_id = id;
+                    mesh_asset_loading_lod = lod;
                     mesh_asset_request_epoch = material_scope.epoch();
                     const std::string cap = scoped_get_mesh_uri;
                     const std::string alt_cap = scoped_get_mesh_alt_uri;
                     mesh_asset_future = std::async(
                         std::launch::async,
-                        [transport, cap, alt_cap, id, mesh_memory_cache]()
+                        [transport, cap, alt_cap, id, lod, mesh_memory_cache]()
                         {
                             assets::MeshDiskCache disk{
                                 assets::MeshDiskCache::default_directory()};
                             return assets::load_mesh_cached(id,
                                 *mesh_memory_cache,disk,
-                                [&transport,&cap,&alt_cap,&id]()
+                                [&transport,&cap,&alt_cap,&id,lod]()
                                 {
                                     return assets::MeshAssetLoader{transport}
-                                        .fetch(cap,id,alt_cap);
-                                });
+                                        .fetch(cap,id,alt_cap,lod);
+                                },lod);
                         });
-                    core::info("GetMesh request started for " + id);
+                    core::info("GetMesh request started for " + id +
+                        "; requested_lod=" + std::string(assets::mesh_lod_name(lod)));
                     break;
                 }
             }
@@ -5888,6 +5947,8 @@ int Application::run(bool enable_developer_modules)
                     " gpu_evictions=" + std::to_string(mesh_gpu_evictions) +
                     " ram_bytes=" + std::to_string(mesh_memory_cache->bytes()) +
                     " ram_assets=" + std::to_string(mesh_memory_cache->count()) +
+                    " lod_swaps=" + std::to_string(mesh_lod_swaps) +
+                    " gpu_estimated_bytes=" + std::to_string(mesh_gpu_estimated_bytes) +
                     " gpu_resident=" +
                     std::to_string(mesh_asset_loaded_ids.size()) +
                     " gpu_budget=" + std::to_string(mesh_gpu_asset_budget));

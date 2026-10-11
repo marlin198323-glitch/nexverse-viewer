@@ -71,6 +71,42 @@ std::string small_mesh(bool with_uv_domain = true,
     return result;
 }
 
+std::string multi_lod_mesh(bool corrupt_high = false)
+{
+    using nexverse::protocol::LlsdValue;
+    const auto original = small_mesh();
+    std::size_t header_length=0U;
+    const auto raw = std::span{
+        reinterpret_cast<const std::uint8_t*>(original.data()),
+        original.size()};
+    const auto parsed = nexverse::protocol::parse_llsd_binary_prefix(
+        raw,header_length);
+    if (!parsed.ok() || header_length >= raw.size()) return {};
+    const std::string block = original.substr(header_length);
+    std::map<std::string,LlsdValue,std::less<>> lods{
+        {"version",LlsdValue::integer(1)}};
+    for (std::size_t i=0U; i<4U; ++i)
+    {
+        const std::array<std::string,4> names{
+            "lowest_lod", "low_lod", "medium_lod", "high_lod"};
+        lods.emplace(names[i],LlsdValue::map({
+            {"offset",LlsdValue::integer(
+                static_cast<std::int64_t>(i*block.size()))},
+            {"size",LlsdValue::integer(
+                static_cast<std::int64_t>(block.size()))}}));
+    }
+    auto header = nexverse::protocol::serialize_llsd_binary(
+        LlsdValue::map(std::move(lods)),false);
+    std::string out(header.begin(),header.end());
+    for (std::size_t i=0U;i<4U;++i)
+    {
+        if (corrupt_high && i==3U)
+            out.append(block.size(),'X');
+        else out.append(block);
+    }
+    return out;
+}
+
 class FakeTransport final : public nexverse::net::IHttpTransport
 {
 public:
@@ -141,6 +177,29 @@ int main()
     {
         std::cerr << "Mesh LOD decoding failed: " << decoded.message << '\n';
         return 2;
+    }
+
+    const auto all_lods = multi_lod_mesh();
+    if (all_lods.empty()) return 10;
+    for (const auto lod : {MeshLod::lowest, MeshLod::low,
+                           MeshLod::medium, MeshLod::high})
+    {
+        const auto result=decode_mesh_asset(id,all_lods,lod);
+        if (!result.success || result.decoded_lod!=lod ||
+            result.geometry.indices.size()!=3U)
+        {
+            std::cerr<<"Explicit mesh LOD decode failed for "
+                     <<mesh_lod_name(lod)<<'\n';
+            return 11;
+        }
+    }
+    const auto fallback = decode_mesh_asset(
+        id,multi_lod_mesh(true),MeshLod::high);
+    if (!fallback.success || fallback.decoded_lod != MeshLod::medium ||
+        fallback.message.find("fallback=medium")==std::string::npos)
+    {
+        std::cerr<<"Damaged high-LOD did not fall back to medium\n";
+        return 12;
     }
 
     const auto transport = std::make_shared<FakeTransport>();

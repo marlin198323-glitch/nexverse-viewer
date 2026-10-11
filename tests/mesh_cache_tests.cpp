@@ -95,6 +95,25 @@ int main()
     }
     if (!error)
     {
+        // Different LODs of one UUID have isolated RAM and disk entries.
+        MeshDiskCache disk{root};
+        MeshMemoryCache ram{bytes*3U};
+        if (!disk.store(a,tri,MeshLod::high) ||
+            !disk.store(a,tri2,MeshLod::medium) ||
+            disk.load(a,MeshLod::low) ||
+            !disk.load(a,MeshLod::medium) ||
+            !ram.store(a,tri,MeshLod::high) ||
+            !ram.store(a,tri2,MeshLod::medium) ||
+            !ram.load(a,MeshLod::medium) ||
+            ram.load(a,MeshLod::low) ||
+            ram.load(a,MeshLod::high)->vertices != tri.vertices)
+            error = 17;
+    }
+    if (!error)
+    {
+        // The multi-LOD isolation fixture stored high; ensure this test
+        // starts with the deliberate network cache miss it checks.
+        (void)fs::remove(root/(std::string{a}+".mesh"));
         MeshMemoryCache ram{bytes*2U};
         MeshDiskCache disk{root};
         int network_calls = 0;

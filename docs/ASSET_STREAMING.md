@@ -1,6 +1,6 @@
 # OpenGenesisLINK – GPU-Textur-Streaming und Residency
 
-Stand 0.2.0-alpha.58 · Phase 9, Basisblock
+Stand 0.2.0-alpha.60 · Phase 9 (Historie ab alpha.58)
 Maßgeblich: projectplan.md
 
 ## Ziel und Grenzen
@@ -126,3 +126,20 @@ Fehlerfällen. Gesamt: 33/33 CTests und Linux-GL3.3-Smoke.
 Offen: echter authentifizierter NexVerse-Mesh-Sichttest,
 LOD-Chunk-/Texture-Mip-Streaming, echte GPU-Bytebudgets,
 Asset-Revision/ETag, Rigging und die gesonderte Bugfixphase.
+
+
+## Ausbau alpha.60 – LOD-Keyspace und Mesh-Residency
+
+**Block A – OpenSim-LOD-Decoder:** High, Medium, Low und Lowest. Gewünschte Stufe zuerst; bei fehlenden/defekten Chunks Fallback auf andere gültige Level. Bestehende LLSD-/zlib-/Mesh-Bounds gelten weiter.
+
+**Block B – Adaptive LOD-Planung:** `plan_mesh_lods` gewichtet Entfernung und Primgröße, dedupliziert mehrfach verwendete Mesh-UUIDs und nutzt Hysterese. Aktualisierung alle etwa 750 ms oder bei Szene-Änderung.
+
+**Block C – LOD-getrennte RAM-/Disk-Caches:** High behält den bisherigen `<uuid>.mesh`-Schlüssel; andere Stufen werden unter `<uuid>.<lod>.mesh` inklusive LOD-gebundener Checksumme gespeichert. Budgets 64 MiB RAM und 512 MiB Disk. Nach Server-Fallback bezeichnet der Cache-Key den angeforderten, nicht zwingend den tatsächlich dekodierten LOD.
+
+**Block D – GPU-Swap und Diagnose:** Mesh-LOD-Upgrades und -Downgrades ohne vorherige Entfernung der Mesh-UUID. GPU lädt zuerst neue Buffers, gibt alte erst nach erfolgreichem Upload frei. Aktuelle Regions-Epoche und Ziel-LOD werden vor Upload geprüft. Neues Log: LOD-Swap-Zähler und geschätzte VBO/EBO-Bytes.
+
+**Verifikation:** C++23-Debug-Build, 34/34 CTests (LOD-Codec/Fallback, Cache-Varianten, Hysterese). OpenGL-Start-Smoke zum Release. Weiter offen: authentifizierter In-World-LOD-Test, GPU-Bytebudget, Texture-Mip-Streaming, Rigging/Animesh und zurückgestellte Avatar-/Bewegungs-/Teleport-Fehler.
+
+Live: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl60-live.log`. Maßgeblich: `projectplan.md`, Branch `develop-current`.
+
+Die Cache-Budgets gelten für alle LOD-Varianten zusammen. Ein Cachetreffer nach Server-Fallback beweist nur den Wunsch-LOD-Key, nicht den originalen Server-LOD. `gpu_estimated_bytes` sind geschätzte Mesh-VBO/EBO-Bytes und keine tatsächliche VRAM-Messung oder Byte-Grenze. Kein Texture-Mip-Streaming in alpha.60.

@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.59`
+Version: `0.2.0-alpha.60`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -935,3 +935,20 @@ Nächste 3–4 Blöcke: echte Mesh-LOD-/Mip-Stufen und
 GPU-/CPU-Bytebudgets. Vor jedem weiteren Commit
 Git-Status prüfen, keine destruktiven Resets/Cleans;
 CMake Debug, CTest und GUI-Smoke nach Änderungen.
+
+
+## 0.2.0-alpha.60 – GitHub-Handoff · 11.10.2026
+
+**Block A – OpenSim-LOD-Decoder:** High, Medium, Low und Lowest. Gewünschte Stufe zuerst; bei fehlenden/defekten Chunks Fallback auf andere gültige Level. Bestehende LLSD-/zlib-/Mesh-Bounds gelten weiter.
+
+**Block B – Adaptive LOD-Planung:** `plan_mesh_lods` gewichtet Entfernung und Primgröße, dedupliziert mehrfach verwendete Mesh-UUIDs und nutzt Hysterese. Aktualisierung alle etwa 750 ms oder bei Szene-Änderung.
+
+**Block C – LOD-getrennte RAM-/Disk-Caches:** High behält den bisherigen `<uuid>.mesh`-Schlüssel; andere Stufen werden unter `<uuid>.<lod>.mesh` inklusive LOD-gebundener Checksumme gespeichert. Budgets 64 MiB RAM und 512 MiB Disk. Nach Server-Fallback bezeichnet der Cache-Key den angeforderten, nicht zwingend den tatsächlich dekodierten LOD.
+
+**Block D – GPU-Swap und Diagnose:** Mesh-LOD-Upgrades und -Downgrades ohne vorherige Entfernung der Mesh-UUID. GPU lädt zuerst neue Buffers, gibt alte erst nach erfolgreichem Upload frei. Aktuelle Regions-Epoche und Ziel-LOD werden vor Upload geprüft. Neues Log: LOD-Swap-Zähler und geschätzte VBO/EBO-Bytes.
+
+**Verifikation:** C++23-Debug-Build, 34/34 CTests (LOD-Codec/Fallback, Cache-Varianten, Hysterese). OpenGL-Start-Smoke zum Release. Weiter offen: authentifizierter In-World-LOD-Test, GPU-Bytebudget, Texture-Mip-Streaming, Rigging/Animesh und zurückgestellte Avatar-/Bewegungs-/Teleport-Fehler.
+
+Live: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl60-live.log`. Maßgeblich: `projectplan.md`, Branch `develop-current`.
+
+**Nächste 3–4 Blöcke:** Texture-Mip/Chunk-Streaming, durchgesetztes GPU-Bytebudget, priorisierte Asset-Anfragen. Verbindlicher Prozess: GitHub-Branch `develop-current` lesen (nicht `develop`), `projectplan.md`, `info.md`, `CHATUEBERGABE.md` und relevante Docs pflegen, Debug-Build/CTest/GUI-Smoke, danach Code und Docs gemeinsam pushen.

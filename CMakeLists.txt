@@ -398,6 +398,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-cache-tests)
     add_test(NAME nexverse-mesh-cache-tests COMMAND nexverse-mesh-cache-tests)
 
+    add_executable(nexverse-mesh-lod-policy-tests tests/mesh_lod_policy_tests.cpp)
+    target_link_libraries(nexverse-mesh-lod-policy-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-mesh-lod-policy-tests)
+    add_test(NAME nexverse-mesh-lod-policy-tests COMMAND nexverse-mesh-lod-policy-tests)
+
     add_executable(nexverse-mesh-residency-tests tests/mesh_residency_tests.cpp)
     target_link_libraries(nexverse-mesh-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-residency-tests)

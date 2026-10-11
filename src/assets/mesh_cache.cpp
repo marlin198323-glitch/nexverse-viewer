@@ -45,6 +45,16 @@ std::string canonical(std::string_view id)
     { return static_cast<char>(c >= 'A' && c <= 'F' ? c - 'A' + 'a' : c); });
     return s;
 }
+std::string cache_key(std::string_view id, MeshLod lod)
+{
+    auto key = canonical(id);
+    if (lod != MeshLod::high)
+    {
+        key += ".";
+        key += mesh_lod_name(lod);
+    }
+    return key;
+}
 void push32(std::vector<std::uint8_t>& data, std::uint32_t value)
 {
     for (unsigned i = 0U; i < 4U; ++i)
@@ -69,13 +79,13 @@ std::uint64_t get64(const std::vector<std::uint8_t>& bytes, std::size_t offset)
         value |= static_cast<std::uint64_t>(bytes[offset+i]) << (8U*i);
     return value;
 }
-std::uint64_t checksum(std::string_view id,
+std::uint64_t checksum(std::string_view id, MeshLod lod,
     const std::vector<std::uint8_t>& bytes)
 {
     std::uint64_t hash = 14695981039346656037ULL;
     const auto fold = [&](std::uint8_t value)
     { hash = (hash ^ value) * 1099511628211ULL; };
-    for (const char c : canonical(id))
+    for (const char c : cache_key(id, lod))
         fold(static_cast<std::uint8_t>(c));
     // Include header counts, but exclude the embedded checksum at [20,28).
     for (std::size_t i = 8U; i < 20U; ++i) fold(bytes[i]);
@@ -123,12 +133,12 @@ std::filesystem::path MeshDiskCache::default_directory()
         return std::filesystem::path{home}/".cache"/"opengenesislink"/"meshes-v1";
     return {};
 }
-std::optional<MeshGeometry> MeshDiskCache::load(std::string_view id) const
+std::optional<MeshGeometry> MeshDiskCache::load(std::string_view id, MeshLod lod) const
 {
     if (!safe_uuid(id) || directory_.empty()) return std::nullopt;
     try
     {
-        const auto path = directory_/(canonical(id)+".mesh");
+        const auto path = directory_/(cache_key(id,lod)+".mesh");
         // Do not follow symlinked entries in a cache directory.
         if (!std::filesystem::is_regular_file(
                 std::filesystem::symlink_status(path)))
@@ -154,7 +164,7 @@ std::optional<MeshGeometry> MeshDiskCache::load(std::string_view id) const
             static_cast<std::uint64_t>(floats)*4U +
             static_cast<std::uint64_t>(indices)*4U +
             static_cast<std::uint64_t>(faces)*12U;
-        if (expected != size || checksum(id,bytes) != get64(bytes,20U))
+        if (expected != size || checksum(id,lod,bytes) != get64(bytes,20U))
             return std::nullopt;
         MeshGeometry geometry;
         geometry.vertices.reserve(floats);
@@ -179,7 +189,7 @@ std::optional<MeshGeometry> MeshDiskCache::load(std::string_view id) const
     catch (const std::ios_base::failure&) { return std::nullopt; }
     catch (const std::bad_alloc&) { return std::nullopt; }
 }
-bool MeshDiskCache::store(std::string_view id, const MeshGeometry& geometry) const
+bool MeshDiskCache::store(std::string_view id, const MeshGeometry& geometry, MeshLod lod) const
 {
     if (!safe_uuid(id) || directory_.empty() || !cacheable_mesh(geometry) ||
         mesh_byte_size(geometry)+header_bytes > budget_bytes_) return false;
@@ -201,11 +211,11 @@ bool MeshDiskCache::store(std::string_view id, const MeshGeometry& geometry) con
             push32(bytes,face.first_index);
             push32(bytes,face.index_count);
         }
-        const auto hash = checksum(id, bytes);
+        const auto hash = checksum(id, lod, bytes);
         for (unsigned i = 0U; i < 8U; ++i)
             bytes[20U+i] = static_cast<std::uint8_t>(hash >> (8U*i));
         std::filesystem::create_directories(directory_);
-        const auto dest = directory_/(canonical(id)+".mesh");
+        const auto dest = directory_/(cache_key(id,lod)+".mesh");
         auto temp = dest;
         temp += ".part";
         {
@@ -240,7 +250,12 @@ std::size_t MeshDiskCache::prune() const
                 !std::filesystem::is_regular_file(file.symlink_status()))
                 continue;
             const auto name = file.path().stem().string();
-            if (!safe_uuid(name)) continue;
+            const auto dot = name.find('.');
+            if (!safe_uuid(name.substr(0U,dot))) continue;
+            if (dot != std::string::npos &&
+                name.substr(dot+1U)!="low" &&
+                name.substr(dot+1U)!="medium" &&
+                name.substr(dot+1U)!="lowest") continue;
             const auto size = file.file_size();
             entries.push_back({file.path(),file.last_write_time(),size});
             total += size;
@@ -262,22 +277,22 @@ std::size_t MeshDiskCache::prune() const
 }
 MeshMemoryCache::MeshMemoryCache(std::size_t budget_bytes) : budget_(budget_bytes)
 {}
-std::optional<MeshGeometry> MeshMemoryCache::load(std::string_view id)
+std::optional<MeshGeometry> MeshMemoryCache::load(std::string_view id, MeshLod lod)
 {
     if (!safe_uuid(id)) return std::nullopt;
-    const auto key = canonical(id);
+    const auto key = cache_key(id,lod);
     std::lock_guard lock{mutex_};
     const auto it = items_.find(key);
     if (it == items_.end()) return std::nullopt;
     lru_.splice(lru_.end(),lru_,it->second.age);
     return it->second.mesh;
 }
-bool MeshMemoryCache::store(std::string_view id, const MeshGeometry& geometry)
+bool MeshMemoryCache::store(std::string_view id, const MeshGeometry& geometry, MeshLod lod)
 {
     if (!safe_uuid(id) || !cacheable_mesh(geometry)) return false;
     const auto size = mesh_byte_size(geometry);
     if (size > budget_) return false;
-    const auto key = canonical(id);
+    const auto key = cache_key(id,lod);
     std::lock_guard lock{mutex_};
     if (const auto it = items_.find(key); it != items_.end())
     {
@@ -310,7 +325,8 @@ std::size_t MeshMemoryCache::count() const
 }
 CachedMeshResult load_mesh_cached(std::string_view id, MeshMemoryCache& memory,
     const MeshDiskCache& disk,
-    const std::function<MeshAssetResult()>& downloader)
+    const std::function<MeshAssetResult()>& downloader,
+    MeshLod preferred_lod)
 {
     CachedMeshResult result;
     result.asset.asset_id = std::string{id};
@@ -319,29 +335,31 @@ CachedMeshResult load_mesh_cached(std::string_view id, MeshMemoryCache& memory,
         result.asset.message = "Invalid mesh asset identifier";
         return result;
     }
-    if (auto hit = memory.load(id))
+    if (auto hit = memory.load(id,preferred_lod))
     {
         result.tier = MeshCacheTier::memory;
         result.asset.success = true;
         result.asset.geometry = std::move(*hit);
         result.asset.message = "RAM mesh cache hit";
+        result.asset.decoded_lod = preferred_lod;
         return result;
     }
-    if (auto hit = disk.load(id))
+    if (auto hit = disk.load(id,preferred_lod))
     {
         result.tier = MeshCacheTier::disk;
         result.asset.success = true;
         result.asset.geometry = std::move(*hit);
         result.asset.message = "Disk mesh cache hit";
-        (void)memory.store(id,result.asset.geometry);
+        result.asset.decoded_lod = preferred_lod;
+        (void)memory.store(id,result.asset.geometry,preferred_lod);
         return result;
     }
     result.asset = downloader();
     if (result.asset.success && cacheable_mesh(result.asset.geometry) &&
         canonical(result.asset.asset_id) == canonical(id))
     {
-        (void)memory.store(id,result.asset.geometry);
-        (void)disk.store(id,result.asset.geometry);
+        (void)memory.store(id,result.asset.geometry,preferred_lod);
+        (void)disk.store(id,result.asset.geometry,preferred_lod);
     }
     return result;
 }

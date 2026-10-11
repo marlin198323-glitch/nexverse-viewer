@@ -29,7 +29,7 @@ Produktname: `OpenGenesisLINK Viewer`
 Zielwelt/Grid: NexVerse
 Technik: C++23, CMake, vcpkg, GLFW, GLAD, OpenGL 3.3 Core, FreeType.
 Lizenz: MPL 2.0.
-Aktuelle Viewer-Version: `0.2.0-alpha.59`.
+Aktuelle Viewer-Version: `0.2.0-alpha.60`.
 
 Versionsregel:
 - Entwicklungsstände werden fortlaufend versioniert.
@@ -1714,3 +1714,20 @@ Code: `assets/mesh_cache.hpp/.cpp`, `tests/mesh_cache_tests.cpp`,
 `src/app/application.cpp`. Weitere Details:
 `docs/ASSET_STREAMING.md`, `docs/MESH.md`.
 Handoff: `develop-current` und nicht divergentes `develop`.
+
+
+## 0.2.0-alpha.60 – Dynamische Mesh-LODs · 11.10.2026
+
+**Block A – OpenSim-LOD-Decoder:** High, Medium, Low und Lowest. Gewünschte Stufe zuerst; bei fehlenden/defekten Chunks Fallback auf andere gültige Level. Bestehende LLSD-/zlib-/Mesh-Bounds gelten weiter.
+
+**Block B – Adaptive LOD-Planung:** `plan_mesh_lods` gewichtet Entfernung und Primgröße, dedupliziert mehrfach verwendete Mesh-UUIDs und nutzt Hysterese. Aktualisierung alle etwa 750 ms oder bei Szene-Änderung.
+
+**Block C – LOD-getrennte RAM-/Disk-Caches:** High behält den bisherigen `<uuid>.mesh`-Schlüssel; andere Stufen werden unter `<uuid>.<lod>.mesh` inklusive LOD-gebundener Checksumme gespeichert. Budgets 64 MiB RAM und 512 MiB Disk. Nach Server-Fallback bezeichnet der Cache-Key den angeforderten, nicht zwingend den tatsächlich dekodierten LOD.
+
+**Block D – GPU-Swap und Diagnose:** Mesh-LOD-Upgrades und -Downgrades ohne vorherige Entfernung der Mesh-UUID. GPU lädt zuerst neue Buffers, gibt alte erst nach erfolgreichem Upload frei. Aktuelle Regions-Epoche und Ziel-LOD werden vor Upload geprüft. Neues Log: LOD-Swap-Zähler und geschätzte VBO/EBO-Bytes.
+
+**Verifikation:** C++23-Debug-Build, 34/34 CTests (LOD-Codec/Fallback, Cache-Varianten, Hysterese). OpenGL-Start-Smoke zum Release. Weiter offen: authentifizierter In-World-LOD-Test, GPU-Bytebudget, Texture-Mip-Streaming, Rigging/Animesh und zurückgestellte Avatar-/Bewegungs-/Teleport-Fehler.
+
+Live: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl60-live.log`. Maßgeblich: `projectplan.md`, Branch `develop-current`.
+
+Quellen: `src/assets/mesh_loader.cpp`, `src/assets/mesh_cache.cpp`, `include/nexverse/assets/mesh_lod_policy.hpp`, `src/app/application.cpp`, `src/render/opengl_renderer.cpp`. Tests `mesh_loader_tests`, `mesh_cache_tests`, `mesh_lod_policy_tests`.

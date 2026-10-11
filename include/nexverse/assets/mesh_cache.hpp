@@ -25,8 +25,10 @@ class MeshDiskCache
 public:
     explicit MeshDiskCache(std::filesystem::path directory,
         std::uint64_t budget_bytes = 512ULL * 1024ULL * 1024ULL);
-    [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id) const;
-    [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh) const;
+    [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id,
+        MeshLod lod = MeshLod::high) const;
+    [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh,
+        MeshLod lod = MeshLod::high) const;
     [[nodiscard]] std::size_t prune() const;
     [[nodiscard]] static std::filesystem::path default_directory();
 private:
@@ -38,8 +40,10 @@ class MeshMemoryCache
 {
 public:
     explicit MeshMemoryCache(std::size_t budget_bytes = 64U * 1024U * 1024U);
-    [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id);
-    [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh);
+    [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id,
+        MeshLod lod = MeshLod::high);
+    [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh,
+        MeshLod lod = MeshLod::high);
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] std::size_t count() const;
 private:
@@ -67,5 +71,6 @@ struct CachedMeshResult
 // enter the caches. Only immutable UUID assets are cached, not CAPS URLs.
 [[nodiscard]] CachedMeshResult load_mesh_cached(
     std::string_view id, MeshMemoryCache& memory, const MeshDiskCache& disk,
-    const std::function<MeshAssetResult()>& downloader);
+    const std::function<MeshAssetResult()>& downloader,
+    MeshLod preferred_lod = MeshLod::high);
 }

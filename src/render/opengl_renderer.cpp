@@ -2906,8 +2906,9 @@ public:
         if (mesh_id.empty() || geometry.vertices.empty() ||
             geometry.indices.empty() || geometry.vertices.size() % 8U != 0U)
             return false;
-        if (mesh_assets_.contains(mesh_id)) return true;
-        if (mesh_assets_.size() >= 256U) return false;
+        const auto old = mesh_assets_.find(mesh_id);
+        if (old == mesh_assets_.end() && mesh_assets_.size() >= 256U)
+            return false;
         MeshData mesh;
         mesh.vertices = geometry.vertices;
         mesh.indices = geometry.indices;
@@ -2916,7 +2917,15 @@ public:
                 face.face, face.first_index, face.index_count});
         GpuMesh gpu;
         if (!upload_mesh(gpu, mesh)) return false;
-        mesh_assets_.emplace(mesh_id, std::move(gpu));
+        // Atomic logical replacement: upload first; destroy previous GPU
+        // buffers only after the new VAO/VBO/EBO were created successfully.
+        // This keeps the old LOD visible if a new upload fails.
+        if (old != mesh_assets_.end())
+        {
+            destroy_mesh(old->second);
+            old->second = std::move(gpu);
+        }
+        else mesh_assets_.emplace(mesh_id, std::move(gpu));
         nexverse::core::info(
             "OGLRender mesh geometry uploaded: triangles=" +
             std::to_string(geometry.indices.size() / 3U));

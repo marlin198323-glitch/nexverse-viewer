@@ -223,7 +223,7 @@ std::string build_get_mesh_uri(std::string_view capability,
 }
 
 MeshAssetResult decode_mesh_asset(std::string_view asset_id,
-                                  std::string_view data)
+                                  std::string_view data, MeshLod preferred_lod)
 {
     MeshAssetResult result;
     result.asset_id.assign(asset_id);
@@ -254,76 +254,91 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
             "; prefix_hex=" + signature.str();
         return result;
     }
-    const auto* lod = header.value->find("high_lod");
-    if (!lod || !lod->is_map())
-        lod = header.value->find("medium_lod");
-    if (!lod || !lod->is_map())
+    // Prefer requested LOD. If the uploader omitted it or it is invalid,
+    // use the closest better resolution, then progressively lower tiers.
+    const int requested = std::clamp(static_cast<int>(preferred_lod), 0, 3);
+    std::array<int, 4> candidates{};
+    std::size_t candidate_count = 0U;
+    candidates[candidate_count++] = requested;
+    for (int level = requested+1; level <= 3; ++level)
+        candidates[candidate_count++] = level;
+    for (int level = requested-1; level >= 0; --level)
+        candidates[candidate_count++] = level;
+    bool any_lod = false;
+    std::string last_error = "Mesh has no supported LOD descriptor";
+    for (std::size_t ci = 0U; ci < candidate_count; ++ci)
     {
-        result.message = "Mesh has no supported LOD descriptor";
-        return result;
-    }
-    const auto* offset = lod->find("offset");
-    const auto* size = lod->find("size");
-    if (!offset || !size || offset->type != LlsdType::integer ||
-        size->type != LlsdType::integer ||
-        offset->integer_value < 0 || size->integer_value <= 0 ||
-        static_cast<std::uint64_t>(offset->integer_value) > raw.size() - header_size ||
-        static_cast<std::uint64_t>(size->integer_value) >
-            raw.size() - header_size -
-                static_cast<std::size_t>(offset->integer_value))
-    {
-        result.message = "Mesh LOD block outside asset boundaries";
-        return result;
-    }
-    const std::size_t begin =
-        header_size + static_cast<std::size_t>(offset->integer_value);
-    const auto expanded = decompress(
-        raw.subspan(begin, static_cast<std::size_t>(size->integer_value)));
-    if (!expanded)
-    {
-        result.message = "Mesh LOD zlib/gzip decompression failed";
-        return result;
-    }
-    const auto parsed = nexverse::protocol::parse_llsd_binary(*expanded);
-    if (!parsed.ok() || !parsed.value->is_array() ||
-        parsed.value->array_value.size() > 64U)
-    {
-        result.message = "Mesh LOD LLSD array invalid: " + parsed.error;
-        return result;
-    }
-    MeshGeometry geometry;
-    std::size_t skipped_faces = 0U;
-    for (std::size_t i = 0U; i < parsed.value->array_value.size(); ++i)
-    {
-        // Individual uploaded faces can be malformed. Retain the other
-        // faces, but rollback partially appended triangles in a bad face.
-        const auto vertex_count = geometry.vertices.size();
-        const auto index_count = geometry.indices.size();
-        const auto face_count = geometry.faces.size();
-        if (!append_submesh(parsed.value->array_value[i],
-                            static_cast<std::uint32_t>(i), geometry))
+        const auto candidate = static_cast<MeshLod>(candidates[ci]);
+        const std::string key = std::string(mesh_lod_name(candidate)) + "_lod";
+        const auto* lod = header.value->find(key);
+        if (!lod || !lod->is_map()) continue;
+        any_lod = true;
+        const auto* offset = lod->find("offset");
+        const auto* size = lod->find("size");
+        if (!offset || !size || offset->type != LlsdType::integer ||
+            size->type != LlsdType::integer ||
+            offset->integer_value < 0 || size->integer_value <= 0 ||
+            static_cast<std::uint64_t>(offset->integer_value) > raw.size()-header_size ||
+            static_cast<std::uint64_t>(size->integer_value) >
+                raw.size()-header_size-static_cast<std::size_t>(offset->integer_value))
         {
-            geometry.vertices.resize(vertex_count);
-            geometry.indices.resize(index_count);
-            geometry.faces.resize(face_count);
-            ++skipped_faces;
+            last_error = "Mesh LOD block outside asset boundaries";
+            continue;
         }
-    }
-    if (!geometry.valid())
-    {
-        result.message = "Mesh LOD contains no valid renderable triangles" +
-            (skipped_faces > 0U
-                ? "; invalid_faces=" + std::to_string(skipped_faces)
-                : "");
+        const std::size_t begin =
+            header_size + static_cast<std::size_t>(offset->integer_value);
+        const auto expanded = decompress(
+            raw.subspan(begin, static_cast<std::size_t>(size->integer_value)));
+        if (!expanded)
+        {
+            last_error = "Mesh LOD zlib/gzip decompression failed";
+            continue;
+        }
+        const auto parsed = nexverse::protocol::parse_llsd_binary(*expanded);
+        if (!parsed.ok() || !parsed.value->is_array() ||
+            parsed.value->array_value.size() > 64U)
+        {
+            last_error = "Mesh LOD LLSD array invalid: " + parsed.error;
+            continue;
+        }
+        MeshGeometry geometry;
+        std::size_t skipped_faces = 0U;
+        for (std::size_t i = 0U; i < parsed.value->array_value.size(); ++i)
+        {
+            const auto vertex_count = geometry.vertices.size();
+            const auto index_count = geometry.indices.size();
+            const auto face_count = geometry.faces.size();
+            if (!append_submesh(parsed.value->array_value[i],
+                                static_cast<std::uint32_t>(i), geometry))
+            {
+                geometry.vertices.resize(vertex_count);
+                geometry.indices.resize(index_count);
+                geometry.faces.resize(face_count);
+                ++skipped_faces;
+            }
+        }
+        if (!geometry.valid())
+        {
+            last_error = "Mesh LOD contains no valid renderable triangles" +
+                (skipped_faces > 0U
+                    ? "; invalid_faces=" + std::to_string(skipped_faces) : "");
+            continue;
+        }
+        result.geometry = std::move(geometry);
+        result.success = true;
+        result.decoded_lod = candidate;
+        result.message = "Mesh " + key + " loaded; triangles=" +
+            std::to_string(result.geometry.indices.size()/3U);
+        if (candidate != preferred_lod)
+            result.message += "; requested=" +
+                std::string(mesh_lod_name(preferred_lod)) +
+                "; fallback=" + std::string(mesh_lod_name(candidate));
+        if (skipped_faces > 0U)
+            result.message += "; skipped_invalid_faces=" +
+                std::to_string(skipped_faces);
         return result;
     }
-    result.geometry = std::move(geometry);
-    result.success = true;
-    result.message = "Mesh high/medium LOD loaded; triangles=" +
-                     std::to_string(result.geometry.indices.size() / 3U);
-    if (skipped_faces > 0U)
-        result.message += "; skipped_invalid_faces=" +
-                          std::to_string(skipped_faces);
+    result.message = any_lod ? last_error : "Mesh has no supported LOD descriptor";
     return result;
 }
 
@@ -335,7 +350,7 @@ MeshAssetLoader::MeshAssetLoader(
 
 MeshAssetResult MeshAssetLoader::fetch(
     std::string_view capability, std::string_view asset_id,
-    std::string_view fallback_capability) const
+    std::string_view fallback_capability, MeshLod preferred_lod) const
 {
     MeshAssetResult result;
     result.asset_id.assign(asset_id);
@@ -363,7 +378,7 @@ MeshAssetResult MeshAssetLoader::fetch(
                 ? "GetMesh HTTP request failed" : response.error;
             return response_result;
         }
-        return decode_mesh_asset(asset_id, response.body);
+        return decode_mesh_asset(asset_id, response.body, preferred_lod);
     };
 
     result = load(capability);
