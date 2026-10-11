@@ -27,6 +27,13 @@ struct AssetStreamingSnapshot
     std::size_t gpu_texture_bytes=0U;
     std::size_t gpu_mesh_bytes=0U;
     std::size_t gpu_shared_budget_bytes=0U;
+    std::size_t gpu_upload_cpu_samples=0U;
+    std::uint64_t gpu_upload_cpu_avg_us=0U;
+    std::uint64_t gpu_upload_cpu_p95_us=0U;
+    std::uint64_t gpu_upload_cpu_max_us=0U;
+    std::size_t gpu_upload_pacing_ms=0U;
+    std::size_t texture_priority_churn=0U;
+    std::size_t mesh_priority_churn=0U;
 
     [[nodiscard]] std::string json() const
     {
@@ -60,6 +67,13 @@ struct AssetStreamingSnapshot
         field("gpu_texture_bytes",gpu_texture_bytes);
         field("gpu_mesh_bytes",gpu_mesh_bytes);
         field("gpu_shared_budget_bytes",gpu_shared_budget_bytes);
+        field("gpu_upload_cpu_samples",gpu_upload_cpu_samples);
+        field("gpu_upload_cpu_avg_us",gpu_upload_cpu_avg_us);
+        field("gpu_upload_cpu_p95_us",gpu_upload_cpu_p95_us);
+        field("gpu_upload_cpu_max_us",gpu_upload_cpu_max_us);
+        field("gpu_upload_pacing_ms",gpu_upload_pacing_ms);
+        field("texture_priority_churn",texture_priority_churn);
+        field("mesh_priority_churn",mesh_priority_churn);
         out+="}";
         return out;
     }

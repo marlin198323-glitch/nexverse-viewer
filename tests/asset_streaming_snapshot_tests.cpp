@@ -15,6 +15,10 @@ int main()
     snapshot.gpu_texture_bytes=240U;
     snapshot.gpu_mesh_bytes=80U;
     snapshot.gpu_shared_budget_bytes=384U;
+    snapshot.gpu_upload_cpu_samples=12U;
+    snapshot.gpu_upload_cpu_p95_us=1300U;
+    snapshot.gpu_upload_pacing_ms=30U;
+    snapshot.mesh_priority_churn=2U;
     const auto json=snapshot.json();
     if(json.rfind("{\"schema\":\"ogl.asset.streaming.v1\"",0U)!=0U ||
        json.back()!='}' ||
@@ -24,7 +28,9 @@ int main()
        json.find("\"mesh_coverage_pct\":50")==std::string::npos ||
        json.find("\"textures_pending\":1")==std::string::npos ||
        json.find("\"mesh_retry_blocked\":0")==std::string::npos ||
-       json.find("\"gpu_shared_budget_bytes\":384")==std::string::npos)
+       json.find("\"gpu_shared_budget_bytes\":384")==std::string::npos ||
+       json.find("\"gpu_upload_cpu_p95_us\":1300")==std::string::npos ||
+       json.find("\"mesh_priority_churn\":2")==std::string::npos)
         return 1;
     AssetStreamingSnapshot none;
     const auto blank=none.json();

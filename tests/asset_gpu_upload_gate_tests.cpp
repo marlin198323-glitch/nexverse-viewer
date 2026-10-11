@@ -14,6 +14,12 @@ int main()
        gate.count()!=1 ||gate.bytes()!=1024)return 2;
     gate.reset();
     if(!gate.ready(t)||gate.count()!=1)return 3;
+    gate.uploaded(t,1024,microseconds{22000});
+    if(gate.effective_interval()!=milliseconds{88} ||
+       gate.ready(t+milliseconds{87}) ||
+       !gate.ready(t+milliseconds{88}))return 9;
+    gate.uploaded(t+milliseconds{88},1024,microseconds{1000});
+    if(gate.effective_interval()!=milliseconds{40})return 10;
 
     const auto fit=plan_texture_slot_admission({"new","a","b"},
         {"a","b"},{},"new",2);

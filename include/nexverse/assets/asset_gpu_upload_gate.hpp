@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -22,18 +23,30 @@ public:
     {
         return !armed_ || now>=next_;
     }
-    void uploaded(Clock::time_point now,std::size_t bytes) noexcept
+    void uploaded(Clock::time_point now,std::size_t bytes,
+        std::chrono::microseconds submission_time={}) noexcept
     {
-        next_=now+interval_;
+        // Adaptive pacing is based on observed CPU submission latency, not
+        // an unsupported claim about asynchronous GPU completion.
+        const auto micros=std::max<std::int64_t>(
+            0,submission_time.count());
+        const auto requested=std::chrono::milliseconds{
+            std::clamp<std::int64_t>((micros+999)/1000*4,
+                interval_.count(),150)};
+        effective_interval_=std::max(interval_,requested);
+        next_=now+effective_interval_;
         armed_=true;
         ++uploads_;
         bytes_uploaded_+=bytes;
     }
-    void reset() noexcept {next_={};armed_=false;}
+    void reset() noexcept {next_={};armed_=false;effective_interval_=interval_;}
+    [[nodiscard]] std::chrono::milliseconds effective_interval() const noexcept
+    {return effective_interval_;}
     [[nodiscard]] std::size_t count() const noexcept{return uploads_;}
     [[nodiscard]] std::size_t bytes() const noexcept{return bytes_uploaded_;}
 private:
     std::chrono::milliseconds interval_;
+    std::chrono::milliseconds effective_interval_{interval_};
     Clock::time_point next_{};
     bool armed_=false;
     std::size_t uploads_=0;

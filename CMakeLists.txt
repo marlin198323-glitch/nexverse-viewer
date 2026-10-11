@@ -410,6 +410,24 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-asset-upload-telemetry-tests tests/asset_upload_telemetry_tests.cpp)
+    target_link_libraries(nexverse-asset-upload-telemetry-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-upload-telemetry-tests)
+    add_test(NAME nexverse-asset-upload-telemetry-tests COMMAND nexverse-asset-upload-telemetry-tests)
+
+    add_executable(nexverse-asset-scene-priority-feedback-tests tests/asset_scene_priority_feedback_tests.cpp)
+    target_link_libraries(nexverse-asset-scene-priority-feedback-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-scene-priority-feedback-tests)
+    add_test(NAME nexverse-asset-scene-priority-feedback-tests COMMAND nexverse-asset-scene-priority-feedback-tests)
+
+    add_executable(nexverse-renderer-gpu-asset-integration-tests tests/renderer_gpu_asset_integration_tests.cpp)
+    target_link_libraries(nexverse-renderer-gpu-asset-integration-tests PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-gpu-asset-integration-tests)
+    add_test(NAME nexverse-renderer-gpu-asset-integration-tests
+        COMMAND nexverse-renderer-gpu-asset-integration-tests)
+    set_tests_properties(nexverse-renderer-gpu-asset-integration-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-asset-lod-dwell-tests tests/asset_lod_dwell_tests.cpp)
     target_link_libraries(nexverse-asset-lod-dwell-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-lod-dwell-tests)

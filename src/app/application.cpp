@@ -23,6 +23,8 @@
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
 #include "nexverse/assets/asset_lod_dwell.hpp"
 #include "nexverse/assets/asset_gpu_upload_gate.hpp"
+#include "nexverse/assets/asset_upload_telemetry.hpp"
+#include "nexverse/assets/asset_scene_priority_feedback.hpp"
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3359,6 +3361,9 @@ int Application::run(bool enable_developer_modules)
     std::unordered_map<std::string, assets::MeshLod> mesh_gpu_lods;
     assets::AssetLodDwell<assets::MeshLod> mesh_lod_dwell;
     assets::AssetGpuUploadGate asset_gpu_upload_gate;
+    assets::AssetUploadTelemetry asset_gpu_upload_telemetry;
+    assets::AssetScenePriorityFeedback mesh_priority_feedback;
+    assets::AssetScenePriorityFeedback texture_priority_feedback;
     std::size_t texture_slot_replacements = 0U;
     std::unordered_map<std::string, std::size_t> mesh_gpu_asset_bytes;
     std::size_t mesh_gpu_estimated_bytes = 0U;
@@ -4593,6 +4598,9 @@ int Application::run(bool enable_developer_modules)
                 mesh_gpu_lods.clear();
                 mesh_lod_dwell.reset();
                 asset_gpu_upload_gate.reset();
+                asset_gpu_upload_telemetry.reset();
+                mesh_priority_feedback.reset();
+                texture_priority_feedback.reset();
                 mesh_gpu_asset_bytes.clear();
                 mesh_gpu_estimated_bytes = 0U;
                 mesh_gpu_budget_deferred_ids.clear();
@@ -5812,10 +5820,20 @@ int Application::run(bool enable_developer_modules)
                         image.width = result.image.width;
                         image.height = result.image.height;
                         image.pixels = std::move(result.image.pixels);
+                        const auto gpu_submission_started =
+                            std::chrono::steady_clock::now();
                         world_renderer->set_object_texture(
                             object_texture_loading_id, image);
+                        const auto gpu_submission_end =
+                            std::chrono::steady_clock::now();
+                        const auto submission_cpu_time =
+                            std::chrono::duration_cast<
+                                std::chrono::microseconds>(
+                                gpu_submission_end-gpu_submission_started);
+                        asset_gpu_upload_telemetry.observe(submission_cpu_time);
                         asset_gpu_upload_gate.uploaded(
-                            std::chrono::steady_clock::now(),next_bytes);
+                            gpu_submission_end,next_bytes,
+                            submission_cpu_time);
                         if (const auto old = texture_gpu_bytes.find(
                                 object_texture_loading_id);
                             old != texture_gpu_bytes.end())
@@ -5907,7 +5925,8 @@ int Application::run(bool enable_developer_modules)
                     scene_texture_samples,
                     render_agent.position.x,render_agent.position.y,
                     render_agent.position.z,object_texture_loaded_ids,
-                    8.0f,&camera_hint);
+                    texture_priority_feedback.loaded_bonus(8.0f),
+                    &camera_hint);
                 auto updated_residency = assets::plan_texture_residency(
                     emitter_texture_ids, nearby_textures,
                     object_texture_loaded_ids, max_object_texture_assets);
@@ -5915,6 +5934,7 @@ int Application::run(bool enable_developer_modules)
                     texture_residency.preferred_ids)
                     texture_budget_deferred_ids.clear();
                 texture_residency = std::move(updated_residency);
+                texture_priority_feedback.observe(texture_residency.desired_ids);
                 std::size_t evicted = 0U;
                 for (const auto& id:texture_residency.eviction_ids)
                 {
@@ -6193,6 +6213,15 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(asset_gpu_upload_gate.count()) +
                     " gpu_uploaded_bytes=" +
                     std::to_string(asset_gpu_upload_gate.bytes()) +
+                    " gpu_submit_cpu_p95_us=" +
+                    std::to_string(asset_gpu_upload_telemetry.recent_p95_us()) +
+                    " gpu_submit_cpu_max_us=" +
+                    std::to_string(asset_gpu_upload_telemetry.recent_max_us()) +
+                    " gpu_upload_pacing_ms=" +
+                    std::to_string(
+                        asset_gpu_upload_gate.effective_interval().count()) +
+                    " texture_priority_churn=" +
+                    std::to_string(texture_priority_feedback.churn_events()) +
                     " budget_deferrals=" +
                     std::to_string(texture_budget_rejections) +
                     " gpu_texture_bytes=" +
@@ -6234,7 +6263,10 @@ int Application::run(bool enable_developer_modules)
                     render_agent.position.y,
                     render_agent.position.z,
                     mesh_asset_loaded_ids,
-                    mesh_gpu_asset_budget,24.0f,&camera_hint);
+                    mesh_gpu_asset_budget,
+                    mesh_priority_feedback.loaded_bonus(24.0f),
+                    &camera_hint);
+                mesh_priority_feedback.observe(mesh_residency.desired_ids);
                 if (mesh_residency.desired_ids != desired_before)
                     mesh_gpu_budget_deferred_ids.clear();
 
@@ -6340,11 +6372,22 @@ int Application::run(bool enable_developer_modules)
                     for (const auto& face : result.geometry.faces)
                         geometry.faces.push_back({
                             face.face, face.first_index, face.index_count});
-                    if (world_renderer->set_mesh_asset(
-                            mesh_asset_loading_id, geometry))
+                    const auto gpu_submission_started =
+                        std::chrono::steady_clock::now();
+                    const bool mesh_uploaded=world_renderer->set_mesh_asset(
+                        mesh_asset_loading_id, geometry);
+                    const auto gpu_submission_end =
+                        std::chrono::steady_clock::now();
+                    const auto submission_cpu_time =
+                        std::chrono::duration_cast<
+                            std::chrono::microseconds>(
+                            gpu_submission_end-gpu_submission_started);
+                    asset_gpu_upload_telemetry.observe(submission_cpu_time);
+                    if (mesh_uploaded)
                     {
                         asset_gpu_upload_gate.uploaded(
-                            std::chrono::steady_clock::now(),gpu_bytes);
+                            gpu_submission_end,gpu_bytes,
+                            submission_cpu_time);
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
                         mesh_asset_retries.success(mesh_asset_loading_id+"."+
                             std::string(assets::mesh_lod_name(
@@ -6492,6 +6535,8 @@ int Application::run(bool enable_developer_modules)
                     " lod_swaps=" + std::to_string(mesh_lod_swaps) +
                     " lod_dwell_pending=" +
                     std::to_string(mesh_lod_dwell.waiting()) +
+                    " mesh_priority_churn=" +
+                    std::to_string(mesh_priority_feedback.churn_events()) +
                     " gpu_estimated_bytes=" + std::to_string(mesh_gpu_estimated_bytes) +
                     " shared_gpu_estimated_bytes=" +
                     std::to_string(mesh_gpu_estimated_bytes +
@@ -6564,6 +6609,20 @@ int Application::run(bool enable_developer_modules)
                 snapshot.gpu_texture_bytes=texture_gpu_used_bytes;
                 snapshot.gpu_mesh_bytes=mesh_gpu_estimated_bytes;
                 snapshot.gpu_shared_budget_bytes=shared_gpu_budget_bytes;
+                snapshot.gpu_upload_cpu_samples=
+                    asset_gpu_upload_telemetry.recent_count();
+                snapshot.gpu_upload_cpu_avg_us=
+                    asset_gpu_upload_telemetry.recent_avg_us();
+                snapshot.gpu_upload_cpu_p95_us=
+                    asset_gpu_upload_telemetry.recent_p95_us();
+                snapshot.gpu_upload_cpu_max_us=
+                    asset_gpu_upload_telemetry.recent_max_us();
+                snapshot.gpu_upload_pacing_ms=static_cast<std::size_t>(
+                    asset_gpu_upload_gate.effective_interval().count());
+                snapshot.texture_priority_churn=
+                    texture_priority_feedback.churn_events();
+                snapshot.mesh_priority_churn=
+                    mesh_priority_feedback.churn_events();
                 core::info("InWorldAssetSnapshot " + snapshot.json());
                 core::info("InWorld asset health: epoch=" +
                     std::to_string(material_scope.epoch()) +

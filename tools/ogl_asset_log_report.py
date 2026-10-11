@@ -79,6 +79,10 @@ def read_report(path: Path) -> dict[str, Any]:
                     "mesh_coverage_pct", "texture_retry_blocked",
                     "mesh_retry_blocked", "gpu_texture_bytes",
                     "gpu_mesh_bytes", "gpu_shared_budget_bytes",
+                    "gpu_upload_cpu_samples", "gpu_upload_cpu_avg_us",
+                    "gpu_upload_cpu_p95_us", "gpu_upload_cpu_max_us",
+                    "gpu_upload_pacing_ms", "texture_priority_churn",
+                    "mesh_priority_churn",
                 )
                 sanitized = {
                     key: data[key] for key in fields
@@ -103,6 +107,15 @@ def read_report(path: Path) -> dict[str, Any]:
         "lowest_mesh_coverage_pct": min(
             (s["mesh_coverage_pct"] for s in snapshots
              if "mesh_coverage_pct" in s), default=None),
+        "peak_gpu_upload_cpu_p95_us": max(
+            (s["gpu_upload_cpu_p95_us"] for s in snapshots
+             if "gpu_upload_cpu_p95_us" in s), default=None),
+        "peak_texture_priority_churn": max(
+            (s["texture_priority_churn"] for s in snapshots
+             if "texture_priority_churn" in s), default=None),
+        "peak_mesh_priority_churn": max(
+            (s["mesh_priority_churn"] for s in snapshots
+             if "mesh_priority_churn" in s), default=None),
     }
 
 
