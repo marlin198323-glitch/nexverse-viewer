@@ -68,7 +68,11 @@ int main()
                     renderer->render_world(1.0);
                     renderer->end_frame();
                     const auto health=renderer->diagnostics();
-                    if(health.visible_objects==0U || health.draw_calls==0U)
+                    if(health.visible_objects==0U || health.draw_calls==0U ||
+                       health.scene_mesh_draw_calls==0U ||
+                       health.scene_draw_calls!=
+                           health.scene_mesh_draw_calls+
+                               health.scene_prim_draw_calls)
                     {error=5;break;}
                     if(glGetError()!=GL_NO_ERROR){error=6;break;}
                 }

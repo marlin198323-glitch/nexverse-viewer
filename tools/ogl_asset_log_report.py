@@ -85,6 +85,12 @@ def read_report(path: Path) -> dict[str, Any]:
                     "mesh_priority_churn",
                     "texture_gpu_upload_failures",
                     "mesh_gpu_upload_failures",
+                    "texture_gpu_staging_deferrals",
+                    "previous_frame_draw_calls",
+                    "previous_frame_visible_objects",
+                    "previous_frame_scene_draw_calls",
+                    "previous_frame_scene_mesh_draw_calls",
+                    "previous_frame_scene_prim_draw_calls",
                 )
                 sanitized = {
                     key: data[key] for key in fields
@@ -94,8 +100,18 @@ def read_report(path: Path) -> dict[str, Any]:
                 }
                 snapshots.append(sanitized)
 
+    # Separate sessions/regions: an acceptance gate must never combine
+    # several old snapshots with one new region's first render frame.
+    latest_epoch = snapshots[-1].get("region_epoch") if snapshots else None
+    latest_epoch_snapshots = 0
+    for snap in reversed(snapshots):
+        if latest_epoch is None or snap.get("region_epoch") != latest_epoch:
+            break
+        latest_epoch_snapshots += 1
+
     return {
         "schema": "ogl.asset.log-report.v1",
+        "latest_epoch_snapshots": latest_epoch_snapshots,
         "date_first": first_date,
         "date_last": last_date,
         "event_counts": dict(sorted(counts.items())),

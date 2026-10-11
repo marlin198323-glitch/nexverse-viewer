@@ -67,7 +67,11 @@ int main()
             scene.mesh_id="synthetic-mesh";
             scene.position={0.0f,0.0f,0.0f};
             scene.texture_id="synthetic-texture";
-            renderer->set_scene_objects({scene});
+            RenderSceneObject prim=scene;
+            prim.local_id=101U;
+            prim.mesh_id.clear();
+            prim.position={0.0f,0.4f,0.0f};
+            renderer->set_scene_objects({scene,prim});
             renderer->set_camera({{0.0f,0.0f,0.0f},
                 {1.0f,0.0f,0.0f}, {0.0f,1.0f,0.0f},
                 {0.0f,0.0f,1.0f},60.0f,0.1f,50.0f});
@@ -78,6 +82,11 @@ int main()
             if(!failed && info.backend.empty())failed=6;
             if(!failed && info.visible_objects==0U)
                 failed=8; // Synthetic mesh object must reach the renderer.
+            if(!failed && (info.scene_mesh_draw_calls==0U ||
+                info.scene_prim_draw_calls==0U ||
+                info.scene_draw_calls!=
+                    info.scene_mesh_draw_calls+info.scene_prim_draw_calls))
+                failed=10;
             const auto gl_error=glGetError();
             if(!failed && gl_error!=GL_NO_ERROR)
             {

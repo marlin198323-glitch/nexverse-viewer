@@ -279,6 +279,11 @@ struct RenderDiagnostics
     std::uint64_t draw_calls = 0U;
     std::uint64_t triangles = 0U;
     std::uint64_t visible_objects = 0U;
+    // Actual per-frame glDrawElements from world-scene objects only.
+    // Sky, terrain, water, UI and avatar proxies are not counted here.
+    std::uint64_t scene_draw_calls = 0U;
+    std::uint64_t scene_mesh_draw_calls = 0U;
+    std::uint64_t scene_prim_draw_calls = 0U;
 };
 
 enum class GpuUploadFailure

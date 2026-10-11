@@ -21,6 +21,11 @@ int main()
     snapshot.mesh_priority_churn=2U;
     snapshot.texture_gpu_upload_failures=3U;
     snapshot.mesh_gpu_upload_failures=4U;
+    snapshot.texture_gpu_staging_deferrals=5U;
+    snapshot.previous_frame_draw_calls=20U;
+    snapshot.previous_frame_scene_draw_calls=9U;
+    snapshot.previous_frame_scene_mesh_draw_calls=7U;
+    snapshot.previous_frame_scene_prim_draw_calls=2U;
     const auto json=snapshot.json();
     if(json.rfind("{\"schema\":\"ogl.asset.streaming.v1\"",0U)!=0U ||
        json.back()!='}' ||
@@ -34,7 +39,10 @@ int main()
        json.find("\"gpu_upload_cpu_p95_us\":1300")==std::string::npos ||
        json.find("\"mesh_priority_churn\":2")==std::string::npos ||
        json.find("\"texture_gpu_upload_failures\":3")==std::string::npos ||
-       json.find("\"mesh_gpu_upload_failures\":4")==std::string::npos)
+       json.find("\"mesh_gpu_upload_failures\":4")==std::string::npos ||
+       json.find("\"texture_gpu_staging_deferrals\":5")==std::string::npos ||
+       json.find("\"previous_frame_scene_mesh_draw_calls\":7")==std::string::npos ||
+       json.find("\"previous_frame_scene_prim_draw_calls\":2")==std::string::npos)
         return 1;
     AssetStreamingSnapshot none;
     const auto blank=none.json();

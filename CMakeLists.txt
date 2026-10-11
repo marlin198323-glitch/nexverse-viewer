@@ -410,6 +410,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-gpu-staging-budget-tests tests/gpu_staging_budget_tests.cpp)
+    target_link_libraries(nexverse-gpu-staging-budget-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-gpu-staging-budget-tests)
+    add_test(NAME nexverse-gpu-staging-budget-tests
+        COMMAND nexverse-gpu-staging-budget-tests)
+
     add_executable(nexverse-asset-full-residency-tests tests/asset_full_residency_tests.cpp)
     target_link_libraries(nexverse-asset-full-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-full-residency-tests)
@@ -462,6 +468,8 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     if(Python3_Interpreter_FOUND)
         add_test(NAME nexverse-asset-log-report-tests
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_asset_log_report.py")
+        add_test(NAME nexverse-inworld-acceptance-tests
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_inworld_acceptance.py")
     endif()
 
     add_executable(nexverse-asset-scene-coverage-tests tests/asset_scene_coverage_tests.cpp)

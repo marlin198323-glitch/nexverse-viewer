@@ -18,6 +18,7 @@
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
+#include "nexverse/assets/gpu_staging_budget.hpp"
 #include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
@@ -3476,6 +3477,7 @@ int Application::run(bool enable_developer_modules)
     std::size_t texture_gpu_evictions = 0U;
     std::size_t texture_gpu_upload_failures = 0U;
     std::size_t mesh_gpu_upload_failures = 0U;
+    std::size_t texture_gpu_staging_deferrals = 0U;
     std::chrono::steady_clock::time_point last_world_asset_health_log{};
     std::chrono::steady_clock::time_point last_texture_telemetry{};
 
@@ -5784,7 +5786,26 @@ int Application::run(bool enable_developer_modules)
                         texture_residency.preferred_ids,
                         object_texture_loaded_ids,byte_plan.eviction_ids,
                         object_texture_loading_id,max_object_texture_assets);
-                    if (!byte_plan.fits || !slot_plan.fits)
+                    const auto staging=assets::gpu_staging_budget(
+                        texture_gpu_used_bytes,mesh_gpu_estimated_bytes,
+                        next_bytes,shared_gpu_budget_bytes);
+                    if(!staging.fits)
+                    {
+                        ++texture_gpu_staging_deferrals;
+                        texture_budget_deferred_ids.insert(
+                            object_texture_loading_id);
+                        core::warning(
+                            "Deferred GetTexture transactional GPU staging: "
+                            "peak estimate exceeds reserve-adjusted budget;"
+                            " candidate_bytes="+std::to_string(next_bytes)+
+                            "; resident_texture_bytes="+
+                            std::to_string(texture_gpu_used_bytes)+
+                            "; resident_mesh_bytes="+
+                            std::to_string(mesh_gpu_estimated_bytes)+
+                            "; safety_reserve_bytes="+
+                            std::to_string(staging.reserve_bytes));
+                    }
+                    else if (!byte_plan.fits || !slot_plan.fits)
                     {
                         texture_budget_deferred_ids.insert(
                             object_texture_loading_id);
@@ -6246,6 +6267,8 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_slot_replacements) +
                     " gpu_upload_failures=" +
                     std::to_string(texture_gpu_upload_failures) +
+                    " gpu_staging_deferrals=" +
+                    std::to_string(texture_gpu_staging_deferrals) +
                     " gpu_uploads=" +
                     std::to_string(asset_gpu_upload_gate.count()) +
                     " gpu_uploaded_bytes=" +
@@ -6475,6 +6498,8 @@ int Application::run(bool enable_developer_modules)
                             "; gpu_failure=" + std::string(
                                 render::gpu_upload_failure_name(
                                     mesh_upload.failure)) +
+                            "; gl_error=" +
+                            std::to_string(mesh_upload.gl_error) +
                             "; retry_delay_ms=" + std::to_string(delay.count()));
                     }
                     }
@@ -6670,12 +6695,24 @@ int Application::run(bool enable_developer_modules)
                     asset_gpu_upload_gate.effective_interval().count());
                 snapshot.texture_gpu_upload_failures=
                     texture_gpu_upload_failures;
+                snapshot.texture_gpu_staging_deferrals=
+                    texture_gpu_staging_deferrals;
                 snapshot.mesh_gpu_upload_failures=
                     mesh_gpu_upload_failures;
                 snapshot.texture_priority_churn=
                     texture_priority_feedback.churn_events();
                 snapshot.mesh_priority_churn=
                     mesh_priority_feedback.churn_events();
+                const auto previous_render=world_renderer->diagnostics();
+                snapshot.previous_frame_draw_calls=previous_render.draw_calls;
+                snapshot.previous_frame_visible_objects=
+                    previous_render.visible_objects;
+                snapshot.previous_frame_scene_draw_calls=
+                    previous_render.scene_draw_calls;
+                snapshot.previous_frame_scene_mesh_draw_calls=
+                    previous_render.scene_mesh_draw_calls;
+                snapshot.previous_frame_scene_prim_draw_calls=
+                    previous_render.scene_prim_draw_calls;
                 core::info("InWorldAssetSnapshot " + snapshot.json());
                 core::info("InWorld asset health: epoch=" +
                     std::to_string(material_scope.epoch()) +

@@ -33,9 +33,15 @@ struct AssetStreamingSnapshot
     std::uint64_t gpu_upload_cpu_max_us=0U;
     std::size_t gpu_upload_pacing_ms=0U;
     std::size_t texture_gpu_upload_failures=0U;
+    std::size_t texture_gpu_staging_deferrals=0U;
     std::size_t mesh_gpu_upload_failures=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
+    std::uint64_t previous_frame_draw_calls=0U;
+    std::uint64_t previous_frame_visible_objects=0U;
+    std::uint64_t previous_frame_scene_draw_calls=0U;
+    std::uint64_t previous_frame_scene_mesh_draw_calls=0U;
+    std::uint64_t previous_frame_scene_prim_draw_calls=0U;
 
     [[nodiscard]] std::string json() const
     {
@@ -75,9 +81,19 @@ struct AssetStreamingSnapshot
         field("gpu_upload_cpu_max_us",gpu_upload_cpu_max_us);
         field("gpu_upload_pacing_ms",gpu_upload_pacing_ms);
         field("texture_gpu_upload_failures",texture_gpu_upload_failures);
+        field("texture_gpu_staging_deferrals",texture_gpu_staging_deferrals);
         field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);
+        field("previous_frame_draw_calls",previous_frame_draw_calls);
+        field("previous_frame_visible_objects",
+            previous_frame_visible_objects);
+        field("previous_frame_scene_draw_calls",
+            previous_frame_scene_draw_calls);
+        field("previous_frame_scene_mesh_draw_calls",
+            previous_frame_scene_mesh_draw_calls);
+        field("previous_frame_scene_prim_draw_calls",
+            previous_frame_scene_prim_draw_calls);
         out+="}";
         return out;
     }

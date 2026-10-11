@@ -1684,8 +1684,10 @@ MeshData make_curved_sweep_mesh(
 
 bool upload_mesh(
     GpuMesh& target,
-    const MeshData& source)
+    const MeshData& source,
+    GLenum* reported_error=nullptr)
 {
+    if(reported_error)*reported_error=GL_NO_ERROR;
     if (source.vertices.empty() || source.indices.empty())
     {
         return false;
@@ -1747,6 +1749,7 @@ bool upload_mesh(
         static_cast<GLsizei>(source.indices.size());
     target.face_ranges = source.face_ranges;
     const auto upload_error=glGetError();
+    if(reported_error)*reported_error=upload_error;
     if(upload_error!=GL_NO_ERROR ||
         target.vao==0U || target.vbo==0U || target.ebo==0U)
     {
@@ -2968,8 +2971,13 @@ public:
             mesh.face_ranges.push_back({
                 face.face, face.first_index, face.index_count});
         GpuMesh gpu;
-        if (!upload_mesh(gpu, mesh))
-            return {false,GpuUploadFailure::driver_error,0U};
+        GLenum gpu_error=GL_NO_ERROR;
+        if(!upload_mesh(gpu,mesh,&gpu_error))
+            return {false,
+                gpu_error==GL_OUT_OF_MEMORY
+                    ? GpuUploadFailure::allocation
+                    : GpuUploadFailure::driver_error,
+                static_cast<unsigned>(gpu_error)};
         // Atomic logical replacement: upload first; destroy previous GPU
         // buffers only after the new VAO/VBO/EBO were created successfully.
         // This keeps the old LOD visible if a new upload fails.
@@ -3086,6 +3094,9 @@ public:
         diagnostics_.draw_calls = 0U;
         diagnostics_.triangles = 0U;
         diagnostics_.visible_objects = 0U;
+        diagnostics_.scene_draw_calls = 0U;
+        diagnostics_.scene_mesh_draw_calls = 0U;
+        diagnostics_.scene_prim_draw_calls = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -3420,9 +3431,11 @@ public:
                 GLsizei object_index_count = 36;
                 const std::vector<MeshFaceRange>* object_face_ranges =
                     nullptr;
+                const bool using_uploaded_mesh =
+                    !object.mesh_id.empty() &&
+                    mesh_assets_.contains(object.mesh_id);
 
-                if (!object.mesh_id.empty() &&
-                    mesh_assets_.contains(object.mesh_id))
+                if (using_uploaded_mesh)
                 {
                     auto& mesh = mesh_assets_.at(object.mesh_id);
                     object_vao = mesh.vao;
@@ -3773,6 +3786,11 @@ public:
                                 sizeof(std::uint32_t)));
 
                         ++diagnostics_.draw_calls;
+                        ++diagnostics_.scene_draw_calls;
+                        if(using_uploaded_mesh)
+                            ++diagnostics_.scene_mesh_draw_calls;
+                        else
+                            ++diagnostics_.scene_prim_draw_calls;
                         diagnostics_.triangles +=
                             static_cast<std::uint64_t>(
                                 count / 3);
