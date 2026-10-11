@@ -5799,22 +5799,8 @@ int Application::run(bool enable_developer_modules)
                         victims.insert(victims.end(),
                             slot_plan.additional_evictions.begin(),
                             slot_plan.additional_evictions.end());
-                        texture_slot_replacements +=
-                            slot_plan.additional_evictions.size();
-                        for (const auto& victim : victims)
-                        {
-                            world_renderer->remove_object_texture(victim);
-                            object_texture_loaded_ids.erase(victim);
-                            texture_gpu_mips.erase(victim);
-                            if (const auto it = texture_gpu_bytes.find(victim);
-                                it != texture_gpu_bytes.end())
-                            {
-                                texture_gpu_used_bytes -= it->second;
-                                texture_gpu_bytes.erase(it);
-                            }
-                            ++texture_gpu_evictions;
-                            mesh_gpu_budget_deferred_ids.clear();
-                        }
+                        // Do not touch the old GPU slots until the new
+                        // texture has been successfully uploaded.
                         const bool was_loaded =
                             object_texture_loaded_ids.contains(
                                 object_texture_loading_id);
@@ -5824,9 +5810,10 @@ int Application::run(bool enable_developer_modules)
                         image.pixels = std::move(result.image.pixels);
                         const auto gpu_submission_started =
                             std::chrono::steady_clock::now();
-                        const bool texture_uploaded =
-                            world_renderer->set_object_texture(
-                                object_texture_loading_id, image);
+                        const auto upload_result =
+                            world_renderer->replace_object_texture(
+                                object_texture_loading_id,image,victims);
+                        const bool texture_uploaded=upload_result.success;
                         const auto gpu_submission_end =
                             std::chrono::steady_clock::now();
                         const auto submission_cpu_time =
@@ -5838,19 +5825,46 @@ int Application::run(bool enable_developer_modules)
                         {
                             ++texture_gpu_upload_failures;
                             ++texture_failure_events;
+                            const auto type=upload_result.failure;
+                            const auto kind=
+                                type==render::GpuUploadFailure::invalid_input ||
+                                type==render::GpuUploadFailure::unsupported_dimensions
+                                ? assets::AssetFailure::invalid
+                                : assets::AssetFailure::transient;
                             const auto delay=object_texture_retries.failure(
-                                object_texture_loading_id,
-                                assets::AssetFailure::transient,
+                                object_texture_loading_id,kind,
                                 gpu_submission_end);
                             core::warning(
                                 "GetTexture GPU upload rejected for " +
                                 object_texture_loading_id +
+                                "; gpu_failure=" +
+                                std::string(render::gpu_upload_failure_name(type)) +
+                                "; gl_error=" +
+                                std::to_string(upload_result.gl_error) +
                                 "; retry_delay_ms=" +
                                 std::to_string(delay.count()) +
-                                "; residency not marked as loaded");
+                                "; existing GPU slots preserved");
                         }
                         else
                         {
+                        // The GL transaction has committed. Mirror only now
+                        // its victim deletions in the CPU residency/accounting.
+                        texture_slot_replacements +=
+                            slot_plan.additional_evictions.size();
+                        for(const auto& victim:victims)
+                        {
+                            object_texture_loaded_ids.erase(victim);
+                            texture_gpu_mips.erase(victim);
+                            if(const auto it=texture_gpu_bytes.find(victim);
+                               it!=texture_gpu_bytes.end())
+                            {
+                                texture_gpu_used_bytes-=it->second;
+                                texture_gpu_bytes.erase(it);
+                            }
+                            ++texture_gpu_evictions;
+                        }
+                        if(!victims.empty())
+                            mesh_gpu_budget_deferred_ids.clear();
                         asset_gpu_upload_gate.uploaded(
                             gpu_submission_end,next_bytes,
                             submission_cpu_time);
@@ -6397,8 +6411,9 @@ int Application::run(bool enable_developer_modules)
                             face.face, face.first_index, face.index_count});
                     const auto gpu_submission_started =
                         std::chrono::steady_clock::now();
-                    const bool mesh_uploaded=world_renderer->set_mesh_asset(
-                        mesh_asset_loading_id, geometry);
+                    const auto mesh_upload=world_renderer->upload_mesh_asset(
+                        mesh_asset_loading_id,geometry);
+                    const bool mesh_uploaded=mesh_upload.success;
                     const auto gpu_submission_end =
                         std::chrono::steady_clock::now();
                     const auto submission_cpu_time =
@@ -6446,13 +6461,21 @@ int Application::run(bool enable_developer_modules)
                             mesh_asset_loading_id + "." +
                                 std::string(assets::mesh_lod_name(
                                     mesh_asset_loading_lod)),
-                            assets::AssetFailure::transient,
+                            mesh_upload.failure==
+                                render::GpuUploadFailure::invalid_input ||
+                            mesh_upload.failure==
+                                render::GpuUploadFailure::unsupported_dimensions
+                                ? assets::AssetFailure::invalid
+                                : assets::AssetFailure::transient,
                             std::chrono::steady_clock::now());
                         ++mesh_failure_events;
                         ++mesh_gpu_upload_failures;
                         core::warning("GetMesh GPU upload failed for " +
-                            mesh_asset_loading_id + "; retry_delay_ms=" +
-                            std::to_string(delay.count()));
+                            mesh_asset_loading_id +
+                            "; gpu_failure=" + std::string(
+                                render::gpu_upload_failure_name(
+                                    mesh_upload.failure)) +
+                            "; retry_delay_ms=" + std::to_string(delay.count()));
                     }
                     }
                 }

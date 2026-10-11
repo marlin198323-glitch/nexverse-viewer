@@ -415,6 +415,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-full-residency-tests)
     add_test(NAME nexverse-asset-full-residency-tests COMMAND nexverse-asset-full-residency-tests)
 
+    add_executable(nexverse-renderer-gpu-profiles-tests tests/renderer_gpu_profiles_tests.cpp)
+    target_link_libraries(nexverse-renderer-gpu-profiles-tests PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-gpu-profiles-tests)
+    add_test(NAME nexverse-renderer-gpu-profiles-tests
+        COMMAND nexverse-renderer-gpu-profiles-tests)
+    set_tests_properties(nexverse-renderer-gpu-profiles-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-renderer-gpu-pressure-tests tests/renderer_gpu_pressure_tests.cpp)
     target_link_libraries(nexverse-renderer-gpu-pressure-tests PRIVATE NexVerse::Render glfw glad::glad)
     nexverse_enable_warnings(nexverse-renderer-gpu-pressure-tests)

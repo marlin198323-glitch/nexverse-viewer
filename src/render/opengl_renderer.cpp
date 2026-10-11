@@ -2844,28 +2844,47 @@ public:
         const std::string& texture_id,
         const RenderImageRgba8& image) override
     {
-        if (texture_id.empty() || !image.valid())
-            return false;
-        constexpr std::size_t max_object_textures = 512U;
-        const auto found = object_textures_.find(texture_id);
-        if (found == object_textures_.end() &&
-            object_textures_.size() >= max_object_textures)
-            return false;
+        return replace_object_texture(texture_id,image,{}).success;
+    }
 
-        GLint max_side = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_side);
-        if (max_side <= 0 ||
-            image.width > static_cast<std::uint32_t>(max_side) ||
-            image.height > static_cast<std::uint32_t>(max_side))
-            return false;
+    [[nodiscard]] GpuUploadResult replace_object_texture(
+        const std::string& texture_id,
+        const RenderImageRgba8& image,
+        const std::vector<std::string>& evictions) override
+    {
+        if(texture_id.empty() || !image.valid())
+            return {false,GpuUploadFailure::invalid_input,0U};
 
-        // Allocate a new name for *every* upload. This makes a failed
-        // mip/replacement transactional: the previous texture stays valid.
-        for (int i=0;i<8 && glGetError()!=GL_NO_ERROR;++i) {}
+        constexpr std::size_t max_object_textures=512U;
+        const auto found=object_textures_.find(texture_id);
+        // Count only actual, distinct victim slots; reject attempts to
+        // replace the incoming UUID as an "eviction".
+        std::unordered_set<std::string> victims;
+        for(const auto& id:evictions)
+        {
+            if(id==texture_id)
+                return {false,GpuUploadFailure::invalid_input,0U};
+            if(object_textures_.contains(id))victims.insert(id);
+        }
+        if(found==object_textures_.end() &&
+           object_textures_.size()-victims.size() >= max_object_textures)
+            return {false,GpuUploadFailure::capacity,0U};
+
+        GLint max_side=0;
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE,&max_side);
+        if(max_side<=0 ||
+           image.width>static_cast<std::uint32_t>(max_side) ||
+           image.height>static_cast<std::uint32_t>(max_side))
+            return {false,GpuUploadFailure::unsupported_dimensions,0U};
+
+        // Important: old textures stay live through the entire GL upload.
+        // This temporarily requires extra VRAM for one candidate texture.
+        for(int i=0;i<8 && glGetError()!=GL_NO_ERROR;++i) {}
         GLuint candidate=0U;
         glGenTextures(1,&candidate);
-        if (candidate==0U)
-            return false;
+        if(candidate==0U)
+            return {false,GpuUploadFailure::allocation,0U};
+
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D,candidate);
         glPixelStorei(GL_UNPACK_ALIGNMENT,1);
@@ -2874,32 +2893,34 @@ public:
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,
             GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-        if (texture_anisotropy_>1.0f)
+        if(texture_anisotropy_>1.0f)
             glTexParameterf(GL_TEXTURE_2D,0x84FEU,texture_anisotropy_);
         glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,
             static_cast<GLsizei>(image.width),
             static_cast<GLsizei>(image.height),0,GL_RGBA,
             GL_UNSIGNED_BYTE,image.pixels.data());
-        if (glGetError()!=GL_NO_ERROR)
+        GLenum error=glGetError();
+        if(error==GL_NO_ERROR)
         {
-            glBindTexture(GL_TEXTURE_2D,0U);
-            glActiveTexture(GL_TEXTURE0);
-            glDeleteTextures(1,&candidate);
-            return false;
+            glGenerateMipmap(GL_TEXTURE_2D);
+            error=glGetError();
         }
-        glGenerateMipmap(GL_TEXTURE_2D);
-        const GLenum upload_error=glGetError();
         glBindTexture(GL_TEXTURE_2D,0U);
         glActiveTexture(GL_TEXTURE0);
-        if (upload_error!=GL_NO_ERROR)
+        if(error!=GL_NO_ERROR)
         {
             glDeleteTextures(1,&candidate);
-            nexverse::core::warning(
-                "OGLRender object texture GPU mip upload failed; gl_error="+
-                std::to_string(upload_error));
-            return false;
+            return {false,
+                error==GL_OUT_OF_MEMORY ?
+                    GpuUploadFailure::allocation :
+                    GpuUploadFailure::driver_error,
+                static_cast<unsigned>(error)};
         }
-        if (found != object_textures_.end())
+
+        // Commit happens only after a fully successful GPU upload.
+        for(const auto& victim:victims)
+            remove_object_texture(victim);
+        if(found!=object_textures_.end())
         {
             const GLuint previous=found->second;
             found->second=candidate;
@@ -2907,22 +2928,28 @@ public:
         }
         else object_textures_.emplace(texture_id,candidate);
         object_texture_alpha_[texture_id]=texture_has_alpha(image);
-        return true;
+        return {true,GpuUploadFailure::none,0U};
     }
 
     [[nodiscard]] bool set_mesh_asset(
         const std::string& mesh_id,
         const RenderMeshGeometry& geometry) override
     {
+        return upload_mesh_asset(mesh_id,geometry).success;
+    }
+    [[nodiscard]] GpuUploadResult upload_mesh_asset(
+        const std::string& mesh_id,
+        const RenderMeshGeometry& geometry) override
+    {
         if (mesh_id.empty() || geometry.vertices.empty() ||
             geometry.indices.empty() || geometry.vertices.size()%8U!=0U ||
             geometry.indices.size()%3U!=0U)
-            return false;
+            return {false,GpuUploadFailure::invalid_input,0U};
         const auto vertex_count=geometry.vertices.size()/8U;
         if (std::any_of(geometry.indices.begin(),geometry.indices.end(),
                 [vertex_count](std::uint32_t index)
                 {return index>=vertex_count;}))
-            return false;
+            return {false,GpuUploadFailure::invalid_input,0U};
         if (std::any_of(geometry.faces.begin(),geometry.faces.end(),
                 [&geometry](const RenderMeshFace& face)
                 {
@@ -2930,10 +2957,10 @@ public:
                         face.index_count >
                             geometry.indices.size()-face.first_index;
                 }))
-            return false;
+            return {false,GpuUploadFailure::invalid_input,0U};
         const auto old = mesh_assets_.find(mesh_id);
         if (old == mesh_assets_.end() && mesh_assets_.size() >= 256U)
-            return false;
+            return {false,GpuUploadFailure::capacity,0U};
         MeshData mesh;
         mesh.vertices = geometry.vertices;
         mesh.indices = geometry.indices;
@@ -2941,7 +2968,8 @@ public:
             mesh.face_ranges.push_back({
                 face.face, face.first_index, face.index_count});
         GpuMesh gpu;
-        if (!upload_mesh(gpu, mesh)) return false;
+        if (!upload_mesh(gpu, mesh))
+            return {false,GpuUploadFailure::driver_error,0U};
         // Atomic logical replacement: upload first; destroy previous GPU
         // buffers only after the new VAO/VBO/EBO were created successfully.
         // This keeps the old LOD visible if a new upload fails.
@@ -2954,7 +2982,7 @@ public:
         nexverse::core::info(
             "OGLRender mesh geometry uploaded: triangles=" +
             std::to_string(geometry.indices.size() / 3U));
-        return true;
+        return {true,GpuUploadFailure::none,0U};
     }
 
     void remove_mesh_asset(const std::string& mesh_id) override

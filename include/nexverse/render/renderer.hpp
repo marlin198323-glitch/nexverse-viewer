@@ -281,6 +281,32 @@ struct RenderDiagnostics
     std::uint64_t visible_objects = 0U;
 };
 
+enum class GpuUploadFailure
+{
+    none, invalid_input, capacity, unsupported_dimensions,
+    allocation, driver_error
+};
+[[nodiscard]] constexpr const char* gpu_upload_failure_name(
+    GpuUploadFailure failure) noexcept
+{
+    switch(failure)
+    {
+    case GpuUploadFailure::none:return "none";
+    case GpuUploadFailure::invalid_input:return "invalid_input";
+    case GpuUploadFailure::capacity:return "capacity";
+    case GpuUploadFailure::unsupported_dimensions:return "unsupported_dimensions";
+    case GpuUploadFailure::allocation:return "allocation";
+    case GpuUploadFailure::driver_error:return "driver_error";
+    }
+    return "unknown";
+}
+struct GpuUploadResult
+{
+    bool success=false;
+    GpuUploadFailure failure=GpuUploadFailure::none;
+    unsigned gl_error=0U;
+};
+
 class Renderer
 {
 public:
@@ -297,10 +323,19 @@ public:
     [[nodiscard]] virtual bool set_object_texture(
         const std::string& texture_id,
         const RenderImageRgba8& image) = 0;
+    // Upload into a separate OpenGL name. If this fails, ALL designated
+    // victim textures and the existing UUID binding must remain unchanged.
+    [[nodiscard]] virtual GpuUploadResult replace_object_texture(
+        const std::string& texture_id,
+        const RenderImageRgba8& image,
+        const std::vector<std::string>& evict_after_success) = 0;
     virtual void remove_object_texture(const std::string& texture_id) = 0;
     virtual void clear_object_textures() = 0;
     // GPU uploads and removals must happen on the render thread.
     [[nodiscard]] virtual bool set_mesh_asset(
+        const std::string& mesh_id,
+        const RenderMeshGeometry& geometry) = 0;
+    [[nodiscard]] virtual GpuUploadResult upload_mesh_asset(
         const std::string& mesh_id,
         const RenderMeshGeometry& geometry) = 0;
     virtual void remove_mesh_asset(const std::string& mesh_id) = 0;

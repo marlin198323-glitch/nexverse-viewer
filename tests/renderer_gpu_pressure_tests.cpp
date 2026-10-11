@@ -77,19 +77,73 @@ int main()
             {
                 if(renderer->set_object_texture("tex-over",texture))
                     error=7;
-                if(renderer->set_mesh_asset("mesh-over",mesh))error=8;
+                const auto mesh_full=renderer->upload_mesh_asset("mesh-over",mesh);
+                if(mesh_full.success ||
+                   mesh_full.failure!=GpuUploadFailure::capacity)error=8;
                 // A rejected replacement cannot corrupt a loaded resource.
                 RenderImageRgba8 invalid;
                 if(renderer->set_object_texture("tex-0",invalid))error=9;
                 RenderMeshGeometry invalid_mesh=mesh;
                 invalid_mesh.indices={0U,1U,900U};
-                if(renderer->set_mesh_asset("mesh-0",invalid_mesh))
+                const auto bad_mesh=renderer->upload_mesh_asset(
+                    "mesh-0",invalid_mesh);
+                if(bad_mesh.success ||
+                   bad_mesh.failure!=GpuUploadFailure::invalid_input)
                     error=10;
                 if(!renderer->set_object_texture("tex-0",texture))
                     error=11;
                 if(!renderer->set_mesh_asset("mesh-0",mesh))
                     error=12;
-                renderer->remove_object_texture("tex-511");
+                // A failed transaction must not remove the victim in a
+                // fully occupied table (512 slots).
+                auto failed=renderer->replace_object_texture(
+                    "tex-transaction",invalid,{"tex-511"});
+                if(failed.success ||
+                   failed.failure!=GpuUploadFailure::invalid_input)
+                    error=16;
+                if(renderer->set_object_texture("tex-transaction",texture))
+                    error=17; // tex-511 must still occupy its slot.
+                const auto full=renderer->replace_object_texture(
+                    "tex-transaction",texture,{});
+                if(full.success || full.failure!=GpuUploadFailure::capacity)
+                    error=18;
+                // An incoming ID cannot self-evict; no side effects.
+                const auto self=renderer->replace_object_texture(
+                    "tex-transaction",texture,{"tex-transaction"});
+                if(self.success ||
+                   self.failure!=GpuUploadFailure::invalid_input)
+                    error=19;
+                GLint max_texture_side=0;
+                glGetIntegerv(GL_MAX_TEXTURE_SIZE,&max_texture_side);
+                if(max_texture_side>0 && max_texture_side<65536)
+                {
+                    const std::size_t beyond=
+                        static_cast<std::size_t>(max_texture_side)+1U;
+                    RenderImageRgba8 oversized{
+                        static_cast<std::uint32_t>(beyond),1U,
+                        std::vector<std::uint8_t>(beyond*4U,255U)};
+                    const auto oversize=renderer->replace_object_texture(
+                        "tex-transaction",oversized,{"tex-511"});
+                    if(oversize.success ||
+                       oversize.failure!=GpuUploadFailure::unsupported_dimensions)
+                        error=20;
+                    if(renderer->set_object_texture("tex-transaction",texture))
+                        error=21; // rollback still holds tex-511
+                }
+                if(!error)
+                {
+                    const auto commit=renderer->replace_object_texture(
+                        "tex-transaction",texture,{"tex-511","tex-511"});
+                    if(!commit.success || commit.failure!=GpuUploadFailure::none)
+                        error=22;
+                    // The committed transaction evicted exactly one slot.
+                    else if(renderer->set_object_texture("tex-511",texture))
+                        error=23;
+                    else if(!renderer->set_object_texture(
+                        "tex-transaction",texture))
+                        error=24; // new UUID remains resident
+                }
+                renderer->remove_object_texture("tex-transaction");
                 renderer->remove_mesh_asset("mesh-255");
                 if(!renderer->set_object_texture("tex-reused",texture))
                     error=13;
