@@ -116,6 +116,7 @@ add_library(nexverse-protocol
     src/protocol/llsd.cpp
     src/protocol/terrain_codec.cpp
     src/protocol/caps.cpp
+    src/protocol/firestorm_compat.cpp
     src/protocol/caps_event_dispatcher.cpp
     src/protocol/caps_world_events.cpp
     src/protocol/environment_settings.cpp
@@ -354,6 +355,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
+
+    add_executable(nexverse-firestorm-compat-tests tests/firestorm_compat_tests.cpp)
+    target_link_libraries(nexverse-firestorm-compat-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-compat-tests)
+    add_test(NAME nexverse-firestorm-compat-tests COMMAND nexverse-firestorm-compat-tests)
 
     add_executable(nexverse-caps-tests tests/caps_tests.cpp)
     target_link_libraries(nexverse-caps-tests PRIVATE NexVerse::Protocol)

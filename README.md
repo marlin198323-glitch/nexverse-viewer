@@ -6,12 +6,14 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.58`
+- Version: `0.2.0-alpha.80`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständig geprüfter Stand: 32/32 CTests erfolgreich; OpenGL-3.3-Starttest alpha.58 OK
-- aktueller Entwicklungsblock: **Großrelease alpha.58: persistenter Texture-Disk-Cache mit Integritätsprüfung/LRU, Live-Texturprioritäten, Mesh-Größengewichtung, optionale 8x anisotrope Filterung und Streaming-Telemetrie; 32/32 Tests, In-World-Abnahme offen**
+- letzter vollständiger Entwicklungs-Teststand: **71/71 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
+- aktueller Entwicklungsblock: **alpha.80 – Firestorm-CAPS-Discovery, lesende Experience-Listen und InventoryThumbnailUpload-LLSD-Vertrag; vollständige Firestorm-Funktionsparität und echte In-World-Abnahme noch offen**
+- Server-Referenz: `opengenesislink/opengenesislinkserver` `main` (für alpha.80 geprüft bei `6dc73f2`); offiziellen Firestorm-Releasebranch jeweils erneut prüfen
+- aktueller Funktionsnachweis: `docs/FIRESTORM_PARITY_MATRIX.md`
 
 Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256
 nächsten unterschiedlichen Mesh-Assets anhand der Avatarposition aus.

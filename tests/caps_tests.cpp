@@ -55,6 +55,21 @@ int main()
 {
     using namespace nexverse::protocol;
 
+    const auto all_seed_names=default_seed_capabilities();
+    for(const auto& name:std::vector<std::string>{
+            "FetchInventory2","FetchInventoryDescendents2",
+            "InventoryThumbnailUpload","GetExperienceInfo",
+            "GetExperiences","AgentExperiences","ExperiencePreferences",
+            "FindExperienceByName","GetAdminExperiences",
+            "GetCreatorExperiences","GroupExperiences",
+            "IsExperienceAdmin","UpdateExperience"})
+    {
+        if(std::count(all_seed_names.begin(),all_seed_names.end(),name)!=1)
+        {
+            std::cerr<<"Firestorm seed CAP missing/duplicated: "<<name<<'\n';
+            return 30;
+        }
+    }
     const auto seed_request = build_seed_capability_request(
         {"EventQueueGet", "SimulatorFeatures"});
 

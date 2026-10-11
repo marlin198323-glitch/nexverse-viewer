@@ -40,6 +40,7 @@
 #include "nexverse/modules/module_manager.hpp"
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
+#include "nexverse/protocol/firestorm_compat.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/event_queue_recovery.hpp"
 #include "nexverse/protocol/caps_world_events.hpp"
@@ -140,6 +141,14 @@ struct CapsRuntimeState
     std::uint32_t event_count = 0U;
     bool simulator_features_loaded = false;
     bool event_queue_available = false;
+    // Read-only initial login-region CAPS status. Advertised != live-verified.
+    nexverse::protocol::FirestormCapsAvailability firestorm_caps;
+    bool owned_experiences_read = false;
+    std::size_t owned_experiences = 0U;
+    bool experience_acquire_offered = false;
+    bool resident_experiences_read = false;
+    std::size_t allowed_experiences = 0U;
+    std::size_t blocked_experiences = 0U;
 };
 
 struct FrameMetrics
@@ -965,7 +974,7 @@ void render_loading_screen(
     }
 
     const float panel_w = std::min(720.0f * scale, w - 64.0f * scale);
-    const float panel_h = 300.0f * scale;
+    const float panel_h = 336.0f * scale;
     const float panel_x = (w - panel_w) * 0.5f;
     const float panel_y = (h - panel_h) * 0.5f;
 
@@ -1056,6 +1065,22 @@ void render_loading_screen(
     step(panel_y + 210.0f * scale, "Region-Capabilities geladen", caps_ready);
     step(panel_y + 234.0f * scale, "Terrain wird geladen", terrain_ready);
     step(panel_y + 258.0f * scale, "Objekte und Umgebung werden geladen", object_ready);
+
+    // A capability merely advertises a server endpoint; it is not a
+    // working feature or an approved upload/Experience consent action.
+    const std::string parity_caps =
+        std::string{"Startregion: Outfit-Vorschau "} +
+        (caps.firestorm_caps.inventory_thumbnail_upload ? "CAP" : "-") +
+        " | Experiences " +
+        (caps.firestorm_caps.experience_owned ? "CAP" : "-") +
+        (caps.owned_experiences_read
+            ? " | Eigene " + std::to_string(caps.owned_experiences)
+            : "") +
+        (caps.resident_experiences_read
+            ? " | Erlaubt " + std::to_string(caps.allowed_experiences)
+            : "");
+    renderer.text(panel_x+30.0f*scale,panel_y+298.0f*scale,
+                  8.2f*scale,parity_caps,theme::text_muted);
 
     const std::string version =
         std::string{"v"} + std::string{nexverse::core::version()};
@@ -3820,7 +3845,93 @@ int Application::run(bool enable_developer_modules)
                                         caps_state.capability_count =
                                             static_cast<std::uint32_t>(
                                                 discovery.capabilities.size());
+                                        caps_state.firestorm_caps =
+                                            protocol::firestorm_caps_availability(
+                                                discovery.capabilities);
                                         caps_state.status = "CAPS READY";
+                                    }
+
+                                    // A separate read-only request must NOT
+                                    // block EventQueue startup. The nested future
+                                    // is joined when this CAPS worker exits.
+                                    std::future<void> experiences_read_future;
+                                    const auto owned=discovery.capabilities.find(
+                                        "AgentExperiences");
+                                    const auto lists=discovery.capabilities.find(
+                                        "GetExperiences");
+                                    const std::string owned_url=
+                                        owned!=discovery.capabilities.end()
+                                            ? owned->second : "";
+                                    const std::string lists_url=
+                                        lists!=discovery.capabilities.end()
+                                            ? lists->second : "";
+                                    if((!owned_url.empty()||!lists_url.empty()) &&
+                                        !caps_stop.load())
+                                    {
+                                        experiences_read_future=std::async(
+                                            std::launch::async,
+                                            [transport,owned_url,lists_url,
+                                             &caps_stop,&caps_state,&caps_mutex]()
+                                            {
+                                                protocol::CapabilityService read_service{
+                                                    transport};
+                                                if(!owned_url.empty())
+                                                {
+                                                    const auto response=
+                                                        read_service.fetch_llsd(
+                                                            owned_url);
+                                                    if(caps_stop.load())return;
+                                                    if(response.success)
+                                                    {
+                                                        const auto parsed=
+                                                            protocol::parse_agent_experiences(
+                                                                response.value);
+                                                        if(parsed)
+                                                        {
+                                                            std::scoped_lock lock{
+                                                                caps_mutex};
+                                                            caps_state.owned_experiences_read=true;
+                                                            caps_state.owned_experiences=
+                                                                parsed->ids.size();
+                                                            caps_state.experience_acquire_offered=
+                                                                parsed->purchase_price.has_value();
+                                                        }
+                                                        else
+                                                            core::warning(
+                                                                "Firestorm AgentExperiences LLSD invalid");
+                                                    }
+                                                    else
+                                                        core::warning(
+                                                            "Firestorm AgentExperiences GET unavailable");
+                                                }
+                                                if(caps_stop.load() ||
+                                                   lists_url.empty())return;
+                                                const auto lists_response=
+                                                    read_service.fetch_llsd(lists_url);
+                                                if(caps_stop.load())return;
+                                                if(lists_response.success)
+                                                {
+                                                    const auto parsed=
+                                                        protocol::parse_resident_experiences(
+                                                            lists_response.value);
+                                                    if(parsed)
+                                                    {
+                                                        std::scoped_lock lock{
+                                                            caps_mutex};
+                                                        caps_state.resident_experiences_read=true;
+                                                        caps_state.allowed_experiences=
+                                                            parsed->allowed.size();
+                                                        caps_state.blocked_experiences=
+                                                            parsed->blocked.size();
+                                                    }
+                                                    else
+                                                        core::warning(
+                                                            "Firestorm GetExperiences LLSD invalid");
+                                                }
+                                                else
+                                                    core::warning(
+                                                        "Firestorm GetExperiences GET unavailable");
+                                            });
                                     }
 
                                     if (const auto found =
