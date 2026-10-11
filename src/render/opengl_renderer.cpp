@@ -3097,6 +3097,8 @@ public:
         diagnostics_.scene_draw_calls = 0U;
         diagnostics_.scene_mesh_draw_calls = 0U;
         diagnostics_.scene_prim_draw_calls = 0U;
+        diagnostics_.scene_opaque_draw_calls = 0U;
+        diagnostics_.scene_alpha_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_objects = 0U;
         diagnostics_.scene_missing_mesh_triangles = 0U;
@@ -3791,6 +3793,8 @@ public:
 
                         ++diagnostics_.draw_calls;
                         ++diagnostics_.scene_draw_calls;
+                        if(pass==1U)++diagnostics_.scene_alpha_draw_calls;
+                        else ++diagnostics_.scene_opaque_draw_calls;
                         if(using_uploaded_mesh)
                             ++diagnostics_.scene_mesh_draw_calls;
                         else

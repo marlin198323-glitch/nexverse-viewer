@@ -30,9 +30,15 @@ struct AssetStreamingSnapshot
     std::size_t texture_ram_hits=0U;
     std::size_t texture_ram_misses=0U;
     std::size_t texture_ram_evictions=0U;
+    std::size_t texture_ram_hit_rate_pct=100U;
+    std::size_t texture_ram_interval_evictions=0U;
+    std::size_t texture_ram_pressure=0U;
     std::size_t mesh_ram_hits=0U;
     std::size_t mesh_ram_misses=0U;
     std::size_t mesh_ram_evictions=0U;
+    std::size_t mesh_ram_hit_rate_pct=100U;
+    std::size_t mesh_ram_interval_evictions=0U;
+    std::size_t mesh_ram_pressure=0U;
     std::size_t gpu_texture_bytes=0U;
     std::size_t gpu_mesh_bytes=0U;
     std::size_t gpu_shared_budget_bytes=0U;
@@ -66,10 +72,14 @@ struct AssetStreamingSnapshot
     std::size_t mesh_fail_transient=0U;
     std::size_t mesh_fail_invalid=0U;
     std::size_t mesh_fail_configuration=0U;
+    std::size_t mesh_missing_unique=0U;
+    std::size_t mesh_missing_unique_overflow=0U;
     std::size_t texture_fail_missing=0U;
     std::size_t texture_fail_transient=0U;
     std::size_t texture_fail_invalid=0U;
     std::size_t texture_fail_configuration=0U;
+    std::size_t texture_missing_unique=0U;
+    std::size_t texture_missing_unique_overflow=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
     std::uint64_t previous_frame_draw_calls=0U;
@@ -77,6 +87,8 @@ struct AssetStreamingSnapshot
     std::uint64_t previous_frame_scene_draw_calls=0U;
     std::uint64_t previous_frame_scene_mesh_draw_calls=0U;
     std::uint64_t previous_frame_scene_prim_draw_calls=0U;
+    std::uint64_t previous_frame_scene_opaque_draw_calls=0U;
+    std::uint64_t previous_frame_scene_alpha_draw_calls=0U;
     std::uint64_t previous_frame_scene_missing_mesh_draw_calls=0U;
     std::uint64_t previous_frame_scene_missing_mesh_objects=0U;
     std::uint64_t previous_frame_scene_missing_mesh_triangles=0U;
@@ -116,9 +128,15 @@ struct AssetStreamingSnapshot
         field("texture_ram_hits",texture_ram_hits);
         field("texture_ram_misses",texture_ram_misses);
         field("texture_ram_evictions",texture_ram_evictions);
+        field("texture_ram_hit_rate_pct",texture_ram_hit_rate_pct);
+        field("texture_ram_interval_evictions",texture_ram_interval_evictions);
+        field("texture_ram_pressure",texture_ram_pressure);
         field("mesh_ram_hits",mesh_ram_hits);
         field("mesh_ram_misses",mesh_ram_misses);
         field("mesh_ram_evictions",mesh_ram_evictions);
+        field("mesh_ram_hit_rate_pct",mesh_ram_hit_rate_pct);
+        field("mesh_ram_interval_evictions",mesh_ram_interval_evictions);
+        field("mesh_ram_pressure",mesh_ram_pressure);
         field("gpu_texture_bytes",gpu_texture_bytes);
         field("gpu_mesh_bytes",gpu_mesh_bytes);
         field("gpu_shared_budget_bytes",gpu_shared_budget_bytes);
@@ -154,10 +172,14 @@ struct AssetStreamingSnapshot
         field("mesh_fail_transient",mesh_fail_transient);
         field("mesh_fail_invalid",mesh_fail_invalid);
         field("mesh_fail_configuration",mesh_fail_configuration);
+        field("mesh_missing_unique",mesh_missing_unique);
+        field("mesh_missing_unique_overflow",mesh_missing_unique_overflow);
         field("texture_fail_missing",texture_fail_missing);
         field("texture_fail_transient",texture_fail_transient);
         field("texture_fail_invalid",texture_fail_invalid);
         field("texture_fail_configuration",texture_fail_configuration);
+        field("texture_missing_unique",texture_missing_unique);
+        field("texture_missing_unique_overflow",texture_missing_unique_overflow);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);
         field("previous_frame_draw_calls",previous_frame_draw_calls);
@@ -169,6 +191,10 @@ struct AssetStreamingSnapshot
             previous_frame_scene_mesh_draw_calls);
         field("previous_frame_scene_prim_draw_calls",
             previous_frame_scene_prim_draw_calls);
+        field("previous_frame_scene_opaque_draw_calls",
+            previous_frame_scene_opaque_draw_calls);
+        field("previous_frame_scene_alpha_draw_calls",
+            previous_frame_scene_alpha_draw_calls);
         field("previous_frame_scene_missing_mesh_draw_calls",
             previous_frame_scene_missing_mesh_draw_calls);
         field("previous_frame_scene_missing_mesh_objects",

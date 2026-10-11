@@ -427,6 +427,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-gpu-pressure-pipeline-tests)
     add_test(NAME nexverse-asset-gpu-pressure-pipeline-tests COMMAND nexverse-asset-gpu-pressure-pipeline-tests)
 
+    add_executable(nexverse-texture-http-epoch-contract-tests
+        tests/texture_http_epoch_contract_tests.cpp)
+    target_link_libraries(nexverse-texture-http-epoch-contract-tests
+        PRIVATE NexVerse::Assets NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-texture-http-epoch-contract-tests)
+    add_test(NAME nexverse-texture-http-epoch-contract-tests
+        COMMAND nexverse-texture-http-epoch-contract-tests)
+
     add_executable(nexverse-region-http-epoch-contract-tests
         tests/region_http_epoch_contract_tests.cpp)
     target_link_libraries(nexverse-region-http-epoch-contract-tests
@@ -434,6 +442,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-region-http-epoch-contract-tests)
     add_test(NAME nexverse-region-http-epoch-contract-tests
         COMMAND nexverse-region-http-epoch-contract-tests)
+
+    add_executable(nexverse-asset-missing-id-counter-tests
+        tests/asset_missing_id_counter_tests.cpp)
+    target_link_libraries(nexverse-asset-missing-id-counter-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-missing-id-counter-tests)
+    add_test(NAME nexverse-asset-missing-id-counter-tests
+        COMMAND nexverse-asset-missing-id-counter-tests)
+
+    add_executable(nexverse-asset-cache-pressure-window-tests
+        tests/asset_cache_pressure_window_tests.cpp)
+    target_link_libraries(nexverse-asset-cache-pressure-window-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-cache-pressure-window-tests)
+    add_test(NAME nexverse-asset-cache-pressure-window-tests
+        COMMAND nexverse-asset-cache-pressure-window-tests)
 
     add_executable(nexverse-asset-failure-telemetry-tests
         tests/asset_failure_telemetry_tests.cpp)

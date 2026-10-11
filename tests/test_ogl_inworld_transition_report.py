@@ -72,6 +72,26 @@ class RegionReportTests(unittest.TestCase):
         self.assertEqual(assess(data,now_unix_ms=NOW)["status"],
                          "not_verified")
 
+    def test_failure_diagnostics_deltas_are_numeric_only(self):
+        entries=[]
+        for i in (1,2,3):
+            sample_data=json.loads(sample(i))
+            sample_data["mesh_fail_missing"]=2*i
+            sample_data["texture_fail_missing"]=i
+            sample_data["mesh_missing_unique"]=i
+            sample_data["texture_ram_pressure"]=1 if i==2 else 0
+            sample_data["mesh_ram_pressure"]=0
+            sample_data["texture_ram_hit_rate_pct"]=55-i
+            sample_data["mesh_ram_hit_rate_pct"]=70+i
+            entries.append(json.dumps(sample_data))
+        data=report(entries)
+        self.assertEqual(data["latest_region_mesh_missing_events_delta"],4)
+        self.assertEqual(data["latest_region_texture_missing_events_delta"],2)
+        self.assertEqual(data["latest_region_peak_missing_mesh_unique"],3)
+        self.assertEqual(data["latest_region_peak_texture_ram_pressure"],1)
+        self.assertEqual(data["latest_region_min_texture_ram_hit_rate_pct"],52)
+        self.assertNotIn("caps-token",str(data))
+
     def test_new_session_requires_own_three_samples(self):
         data=report([sample(1,session=START-90_000,epoch=1),
                      sample(2,session=START-90_000,epoch=1),

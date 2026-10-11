@@ -38,16 +38,24 @@ int main()
     snapshot.mesh_ram_hits=31U;
     snapshot.mesh_ram_misses=11U;
     snapshot.mesh_ram_evictions=5U;
+    snapshot.texture_ram_hit_rate_pct=27U;
+    snapshot.texture_ram_interval_evictions=3U;
+    snapshot.texture_ram_pressure=1U;
+    snapshot.mesh_ram_hit_rate_pct=77U;
     snapshot.mesh_fail_missing=6U;
     snapshot.mesh_fail_transient=7U;
     snapshot.mesh_fail_invalid=8U;
     snapshot.mesh_fail_configuration=9U;
+    snapshot.mesh_missing_unique=10U;
+    snapshot.texture_missing_unique=11U;
     snapshot.texture_cpu_cached_region_ram=9U;
     snapshot.texture_cpu_cached_region_disk=10U;
     snapshot.mesh_cpu_cached_lod_ram=11U;
     snapshot.mesh_cpu_cached_lod_disk=12U;
     snapshot.mesh_cpu_reuse_history_evictions=13U;
     snapshot.previous_frame_scene_missing_mesh_draw_calls=3U;
+    snapshot.previous_frame_scene_opaque_draw_calls=11U;
+    snapshot.previous_frame_scene_alpha_draw_calls=12U;
     snapshot.previous_frame_scene_missing_mesh_objects=2U;
     snapshot.previous_frame_scene_missing_mesh_triangles=36U;
     snapshot.texture_gpu_staging_deferrals=5U;
@@ -80,14 +88,21 @@ int main()
        json.find("\"texture_ram_evictions\":7")==std::string::npos ||
        json.find("\"mesh_ram_misses\":11")==std::string::npos ||
        json.find("\"mesh_ram_evictions\":5")==std::string::npos ||
+       json.find("\"texture_ram_hit_rate_pct\":27")==std::string::npos ||
+       json.find("\"texture_ram_pressure\":1")==std::string::npos ||
+       json.find("\"mesh_ram_hit_rate_pct\":77")==std::string::npos ||
        json.find("\"mesh_fail_missing\":6")==std::string::npos ||
        json.find("\"mesh_fail_configuration\":9")==std::string::npos ||
+       json.find("\"mesh_missing_unique\":10")==std::string::npos ||
+       json.find("\"texture_missing_unique\":11")==std::string::npos ||
        json.find("\"texture_cpu_cached_region_ram\":9")==std::string::npos ||
        json.find("\"texture_cpu_cached_region_disk\":10")==std::string::npos ||
        json.find("\"mesh_cpu_cached_lod_ram\":11")==std::string::npos ||
        json.find("\"mesh_cpu_cached_lod_disk\":12")==std::string::npos ||
        json.find("\"mesh_cpu_reuse_history_evictions\":13")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_draw_calls\":3")==std::string::npos ||
+       json.find("\"previous_frame_scene_opaque_draw_calls\":11")==std::string::npos ||
+       json.find("\"previous_frame_scene_alpha_draw_calls\":12")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_objects\":2")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_triangles\":36")==std::string::npos ||
        json.find("\"texture_gpu_staging_deferrals\":5")==std::string::npos ||

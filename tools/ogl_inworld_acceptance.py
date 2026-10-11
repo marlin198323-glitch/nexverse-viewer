@@ -73,6 +73,16 @@ def assess(report: dict, min_snapshots: int = 3,
             "region_min_mesh_coverage_pct": window_mesh,
             "region_min_mesh_draw_calls": window_draws,
             "region_max_missing_mesh_draw_calls": window_missing,
+            "region_mesh_missing_events_delta": report.get(
+                "latest_region_mesh_missing_events_delta"),
+            "region_texture_missing_events_delta": report.get(
+                "latest_region_texture_missing_events_delta"),
+            "region_peak_missing_mesh_unique": report.get(
+                "latest_region_peak_missing_mesh_unique"),
+            "region_peak_texture_ram_pressure": report.get(
+                "latest_region_peak_texture_ram_pressure"),
+            "region_peak_mesh_ram_pressure": report.get(
+                "latest_region_peak_mesh_ram_pressure"),
             "last_mesh_fallback_draw_calls": latest.get(
                 "previous_frame_scene_missing_mesh_draw_calls"),
             "last_missing_mesh_objects": latest.get(

@@ -128,6 +128,10 @@ int main()
                 renderer->end_frame();
                 const auto diagnostics=renderer->diagnostics();
                 if(diagnostics.scene_mesh_draw_calls!=6U ||
+                   diagnostics.scene_opaque_draw_calls==0U ||
+                   diagnostics.scene_alpha_draw_calls==0U ||
+                   diagnostics.scene_opaque_draw_calls+
+                       diagnostics.scene_alpha_draw_calls!=6U ||
                    diagnostics.scene_missing_mesh_objects!=0U ||
                    diagnostics.scene_draw_calls!=
                        diagnostics.scene_mesh_draw_calls+

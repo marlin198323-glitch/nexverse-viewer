@@ -81,7 +81,11 @@ def read_report(path: Path) -> dict[str, Any]:
                     "mesh_coverage_pct", "texture_retry_blocked",
                     "mesh_retry_blocked", "gpu_texture_bytes",
                     "texture_ram_hits", "texture_ram_misses",
-                    "texture_ram_evictions", "mesh_ram_hits",
+                    "texture_ram_evictions",
+                    "texture_ram_hit_rate_pct", "texture_ram_interval_evictions",
+                    "texture_ram_pressure", "mesh_ram_hit_rate_pct",
+                    "mesh_ram_interval_evictions", "mesh_ram_pressure",
+                    "mesh_ram_hits",
                     "mesh_ram_misses", "mesh_ram_evictions",
                     "gpu_mesh_bytes", "gpu_shared_budget_bytes",
                     "gpu_upload_cpu_samples", "gpu_upload_cpu_avg_us",
@@ -92,8 +96,10 @@ def read_report(path: Path) -> dict[str, Any]:
                     "mesh_gpu_upload_failures",
                     "mesh_fail_missing", "mesh_fail_transient",
                     "mesh_fail_invalid", "mesh_fail_configuration",
+                    "mesh_missing_unique", "mesh_missing_unique_overflow",
                     "texture_fail_missing", "texture_fail_transient",
                     "texture_fail_invalid", "texture_fail_configuration",
+                    "texture_missing_unique", "texture_missing_unique_overflow",
                     "texture_gpu_staging_deferrals",
                     "texture_gpu_staging_waiting",
                     "texture_gpu_staging_released",
@@ -118,6 +124,8 @@ def read_report(path: Path) -> dict[str, Any]:
                     "previous_frame_scene_draw_calls",
                     "previous_frame_scene_mesh_draw_calls",
                     "previous_frame_scene_prim_draw_calls",
+                    "previous_frame_scene_opaque_draw_calls",
+                    "previous_frame_scene_alpha_draw_calls",
                     "previous_frame_scene_missing_mesh_draw_calls",
                     "previous_frame_scene_missing_mesh_objects",
                     "previous_frame_scene_missing_mesh_triangles",
@@ -159,6 +167,13 @@ def read_report(path: Path) -> dict[str, Any]:
     def window_max(key):
         observed=[sample[key] for sample in region_window if key in sample]
         return max(observed) if len(observed)==len(region_window) and observed else None
+    def window_delta(key):
+        observed=[sample[key] for sample in region_window if key in sample]
+        if len(observed)!=len(region_window) or not observed:
+            return None
+        if observed[-1]<observed[0]:
+            return None
+        return observed[-1]-observed[0]
 
     return {
         "schema": "ogl.asset.log-report.v1",
@@ -173,6 +188,20 @@ def read_report(path: Path) -> dict[str, Any]:
             "previous_frame_scene_mesh_draw_calls"),
         "latest_region_max_mesh_budget_waiting": window_max(
             "mesh_gpu_budget_waiting"),
+        "latest_region_mesh_missing_events_delta": window_delta(
+            "mesh_fail_missing"),
+        "latest_region_texture_missing_events_delta": window_delta(
+            "texture_fail_missing"),
+        "latest_region_peak_missing_mesh_unique": window_max(
+            "mesh_missing_unique"),
+        "latest_region_peak_texture_ram_pressure": window_max(
+            "texture_ram_pressure"),
+        "latest_region_peak_mesh_ram_pressure": window_max(
+            "mesh_ram_pressure"),
+        "latest_region_min_texture_ram_hit_rate_pct": window_min(
+            "texture_ram_hit_rate_pct"),
+        "latest_region_min_mesh_ram_hit_rate_pct": window_min(
+            "mesh_ram_hit_rate_pct"),
         "last_snapshot_emitted_unix_ms": latest.get("emitted_unix_ms"),
         "last_snapshot_session_unix_ms": latest.get("session_started_unix_ms"),
         "date_first": first_date,

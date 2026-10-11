@@ -128,6 +128,10 @@ int main()
                 const auto stats=renderer->diagnostics();
                 if(stats.scene_mesh_draw_calls==0U ||
                    stats.scene_prim_draw_calls==0U ||
+                   stats.scene_opaque_draw_calls==0U ||
+                   stats.scene_alpha_draw_calls==0U ||
+                   stats.scene_opaque_draw_calls+
+                       stats.scene_alpha_draw_calls!=stats.scene_draw_calls ||
                    stats.scene_missing_mesh_objects!=4U ||
                    stats.scene_missing_mesh_draw_calls<
                        stats.scene_missing_mesh_objects ||
