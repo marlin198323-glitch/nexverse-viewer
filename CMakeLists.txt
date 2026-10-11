@@ -83,6 +83,7 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 
 add_library(nexverse-assets
     src/assets/texture_loader.cpp
+    src/assets/texture_mip.cpp
     src/assets/texture_disk_cache.cpp
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
@@ -432,6 +433,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-texture-disk-cache-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-disk-cache-tests)
     add_test(NAME nexverse-texture-disk-cache-tests COMMAND nexverse-texture-disk-cache-tests)
+
+    add_executable(nexverse-texture-mip-tests tests/texture_mip_tests.cpp)
+    target_link_libraries(nexverse-texture-mip-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-mip-tests)
+    add_test(NAME nexverse-texture-mip-tests COMMAND nexverse-texture-mip-tests)
 
     add_executable(nexverse-texture-distance-tests tests/texture_distance_tests.cpp)
     target_link_libraries(nexverse-texture-distance-tests PRIVATE NexVerse::Assets)

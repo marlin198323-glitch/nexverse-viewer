@@ -11,6 +11,7 @@
 #include "nexverse/assets/texture_request_priority.hpp"
 #include "nexverse/assets/texture_residency.hpp"
 #include "nexverse/assets/texture_distance.hpp"
+#include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
@@ -3390,6 +3391,16 @@ int Application::run(bool enable_developer_modules)
     bool object_texture_loading = false;
     std::uint64_t object_texture_request_epoch = 0U;
     std::string object_texture_loading_id;
+    std::uint8_t object_texture_loading_mip = 0U;
+    std::unordered_map<std::string, std::uint8_t> texture_desired_mips;
+    std::unordered_map<std::string, std::uint8_t> texture_gpu_mips;
+    std::unordered_map<std::string, std::size_t> texture_gpu_bytes;
+    std::size_t texture_gpu_used_bytes = 0U;
+    constexpr std::size_t texture_gpu_budget_bytes =
+        256U * 1024U * 1024U;
+    std::unordered_set<std::string> texture_budget_deferred_ids;
+    std::size_t texture_mip_swaps = 0U;
+    std::size_t texture_budget_rejections = 0U;
     std::unordered_set<std::string> object_texture_loaded_ids;
     std::unordered_set<std::string> object_texture_failed_ids;
     std::vector<std::string> scene_texture_ids;
@@ -4537,6 +4548,11 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_failed_ids.clear();
+                texture_desired_mips.clear();
+                texture_gpu_mips.clear();
+                texture_gpu_bytes.clear();
+                texture_gpu_used_bytes = 0U;
+                texture_budget_deferred_ids.clear();
                 terrain_texture_request_generation =
                     std::numeric_limits<std::uint32_t>::max();
                 terrain_texture_request_material_revision =
@@ -5636,29 +5652,88 @@ int Application::run(bool enable_developer_modules)
                 }
                 else if (result.success &&
                     result.image.valid() &&
+                    !object_texture_loading_id.empty() &&
+                    texture_desired_mips.contains(object_texture_loading_id) &&
+                    texture_desired_mips.at(object_texture_loading_id) !=
+                        object_texture_loading_mip)
+                {
+                    core::info("Discarded out-of-date GetTexture mip result");
+                }
+                else if (result.success &&
+                    result.image.valid() &&
                     !object_texture_loading_id.empty())
                 {
-                    render::RenderImageRgba8 image;
-                    image.width = result.image.width;
-                    image.height = result.image.height;
-                    image.pixels =
-                        std::move(result.image.pixels);
-
-                    world_renderer->set_object_texture(
-                        object_texture_loading_id,
-                        image);
-                    object_texture_loaded_ids.insert(
-                        object_texture_loading_id);
-
-                    if (result.message == "Disk texture cache hit")
-                        ++texture_cache_hits;
+                    const std::size_t next_bytes =
+                        assets::gpu_rgba8_mip_bytes(result.image.width,
+                                                    result.image.height);
+                    const auto byte_plan = assets::plan_texture_byte_budget(
+                        texture_residency.preferred_ids, texture_gpu_bytes,
+                        object_texture_loading_id, next_bytes,
+                        texture_gpu_budget_bytes);
+                    const bool new_asset =
+                        !object_texture_loaded_ids.contains(
+                            object_texture_loading_id);
+                    if (!byte_plan.fits ||
+                        (new_asset &&
+                         object_texture_loaded_ids.size() -
+                             byte_plan.eviction_ids.size() >=
+                             max_object_texture_assets))
+                    {
+                        texture_budget_deferred_ids.insert(
+                            object_texture_loading_id);
+                        ++texture_budget_rejections;
+                        core::warning("Deferred GetTexture GPU upload " +
+                            object_texture_loading_id +
+                            ": texture byte/slot budget exhausted");
+                    }
                     else
-                        ++texture_http_loads;
-                    core::info(
-                        "Object texture asset loaded (" + result.message +
-                        "); cached=" +
-                        std::to_string(
-                            object_texture_loaded_ids.size()));
+                    {
+                        for (const auto& victim : byte_plan.eviction_ids)
+                        {
+                            world_renderer->remove_object_texture(victim);
+                            object_texture_loaded_ids.erase(victim);
+                            texture_gpu_mips.erase(victim);
+                            if (const auto it = texture_gpu_bytes.find(victim);
+                                it != texture_gpu_bytes.end())
+                            {
+                                texture_gpu_used_bytes -= it->second;
+                                texture_gpu_bytes.erase(it);
+                            }
+                            ++texture_gpu_evictions;
+                        }
+                        const bool was_loaded =
+                            object_texture_loaded_ids.contains(
+                                object_texture_loading_id);
+                        render::RenderImageRgba8 image;
+                        image.width = result.image.width;
+                        image.height = result.image.height;
+                        image.pixels = std::move(result.image.pixels);
+                        world_renderer->set_object_texture(
+                            object_texture_loading_id, image);
+                        if (const auto old = texture_gpu_bytes.find(
+                                object_texture_loading_id);
+                            old != texture_gpu_bytes.end())
+                            texture_gpu_used_bytes -= old->second;
+                        texture_gpu_bytes[object_texture_loading_id] =
+                            next_bytes;
+                        texture_gpu_used_bytes += next_bytes;
+                        texture_gpu_mips[object_texture_loading_id] =
+                            object_texture_loading_mip;
+                        object_texture_loaded_ids.insert(
+                            object_texture_loading_id);
+                        if (was_loaded) ++texture_mip_swaps;
+                        if (result.message == "Disk texture cache hit")
+                            ++texture_cache_hits;
+                        else ++texture_http_loads;
+                        core::info(
+                            "Object texture asset loaded (" + result.message +
+                            "); mip=" +
+                            std::to_string(object_texture_loading_mip) +
+                            "; gpu_texture_bytes=" +
+                            std::to_string(texture_gpu_used_bytes) +
+                            "; cached=" +
+                            std::to_string(object_texture_loaded_ids.size()));
+                    }
                 }
                 else if (!object_texture_loading_id.empty())
                 {
@@ -5686,19 +5761,41 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::milliseconds{750})
             {
                 last_texture_residency_plan = texture_plan_now;
+                const std::unordered_set<std::string> active_particles{
+                    emitter_texture_ids.begin(),emitter_texture_ids.end()};
+                auto planned_mips = assets::plan_texture_mip_levels(
+                    scene_texture_samples,render_agent.position.x,
+                    render_agent.position.y,render_agent.position.z,
+                    texture_desired_mips,active_particles);
+                if (planned_mips != texture_desired_mips)
+                {
+                    texture_budget_deferred_ids.clear();
+                    texture_desired_mips = std::move(planned_mips);
+                }
                 const auto nearby_textures = assets::rank_texture_distances(
                     scene_texture_samples,
                     render_agent.position.x,render_agent.position.y,
                     render_agent.position.z,object_texture_loaded_ids);
-                texture_residency = assets::plan_texture_residency(
+                auto updated_residency = assets::plan_texture_residency(
                     emitter_texture_ids, nearby_textures,
                     object_texture_loaded_ids, max_object_texture_assets);
+                if (updated_residency.preferred_ids !=
+                    texture_residency.preferred_ids)
+                    texture_budget_deferred_ids.clear();
+                texture_residency = std::move(updated_residency);
                 std::size_t evicted = 0U;
                 for (const auto& id:texture_residency.eviction_ids)
                 {
                     if(evicted>=8U)break;
                     world_renderer->remove_object_texture(id);
                     object_texture_loaded_ids.erase(id);
+                    texture_gpu_mips.erase(id);
+                    if (const auto it=texture_gpu_bytes.find(id);
+                        it != texture_gpu_bytes.end())
+                    {
+                        texture_gpu_used_bytes -= it->second;
+                        texture_gpu_bytes.erase(it);
+                    }
                     ++evicted;
                 }
                 texture_gpu_evictions += evicted;
@@ -5706,42 +5803,81 @@ int Application::run(bool enable_developer_modules)
                     core::info("GetTexture GPU residency evicted=" +
                         std::to_string(evicted));
             }
-            if (!object_texture_loading &&
-                !texture_capability.empty() &&
-                object_texture_loaded_ids.size() <
-                    max_object_texture_assets)
+            if (!object_texture_loading && !texture_capability.empty())
             {
+                std::unordered_set<std::string> satisfied;
+                for (const auto& [id,level] : texture_gpu_mips)
+                {
+                    const auto target = texture_desired_mips.find(id);
+                    if (target == texture_desired_mips.end()
+                        ? level == 0U : level == target->second)
+                        satisfied.insert(id);
+                }
+                auto unavailable = object_texture_failed_ids;
+                unavailable.insert(texture_budget_deferred_ids.begin(),
+                                   texture_budget_deferred_ids.end());
                 if (const auto texture_id = assets::next_texture_request(
                         texture_residency.preferred_ids, {},
-                        object_texture_loaded_ids, object_texture_failed_ids))
+                        satisfied, unavailable))
                 {
+                    const bool new_asset =
+                        !object_texture_loaded_ids.contains(*texture_id);
+                    if (new_asset &&
+                        object_texture_loaded_ids.size() >=
+                            max_object_texture_assets)
+                    {
+                        texture_budget_deferred_ids.insert(*texture_id);
+                        ++texture_budget_rejections;
+                    }
+                    else
+                    {
                     object_texture_loading_id = *texture_id;
+                    const auto desired_mip = texture_desired_mips.find(*texture_id);
+                    object_texture_loading_mip =
+                        desired_mip == texture_desired_mips.end()
+                            ? 0U : desired_mip->second;
                     object_texture_loading = true;
                     object_texture_request_epoch = material_scope.epoch();
                     const std::string capability = texture_capability;
                     const std::string requested_id = *texture_id;
                     object_texture_future = std::async(
                         std::launch::async,
-                        [transport, capability, requested_id]()
+                        [transport, capability, requested_id,
+                         mip=object_texture_loading_mip]()
                         {
                             assets::TextureDiskCache disk{
                                 assets::TextureDiskCache::default_directory()};
+                            assets::TextureAssetResult result;
                             if (const auto cached = disk.load(requested_id))
                             {
-                                assets::TextureAssetResult result;
                                 result.success = true;
                                 result.asset_id = requested_id;
                                 result.image = *cached;
                                 result.message = "Disk texture cache hit";
-                                return result;
                             }
-                            assets::TextureAssetLoader loader{transport};
-                            auto result=loader.fetch_rgba(
-                                capability, requested_id);
-                            if(result.success && result.image.valid())
-                                (void)disk.store(requested_id,result.image);
+                            else
+                            {
+                                assets::TextureAssetLoader loader{transport};
+                                result=loader.fetch_rgba(capability,requested_id);
+                                // Preserve full resolution on disk even if
+                                // this view uses only a low-res base mip.
+                                if(result.success && result.image.valid())
+                                    (void)disk.store(requested_id,result.image);
+                            }
+                            if(result.success && result.image.valid() && mip>0U)
+                            {
+                                if (auto image = assets::texture_mip_image(
+                                        result.image,mip))
+                                    result.image = std::move(*image);
+                                else
+                                {
+                                    result.success=false;
+                                    result.message="Texture mip reduction failed";
+                                }
+                            }
                             return result;
                         });
+                    }
                 }
             }
 
@@ -5754,6 +5890,14 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_cache_hits) +
                     " network_loads=" + std::to_string(texture_http_loads) +
                     " gpu_evictions=" + std::to_string(texture_gpu_evictions) +
+                    " mip_swaps=" +
+                    std::to_string(texture_mip_swaps) +
+                    " budget_deferrals=" +
+                    std::to_string(texture_budget_rejections) +
+                    " gpu_texture_bytes=" +
+                    std::to_string(texture_gpu_used_bytes) +
+                    " gpu_texture_byte_budget=" +
+                    std::to_string(texture_gpu_budget_bytes) +
                     " gpu_resident=" +
                     std::to_string(object_texture_loaded_ids.size()) +
                     " gpu_budget=" +
