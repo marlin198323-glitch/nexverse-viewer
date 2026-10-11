@@ -10,3 +10,7 @@ compile_commands.json
 *.VC.db
 .DS_Store
 Thumbs.db
+
+# Python log analyzer generated files
+__pycache__/
+*.pyc

@@ -21,6 +21,8 @@
 #include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
+#include "nexverse/assets/asset_lod_dwell.hpp"
+#include "nexverse/assets/asset_gpu_upload_gate.hpp"
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/core/logger.hpp"
@@ -3355,6 +3357,9 @@ int Application::run(bool enable_developer_modules)
     assets::MeshLod mesh_asset_loading_lod = assets::MeshLod::high;
     std::unordered_map<std::string, assets::MeshLod> mesh_desired_lods;
     std::unordered_map<std::string, assets::MeshLod> mesh_gpu_lods;
+    assets::AssetLodDwell<assets::MeshLod> mesh_lod_dwell;
+    assets::AssetGpuUploadGate asset_gpu_upload_gate;
+    std::size_t texture_slot_replacements = 0U;
     std::unordered_map<std::string, std::size_t> mesh_gpu_asset_bytes;
     std::size_t mesh_gpu_estimated_bytes = 0U;
     constexpr std::size_t shared_gpu_budget_bytes = 384U*1024U*1024U;
@@ -3432,6 +3437,7 @@ int Application::run(bool enable_developer_modules)
     std::uint8_t object_texture_loading_mip = 0U;
     std::unordered_map<std::string, std::uint8_t> texture_desired_mips;
     std::unordered_map<std::string, std::uint8_t> texture_gpu_mips;
+    assets::AssetLodDwell<std::uint8_t> texture_lod_dwell;
     std::unordered_map<std::string, std::size_t> texture_gpu_bytes;
     std::size_t texture_gpu_used_bytes = 0U;
     constexpr std::size_t texture_gpu_budget_bytes =
@@ -4585,6 +4591,8 @@ int Application::run(bool enable_developer_modules)
                 mesh_asset_retries.enter(material_scope.epoch());
                 mesh_desired_lods.clear();
                 mesh_gpu_lods.clear();
+                mesh_lod_dwell.reset();
+                asset_gpu_upload_gate.reset();
                 mesh_gpu_asset_bytes.clear();
                 mesh_gpu_estimated_bytes = 0U;
                 mesh_gpu_budget_deferred_ids.clear();
@@ -4608,6 +4616,7 @@ int Application::run(bool enable_developer_modules)
                 object_texture_retries.enter(material_scope.epoch());
                 texture_desired_mips.clear();
                 texture_gpu_mips.clear();
+                texture_lod_dwell.reset();
                 texture_gpu_bytes.clear();
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
@@ -5696,7 +5705,8 @@ int Application::run(bool enable_developer_modules)
                 object_texture_future.valid() &&
                 object_texture_future.wait_for(
                     std::chrono::seconds{0}) ==
-                    std::future_status::ready)
+                    std::future_status::ready &&
+                asset_gpu_upload_gate.ready(std::chrono::steady_clock::now()))
             {
                 assets::TextureAssetResult result =
                     object_texture_future.get();
@@ -5760,14 +5770,11 @@ int Application::run(bool enable_developer_modules)
                         assets::effective_gpu_family_budget(
                             texture_gpu_budget_bytes,shared_gpu_budget_bytes,
                             mesh_gpu_estimated_bytes));
-                    const bool new_asset =
-                        !object_texture_loaded_ids.contains(
-                            object_texture_loading_id);
-                    if (!byte_plan.fits ||
-                        (new_asset &&
-                         object_texture_loaded_ids.size() -
-                             byte_plan.eviction_ids.size() >=
-                             max_object_texture_assets))
+                    const auto slot_plan=assets::plan_texture_slot_admission(
+                        texture_residency.preferred_ids,
+                        object_texture_loaded_ids,byte_plan.eviction_ids,
+                        object_texture_loading_id,max_object_texture_assets);
+                    if (!byte_plan.fits || !slot_plan.fits)
                     {
                         texture_budget_deferred_ids.insert(
                             object_texture_loading_id);
@@ -5778,7 +5785,13 @@ int Application::run(bool enable_developer_modules)
                     }
                     else
                     {
-                        for (const auto& victim : byte_plan.eviction_ids)
+                        std::vector<std::string> victims=byte_plan.eviction_ids;
+                        victims.insert(victims.end(),
+                            slot_plan.additional_evictions.begin(),
+                            slot_plan.additional_evictions.end());
+                        texture_slot_replacements +=
+                            slot_plan.additional_evictions.size();
+                        for (const auto& victim : victims)
                         {
                             world_renderer->remove_object_texture(victim);
                             object_texture_loaded_ids.erase(victim);
@@ -5801,6 +5814,8 @@ int Application::run(bool enable_developer_modules)
                         image.pixels = std::move(result.image.pixels);
                         world_renderer->set_object_texture(
                             object_texture_loading_id, image);
+                        asset_gpu_upload_gate.uploaded(
+                            std::chrono::steady_clock::now(),next_bytes);
                         if (const auto old = texture_gpu_bytes.find(
                                 object_texture_loading_id);
                             old != texture_gpu_bytes.end())
@@ -5874,6 +5889,11 @@ int Application::run(bool enable_developer_modules)
                     scene_texture_samples,render_agent.position.x,
                     render_agent.position.y,render_agent.position.z,
                     texture_desired_mips,active_particles);
+                texture_lod_dwell.prune(planned_mips);
+                for (auto& [id,level]:planned_mips)
+                    if (!active_particles.contains(id))
+                        level=texture_lod_dwell.resolve(
+                            id,level,texture_gpu_mips,texture_plan_now);
                 if (planned_mips != texture_desired_mips)
                 {
                     texture_budget_deferred_ids.clear();
@@ -6165,6 +6185,14 @@ int Application::run(bool enable_developer_modules)
                     " gpu_evictions=" + std::to_string(texture_gpu_evictions) +
                     " mip_swaps=" +
                     std::to_string(texture_mip_swaps) +
+                    " mip_dwell_pending=" +
+                    std::to_string(texture_lod_dwell.waiting()) +
+                    " slot_priority_evictions=" +
+                    std::to_string(texture_slot_replacements) +
+                    " gpu_uploads=" +
+                    std::to_string(asset_gpu_upload_gate.count()) +
+                    " gpu_uploaded_bytes=" +
+                    std::to_string(asset_gpu_upload_gate.bytes()) +
                     " budget_deferrals=" +
                     std::to_string(texture_budget_rejections) +
                     " gpu_texture_bytes=" +
@@ -6186,10 +6214,15 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::milliseconds{750})
             {
                 last_mesh_residency_plan = mesh_plan_now;
-                mesh_desired_lods = assets::plan_mesh_lods(
+                auto planned_lods = assets::plan_mesh_lods(
                     scene_mesh_samples,
                     render_agent.position.x, render_agent.position.y,
                     render_agent.position.z, mesh_desired_lods);
+                mesh_lod_dwell.prune(planned_lods);
+                for(auto& [id,lod]:planned_lods)
+                    lod=mesh_lod_dwell.resolve(
+                        id,lod,mesh_gpu_lods,mesh_plan_now);
+                mesh_desired_lods=std::move(planned_lods);
                 const auto view = render_camera_from_agent(render_agent);
                 const assets::AssetCameraHint camera_hint{
                     view.center.x,view.center.y,view.center.z,
@@ -6238,7 +6271,8 @@ int Application::run(bool enable_developer_modules)
             // or for meshes that have left the current residency set.
             if (mesh_asset_future.valid() &&
                 mesh_asset_future.wait_for(std::chrono::seconds{0}) ==
-                    std::future_status::ready)
+                    std::future_status::ready &&
+                asset_gpu_upload_gate.ready(std::chrono::steady_clock::now()))
             {
                 auto completed_mesh = mesh_asset_future.get();
                 if (mesh_request_started.time_since_epoch().count()!=0)
@@ -6309,6 +6343,8 @@ int Application::run(bool enable_developer_modules)
                     if (world_renderer->set_mesh_asset(
                             mesh_asset_loading_id, geometry))
                     {
+                        asset_gpu_upload_gate.uploaded(
+                            std::chrono::steady_clock::now(),gpu_bytes);
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
                         mesh_asset_retries.success(mesh_asset_loading_id+"."+
                             std::string(assets::mesh_lod_name(
@@ -6454,6 +6490,8 @@ int Application::run(bool enable_developer_modules)
                     " ram_bytes=" + std::to_string(mesh_memory_cache->bytes()) +
                     " ram_assets=" + std::to_string(mesh_memory_cache->count()) +
                     " lod_swaps=" + std::to_string(mesh_lod_swaps) +
+                    " lod_dwell_pending=" +
+                    std::to_string(mesh_lod_dwell.waiting()) +
                     " gpu_estimated_bytes=" + std::to_string(mesh_gpu_estimated_bytes) +
                     " shared_gpu_estimated_bytes=" +
                     std::to_string(mesh_gpu_estimated_bytes +

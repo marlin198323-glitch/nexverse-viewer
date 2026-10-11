@@ -410,6 +410,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-prefetch-tests)
     add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
 
+    add_executable(nexverse-asset-lod-dwell-tests tests/asset_lod_dwell_tests.cpp)
+    target_link_libraries(nexverse-asset-lod-dwell-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-lod-dwell-tests)
+    add_test(NAME nexverse-asset-lod-dwell-tests COMMAND nexverse-asset-lod-dwell-tests)
+
+    add_executable(nexverse-asset-gpu-upload-gate-tests tests/asset_gpu_upload_gate_tests.cpp)
+    target_link_libraries(nexverse-asset-gpu-upload-gate-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-gpu-upload-gate-tests)
+    add_test(NAME nexverse-asset-gpu-upload-gate-tests COMMAND nexverse-asset-gpu-upload-gate-tests)
+
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+        add_test(NAME nexverse-asset-log-report-tests
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_asset_log_report.py")
+    endif()
+
     add_executable(nexverse-asset-scene-coverage-tests tests/asset_scene_coverage_tests.cpp)
     target_link_libraries(nexverse-asset-scene-coverage-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-scene-coverage-tests)
