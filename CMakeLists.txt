@@ -356,6 +356,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-firestorm-region-lease-tests
+        tests/firestorm_region_lease_tests.cpp)
+    target_link_libraries(nexverse-firestorm-region-lease-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-region-lease-tests)
+    add_test(NAME nexverse-firestorm-region-lease-tests
+        COMMAND nexverse-firestorm-region-lease-tests)
+
+    add_executable(nexverse-firestorm-thumbnail-metadata-tests
+        tests/firestorm_thumbnail_metadata_tests.cpp)
+    target_link_libraries(nexverse-firestorm-thumbnail-metadata-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-thumbnail-metadata-tests)
+    add_test(NAME nexverse-firestorm-thumbnail-metadata-tests
+        COMMAND nexverse-firestorm-thumbnail-metadata-tests)
+
     add_executable(nexverse-firestorm-compat-tests tests/firestorm_compat_tests.cpp)
     target_link_libraries(nexverse-firestorm-compat-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-firestorm-compat-tests)

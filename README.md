@@ -6,12 +6,12 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.80`
+- Version: `0.2.0-alpha.81`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständiger Entwicklungs-Teststand: **71/71 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
-- aktueller Entwicklungsblock: **alpha.80 – Firestorm-CAPS-Discovery, lesende Experience-Listen und InventoryThumbnailUpload-LLSD-Vertrag; vollständige Firestorm-Funktionsparität und echte In-World-Abnahme noch offen**
+- letzter vollständiger Entwicklungs-Teststand: **73/73 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
+- aktueller Entwicklungsblock: **alpha.81 – F8-Experience-Floater, Regions-Lease und Outfit-Thumbnail-Metadaten/-Cache-Vertrag; Firestorm-Vollparität und echte In-World-Abnahme noch offen**
 - Server-Referenz: `opengenesislink/opengenesislinkserver` `main` (für alpha.80 geprüft bei `6dc73f2`); offiziellen Firestorm-Releasebranch jeweils erneut prüfen
 - aktueller Funktionsnachweis: `docs/FIRESTORM_PARITY_MATRIX.md`
 

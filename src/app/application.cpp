@@ -41,6 +41,7 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/caps.hpp"
 #include "nexverse/protocol/firestorm_compat.hpp"
+#include "nexverse/protocol/firestorm_region_lease.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/event_queue_recovery.hpp"
 #include "nexverse/protocol/caps_world_events.hpp"
@@ -149,6 +150,10 @@ struct CapsRuntimeState
     bool resident_experiences_read = false;
     std::size_t allowed_experiences = 0U;
     std::size_t blocked_experiences = 0U;
+    // Local display state only; never log or persist Experience UUIDs.
+    std::vector<std::string> owned_ids;
+    std::vector<std::string> allowed_ids;
+    std::vector<std::string> blocked_ids;
 };
 
 struct FrameMetrics
@@ -349,6 +354,8 @@ struct LoginUiState
 struct InputContext
 {
     LoginUiState* login = nullptr;
+    nexverse::protocol::ExperienceUiState* experience = nullptr;
+    bool* simulation_ready = nullptr;
     bool exclusive_fullscreen = false;
     int windowed_x = 100;
     int windowed_y = 100;
@@ -439,8 +446,31 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        if(context && context->experience && context->experience->open)
+            context->experience->close();
+        else
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
         return;
+    }
+    if(context && context->experience && action==GLFW_PRESS)
+    {
+        auto& ui=*context->experience;
+        if(key==GLFW_KEY_F8)
+        {
+            ui.toggle(context->login && context->login->authenticated,
+                      context->simulation_ready && *context->simulation_ready);
+            return;
+        }
+        if(ui.open)
+        {
+            if(key==GLFW_KEY_1)
+                ui.select(nexverse::protocol::ExperienceUiState::Tab::owned);
+            else if(key==GLFW_KEY_2)
+                ui.select(nexverse::protocol::ExperienceUiState::Tab::allowed);
+            else if(key==GLFW_KEY_3)
+                ui.select(nexverse::protocol::ExperienceUiState::Tab::blocked);
+            return;
+        }
     }
 
     if (key == GLFW_KEY_F11 && action == GLFW_PRESS && context != nullptr)
@@ -531,6 +561,38 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
 
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if(context && context->experience && context->experience->open &&
+       context->login && context->login->authenticated)
+    {
+        int window_w=0,window_h=0;
+        glfwGetWindowSize(window,&window_w,&window_h);
+        double px=0.0,py=0.0;
+        glfwGetCursorPos(window,&px,&py);
+        const float scale=std::clamp(
+            static_cast<float>(window_h)/1080.0f,0.75f,1.5f);
+        const float panel_w=std::min(670.0f*scale,
+                                    static_cast<float>(window_w)-32.0f);
+        const float panel_x=(static_cast<float>(window_w)-panel_w)/2.0f;
+        const float panel_y=std::max(35.0f,
+            (static_cast<float>(window_h)-520.0f*scale)/2.0f);
+        if(point_inside(px,py,panel_x+panel_w-55.0f*scale,
+                        panel_y+10.0f*scale,45.0f*scale,35.0f))
+            context->experience->close();
+        else
+        {
+            const float tabs_x=panel_x+20.0f*scale;
+            const float tabs_y=panel_y+80.0f*scale;
+            for(int i=0;i<3;++i)
+                if(point_inside(px,py,tabs_x+static_cast<float>(i)*203.0f*scale,
+                                tabs_y,194.0f*scale,40.0f*scale))
+                {
+                    context->experience->select(
+                        static_cast<nexverse::protocol::ExperienceUiState::Tab>(i));
+                    break;
+                }
+        }
+        return;
+    }
     if (context == nullptr || context->login == nullptr ||
         context->login->authenticated) return;
 
@@ -1408,6 +1470,11 @@ void render_world_hud(
         8.3f * scale,
         debug_line,
         theme::cyan);
+    renderer.text(card_x+12.0f*scale,
+                  rail_y+rail_h-24.0f*scale,
+                  8.0f*scale,
+                  "Erlebnisse [F8]",
+                  theme::text_muted);
 
     // Bottom action bar, visually aligned with the original NexVerse UI.
     renderer.rect(
@@ -1452,6 +1519,91 @@ void render_world_hud(
             theme::text_muted);
         action_x += action_w + 8.0f * scale;
     }
+}
+
+// Firestorm Experiences: real read-only floater, available only after a
+// live simulator scene is ready. No accidental Purchase/Allow/Block actions.
+void render_experience_floater(
+    UiRenderer& renderer,int width,int height,
+    const nexverse::protocol::ExperienceUiState& ui,
+    const CapsRuntimeState& caps)
+{
+    if(!ui.open)return;
+    const float w=static_cast<float>(std::max(width,1));
+    const float h=static_cast<float>(std::max(height,1));
+    const float scale=std::clamp(h/1080.0f,0.75f,1.5f);
+    const float pw=std::min(670.0f*scale,w-32.0f);
+    const float ph=520.0f*scale;
+    const float x=(w-pw)*0.5f;
+    const float y=std::max(35.0f,(h-ph)*0.5f);
+    renderer.rect(0.0f,0.0f,w,h,Color{0.0f,0.009f,0.025f,0.52f},0.0f);
+    renderer.rect(x-2.0f*scale,y-2.0f*scale,
+                  pw+4.0f*scale,ph+4.0f*scale,
+                  with_alpha(theme::cyan,0.27f),13.0f*scale);
+    renderer.rect(x,y,pw,ph,Color{0.013f,0.030f,0.053f,0.98f},
+                  12.0f*scale);
+    renderer.text(x+22.0f*scale,y+22.0f*scale,
+                  18.0f*scale,"Erlebnisse / Experiences",theme::text);
+    renderer.text(x+22.0f*scale,y+53.0f*scale,
+                  9.0f*scale,"Firestorm-kompatible Ansicht (nur lesend)",
+                  theme::cyan);
+    renderer.rect(x+pw-55.0f*scale,y+10.0f*scale,
+                  45.0f*scale,35.0f*scale,
+                  Color{0.16f,0.050f,0.087f,1.0f},8.0f*scale);
+    renderer.text(x+pw-40.0f*scale,y+17.0f*scale,
+                  12.0f*scale,"X",theme::text);
+    const std::array<std::string_view,3U> tabs{
+        "1 Eigene","2 Erlaubt","3 Blockiert"};
+    const auto selected=static_cast<std::size_t>(ui.tab);
+    for(std::size_t i=0U;i<tabs.size();++i)
+    {
+        const auto xx=x+(20.0f+static_cast<float>(i)*203.0f)*scale;
+        renderer.rect(xx,y+80.0f*scale,194.0f*scale,40.0f*scale,
+                      i==selected ? Color{0.06f,0.21f,0.30f,1.0f}
+                                  : Color{0.027f,0.069f,0.11f,1.0f},
+                      6.0f*scale);
+        renderer.text(xx+14.0f*scale,y+91.0f*scale,11.0f*scale,
+                      tabs[i],i==selected?theme::text:theme::text_muted);
+    }
+    const bool ready=selected==0U ? caps.owned_experiences_read
+                                 : caps.resident_experiences_read;
+    const bool advertised=selected==0U ?
+        caps.firestorm_caps.experience_owned:
+        caps.firestorm_caps.experience_lists;
+    const auto& ids=selected==0U ? caps.owned_ids :
+                    selected==1U ? caps.allowed_ids : caps.blocked_ids;
+    const std::string state=!advertised
+        ? "Vom aktuellen Grid nicht angeboten"
+        : !ready ? "Serverantwort noch nicht verfügbar"
+                 : ids.empty() ? "Keine Einträge" :
+                     std::to_string(ids.size())+" Einträge vom Simulator";
+    renderer.text(x+25.0f*scale,y+145.0f*scale,10.0f*scale,
+                  state,ready?theme::text:theme::warning);
+    if(ready)
+    {
+        for(std::size_t i=0U;i<std::min(ids.size(),std::size_t{9U});++i)
+        {
+            renderer.rect(x+22.0f*scale,y+
+                          (174.0f+static_cast<float>(i)*31.0f)*scale,
+                          pw-44.0f*scale,28.0f*scale,
+                          Color{0.020f,0.051f,0.083f,0.94f},
+                          5.0f*scale);
+            // The list CAP supplies UUIDs, not user-facing names. Display
+            // an explicit short ID instead of fabricating Experience names.
+            renderer.text(x+32.0f*scale,y+
+                          (181.0f+static_cast<float>(i)*31.0f)*scale,
+                          9.2f*scale,
+                          std::to_string(i+1U)+". ID "+
+                          ids[i].substr(0U,8U)+" (Name nicht geladen)",
+                          theme::text_muted);
+        }
+    }
+    renderer.text(x+22.0f*scale,y+ph-47.0f*scale,
+                  8.7f*scale,"Schreiben, Kaufen und Berechtigungen: noch gesperrt",
+                  theme::warning);
+    renderer.text(x+22.0f*scale,y+ph-25.0f*scale,
+                  8.0f*scale,"F8 schließen | 1-3 Reiter | ESC zurück",
+                  theme::text_muted);
 }
 
 void render_shell(
@@ -2517,6 +2669,7 @@ int Application::run(bool enable_developer_modules)
     glfwGetWindowSize(window, &window_width, &window_height);
 
     LoginUiState login_ui;
+    protocol::ExperienceUiState experience_ui;
     InputContext input_context{&login_ui};
     glfwSetWindowUserPointer(window, &input_context);
     glfwSetCharCallback(window, character_callback);
@@ -2548,6 +2701,8 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t self_avatar_region_handle = 0U;
     std::chrono::steady_clock::time_point last_self_movement_log{};
     bool simulation_ready = false;
+    input_context.experience=&experience_ui;
+    input_context.simulation_ready=&simulation_ready;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
 
@@ -3377,6 +3532,7 @@ int Application::run(bool enable_developer_modules)
     std::future<void> caps_future;
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
+    protocol::FirestormRegionLease firestorm_region_lease;
     protocol::RegionMaterialScope material_scope;
     std::future<protocol::CapabilityDiscoveryResult> region_material_discovery_future;
     std::uint64_t region_material_discovery_epoch = 0U;
@@ -3715,11 +3871,7 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            {
-                glfwSetWindowShouldClose(window, GLFW_TRUE);
-            }
-
+            // Escape callback closes the Experience floater before quitting.
             if (login_ui.busy &&
                 login_future.valid() &&
                 login_future.wait_for(std::chrono::milliseconds{0}) == std::future_status::ready)
@@ -3796,11 +3948,24 @@ int Application::run(bool enable_developer_modules)
                             caps_started = true;
                             const std::string seed_capability =
                                 active_session->seed_capability;
+                            std::uint64_t initial_handle=0U;
+                            std::uint32_t initial_generation=0U;
+                            {
+                                std::scoped_lock lock{world_mutex};
+                                initial_handle=world_model.region().handle;
+                                initial_generation=world_model.region().generation;
+                            }
+                            const auto firestorm_issued_epoch=
+                                firestorm_region_lease.enter(
+                                    initial_handle,initial_generation,
+                                    seed_capability);
 
                             caps_future = std::async(
                                 std::launch::async,
                                 [transport,
                                  seed_capability,
+                                 firestorm_issued_epoch,
+                                 &firestorm_region_lease,
                                  &caps_stop,
                                  &caps_mutex,
                                  &caps_state,
@@ -3845,9 +4010,11 @@ int Application::run(bool enable_developer_modules)
                                         caps_state.capability_count =
                                             static_cast<std::uint32_t>(
                                                 discovery.capabilities.size());
-                                        caps_state.firestorm_caps =
-                                            protocol::firestorm_caps_availability(
-                                                discovery.capabilities);
+                                        if(firestorm_region_lease.matches(
+                                               firestorm_issued_epoch))
+                                            caps_state.firestorm_caps =
+                                                protocol::firestorm_caps_availability(
+                                                    discovery.capabilities);
                                         caps_state.status = "CAPS READY";
                                     }
 
@@ -3871,6 +4038,8 @@ int Application::run(bool enable_developer_modules)
                                         experiences_read_future=std::async(
                                             std::launch::async,
                                             [transport,owned_url,lists_url,
+                                             firestorm_issued_epoch,
+                                             &firestorm_region_lease,
                                              &caps_stop,&caps_state,&caps_mutex]()
                                             {
                                                 protocol::CapabilityService read_service{
@@ -3886,10 +4055,15 @@ int Application::run(bool enable_developer_modules)
                                                         const auto parsed=
                                                             protocol::parse_agent_experiences(
                                                                 response.value);
-                                                        if(parsed)
+                                                        if(parsed && firestorm_region_lease.matches(
+                                                               firestorm_issued_epoch))
                                                         {
                                                             std::scoped_lock lock{
                                                                 caps_mutex};
+                                                            if(!firestorm_region_lease.matches(
+                                                                   firestorm_issued_epoch))
+                                                                return;
+                                                            caps_state.owned_ids=parsed->ids;
                                                             caps_state.owned_experiences_read=true;
                                                             caps_state.owned_experiences=
                                                                 parsed->ids.size();
@@ -3914,10 +4088,16 @@ int Application::run(bool enable_developer_modules)
                                                     const auto parsed=
                                                         protocol::parse_resident_experiences(
                                                             lists_response.value);
-                                                    if(parsed)
+                                                    if(parsed && firestorm_region_lease.matches(
+                                                           firestorm_issued_epoch))
                                                     {
                                                         std::scoped_lock lock{
                                                             caps_mutex};
+                                                        if(!firestorm_region_lease.matches(
+                                                               firestorm_issued_epoch))
+                                                            return;
+                                                        caps_state.allowed_ids=parsed->allowed;
+                                                        caps_state.blocked_ids=parsed->blocked;
                                                         caps_state.resident_experiences_read=true;
                                                         caps_state.allowed_experiences=
                                                             parsed->allowed.size();
@@ -4528,6 +4708,7 @@ int Application::run(bool enable_developer_modules)
             if (!simulation_ready)
             {
                 world_ready_logged = false;
+                experience_ui.close();
             }
             else if (!world_ready_logged)
             {
@@ -4560,7 +4741,7 @@ int Application::run(bool enable_developer_modules)
                     glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
                 const auto pressed = [&](int key)
                 {
-                    return focused &&
+                    return focused && !experience_ui.open &&
                            glfwGetKey(window, key) == GLFW_PRESS;
                 };
                 protocol::MovementKeys keys;
@@ -4714,6 +4895,26 @@ int Application::run(bool enable_developer_modules)
                 current_region_handle = active_region.handle;
                 current_region_generation = active_region.generation;
                 current_region_seed = active_region.seed_capability;
+            }
+            const auto previous_firestorm_epoch=firestorm_region_lease.epoch();
+            const auto current_firestorm_epoch=firestorm_region_lease.enter(
+                current_region_handle,current_region_generation,
+                current_region_seed);
+            if(current_firestorm_epoch!=previous_firestorm_epoch &&
+               previous_firestorm_epoch!=0U)
+            {
+                std::scoped_lock lock{caps_mutex};
+                caps_state.firestorm_caps={};
+                caps_state.owned_experiences_read=false;
+                caps_state.owned_experiences=0U;
+                caps_state.experience_acquire_offered=false;
+                caps_state.resident_experiences_read=false;
+                caps_state.allowed_experiences=0U;
+                caps_state.blocked_experiences=0U;
+                caps_state.owned_ids.clear();
+                caps_state.allowed_ids.clear();
+                caps_state.blocked_ids.clear();
+                experience_ui.close();
             }
             if (material_scope.update(
                     current_region_handle,
@@ -7079,6 +7280,9 @@ int Application::run(bool enable_developer_modules)
                 memory_metrics,
                 simulation_ready,
                 welcome_texture);
+            if(simulation_ready)
+                render_experience_floater(renderer,window_width,window_height,
+                                          experience_ui,caps_snapshot);
 
             glfwSwapBuffers(window);
         }

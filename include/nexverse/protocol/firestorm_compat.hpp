@@ -60,4 +60,36 @@ struct ThumbnailUploadStage
     ThumbnailTarget target,std::string_view inventory_uuid);
 [[nodiscard]] std::optional<ThumbnailUploadStage> parse_thumbnail_stage(
     const LlsdValue& response);
+
+// OpenGenesisLINK FetchInventory2/FetchInventoryDescendents2 payload
+// thumbnail: { asset_id: UUID }, optional on legacy inventories.
+// A missing metadata field is distinct from an explicit empty thumbnail.
+struct InventoryThumbnailMetadata
+{
+    bool advertised=false;
+    std::optional<std::string> asset_id;
+};
+[[nodiscard]] std::optional<InventoryThumbnailMetadata>
+parse_inventory_thumbnail_metadata(const LlsdValue& inventory_node);
+
+// A newer folder metadata record invalidates the local thumbnail
+// association. A same-version changed UUID also invalidates, defending
+// against the documented Firestorm 7.2.4 outfit gallery cache issue.
+enum class ThumbnailCacheUpdate { applied, unchanged, stale };
+class InventoryFolderThumbnailCache
+{
+public:
+    [[nodiscard]] ThumbnailCacheUpdate apply(
+        std::string_view folder_id,std::uint64_t version,
+        const InventoryThumbnailMetadata& thumbnail);
+    void reset() noexcept { entries_.clear(); }
+    [[nodiscard]] std::size_t count() const noexcept {return entries_.size();}
+private:
+    struct Entry
+    {
+        std::uint64_t version=0;
+        InventoryThumbnailMetadata thumbnail;
+    };
+    std::map<std::string,Entry,std::less<>> entries_;
+};
 }

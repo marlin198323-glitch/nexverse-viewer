@@ -128,4 +128,50 @@ std::optional<ThumbnailUploadStage> parse_thumbnail_stage(
     }
     return std::nullopt;
 }
+std::optional<InventoryThumbnailMetadata>
+parse_inventory_thumbnail_metadata(const LlsdValue& node)
+{
+    if(!node.is_map())return std::nullopt;
+    const auto* thumbnail=node.find("thumbnail");
+    if(!thumbnail)return InventoryThumbnailMetadata{};
+    if(!thumbnail->is_map())return std::nullopt;
+    const auto* asset=thumbnail->find("asset_id");
+    if(!asset)return std::nullopt;
+    if(asset->type!=LlsdType::uuid && asset->type!=LlsdType::string)
+        return std::nullopt;
+    const auto bytes=uuid_to_bytes(asset->as_string());
+    if(!bytes)return std::nullopt;
+    InventoryThumbnailMetadata result;
+    result.advertised=true;
+    if(!std::all_of(bytes->begin(),bytes->end(),
+                    [](std::uint8_t byte){return byte==0U;}))
+        result.asset_id=std::string{asset->as_string()};
+    return result;
+}
+ThumbnailCacheUpdate InventoryFolderThumbnailCache::apply(
+    std::string_view folder_id,std::uint64_t version,
+    const InventoryThumbnailMetadata& thumbnail)
+{
+    const auto id=uuid_to_bytes(folder_id);
+    if(!id || std::all_of(id->begin(),id->end(),
+                          [](std::uint8_t byte){return byte==0U;}))
+        return ThumbnailCacheUpdate::stale;
+    const auto it=entries_.find(folder_id);
+    if(it!=entries_.end())
+    {
+        if(version<it->second.version)
+            return ThumbnailCacheUpdate::stale;
+        // Legacy inventory fetches omit the thumbnail map altogether;
+        // omission is NOT an instruction to erase a known association.
+        if(!thumbnail.advertised)
+            return ThumbnailCacheUpdate::unchanged;
+        if(version==it->second.version &&
+           it->second.thumbnail.advertised==thumbnail.advertised &&
+           it->second.thumbnail.asset_id==thumbnail.asset_id)
+            return ThumbnailCacheUpdate::unchanged;
+    }
+    entries_.insert_or_assign(std::string{folder_id},
+                              Entry{version,thumbnail});
+    return ThumbnailCacheUpdate::applied;
+}
 }
