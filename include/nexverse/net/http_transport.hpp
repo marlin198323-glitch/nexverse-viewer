@@ -41,6 +41,17 @@ public:
         std::size_t max_bytes,
         std::chrono::milliseconds connect_timeout,
         std::chrono::milliseconds total_timeout) = 0;
+
+    // Opt-in mutating CAPS operation. Existing mocks and transports fail
+    // closed unless they implement PUT. Only explicit UI confirmation
+    // may call this method.
+    virtual HttpResponse put(
+        std::string_view, std::string_view, std::string_view,
+        std::size_t, std::chrono::milliseconds,
+        std::chrono::milliseconds)
+    {
+        return {0, {}, "HTTP PUT unsupported by transport"};
+    }
 };
 
 class CurlHttpTransport final : public IHttpTransport
@@ -53,6 +64,13 @@ public:
         std::chrono::milliseconds total_timeout) override;
 
     HttpResponse post(
+        std::string_view url,
+        std::string_view content_type,
+        std::string_view body,
+        std::size_t max_bytes,
+        std::chrono::milliseconds connect_timeout,
+        std::chrono::milliseconds total_timeout) override;
+    HttpResponse put(
         std::string_view url,
         std::string_view content_type,
         std::string_view body,

@@ -34,6 +34,7 @@ public:
                 {"folders",LlsdValue::array({
                     LlsdValue::map({
                         {"folder_id",LlsdValue::uuid(ROOT)},
+                        {"owner_id",LlsdValue::uuid(B)},
                         {"version",LlsdValue::integer(17)},
                         {"categories",LlsdValue::array({
                             LlsdValue::map({
@@ -48,6 +49,7 @@ public:
                     }),
                     LlsdValue::map({
                         {"folder_id",LlsdValue::uuid(A)},
+                        {"owner_id",LlsdValue::uuid(B)},
                         {"version",LlsdValue::integer(18)},
                         {"categories",LlsdValue::array({})}
                     })

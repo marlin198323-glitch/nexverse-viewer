@@ -37,4 +37,12 @@ std::vector<OutfitGalleryFolder> outfits_from_login_skeleton(
     }
     return result;
 }
+std::optional<std::string> current_outfit_folder_id(
+    const std::vector<InventoryFolder>& skeleton)
+{
+    for(const auto& folder:skeleton)
+        if(folder.type_default==46 &&uuid_to_bytes(folder.folder_id))
+            return folder.folder_id;
+    return std::nullopt;
+}
 }

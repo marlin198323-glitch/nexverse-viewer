@@ -34,6 +34,8 @@ struct FirestormRegionRead
     OutfitInventoryRead outfit_inventory;
     // Secret CAPS URI: runtime-only. Never serialize or log.
     std::string get_texture_uri;
+    std::string inventory_folder_uri;
+    std::string experience_permissions_uri;
 };
 [[nodiscard]] std::optional<std::string> experience_profile_query(
     std::string_view cap_uri,const std::vector<std::string>& ids);
@@ -46,5 +48,6 @@ parse_experience_profile_details(const LlsdValue& response);
     std::string_view seed,std::uint64_t issued_epoch,
     const FirestormRegionLease& lease,
     std::string_view agent_id={},
-    const std::vector<OutfitGalleryFolder>& outfits={});
+    const std::vector<OutfitGalleryFolder>& outfits={},
+    std::string_view current_outfit_folder={});
 }

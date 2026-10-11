@@ -118,6 +118,7 @@ add_library(nexverse-protocol
     src/protocol/caps.cpp
     src/protocol/firestorm_compat.cpp
     src/protocol/firestorm_region_read.cpp
+    src/protocol/firestorm_experience_permissions.cpp
     src/protocol/firestorm_inventory_gallery.cpp
     src/protocol/firestorm_inventory_fetch.cpp
     src/protocol/caps_event_dispatcher.cpp
@@ -358,6 +359,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
+
+    add_executable(nexverse-firestorm-inventory-sync-tests
+        tests/firestorm_inventory_sync_tests.cpp)
+    target_link_libraries(nexverse-firestorm-inventory-sync-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-inventory-sync-tests)
+    add_test(NAME nexverse-firestorm-inventory-sync-tests
+        COMMAND nexverse-firestorm-inventory-sync-tests)
+
+    add_executable(nexverse-firestorm-experience-permissions-tests
+        tests/firestorm_experience_permissions_tests.cpp)
+    target_link_libraries(nexverse-firestorm-experience-permissions-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-experience-permissions-tests)
+    add_test(NAME nexverse-firestorm-experience-permissions-tests
+        COMMAND nexverse-firestorm-experience-permissions-tests)
 
     add_executable(nexverse-firestorm-inventory-fetch-tests
         tests/firestorm_inventory_fetch_tests.cpp)

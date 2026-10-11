@@ -29,6 +29,7 @@ public:
             {"folders",LlsdValue::array({
                 LlsdValue::map({
                     {"folder_id",LlsdValue::uuid(R)},
+                    {"owner_id",LlsdValue::uuid(O)},
                     {"version",LlsdValue::integer(7)},
                     {"categories",LlsdValue::array({
                         LlsdValue::map({
@@ -42,7 +43,17 @@ public:
                 }),
                 LlsdValue::map({
                     {"folder_id",LlsdValue::uuid(F)},
+                    {"owner_id",LlsdValue::uuid(O)},
                     {"version",LlsdValue::integer(8)},
+                    {"items",LlsdValue::array({
+                        LlsdValue::map({
+                            {"item_id",LlsdValue::uuid(T)},
+                            {"asset_id",LlsdValue::uuid(T)},
+                            {"name",LlsdValue::string("Outfit Shirt")},
+                            {"type",LlsdValue::integer(5)},
+                            {"inv_type",LlsdValue::integer(18)}
+                        })
+                    })},
                     {"categories",LlsdValue::array({})}
                 })
             })}
@@ -75,8 +86,22 @@ int main()
         "https://caps.test/folders",O,outfits,epoch,lease);
     if(!fetched.valid||fetched.returned_folders!=2U||
        fetched.versions.at(F)!=8U ||
-       fetched.thumbnails.at(F).asset_id!=T||transport->posts!=1)
+       fetched.thumbnails.at(F).asset_id!=T||transport->posts!=1||
+       fetched.items.at(F).size()!=1U ||
+       fetched.items.at(F)[0].name!="Outfit Shirt")
         return 6;
+    if(!build_outfit_descendents_request(O,{},F))return 18;
+    if(parse_outfit_descendents(LlsdValue::map({
+        {"folders",LlsdValue::array({
+            LlsdValue::map({
+                {"folder_id",LlsdValue::uuid(F)},
+                {"owner_id",LlsdValue::uuid(R)},
+                {"version",LlsdValue::integer(8)},
+                {"categories",LlsdValue::array({})}
+            })
+        })}
+    }),outfits,"",O).returned_folders!=0U)
+        return 20;
     const auto next=lease.enter(101U,1U,"https://caps.test/next");
     (void)next;
     const auto stale=fetch_outfit_descendents(transport,

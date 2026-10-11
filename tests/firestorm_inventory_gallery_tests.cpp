@@ -22,6 +22,11 @@ int main()
        gallery[1].id!=a||gallery[1].name!="CasualTest")
         return 1;
     if(!outfits_from_login_skeleton({}).empty())return 2;
+    skeleton.push_back({
+        "66666666-6666-6666-6666-666666666666",r,
+        "Current Outfit",46,4});
+    if(current_outfit_folder_id(skeleton)!=
+       "66666666-6666-6666-6666-666666666666")return 3;
     std::cout<<"Firestorm outfit 47 and My Outfits 48 from real login"
         " inventory skeleton; duplicate and invalid ID filtering OK\n";
     return 0;

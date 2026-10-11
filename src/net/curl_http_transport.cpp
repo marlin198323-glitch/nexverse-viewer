@@ -56,11 +56,12 @@ long timeout_ms(std::chrono::milliseconds value)
     return static_cast<long>(bounded);
 }
 
+enum class RequestMethod { get, post, put };
 nexverse::net::HttpResponse perform_request(
     std::string_view url,
     std::string_view content_type,
     std::string_view body,
-    bool is_post,
+    RequestMethod method,
     std::size_t max_bytes,
     std::chrono::milliseconds connect_timeout,
     std::chrono::milliseconds total_timeout)
@@ -87,7 +88,10 @@ nexverse::net::HttpResponse perform_request(
 
     curl_easy_setopt(curl, CURLOPT_URL, url_copy.c_str());
     curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    // Mutating PUT must not forward an authenticated capability on
+    // redirects, which could carry a request to a different origin.
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
+                     method==RequestMethod::put?0L:1L);
     curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms(connect_timeout));
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms(total_timeout));
@@ -98,13 +102,16 @@ nexverse::net::HttpResponse perform_request(
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &context);
 
     curl_slist* headers = nullptr;
-    if (is_post)
+    if (method!=RequestMethod::get)
     {
         const std::string type_header = "Content-Type: " + std::string{content_type};
         headers = curl_slist_append(headers, type_header.c_str());
         headers = curl_slist_append(headers, "Accept: text/xml, application/xml");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        if(method==RequestMethod::post)
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        else
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.data());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(body.size()));
     }
@@ -148,7 +155,7 @@ HttpResponse CurlHttpTransport::get(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(
-        url, {}, {}, false, max_bytes, connect_timeout, total_timeout);
+        url, {}, {}, RequestMethod::get, max_bytes, connect_timeout, total_timeout);
 }
 
 HttpResponse CurlHttpTransport::post(
@@ -160,6 +167,18 @@ HttpResponse CurlHttpTransport::post(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(
-        url, content_type, body, true, max_bytes, connect_timeout, total_timeout);
+        url, content_type, body, RequestMethod::post, max_bytes,
+        connect_timeout, total_timeout);
+}
+HttpResponse CurlHttpTransport::put(
+    std::string_view url,
+    std::string_view content_type,
+    std::string_view body,
+    std::size_t max_bytes,
+    std::chrono::milliseconds connect_timeout,
+    std::chrono::milliseconds total_timeout)
+{
+    return perform_request(url,content_type,body,RequestMethod::put,
+                           max_bytes,connect_timeout,total_timeout);
 }
 }

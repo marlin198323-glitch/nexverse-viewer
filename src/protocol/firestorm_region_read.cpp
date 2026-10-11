@@ -102,7 +102,8 @@ FirestormRegionRead fetch_firestorm_region(
     std::string_view seed,std::uint64_t issued_epoch,
     const FirestormRegionLease& lease,
     std::string_view agent_id,
-    const std::vector<OutfitGalleryFolder>& outfits)
+    const std::vector<OutfitGalleryFolder>& outfits,
+    std::string_view current_outfit_folder)
 {
     FirestormRegionRead result;
     result.issued_epoch=issued_epoch;
@@ -111,13 +112,20 @@ FirestormRegionRead fetch_firestorm_region(
     const auto caps=client.discover(seed,{
         "AgentExperiences","GetExperiences","GetExperienceInfo",
         "FetchInventory2","FetchInventoryDescendents2",
-        "InventoryThumbnailUpload","GetTexture"});
+        "InventoryThumbnailUpload","GetTexture",
+        "ExperiencePreferences"});
     if(!caps.success ||!lease.matches(issued_epoch))return result;
     result.discovered=true;
     result.available=firestorm_caps_availability(caps.capabilities);
+    if(const auto it=caps.capabilities.find("ExperiencePreferences");
+       it!=caps.capabilities.end())
+        result.experience_permissions_uri=it->second;
     if(const auto it=caps.capabilities.find("GetTexture");
        it!=caps.capabilities.end())
         result.get_texture_uri=it->second;
+    if(const auto it=caps.capabilities.find("FetchInventoryDescendents2");
+       it!=caps.capabilities.end())
+        result.inventory_folder_uri=it->second;
     if(const auto it=caps.capabilities.find("AgentExperiences");
        it!=caps.capabilities.end() &&lease.matches(issued_epoch))
     {
@@ -164,10 +172,12 @@ FirestormRegionRead fetch_firestorm_region(
     }
     if(const auto it=caps.capabilities.find("FetchInventoryDescendents2");
        it!=caps.capabilities.end() &&!agent_id.empty()&&
-       !outfits.empty()&&lease.matches(issued_epoch))
+       (!outfits.empty()||!current_outfit_folder.empty())&&
+       lease.matches(issued_epoch))
     {
         result.outfit_inventory=fetch_outfit_descendents(
-            transport,it->second,agent_id,outfits,issued_epoch,lease);
+            transport,it->second,agent_id,outfits,issued_epoch,lease,
+            current_outfit_folder);
         if(!lease.matches(issued_epoch))return {};
     }
     return result;

@@ -6,13 +6,13 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 
 ## Aktueller Stand
 
-- Version: `0.2.0-alpha.83`
+- Version: `0.2.0-alpha.84`
 - lokaler Arbeitsbranch: `develop-current`
 - GitHub-Handoff-Branch: `develop-current`
 - direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständiger Entwicklungs-Teststand: **76/76 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
-- aktueller Entwicklungsblock: **alpha.83 – CAPS-Folder-/Thumbnail-Readback, asynchrone echte GetTexture-Outfitbilder und F8-Experience-Profildetails; vollständige Firestorm- und Live-InWorld-Abnahme offen**
-- Server-Referenz: `opengenesislink/opengenesislinkserver` `main` (für alpha.83 geprüft bei `fcac896e`); offiziellen Firestorm-Releasebranch jeweils erneut prüfen
+- letzter vollständiger Entwicklungs-Teststand: **78/78 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
+- aktueller Entwicklungsblock: **alpha.84 – Current Outfit Folder/Items, versionsgebundene F9-Inventarsynchronisierung und explizit bestätigbare F8-Experience-Allow/Block-CAPS; vollständige Firestorm- und Live-InWorld-Abnahme offen**
+- Server-Referenz: `opengenesislink/opengenesislinkserver` `main` (für alpha.84 geprüft bei `efc9b3a`); offiziellen Firestorm-Releasebranch jeweils erneut prüfen
 - aktueller Funktionsnachweis: `docs/FIRESTORM_PARITY_MATRIX.md`
 
 Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256

@@ -2,6 +2,7 @@
  * License, v. 2.0. */
 #pragma once
 #include "nexverse/protocol/login.hpp"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,5 +18,9 @@ struct OutfitGalleryFolder
     std::string parent_id;
 };
 [[nodiscard]] std::vector<OutfitGalleryFolder> outfits_from_login_skeleton(
+    const std::vector<InventoryFolder>& skeleton);
+// The Current Outfit Folder (COF; Firestorm type 46) is independent from
+// My Outfits (48) and Outfit folders (47). It is never mutated by readbacks.
+[[nodiscard]] std::optional<std::string> current_outfit_folder_id(
     const std::vector<InventoryFolder>& skeleton);
 }
