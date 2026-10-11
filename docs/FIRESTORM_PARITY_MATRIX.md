@@ -196,3 +196,18 @@ Vier zusammengehörende Firestorm-Paritätsblöcke:
 **Tests und Grenzen:** Für Alpha.85 wurden neue CTests `firestorm-inventory-items-tests` und `firestorm-inventory-tree-wear-tests` integriert sowie Forget-/COF-/F10-Owner-/Region-Regressionen erweitert. Insgesamt 80 CTests geplant und im finalen Debug-C++23-Versions-Neubau mit echten GPU-Tests zu prüfen. Ein synthetischer HTTP-Fixture-Test ist `tested_synthetic`, nicht `live_verified`. Der GUI-Welcome-Smoke verifiziert nicht die post-login F8/F9/F10-Fenster; echtes NexVerse-InWorld-Testing, Avatar, Bewegung, EventQueue/Teleport, Meshes und Outfit-Wear bleiben als nicht abgenommen markiert.
 
 **Nächste 3–4 Blöcke Alpha.86:** Echte Firestorm-COF-/Wearable-Asset- und Attachment-Transaktion anhand `llappearancemgr.cpp` und OpenGenesisLINK-Serverrechten entwerfen/implementieren und mit Live-Avatar-Readback absichern; den F10-Baum um gezielten Item-Readback und Folder-EventQueue-Änderungen ergänzen; Experience-Consent-/Avatar-/Permission-Dialoge gegen aktuellen Simulator robuster machen; authentifizierte In-World-Abnahme (Avatar, WASD, Mesh und EventQueue) mit realem Grid-Zugang priorisieren. Volle Firestorm-Funktionsparität bleibt die verbindliche Baseline.
+
+
+## Alpha.86 – F10 Inventory / FetchInventory2 (11.10.2026)
+
+| Firestorm-Funktionsbereich | Implementiert | Status |
+|---|---|---|
+| InventoryDescendents2 Items im F10 | Eigentümer-/Folder-geprüfter Items-Readback (max. 256) und reale Gegenstandsnamen | tested_synthetic; Live noch offen |
+| Folder Sync | Versionen, 30s Read-Polling, R-Refresh und Region-Cache-Reset | tested_synthetic; EventQueue-Diffs offen |
+| Itemdetails | I liest per FetchInventory2 nur gewähltes Item, Lease-/Folder-/Selection-Guard | tested_synthetic; InWorld offen |
+| Firestorm COF/Outfit Wear/Appearance | nicht freigeschaltet; vollständige Auth-/Rechte-/Attachment-Transaktion nötig | not_implemented |
+
+Aktuell abgeglichene Quellen: OpenGenesisLINK main
+885fa72a10fec770d6dc1220f08766437159a084 und offizieller
+Firestorm Releasebranch Firestorm_7.2.4
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.

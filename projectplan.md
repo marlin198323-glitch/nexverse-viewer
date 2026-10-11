@@ -3697,3 +3697,55 @@ Vier zusammengehörende Firestorm-Paritätsblöcke:
 **Tests und Grenzen:** Für Alpha.85 wurden neue CTests `firestorm-inventory-items-tests` und `firestorm-inventory-tree-wear-tests` integriert sowie Forget-/COF-/F10-Owner-/Region-Regressionen erweitert. Insgesamt 80 CTests geplant und im finalen Debug-C++23-Versions-Neubau mit echten GPU-Tests zu prüfen. Ein synthetischer HTTP-Fixture-Test ist `tested_synthetic`, nicht `live_verified`. Der GUI-Welcome-Smoke verifiziert nicht die post-login F8/F9/F10-Fenster; echtes NexVerse-InWorld-Testing, Avatar, Bewegung, EventQueue/Teleport, Meshes und Outfit-Wear bleiben als nicht abgenommen markiert.
 
 **Nächste 3–4 Blöcke Alpha.86:** Echte Firestorm-COF-/Wearable-Asset- und Attachment-Transaktion anhand `llappearancemgr.cpp` und OpenGenesisLINK-Serverrechten entwerfen/implementieren und mit Live-Avatar-Readback absichern; den F10-Baum um gezielten Item-Readback und Folder-EventQueue-Änderungen ergänzen; Experience-Consent-/Avatar-/Permission-Dialoge gegen aktuellen Simulator robuster machen; authentifizierte In-World-Abnahme (Avatar, WASD, Mesh und EventQueue) mit realem Grid-Zugang priorisieren. Volle Firestorm-Funktionsparität bleibt die verbindliche Baseline.
+
+
+## 0.2.0-alpha.86 – Firestorm F10 Inventar, Items, Detailabruf · 11.10.2026
+
+Block 1 – Lesender F10-Folder-Readback: FetchInventoryDescendents2 sendet
+fetch_folders=true und fetch_items=true an die aktuelle vom Simulator
+beworbene CAP. Antwort: authentifizierte owner_id, angefragte folder_id,
+version >= 0, items[]; pro Item UUID, parent_id des aktiven Folders,
+permissions.owner_id des angemeldeten Agenten, gültige Typen und bereinigte
+Namen. Maximal 512 zurückgegebene / 256 dargestellte Einträge je Folder.
+Keine serverseitige Wear- oder Inventory-Mutation.
+
+Block 2 – versionsgebundene Sync und Lease: InventoryFolderContents hält
+Items und Server-Folderversion zusammen. Older-version Responses werden
+verworfen; neue leere Arrays können Einträge entfernen. Region-Lease
+schützt gegen alte HTTP-Resultate; Regionswechsel invalidiert alle
+Folder-Inhalte, Pollzeiten und Detailansichten. Maximal ein asynchroner
+F10-Folder-Fetch gleichzeitig; 30-Sekunden-Polling für sichtbaren Folder,
+R führt einen manuellen Refresh aus. Der InventoryTree bleibt auf 4096
+Folder begrenzt; bestehende Nodes werden beim Limit noch aktualisiert.
+
+Block 3 – F10 UI und Einzelitem: links reale Unterordner, rechts echte
+Itemnamen aus dem CAPS-Readback, keine erfundenen Gegenstände. J/K und
+Mausklick wählen Item; I fordert via aktueller ownergebundener
+FetchInventory2-CAP nur die ausgewählte UUID an. Ergebnis passt
+ausschließlich zur aktuellen Selection, Folder-ID und Regionsepoche.
+F10 bleibt read-only; Auf/Ab/Enter navigieren den Ordnerbaum.
+
+Block 4 – nachprüfbarer Protokollvertrag: Servercode
+OpenSim/Capabilities/Handlers/FetchInventory/FetchInvDescHandler.cs,
+OpenSim/Framework/InventoryItemBase.cs::ToLLSDxml und
+OpenSim/Capabilities/Handlers/FetchInventory/FetchInventory2Handler.cs
+zeigen die erforderlichen item_id, parent_id, permissions.owner_id,
+version und item-/folder-Strukturen. Offizieller Server main
+885fa72a10fec770d6dc1220f08766437159a084 und Firestorm Releasebranch
+Firestorm_7.2.4 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d
+vor diesem Entwicklungsblock verifiziert. Deterministische
+Regressionen prüfen Owner-/Parent-Spoofing, versionsgebundene Updates,
+empty Items, Fetch-Requestvertrag und Region-Invalidierung.
+
+WICHTIG: Build/CTest/OpenGL-Welcome-Smoke werden lokal durchgeführt.
+Sie ergeben nur tested_synthetic, keine bestätigte Live-Anmeldung und
+keinen Firestorm-Vollfork. F10-Readback, Outfit-Wear, Avatar, WASD,
+Teleport, Meshes, EventQueue und COF-Transaktionen müssen am
+authentifizierten NexVerse-Grid weiter geprüft werden.
+
+Nächste Blöcke: Inventar-Folder-Event-Diffs nach vom aktuellen Server
+tatsächlich ausgesendetem CAPS/UDP-Vertrag; Firestorm COF/Wearables/
+Attachment-/Appearance-Rechtemodell und Lifecycle; interaktive InWorld-
+Abnahme inkl. Avatar, Bewegung, Mesh und EventQueue. Projektplan und
+Firestorm-Funktionsbaseline bleiben verbindlich.
+Branch: develop-current, Repo: marlin198323-glitch/nexverse-viewer.

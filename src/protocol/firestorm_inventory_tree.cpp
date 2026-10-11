@@ -6,6 +6,7 @@
 #include <chrono>
 #include <algorithm>
 #include <set>
+#include <limits>
 
 namespace nexverse::protocol
 {
@@ -59,7 +60,7 @@ InventoryFolderRead fetch_inventory_folder_children(
             {"owner_id",LlsdValue::uuid(std::string{owner})},
             {"sort_order",LlsdValue::integer(0)},
             {"fetch_folders",LlsdValue::boolean(true)},
-            {"fetch_items",LlsdValue::boolean(false)}
+            {"fetch_items",LlsdValue::boolean(true)}
         })})}
     }));
     const auto response=transport->post(cap,"application/llsd+xml",request,
@@ -76,10 +77,52 @@ InventoryFolderRead fetch_inventory_folder_children(
         if(!candidate.is_map())continue;
         const auto* id=candidate.find("folder_id");
         const auto* owner_id=candidate.find("owner_id");
-        if(!id||!owner_id||
+        const auto* version=candidate.find("version");
+        const auto* items=candidate.find("items");
+        if(!id||!owner_id||!version||!items||
            uuid_to_bytes(id->as_string())!=uuid_to_bytes(folder)||
-           uuid_to_bytes(owner_id->as_string())!=uuid_to_bytes(owner))
+           uuid_to_bytes(owner_id->as_string())!=uuid_to_bytes(owner)||
+           version->type!=LlsdType::integer||version->integer_value<0||
+           !items->is_array()||items->array_value.size()>512U)
             continue;
+        std::set<std::string> ids;
+        for(const auto& item:items->array_value)
+        {
+            if(!item.is_map()||result.items.size()>=256U)continue;
+            const auto* iid=item.find("item_id");
+            const auto* parent=item.find("parent_id");
+            const auto* permissions=item.find("permissions");
+            const auto* name=item.find("name");
+            const auto* type=item.find("type");
+            const auto* inventory_type=item.find("inv_type");
+            if(!iid||!parent||!permissions||!permissions->is_map()||
+               !name||name->type!=LlsdType::string||
+               !type||type->type!=LlsdType::integer||
+               type->integer_value<std::numeric_limits<std::int32_t>::min()||
+               type->integer_value>std::numeric_limits<std::int32_t>::max()||
+               !inventory_type||inventory_type->type!=LlsdType::integer||
+               inventory_type->integer_value<std::numeric_limits<std::int32_t>::min()||
+               inventory_type->integer_value>std::numeric_limits<std::int32_t>::max()||
+               !uuid_to_bytes(iid->as_string())||
+               uuid_to_bytes(parent->as_string())!=uuid_to_bytes(folder)||
+               !ids.insert(std::string{iid->as_string()}).second)
+                continue;
+            const auto* item_owner=permissions->find("owner_id");
+            if(!item_owner||
+               uuid_to_bytes(item_owner->as_string())!=uuid_to_bytes(owner))
+                continue;
+            const auto title=valid_title(name->as_string());
+            if(!title)continue;
+            const auto* asset=item.find("asset_id");
+            result.items.push_back(OutfitInventoryItem{
+                std::string{iid->as_string()},
+                asset&&uuid_to_bytes(asset->as_string())
+                    ?std::string{asset->as_string()}:std::string{},
+                *title,
+                static_cast<std::int32_t>(type->integer_value),
+                static_cast<std::int32_t>(inventory_type->integer_value)});
+        }
+        result.version=static_cast<std::uint64_t>(version->integer_value);
         result.valid=true;
         break;
     }
@@ -87,6 +130,29 @@ InventoryFolderRead fetch_inventory_folder_children(
     (void)apply_inventory_categories(result.tree,*parsed.value,
                                       owner,{std::string{folder}});
     return result;
+}
+bool merge_inventory_folder_read(
+    InventoryTreeSnapshot& tree,
+    std::map<std::string,InventoryFolderContents,std::less<>>& contents,
+    const InventoryFolderRead& read)
+{
+    if(!read.valid || !uuid_to_bytes(read.folder_id))return false;
+    if(const auto it=contents.find(read.folder_id);it!=contents.end() &&
+       it->second.version>read.version)return false;
+    for(const auto& [id,node]:read.tree.folders)
+    {
+        const auto it=tree.folders.find(id);
+        if(it==tree.folders.end())
+        {
+            if(tree.count()>=4096U)continue;
+            tree.folders.emplace(id,node);
+        }
+        else if(node.version>=it->second.version)
+            it->second=node;
+    }
+    contents.insert_or_assign(read.folder_id,
+        InventoryFolderContents{read.version,read.items});
+    return true;
 }
 std::size_t merge_inventory_categories(
     InventoryTreeSnapshot& tree,const OutfitInventoryRead& result)
@@ -99,6 +165,8 @@ std::size_t merge_inventory_categories(
         const auto next=static_cast<std::uint64_t>(
             std::max<std::int32_t>(0,child.version));
         if(found!=tree.folders.end()&&found->second.version>next)
+            continue;
+        if(found==tree.folders.end()&&tree.count()>=4096U)
             continue;
         if(found==tree.folders.end()||
            found->second.version!=next||
@@ -136,7 +204,7 @@ std::size_t apply_inventory_categories(
             continue;
         for(const auto& child:children->array_value)
         {
-            if(!child.is_map()||tree.count()>=4096U)break;
+            if(!child.is_map())continue;
             const auto* cid=child.find("category_id");
             const auto* parent=child.find("parent_id");
             const auto* name=child.find("name");
@@ -147,11 +215,15 @@ std::size_t apply_inventory_categories(
                parent->as_string()!=id->as_string()||
                type->type!=LlsdType::integer||
                version->type!=LlsdType::integer||
-               version->integer_value<0)
+               version->integer_value<0||
+               type->integer_value<std::numeric_limits<std::int32_t>::min()||
+               type->integer_value>std::numeric_limits<std::int32_t>::max())
                 continue;
             const auto title=valid_title(name->as_string());
             if(!title)continue;
             const auto key=std::string{cid->as_string()};
+            if(tree.count()>=4096U&&!tree.folders.contains(key))
+                continue;
             const auto v=static_cast<std::uint64_t>(version->integer_value);
             const auto found=tree.folders.find(key);
             if(found!=tree.folders.end()&&found->second.version>v)

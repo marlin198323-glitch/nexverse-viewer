@@ -13,6 +13,9 @@ struct FolderHttp : nexverse::net::IHttpTransport
 {
     int calls=0;
     bool wrong_owner=false;
+    bool wrong_item_owner=false;
+    bool wrong_item_parent=false;
+    std::int64_t version=10;
     nexverse::net::HttpResponse get(std::string_view,std::size_t,
         std::chrono::milliseconds,std::chrono::milliseconds) override
     {return {405,{},"not allowed"};}
@@ -23,11 +26,30 @@ struct FolderHttp : nexverse::net::IHttpTransport
         if(uri!="https://sim.test/inventory")return {404,{},"unavailable"};
         auto request=parse_llsd_xml(body);
         if(!request.ok())return {400,{},"malformed"};
+        const auto* folders=request.value->find("folders");
+        if(!folders||!folders->is_array()||folders->array_value.size()!=1U ||
+           !folders->array_value[0].find("fetch_items") ||
+           !folders->array_value[0].find("fetch_items")->boolean_value)
+            return {400,{},"items must be requested"};
         ++calls;
         return {200,serialize_llsd_xml(LlsdValue::map({
             {"folders",LlsdValue::array({LlsdValue::map({
                 {"folder_id",LlsdValue::uuid(FOLDER)},
                 {"owner_id",LlsdValue::uuid(wrong_owner?LINK:OWNER)},
+                {"version",LlsdValue::integer(version)},
+                {"items",LlsdValue::array({LlsdValue::map({
+                    {"item_id",LlsdValue::uuid(ITEM)},
+                    {"parent_id",LlsdValue::uuid(
+                        wrong_item_parent?ROOT:FOLDER)},
+                    {"permissions",LlsdValue::map({
+                        {"owner_id",LlsdValue::uuid(
+                            wrong_item_owner?LINK:OWNER)}
+                    })},
+                    {"name",LlsdValue::string("Server item")},
+                    {"asset_id",LlsdValue::uuid(ROOT)},
+                    {"type",LlsdValue::integer(5)},
+                    {"inv_type",LlsdValue::integer(18)}
+                })})},
                 {"categories",LlsdValue::array({LlsdValue::map({
                     {"category_id",LlsdValue::uuid(LINK)},
                     {"parent_id",LlsdValue::uuid(FOLDER)},
@@ -104,7 +126,31 @@ int main()
         "https://sim.test/inventory",OWNER,FOLDER,epoch,lease);
     if(!loaded.valid||loaded.tree.count()!=1U ||
        loaded.tree.folders.at(LINK).name!="Nested folder"||
-       http->calls!=1)return 10;
+       loaded.items.size()!=1U||loaded.items[0].name!="Server item"||
+       loaded.version!=10U||http->calls!=1)return 10;
+    std::map<std::string,InventoryFolderContents,std::less<>> contents;
+    if(!merge_inventory_folder_read(tree,contents,loaded) ||
+       contents.at(FOLDER).items.size()!=1U)return 13;
+    auto older=loaded;
+    older.version=9;
+    older.items.clear();
+    if(merge_inventory_folder_read(tree,contents,older) ||
+       contents.at(FOLDER).items.size()!=1U)return 14;
+    auto removed=loaded;
+    removed.version=11;
+    removed.items.clear();
+    if(!merge_inventory_folder_read(tree,contents,removed)||
+       !contents.at(FOLDER).items.empty())return 15;
+    http->wrong_item_owner=true;
+    const auto item_rejected=fetch_inventory_folder_children(http,
+        "https://sim.test/inventory",OWNER,FOLDER,epoch,lease);
+    if(!item_rejected.valid||!item_rejected.items.empty())return 16;
+    http->wrong_item_owner=false;
+    http->wrong_item_parent=true;
+    const auto parent_rejected=fetch_inventory_folder_children(http,
+        "https://sim.test/inventory",OWNER,FOLDER,epoch,lease);
+    if(!parent_rejected.valid||!parent_rejected.items.empty())return 17;
+    http->wrong_item_parent=false;
     http->wrong_owner=true;
     if(fetch_inventory_folder_children(http,
         "https://sim.test/inventory",OWNER,FOLDER,epoch,lease).valid)
@@ -113,8 +159,8 @@ int main()
     (void)changed;
     if(fetch_inventory_folder_children(http,
         "https://sim.test/inventory",OWNER,FOLDER,epoch,lease).valid||
-       http->calls!=2)return 12;
-    std::cout<<"Inventory tree owner/version checks; Firestorm COF links and"
+       http->calls!=4)return 12;
+    std::cout<<"Inventory tree server items, owner/parent/version/epoch checks; Firestorm COF links and"
                 " wear preflight fail-closed OK\n";
     return 0;
 }

@@ -390,6 +390,9 @@ struct InputContext
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
     nexverse::protocol::InventoryTreeSnapshot* inventory_tree=nullptr;
+    bool* inventory_refresh_requested=nullptr;
+    std::size_t* inventory_item_selection=nullptr;
+    bool* inventory_item_detail_requested=nullptr;
     bool* simulation_ready = nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
@@ -562,6 +565,25 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             std::vector<std::string> children;
             for(const auto& [id,node]:context->inventory_tree->folders)
                 if(node.parent_id==folder)children.push_back(id);
+            if(key==GLFW_KEY_R)
+            {
+                if(context->inventory_refresh_requested)
+                    *context->inventory_refresh_requested=true;
+                return;
+            }
+            if(context->inventory_item_selection&&
+               (key==GLFW_KEY_J||key==GLFW_KEY_K))
+            {
+                auto& index=*context->inventory_item_selection;
+                if(key==GLFW_KEY_J)index=std::min(index+1U,std::size_t{9U});
+                else if(index>0U)--index;
+                return;
+            }
+            if(key==GLFW_KEY_I &&context->inventory_item_detail_requested)
+            {
+                *context->inventory_item_detail_requested=true;
+                return;
+            }
             if(key==GLFW_KEY_DOWN&&!children.empty())
                 selected=std::min(selected+1U,children.size()-1U);
             else if(key==GLFW_KEY_UP&&selected>0U)--selected;
@@ -570,6 +592,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             {
                 folder=children[selected];
                 selected=0U;
+                if(context->inventory_item_selection)
+                    *context->inventory_item_selection=0U;
             }
             else if(key==GLFW_KEY_LEFT||key==GLFW_KEY_BACKSPACE)
             {
@@ -579,6 +603,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                 {
                     folder=it->second.parent_id;
                     selected=0U;
+                    if(context->inventory_item_selection)
+                        *context->inventory_item_selection=0U;
                 }
             }
             return;
@@ -823,8 +849,16 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         const float pw=std::min(690.0f*sc,static_cast<float>(ww)-32.0f);
         const float xx=(static_cast<float>(ww)-pw)*0.5f;
         const float yy=std::max(30.0f,(static_cast<float>(hh)-520.0f*sc)*0.5f);
+        if(context->inventory_item_selection &&
+           point_inside(mx,my,xx+pw*0.51f+12.0f*sc,yy+145.0f*sc,
+                        pw*0.48f-20.0f*sc,270.0f*sc))
+        {
+            *context->inventory_item_selection=static_cast<std::size_t>(
+                (my-yy-145.0f*sc)/(27.0f*sc));
+            return;
+        }
         if(point_inside(mx,my,xx+23.0f*sc,yy+145.0f*sc,
-                        pw-46.0f*sc,297.0f*sc))
+                        pw*0.51f-30.0f*sc,297.0f*sc))
         {
             const auto row=static_cast<std::size_t>(
                 (my-yy-145.0f*sc)/(27.0f*sc));
@@ -1892,7 +1926,13 @@ void render_outfit_gallery(
 void render_inventory_tree(
     UiRenderer& renderer,int width,int height,
     const nexverse::protocol::InventoryTreeSnapshot& tree,
-    std::string_view current_parent,std::size_t selected_index)
+    const std::map<std::string,nexverse::protocol::InventoryFolderContents,
+                   std::less<>>& contents,
+    std::string_view current_parent,std::size_t selected_index,
+    std::size_t item_index,
+    const std::optional<nexverse::protocol::OutfitInventoryItem>& detail,
+    std::string_view detail_folder,std::string_view detail_id,
+    std::string_view detail_status)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -1918,28 +1958,61 @@ void render_inventory_tree(
         if(node.parent_id==current_parent)
             children.push_back(&node);
     }
+    const auto data=contents.find(std::string{current_parent});
     renderer.text(x+23.0f*scale,y+114.0f*scale,8.4f*scale,
         std::to_string(children.size())+" Ordner / "+
-        std::to_string(tree.count())+" im Inventarmodell",
-        theme::text_muted);
+        (data==contents.end()?"Gegenstaende nicht geladen":
+         std::to_string(data->second.items.size())+" Gegenstaende (v"+
+         std::to_string(data->second.version)+")"),theme::text_muted);
+    const float divider_x=x+pw*0.51f;
+    renderer.rect(divider_x,y+139.0f*scale,1.0f*scale,
+        294.0f*scale,with_alpha(theme::cyan,0.22f),0.0f);
+    renderer.text(divider_x+12.0f*scale,y+127.0f*scale,
+        8.5f*scale,"Inhalt dieses Ordners",theme::cyan);
     const auto offset=selected_index>10U?selected_index-10U:0U;
     for(std::size_t i=offset;i<std::min(children.size(),offset+11U);++i)
     {
         const float yy=y+(145.0f+static_cast<float>(i-offset)*27.0f)*scale;
-        renderer.rect(x+23.0f*scale,yy,pw-46.0f*scale,25.0f*scale,
+        renderer.rect(x+23.0f*scale,yy,pw*0.51f-30.0f*scale,25.0f*scale,
             i==selected_index?Color{0.07f,0.20f,0.29f,0.96f}:
                               Color{0.023f,0.052f,0.078f,0.96f},
             5.0f*scale);
         renderer.text(x+33.0f*scale,yy+5.0f*scale,9.2f*scale,
-            children[i]->name.substr(0U,65U),theme::text);
-        renderer.text(x+pw-100.0f*scale,yy+6.0f*scale,8.0f*scale,
-            "Typ "+std::to_string(children[i]->type),theme::text_muted);
+            children[i]->name.substr(0U,29U),theme::text);
+
+    }
+    if(data!=contents.end())
+    {
+        const auto& items=data->second.items;
+        for(std::size_t i=0U;i<std::min(items.size(),std::size_t{10U});++i)
+        {
+            const float yy=y+(145.0f+static_cast<float>(i)*27.0f)*scale;
+            if(i==item_index)
+                renderer.rect(divider_x+9.0f*scale,yy,
+                    pw*0.48f-16.0f*scale,25.0f*scale,
+                    Color{0.07f,0.20f,0.29f,0.96f},5.0f*scale);
+            renderer.text(divider_x+13.0f*scale,yy+5.0f*scale,9.0f*scale,
+                items[i].name.substr(0U,30U),theme::text_muted);
+        }
+        if(items.size()>10U)
+            renderer.text(divider_x+13.0f*scale,y+418.0f*scale,
+                8.0f*scale,"Weitere Gegenstaende vorhanden",theme::cyan);
+        if(item_index<items.size()&&
+           detail_folder==current_parent &&
+           detail_id==items[item_index].item_id)
+        {
+            const std::string line=detail?
+                "Itemdetails: "+detail->name.substr(0U,30U):
+                std::string{detail_status};
+            renderer.text(x+23.0f*scale,y+435.0f*scale,
+                8.5f*scale,line,theme::cyan);
+        }
     }
     renderer.text(x+23.0f*scale,y+ph-55.0f*scale,8.5f*scale,
-        "Auf/Ab markieren | Rechts/Enter Ordner | Links/Backspace zurueck",
+        "Auf/Ab Ordner | J/K Gegenstand | I Details | Enter Ordner | Links zurueck",
         theme::cyan);
     renderer.text(x+23.0f*scale,y+ph-32.0f*scale,8.0f*scale,
-        "F10/ESC schliessen | Nur lesend; COF/Wear nicht automatisch geaendert",
+        "R aktualisieren | F10/ESC schliessen | Nur lesend; kein Outfit-Wear",
         theme::text_muted);
 }
 
@@ -3144,6 +3217,19 @@ int Application::run(bool enable_developer_modules)
     std::size_t inventory_selection=0U;
     std::future<protocol::InventoryFolderRead> inventory_folder_future;
     std::set<std::string> inventory_fetched_folders;
+    std::map<std::string,protocol::InventoryFolderContents,std::less<>>
+        inventory_folder_contents;
+    std::map<std::string,std::chrono::steady_clock::time_point,std::less<>>
+        inventory_last_requested;
+    bool inventory_refresh_requested=false;
+    std::size_t inventory_item_selection=0U;
+    bool inventory_item_detail_requested=false;
+    std::future<protocol::InventoryItemFetch> inventory_item_detail_future;
+    std::optional<protocol::OutfitInventoryItem> inventory_item_detail;
+    std::uint64_t inventory_item_detail_epoch=0U;
+    std::string inventory_item_detail_folder;
+    std::string inventory_item_detail_id;
+    std::string inventory_item_detail_status;
     InputContext input_context{&login_ui};
     glfwSetWindowUserPointer(window, &input_context);
     glfwSetCharCallback(window, character_callback);
@@ -3182,6 +3268,9 @@ int Application::run(bool enable_developer_modules)
     input_context.inventory_parent=&inventory_parent;
     input_context.inventory_selection=&inventory_selection;
     input_context.inventory_tree=&inventory_tree;
+    input_context.inventory_refresh_requested=&inventory_refresh_requested;
+    input_context.inventory_item_selection=&inventory_item_selection;
+    input_context.inventory_item_detail_requested=&inventory_item_detail_requested;
     input_context.permission_consent=&experience_consent;
     input_context.approved_permission=&approved_experience_permission;
     input_context.permission_busy=&experience_permission_busy;
@@ -5460,6 +5549,15 @@ int Application::run(bool enable_developer_modules)
                 outfit_gallery_open=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
+                inventory_folder_contents.clear();
+                inventory_last_requested.clear();
+                inventory_refresh_requested=false;
+                inventory_item_selection=0U;
+                inventory_item_detail_requested=false;
+                inventory_item_detail.reset();
+                inventory_item_detail_folder.clear();
+                inventory_item_detail_id.clear();
+                inventory_item_detail_status.clear();
                 if(active_session)
                 {
                     inventory_tree=protocol::inventory_tree_from_login(
@@ -5833,13 +5931,8 @@ int Application::run(bool enable_developer_modules)
                     }
                     if(firestorm_region_lease.matches(reply.epoch)&&reply.valid)
                     {
-                        for(const auto& [id,node]:reply.tree.folders)
-                        {
-                            const auto it=inventory_tree.folders.find(id);
-                            if(it==inventory_tree.folders.end()||
-                               node.version>=it->second.version)
-                                inventory_tree.folders.insert_or_assign(id,node);
-                        }
+                        (void)protocol::merge_inventory_folder_read(
+                            inventory_tree,inventory_folder_contents,reply);
                         inventory_fetched_folders.insert(reply.folder_id);
                     }
                 }
@@ -5851,11 +5944,19 @@ int Application::run(bool enable_developer_modules)
             if(inventory_tree_open &&active_session &&
                !gallery_inventory_cap.empty() &&
                !inventory_parent.empty() &&
-               inventory_fetched_folders.size()<256U &&
-               !inventory_fetched_folders.contains(inventory_parent)&&
+               (inventory_fetched_folders.size()<256U ||
+                inventory_fetched_folders.contains(inventory_parent)) &&
                !inventory_folder_future.valid() &&
-               firestorm_region_lease.matches(current_firestorm_epoch))
+               firestorm_region_lease.matches(current_firestorm_epoch) &&
+               (inventory_refresh_requested ||
+                !inventory_last_requested.contains(inventory_parent) ||
+                std::chrono::steady_clock::now()-
+                  inventory_last_requested.at(inventory_parent)>=
+                    std::chrono::seconds{30}))
             {
+                inventory_last_requested[inventory_parent]=
+                    std::chrono::steady_clock::now();
+                inventory_refresh_requested=false;
                 inventory_folder_future=std::async(std::launch::async,
                     [transport,cap=gallery_inventory_cap,
                      owner=active_session->agent_id,
@@ -5867,6 +5968,70 @@ int Application::run(bool enable_developer_modules)
                             transport,cap,owner,parent,issued,
                             firestorm_region_lease);
                     });
+            }
+            // F10 individual item details use the same authenticated
+            // FetchInventory2 capability as F9. Never trust a reply from
+            // an earlier region, folder, or selection.
+            if(inventory_item_detail_future.valid() &&
+               inventory_item_detail_future.wait_for(
+                   std::chrono::milliseconds{0})==std::future_status::ready)
+            {
+                try
+                {
+                    auto reply=inventory_item_detail_future.get();
+                    if(firestorm_region_lease.matches(
+                           inventory_item_detail_epoch) &&
+                       inventory_item_detail_folder==inventory_parent)
+                    {
+                        inventory_item_detail.reset();
+                        for(const auto& item:reply.items)
+                        {
+                            if(reply.valid&&
+                               item.item_id==inventory_item_detail_id)
+                            {
+                                inventory_item_detail=item;
+                                break;
+                            }
+                        }
+                        inventory_item_detail_status=inventory_item_detail
+                            ?"FetchInventory2 vom Simulator bestaetigt"
+                            :"Details vom Simulator nicht verfuegbar";
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    inventory_item_detail_status="Detailabruf fehlgeschlagen";
+                }
+            }
+            if(inventory_item_detail_requested &&inventory_tree_open &&
+               active_session&&!inventory_item_detail_future.valid())
+            {
+                inventory_item_detail_requested=false;
+                auto found=inventory_folder_contents.find(inventory_parent);
+                if(found!=inventory_folder_contents.end()&&
+                   inventory_item_selection<found->second.items.size() &&
+                   !gallery_inventory_items_cap.empty()&&
+                   firestorm_region_lease.matches(current_firestorm_epoch))
+                {
+                    const auto id=found->second.items[
+                        inventory_item_selection].item_id;
+                    inventory_item_detail_id=id;
+                    inventory_item_detail_folder=inventory_parent;
+                    inventory_item_detail_epoch=current_firestorm_epoch;
+                    inventory_item_detail.reset();
+                    inventory_item_detail_status="Details werden geladen";
+                    inventory_item_detail_future=std::async(
+                        std::launch::async,
+                        [transport,cap=gallery_inventory_items_cap,
+                         owner=active_session->agent_id,id,
+                         epoch=current_firestorm_epoch,
+                         &firestorm_region_lease]()
+                        {
+                            return protocol::fetch_inventory2(
+                                transport,cap,owner,{id},epoch,
+                                firestorm_region_lease);
+                        });
+                }
             }
             // Completed optional outfit thumbnail decodes become UI GPU
             // textures exclusively on this OpenGL thread. Never upload a
@@ -8312,8 +8477,13 @@ int Application::run(bool enable_developer_modules)
                         caps_snapshot,gallery_gpu_textures,outfit_selection);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
-                                          inventory_tree,inventory_parent,
-                                          inventory_selection);
+                                          inventory_tree,
+                                          inventory_folder_contents,
+                                          inventory_parent,inventory_selection,
+                                          inventory_item_selection,inventory_item_detail,
+                                          inventory_item_detail_folder,
+                                          inventory_item_detail_id,
+                                          inventory_item_detail_status);
                 render_experience_floater(renderer,window_width,window_height,
                     experience_ui,caps_snapshot,experience_consent);
             }

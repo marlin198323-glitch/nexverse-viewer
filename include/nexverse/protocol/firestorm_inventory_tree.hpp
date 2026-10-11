@@ -14,6 +14,11 @@ struct InventoryFolderNode
     std::int32_t type=0;
     std::uint64_t version=0;
 };
+struct InventoryFolderContents
+{
+    std::uint64_t version=0;
+    std::vector<OutfitInventoryItem> items;
+};
 struct InventoryTreeSnapshot
 {
     std::map<std::string,InventoryFolderNode,std::less<>> folders;
@@ -28,12 +33,20 @@ struct InventoryFolderRead
     std::uint64_t epoch=0U;
     std::string folder_id;
     bool valid=false;
+    std::uint64_t version=0;
+    std::vector<OutfitInventoryItem> items;
     InventoryTreeSnapshot tree;
 };
 [[nodiscard]] InventoryFolderRead fetch_inventory_folder_children(
     const std::shared_ptr<net::IHttpTransport>& transport,
     std::string_view cap,std::string_view owner,std::string_view folder,
     std::uint64_t epoch,const FirestormRegionLease& lease);
+// Merge only newer owner-validated snapshots; an empty items[] clears a
+// folder on the same/newer version. Callers must first check the region lease.
+[[nodiscard]] bool merge_inventory_folder_read(
+    InventoryTreeSnapshot& tree,
+    std::map<std::string,InventoryFolderContents,std::less<>>& contents,
+    const InventoryFolderRead& read);
 [[nodiscard]] std::size_t merge_inventory_categories(
     InventoryTreeSnapshot& tree,const OutfitInventoryRead& result);
 [[nodiscard]] std::size_t apply_inventory_categories(
