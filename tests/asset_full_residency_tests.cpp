@@ -31,6 +31,19 @@ int main()
             next.preferred_ids,resident,next.eviction_ids,urgent,512U);
         if(!admission.fits || !admission.additional_evictions.empty())
             return 3;
+        // Regression: the request must be allowed BEFORE resident
+        // eviction, or the viewer stalls at its 512-slot limit.
+        if(step==0)
+        {
+            const auto preflight=plan_texture_slot_admission(
+                next.preferred_ids,resident,next.eviction_ids,
+                urgent,512U);
+            if(!preflight.fits)return 12;
+            const auto forbidden=plan_texture_slot_admission(
+                {"higher-priority","lower-priority"},
+                {"higher-priority"},{},"lower-priority",1U);
+            if(forbidden.fits)return 13;
+        }
         for(const auto& id:next.eviction_ids)resident.erase(id);
         resident.insert(urgent);
         if(resident.size()!=512U)return 4;

@@ -16,7 +16,8 @@ from ogl_asset_log_report import read_report
 def assess(report: dict, min_snapshots: int = 3,
            min_coverage_pct: int = 75,
            now_unix_ms: int | None = None,
-           max_age_ms: int = 180_000) -> dict:
+           max_age_ms: int = 180_000,
+           max_missing_mesh_draws: int = 0) -> dict:
     if now_unix_ms is None:
         now_unix_ms = time.time_ns() // 1_000_000
     latest = report.get("latest_snapshot") or {}
@@ -41,6 +42,11 @@ def assess(report: dict, min_snapshots: int = 3,
             "previous_frame_scene_draw_calls", 0) > 0,
         "actual_uploaded_mesh_draw_calls": latest.get(
             "previous_frame_scene_mesh_draw_calls", 0) > 0,
+        "missing_mesh_fallback_within_limit": (
+            latest.get("previous_frame_scene_missing_mesh_draw_calls")
+            is not None
+            and latest["previous_frame_scene_missing_mesh_draw_calls"]
+            <= max_missing_mesh_draws),
     }
     return {
         "schema": "ogl.inworld.acceptance.v2",
@@ -61,6 +67,8 @@ def assess(report: dict, min_snapshots: int = 3,
                 "previous_frame_scene_mesh_draw_calls"),
             "last_mesh_fallback_draw_calls": latest.get(
                 "previous_frame_scene_missing_mesh_draw_calls"),
+            "last_missing_mesh_objects": latest.get(
+                "previous_frame_scene_missing_mesh_objects"),
         },
         "caveat": "Evidence of recent OpenGL scene draws/asset residency "
                   "cannot establish avatar appearance, movement, "
@@ -74,15 +82,18 @@ def main() -> int:
     parser.add_argument("--min-snapshots", type=int, default=3)
     parser.add_argument("--min-coverage", type=int, default=75)
     parser.add_argument("--max-age-seconds", type=int, default=180)
+    parser.add_argument("--max-missing-mesh-draws", type=int, default=0)
     args = parser.parse_args()
     if (args.min_snapshots < 1 or not 0 <= args.min_coverage <= 100
-            or not 1 <= args.max_age_seconds <= 3600):
+            or not 1 <= args.max_age_seconds <= 3600
+            or args.max_missing_mesh_draws < 0):
         parser.error("Invalid acceptance thresholds")
     if not args.logfile.is_file():
         parser.error("Viewer log not found")
     result = assess(read_report(args.logfile),
                     args.min_snapshots, args.min_coverage,
-                    max_age_ms=args.max_age_seconds * 1000)
+                    max_age_ms=args.max_age_seconds * 1000,
+                    max_missing_mesh_draws=args.max_missing_mesh_draws)
     print(json.dumps(result, sort_keys=True, indent=2))
     return 0 if result["status"] == "evidence_pass" else 2
 

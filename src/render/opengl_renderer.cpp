@@ -3098,6 +3098,8 @@ public:
         diagnostics_.scene_mesh_draw_calls = 0U;
         diagnostics_.scene_prim_draw_calls = 0U;
         diagnostics_.scene_missing_mesh_draw_calls = 0U;
+        diagnostics_.scene_missing_mesh_objects = 0U;
+        diagnostics_.scene_missing_mesh_triangles = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -3374,6 +3376,7 @@ public:
                 visible_objects.push_back({index, dx * dx + dy * dy + dz * dz});
             }
             diagnostics_.visible_objects += visible_objects.size();
+            std::unordered_set<std::size_t> missing_mesh_object_indices;
 
             // Draw all opaque surfaces with depth writes before alpha surfaces.
             // Transparent objects are drawn back-to-front, without depth writes.
@@ -3794,7 +3797,13 @@ public:
                         {
                             ++diagnostics_.scene_prim_draw_calls;
                             if(!object.mesh_id.empty())
+                            {
                                 ++diagnostics_.scene_missing_mesh_draw_calls;
+                                diagnostics_.scene_missing_mesh_triangles+=
+                                    static_cast<std::uint64_t>(count/3);
+                                if(missing_mesh_object_indices.insert(index).second)
+                                    ++diagnostics_.scene_missing_mesh_objects;
+                            }
                         }
                         diagnostics_.triangles +=
                             static_cast<std::uint64_t>(

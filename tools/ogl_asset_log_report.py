@@ -96,6 +96,8 @@ def read_report(path: Path) -> dict[str, Any]:
                     "previous_frame_scene_mesh_draw_calls",
                     "previous_frame_scene_prim_draw_calls",
                     "previous_frame_scene_missing_mesh_draw_calls",
+                    "previous_frame_scene_missing_mesh_objects",
+                    "previous_frame_scene_missing_mesh_triangles",
                 )
                 sanitized = {
                     key: data[key] for key in fields

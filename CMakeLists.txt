@@ -435,6 +435,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-renderer-gpu-profiles-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-renderer-gpu-soak-tests tests/renderer_gpu_soak_tests.cpp)
+    target_link_libraries(nexverse-renderer-gpu-soak-tests PRIVATE NexVerse::Render NexVerse::Assets glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-gpu-soak-tests)
+    add_test(NAME nexverse-renderer-gpu-soak-tests COMMAND nexverse-renderer-gpu-soak-tests)
+    set_tests_properties(nexverse-renderer-gpu-soak-tests PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-renderer-gpu-pressure-tests tests/renderer_gpu_pressure_tests.cpp)
     target_link_libraries(nexverse-renderer-gpu-pressure-tests PRIVATE NexVerse::Render glfw glad::glad)
     nexverse_enable_warnings(nexverse-renderer-gpu-pressure-tests)

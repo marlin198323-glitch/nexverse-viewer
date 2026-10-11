@@ -27,6 +27,8 @@ int main()
     snapshot.texture_gpu_staging_waiting=1U;
     snapshot.texture_gpu_staging_released=2U;
     snapshot.previous_frame_scene_missing_mesh_draw_calls=3U;
+    snapshot.previous_frame_scene_missing_mesh_objects=2U;
+    snapshot.previous_frame_scene_missing_mesh_triangles=36U;
     snapshot.texture_gpu_staging_deferrals=5U;
     snapshot.previous_frame_draw_calls=20U;
     snapshot.previous_frame_scene_draw_calls=9U;
@@ -50,6 +52,8 @@ int main()
        json.find("\"texture_gpu_staging_waiting\":1")==std::string::npos ||
        json.find("\"texture_gpu_staging_released\":2")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_draw_calls\":3")==std::string::npos ||
+       json.find("\"previous_frame_scene_missing_mesh_objects\":2")==std::string::npos ||
+       json.find("\"previous_frame_scene_missing_mesh_triangles\":36")==std::string::npos ||
        json.find("\"texture_gpu_staging_deferrals\":5")==std::string::npos ||
        json.find("\"previous_frame_scene_mesh_draw_calls\":7")==std::string::npos ||
        json.find("\"previous_frame_scene_prim_draw_calls\":2")==std::string::npos)

@@ -91,6 +91,8 @@ int main()
             if(!failed && (info.scene_mesh_draw_calls!=2U ||
                 info.scene_prim_draw_calls==0U ||
                 info.scene_missing_mesh_draw_calls==0U ||
+                info.scene_missing_mesh_objects!=1U ||
+                info.scene_missing_mesh_triangles==0U ||
                 info.scene_draw_calls!=
                     info.scene_mesh_draw_calls+info.scene_prim_draw_calls))
                 failed=10;
@@ -106,6 +108,7 @@ int main()
             renderer->end_frame();
             const auto no_mesh=renderer->diagnostics();
             if(!failed && (no_mesh.scene_mesh_draw_calls!=0U ||
+               no_mesh.scene_missing_mesh_objects!=2U ||
                no_mesh.scene_missing_mesh_draw_calls<
                    info.scene_missing_mesh_draw_calls))
                 failed=11; // Frame counters reset and missing mesh falls back.

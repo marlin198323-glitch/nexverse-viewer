@@ -26,6 +26,8 @@ def snapshot(seq: int, epoch: int = 17, session: int = SESSION,
         "mesh_coverage_pct": 80,
         "previous_frame_scene_draw_calls": 12,
         "previous_frame_scene_mesh_draw_calls": mesh_draws,
+        "previous_frame_scene_missing_mesh_draw_calls": 0,
+        "previous_frame_scene_missing_mesh_objects": 0,
         "secret": "https://private.caps.example",
     })
 
@@ -65,6 +67,18 @@ class InWorldAcceptanceTests(unittest.TestCase):
                 self.assertEqual(
                     assess(report, now_unix_ms=NOW)["status"],
                     "not_verified")
+
+    def test_missing_mesh_fallback_requires_explicit_clean_frame(self):
+        entries=[snapshot(i) for i in (1,2,3)]
+        entries[-1]=entries[-1].replace(
+            '"previous_frame_scene_missing_mesh_draw_calls": 0',
+            '"previous_frame_scene_missing_mesh_draw_calls": 3')
+        result=assess(report_from(entries),now_unix_ms=NOW)
+        self.assertEqual(result["status"],"not_verified")
+        self.assertFalse(result["checks"]["missing_mesh_fallback_within_limit"])
+        relaxed=assess(report_from(entries),now_unix_ms=NOW,
+                      max_missing_mesh_draws=3)
+        self.assertEqual(relaxed["status"],"evidence_pass")
 
     def test_stale_and_missing_mesh(self):
         report=report_from([snapshot(i) for i in (1,2,3)])

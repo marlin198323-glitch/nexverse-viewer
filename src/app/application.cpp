@@ -6052,11 +6052,17 @@ int Application::run(bool enable_developer_modules)
                 if (request_choice)
                 {
                     const std::string& texture_id=request_choice->id;
-                    const bool new_asset =
-                        !object_texture_loaded_ids.contains(texture_id);
-                    if (new_asset &&
-                        object_texture_loaded_ids.size() >=
-                            max_object_texture_assets)
+                    // A full GPU table is not by itself a reason to
+                    // reject a high-priority request: the upload planner
+                    // can atomically replace lower-priority resident slots.
+                    // This is only preflight; decoded byte size still gets
+                    // checked against the staging and byte budgets later.
+                    const auto preflight=assets::plan_texture_slot_admission(
+                        texture_residency.preferred_ids,
+                        object_texture_loaded_ids,
+                        texture_residency.eviction_ids,
+                        texture_id,max_object_texture_assets);
+                    if (!preflight.fits)
                     {
                         texture_budget_deferred_ids.insert(texture_id);
                         ++texture_budget_rejections;
@@ -6750,6 +6756,10 @@ int Application::run(bool enable_developer_modules)
                     previous_render.scene_prim_draw_calls;
                 snapshot.previous_frame_scene_missing_mesh_draw_calls=
                     previous_render.scene_missing_mesh_draw_calls;
+                snapshot.previous_frame_scene_missing_mesh_objects=
+                    previous_render.scene_missing_mesh_objects;
+                snapshot.previous_frame_scene_missing_mesh_triangles=
+                    previous_render.scene_missing_mesh_triangles;
                 core::info("InWorldAssetSnapshot " + snapshot.json());
                 core::info("InWorld asset health: epoch=" +
                     std::to_string(material_scope.epoch()) +
