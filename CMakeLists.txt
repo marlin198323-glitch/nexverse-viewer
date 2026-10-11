@@ -405,6 +405,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-lod-policy-tests)
     add_test(NAME nexverse-mesh-lod-policy-tests COMMAND nexverse-mesh-lod-policy-tests)
 
+    add_executable(nexverse-texture-prefetch-tests tests/texture_prefetch_tests.cpp)
+    target_link_libraries(nexverse-texture-prefetch-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-prefetch-tests)
+    add_test(NAME nexverse-texture-prefetch-tests COMMAND nexverse-texture-prefetch-tests)
+
+    add_executable(nexverse-asset-stream-scheduler-tests tests/asset_stream_scheduler_tests.cpp)
+    target_link_libraries(nexverse-asset-stream-scheduler-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-stream-scheduler-tests)
+    add_test(NAME nexverse-asset-stream-scheduler-tests COMMAND nexverse-asset-stream-scheduler-tests)
+
     add_executable(nexverse-asset-gpu-budget-tests tests/asset_gpu_budget_tests.cpp)
     target_link_libraries(nexverse-asset-gpu-budget-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-gpu-budget-tests)

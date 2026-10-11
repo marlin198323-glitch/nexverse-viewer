@@ -18,6 +18,8 @@
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
+#include "nexverse/assets/asset_stream_scheduler.hpp"
+#include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -46,6 +48,7 @@
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <cmath>
 #include <chrono>
@@ -3370,6 +3373,9 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_disk_hits = 0U;
     std::size_t mesh_network_loads = 0U;
     std::size_t mesh_gpu_evictions = 0U;
+    assets::AssetRequestPacer mesh_request_pacer{
+        std::chrono::milliseconds{180}};
+    std::size_t mesh_request_dispatches = 0U;
     std::chrono::steady_clock::time_point last_mesh_telemetry{};
     std::future<protocol::RenderMaterialsResult> render_materials_future;
     std::uint64_t render_materials_get_epoch = 0U;
@@ -3397,6 +3403,20 @@ int Application::run(bool enable_developer_modules)
         std::numeric_limits<std::uint32_t>::max();
 
     auto texture_memory_cache = std::make_shared<assets::TextureMemoryCache>();
+    assets::TexturePrefetchScope texture_prefetch_scope;
+    auto texture_prefetch_live_epoch =
+        std::make_shared<std::atomic<std::uint64_t>>(0U);
+    std::future<bool> texture_prefetch_future;
+    std::uint64_t texture_prefetch_request_epoch = 0U;
+    std::size_t texture_prefetch_attempts = 0U;
+    std::size_t texture_prefetch_warmed = 0U;
+    std::size_t texture_prefetch_misses = 0U;
+    std::size_t texture_prefetch_stale = 0U;
+    assets::AssetRequestPacer texture_prefetch_pacer{
+        std::chrono::milliseconds{650}};
+    assets::AssetRequestPacer texture_request_pacer{
+        std::chrono::milliseconds{125}};
+    std::size_t texture_request_dispatches = 0U;
     std::future<assets::TextureAssetResult> object_texture_future;
     bool object_texture_loading = false;
     std::uint64_t object_texture_request_epoch = 0U;
@@ -4548,6 +4568,7 @@ int Application::run(bool enable_developer_modules)
                 mesh_gpu_asset_bytes.clear();
                 mesh_gpu_estimated_bytes = 0U;
                 mesh_gpu_budget_deferred_ids.clear();
+                mesh_request_pacer.reset();
                 region_material_discovery_started = false;
                 render_materials_started = false;
                 render_materials_get_complete = false;
@@ -4568,6 +4589,11 @@ int Application::run(bool enable_developer_modules)
                 texture_gpu_bytes.clear();
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
+                texture_request_pacer.reset();
+                texture_prefetch_pacer.reset();
+                texture_prefetch_scope.enter(material_scope.epoch());
+                texture_prefetch_live_epoch->store(
+                    material_scope.epoch(),std::memory_order_release);
                 terrain_texture_request_generation =
                     std::numeric_limits<std::uint32_t>::max();
                 terrain_texture_request_material_revision =
@@ -5843,7 +5869,8 @@ int Application::run(bool enable_developer_modules)
                     core::info("GetTexture GPU residency evicted=" +
                         std::to_string(evicted));
             }
-            if (!object_texture_loading && !texture_capability.empty())
+            if (!object_texture_loading && !texture_capability.empty() &&
+                texture_request_pacer.ready(texture_plan_now))
             {
                 std::unordered_set<std::string> satisfied;
                 for (const auto& [id,level] : texture_gpu_mips)
@@ -5878,6 +5905,8 @@ int Application::run(bool enable_developer_modules)
                             ? 0U : desired_mip->second;
                     object_texture_loading = true;
                     texture_request_started = std::chrono::steady_clock::now();
+                    texture_request_pacer.dispatched(texture_request_started);
+                    ++texture_request_dispatches;
                     object_texture_request_epoch = material_scope.epoch();
                     const std::string capability = texture_capability;
                     const std::string requested_id = *texture_id;
@@ -5936,6 +5965,56 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
+            // Warm at most one decoded texture from the existing disk cache
+            // in a worker. No prefetch HTTP request, GPU upload or CAPS URL
+            // is retained. Region epoch protects stale worker admission.
+            if (texture_prefetch_future.valid() &&
+                texture_prefetch_future.wait_for(std::chrono::seconds{0}) ==
+                    std::future_status::ready)
+            {
+                const bool warmed = texture_prefetch_future.get();
+                if (texture_prefetch_scope.current(
+                        texture_prefetch_request_epoch))
+                {
+                    if (warmed) ++texture_prefetch_warmed;
+                    else ++texture_prefetch_misses;
+                }
+                else ++texture_prefetch_stale;
+            }
+            if (!texture_prefetch_future.valid() &&
+                texture_prefetch_scope.current(material_scope.epoch()) &&
+                texture_prefetch_scope.attempted() < 48U &&
+                texture_prefetch_pacer.ready(texture_plan_now))
+            {
+                const auto pending = texture_prefetch_scope.candidates(
+                    texture_residency.preferred_ids,
+                    object_texture_loaded_ids,object_texture_failed_ids,4U);
+                for (const auto& id : pending)
+                {
+                    if (texture_memory_cache->contains(id))
+                    {
+                        texture_prefetch_scope.dispatched(id);
+                        continue;
+                    }
+                    texture_prefetch_scope.dispatched(id);
+                    ++texture_prefetch_attempts;
+                    texture_prefetch_request_epoch = material_scope.epoch();
+                    texture_prefetch_pacer.dispatched(texture_plan_now);
+                    const auto request_epoch=texture_prefetch_request_epoch;
+                    texture_prefetch_future = std::async(std::launch::async,
+                        [id,texture_memory_cache,texture_prefetch_live_epoch,
+                         request_epoch]()
+                        {
+                            assets::TextureDiskCache disk{
+                                assets::TextureDiskCache::default_directory()};
+                            return assets::prefetch_texture_disk_to_memory(
+                                id,disk,*texture_memory_cache,
+                                *texture_prefetch_live_epoch,request_epoch);
+                        });
+                    break;
+                }
+            }
+
             if (last_texture_telemetry.time_since_epoch().count()==0 ||
                 texture_plan_now-last_texture_telemetry >=
                     std::chrono::seconds{60})
@@ -5947,6 +6026,16 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_memory_cache->count()) +
                     " ram_bytes=" +
                     std::to_string(texture_memory_cache->bytes()) +
+                    " demand_dispatches=" +
+                    std::to_string(texture_request_dispatches) +
+                    " prefetch_probes=" +
+                    std::to_string(texture_prefetch_attempts) +
+                    " prefetch_warmed=" +
+                    std::to_string(texture_prefetch_warmed) +
+                    " prefetch_missed=" +
+                    std::to_string(texture_prefetch_misses) +
+                    " prefetch_stale=" +
+                    std::to_string(texture_prefetch_stale) +
                     " worker_completions=" +
                     std::to_string(texture_worker_completions) +
                     " avg_worker_elapsed_ms=" +
@@ -6144,7 +6233,8 @@ int Application::run(bool enable_developer_modules)
                 mesh_asset_loading_id.clear();
             }
             if (!mesh_asset_future.valid() &&
-                !scoped_get_mesh_uri.empty())
+                !scoped_get_mesh_uri.empty() &&
+                mesh_request_pacer.ready(mesh_plan_now))
             {
                 // Prefer near meshes, not lexicographic UUID order.
                 for (const auto& id : mesh_residency.prioritized_ids)
@@ -6166,6 +6256,8 @@ int Application::run(bool enable_developer_modules)
                         std::string(assets::mesh_lod_name(lod)))) continue;
                     mesh_asset_loading_id = id;
                     mesh_request_started = std::chrono::steady_clock::now();
+                    mesh_request_pacer.dispatched(mesh_request_started);
+                    ++mesh_request_dispatches;
                     mesh_asset_loading_lod = lod;
                     mesh_asset_request_epoch = material_scope.epoch();
                     const std::string cap = scoped_get_mesh_uri;
@@ -6211,6 +6303,8 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(shared_gpu_budget_bytes) +
                     " mesh_budget_deferrals=" +
                     std::to_string(mesh_gpu_budget_deferrals) +
+                    " demand_dispatches=" +
+                    std::to_string(mesh_request_dispatches) +
                     " worker_completions=" +
                     std::to_string(mesh_worker_completions) +
                     " avg_worker_elapsed_ms=" +

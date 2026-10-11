@@ -39,6 +39,12 @@ std::optional<ImageRgba8> TextureMemoryCache::load(std::string_view id)
     age_.splice(age_.end(),age_,it->second.age);
     return it->second.image;
 }
+bool TextureMemoryCache::contains(std::string_view id) const
+{
+    if(!uuid(id))return false;
+    std::lock_guard guard{mutex_};
+    return entries_.contains(canonical(id));
+}
 bool TextureMemoryCache::store(std::string_view id,
     const ImageRgba8& image)
 {

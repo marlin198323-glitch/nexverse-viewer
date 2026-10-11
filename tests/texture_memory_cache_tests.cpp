@@ -14,6 +14,7 @@ int main()
     TextureMemoryCache cache{8U};
     if(!cache.store(a,red)||!cache.store(b,blue)||
        !cache.load("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") ||
+       !cache.contains(a) || cache.contains(c) ||
        cache.bytes()!=8U||cache.count()!=2U)return 1;
     if(!cache.store(c,blue) || cache.load(b) ||
        !cache.load(a) || !cache.load(c) ||

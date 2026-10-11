@@ -19,6 +19,7 @@ public:
     explicit TextureMemoryCache(
         std::size_t byte_budget = 96U*1024U*1024U);
     [[nodiscard]] std::optional<ImageRgba8> load(std::string_view id);
+    [[nodiscard]] bool contains(std::string_view id) const;
     [[nodiscard]] bool store(std::string_view id,const ImageRgba8& image);
     [[nodiscard]] std::size_t bytes() const;
     [[nodiscard]] std::size_t count() const;
