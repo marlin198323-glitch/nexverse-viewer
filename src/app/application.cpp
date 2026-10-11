@@ -5930,8 +5930,11 @@ int Application::run(bool enable_developer_modules)
                         (void)texture_cpu_reuse_history.uploaded(
                             object_texture_loading_id,material_scope.epoch(),
                             object_texture_loading_mip,
-                            result.message=="RAM texture cache hit" ||
-                            result.message=="Disk texture cache hit");
+                            result.message=="RAM texture cache hit"
+                                ? assets::AssetReuseHistory::Tier::memory
+                                : result.message=="Disk texture cache hit"
+                                    ? assets::AssetReuseHistory::Tier::disk
+                                    : assets::AssetReuseHistory::Tier::network);
                         texture_gpu_staging_recovery.resolved(
                             object_texture_loading_id);
                         if (was_loaded) ++texture_mip_swaps;
@@ -6005,7 +6008,16 @@ int Application::run(bool enable_developer_modules)
                             id,level,texture_gpu_mips,texture_plan_now);
                 if (planned_mips != texture_desired_mips)
                 {
-                    texture_budget_deferred_ids.clear();
+                    for(const auto& [id,quality]:planned_mips)
+                    {
+                        const auto old=texture_desired_mips.find(id);
+                        if(old!=texture_desired_mips.end() &&
+                           old->second!=quality)
+                        {
+                            texture_budget_deferred_ids.erase(id);
+                            texture_gpu_staging_recovery.resolved(id);
+                        }
+                    }
                     texture_desired_mips = std::move(planned_mips);
                 }
                 const auto view = render_camera_from_agent(render_agent);
@@ -6021,11 +6033,9 @@ int Application::run(bool enable_developer_modules)
                 auto updated_residency = assets::plan_texture_residency(
                     emitter_texture_ids, nearby_textures,
                     object_texture_loaded_ids, max_object_texture_assets);
-                if (updated_residency.preferred_ids !=
-                    texture_residency.preferred_ids)
-                    texture_budget_deferred_ids.clear();
                 texture_residency = std::move(updated_residency);
-                texture_gpu_staging_recovery.prune(texture_residency.desired_ids);
+                texture_gpu_staging_recovery.synchronize(
+                    texture_budget_deferred_ids,texture_residency.desired_ids);
                 texture_priority_feedback.observe(texture_residency.desired_ids);
                 std::size_t evicted = 0U;
                 for (const auto& id:texture_residency.eviction_ids)
@@ -6079,6 +6089,9 @@ int Application::run(bool enable_developer_modules)
                     if (!preflight.fits)
                     {
                         texture_budget_deferred_ids.insert(texture_id);
+                        texture_gpu_staging_recovery.defer(texture_id,
+                            texture_plan_now,texture_gpu_used_bytes,
+                            mesh_gpu_estimated_bytes);
                         ++texture_budget_rejections;
                     }
                     else
@@ -6370,7 +6383,6 @@ int Application::run(bool enable_developer_modules)
                 const assets::AssetCameraHint camera_hint{
                     view.center.x,view.center.y,view.center.z,
                     view.at.x,view.at.y,view.at.z};
-                const auto desired_before = mesh_residency.desired_ids;
                 mesh_residency = assets::plan_mesh_residency(
                     scene_mesh_samples,
                     render_agent.position.x,
@@ -6389,9 +6401,8 @@ int Application::run(bool enable_developer_modules)
                         wanted_keys.insert(id+"."+
                             std::string(assets::mesh_lod_name(it->second)));
                 }
-                mesh_gpu_budget_recovery.prune(wanted_keys);
-                if (mesh_residency.desired_ids != desired_before)
-                    mesh_gpu_budget_deferred_ids.clear();
+                mesh_gpu_budget_recovery.synchronize(
+                    mesh_gpu_budget_deferred_ids,wanted_keys);
 
                 // Evict in small batches to avoid long OpenGL stalls. The
                 // next frame can immediately start loading newly relevant
@@ -6523,7 +6534,11 @@ int Application::run(bool enable_developer_modules)
                         (void)mesh_cpu_reuse_history.uploaded(
                             mesh_asset_loading_id,material_scope.epoch(),
                             static_cast<std::uint32_t>(mesh_asset_loading_lod),
-                            completed_mesh.tier!=assets::MeshCacheTier::network);
+                            completed_mesh.tier==assets::MeshCacheTier::memory
+                                ? assets::AssetReuseHistory::Tier::memory
+                                : completed_mesh.tier==assets::MeshCacheTier::disk
+                                    ? assets::AssetReuseHistory::Tier::disk
+                                    : assets::AssetReuseHistory::Tier::network);
                         if (replacement) ++mesh_lod_swaps;
                         if (const auto old = mesh_gpu_asset_bytes.find(
                                 mesh_asset_loading_id);
@@ -6797,6 +6812,26 @@ int Application::run(bool enable_developer_modules)
                     mesh_cpu_reuse_history.region_cache_hits();
                 snapshot.mesh_cpu_cached_lod_reuse=
                     mesh_cpu_reuse_history.lod_cache_hits();
+                snapshot.texture_cpu_cached_region_ram=
+                    texture_cpu_reuse_history.region_ram_hits();
+                snapshot.texture_cpu_cached_region_disk=
+                    texture_cpu_reuse_history.region_disk_hits();
+                snapshot.texture_cpu_cached_lod_ram=
+                    texture_cpu_reuse_history.lod_ram_hits();
+                snapshot.texture_cpu_cached_lod_disk=
+                    texture_cpu_reuse_history.lod_disk_hits();
+                snapshot.mesh_cpu_cached_region_ram=
+                    mesh_cpu_reuse_history.region_ram_hits();
+                snapshot.mesh_cpu_cached_region_disk=
+                    mesh_cpu_reuse_history.region_disk_hits();
+                snapshot.mesh_cpu_cached_lod_ram=
+                    mesh_cpu_reuse_history.lod_ram_hits();
+                snapshot.mesh_cpu_cached_lod_disk=
+                    mesh_cpu_reuse_history.lod_disk_hits();
+                snapshot.texture_cpu_reuse_history_evictions=
+                    texture_cpu_reuse_history.evictions();
+                snapshot.mesh_cpu_reuse_history_evictions=
+                    mesh_cpu_reuse_history.evictions();
                 snapshot.mesh_gpu_upload_failures=
                     mesh_gpu_upload_failures;
                 snapshot.texture_priority_churn=

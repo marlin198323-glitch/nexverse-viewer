@@ -45,6 +45,16 @@ struct AssetStreamingSnapshot
     std::size_t texture_cpu_cached_lod_reuse=0U;
     std::size_t mesh_cpu_cached_region_reuse=0U;
     std::size_t mesh_cpu_cached_lod_reuse=0U;
+    std::size_t texture_cpu_cached_region_ram=0U;
+    std::size_t texture_cpu_cached_region_disk=0U;
+    std::size_t texture_cpu_cached_lod_ram=0U;
+    std::size_t texture_cpu_cached_lod_disk=0U;
+    std::size_t mesh_cpu_cached_region_ram=0U;
+    std::size_t mesh_cpu_cached_region_disk=0U;
+    std::size_t mesh_cpu_cached_lod_ram=0U;
+    std::size_t mesh_cpu_cached_lod_disk=0U;
+    std::size_t texture_cpu_reuse_history_evictions=0U;
+    std::size_t mesh_cpu_reuse_history_evictions=0U;
     std::size_t mesh_gpu_upload_failures=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
@@ -107,6 +117,18 @@ struct AssetStreamingSnapshot
         field("texture_cpu_cached_lod_reuse",texture_cpu_cached_lod_reuse);
         field("mesh_cpu_cached_region_reuse",mesh_cpu_cached_region_reuse);
         field("mesh_cpu_cached_lod_reuse",mesh_cpu_cached_lod_reuse);
+        field("texture_cpu_cached_region_ram",texture_cpu_cached_region_ram);
+        field("texture_cpu_cached_region_disk",texture_cpu_cached_region_disk);
+        field("texture_cpu_cached_lod_ram",texture_cpu_cached_lod_ram);
+        field("texture_cpu_cached_lod_disk",texture_cpu_cached_lod_disk);
+        field("mesh_cpu_cached_region_ram",mesh_cpu_cached_region_ram);
+        field("mesh_cpu_cached_region_disk",mesh_cpu_cached_region_disk);
+        field("mesh_cpu_cached_lod_ram",mesh_cpu_cached_lod_ram);
+        field("mesh_cpu_cached_lod_disk",mesh_cpu_cached_lod_disk);
+        field("texture_cpu_reuse_history_evictions",
+            texture_cpu_reuse_history_evictions);
+        field("mesh_cpu_reuse_history_evictions",
+            mesh_cpu_reuse_history_evictions);
         field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);

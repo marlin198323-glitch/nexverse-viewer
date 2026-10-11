@@ -96,6 +96,16 @@ def read_report(path: Path) -> dict[str, Any]:
                     "texture_cpu_cached_lod_reuse",
                     "mesh_cpu_cached_region_reuse",
                     "mesh_cpu_cached_lod_reuse",
+                    "texture_cpu_cached_region_ram",
+                    "texture_cpu_cached_region_disk",
+                    "texture_cpu_cached_lod_ram",
+                    "texture_cpu_cached_lod_disk",
+                    "mesh_cpu_cached_region_ram",
+                    "mesh_cpu_cached_region_disk",
+                    "mesh_cpu_cached_lod_ram",
+                    "mesh_cpu_cached_lod_disk",
+                    "texture_cpu_reuse_history_evictions",
+                    "mesh_cpu_reuse_history_evictions",
                     "previous_frame_draw_calls",
                     "previous_frame_visible_objects",
                     "previous_frame_scene_draw_calls",
@@ -135,9 +145,27 @@ def read_report(path: Path) -> dict[str, Any]:
             latest_epoch_snapshots+=1
             current=prior
 
+    region_window = snapshots[-latest_epoch_snapshots:] if latest_epoch_snapshots else []
+    def window_min(key):
+        observed=[sample[key] for sample in region_window if key in sample]
+        return min(observed) if len(observed)==len(region_window) and observed else None
+    def window_max(key):
+        observed=[sample[key] for sample in region_window if key in sample]
+        return max(observed) if len(observed)==len(region_window) and observed else None
+
     return {
         "schema": "ogl.asset.log-report.v1",
         "latest_epoch_snapshots": latest_epoch_snapshots,
+        "latest_region_min_texture_coverage_pct": window_min(
+            "texture_coverage_pct"),
+        "latest_region_min_mesh_coverage_pct": window_min(
+            "mesh_coverage_pct"),
+        "latest_region_max_missing_mesh_fallback_draws": window_max(
+            "previous_frame_scene_missing_mesh_draw_calls"),
+        "latest_region_min_mesh_draw_calls": window_min(
+            "previous_frame_scene_mesh_draw_calls"),
+        "latest_region_max_mesh_budget_waiting": window_max(
+            "mesh_gpu_budget_waiting"),
         "last_snapshot_emitted_unix_ms": latest.get("emitted_unix_ms"),
         "last_snapshot_session_unix_ms": latest.get("session_started_unix_ms"),
         "date_first": first_date,

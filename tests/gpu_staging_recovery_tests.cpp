@@ -27,8 +27,13 @@ int main()
     recovery.resolved("tex-C");
     if(recovery.pending()!=0U)return 7;
     recovery.defer("tex-D",t+seconds{9},10,10);
-    recovery.prune({"other"});
-    if(recovery.pending()!=0U)return 10;
+    std::unordered_set<std::string> blocked{"tex-D","obsolete"};
+    blocked.insert("orphan");
+    recovery.synchronize(blocked,{"tex-D","orphan"});
+    if(recovery.pending()!=1U||blocked.size()!=1U ||
+       !blocked.contains("tex-D")||blocked.contains("orphan"))return 11;
+    recovery.synchronize(blocked,{"other"});
+    if(recovery.pending()!=0U||!blocked.empty())return 10;
     recovery.reset();
     if(recovery.pending()!=0U||recovery.released()!=0U)return 8;
     std::cout<<"Deferred GPU staging retry: time, memory drop, resolution, epoch reset OK\n";

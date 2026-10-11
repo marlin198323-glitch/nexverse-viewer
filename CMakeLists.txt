@@ -445,6 +445,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-renderer-gpu-profiles-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-renderer-region-transition-tests
+        tests/renderer_region_transition_tests.cpp)
+    target_link_libraries(nexverse-renderer-region-transition-tests
+        PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-region-transition-tests)
+    add_test(NAME nexverse-renderer-region-transition-tests
+        COMMAND nexverse-renderer-region-transition-tests)
+    set_tests_properties(nexverse-renderer-region-transition-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-renderer-gpu-soak-tests tests/renderer_gpu_soak_tests.cpp)
     target_link_libraries(nexverse-renderer-gpu-soak-tests PRIVATE NexVerse::Render NexVerse::Assets glfw glad::glad)
     nexverse_enable_warnings(nexverse-renderer-gpu-soak-tests)
@@ -492,6 +502,8 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_asset_log_report.py")
         add_test(NAME nexverse-inworld-acceptance-tests
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_inworld_acceptance.py")
+        add_test(NAME nexverse-inworld-transition-report-tests
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ogl_inworld_transition_report.py")
     endif()
 
     add_executable(nexverse-asset-scene-coverage-tests tests/asset_scene_coverage_tests.cpp)

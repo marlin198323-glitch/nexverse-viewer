@@ -25,6 +25,12 @@ def assess(report: dict, min_snapshots: int = 3,
     emitted = latest.get("emitted_unix_ms", 0)
     session = latest.get("session_started_unix_ms", 0)
     age = now_unix_ms - emitted if emitted else None
+    # Require healthy evidence throughout the latest consecutive window,
+    # not only in the most recent frame after earlier missing textures.
+    window_texture=report.get("latest_region_min_texture_coverage_pct")
+    window_mesh=report.get("latest_region_min_mesh_coverage_pct")
+    window_draws=report.get("latest_region_min_mesh_draw_calls")
+    window_missing=report.get("latest_region_max_missing_mesh_fallback_draws")
     checks = {
         "session_and_epoch": (latest.get("region_epoch", 0) > 0 and
                               session > 0 and emitted >= session and
@@ -34,19 +40,17 @@ def assess(report: dict, min_snapshots: int = 3,
         "consecutive_timed_snapshots": count >= min_snapshots,
         "nonempty_texture_scene": latest.get("textures_wanted", 0) > 0,
         "nonempty_mesh_scene": latest.get("meshes_wanted", 0) > 0,
-        "texture_coverage": latest.get("texture_coverage_pct", 0)
-                            >= min_coverage_pct,
-        "mesh_coverage": latest.get("mesh_coverage_pct", 0)
-                         >= min_coverage_pct,
+        "texture_coverage": (window_texture is not None and
+                             window_texture>=min_coverage_pct),
+        "mesh_coverage": (window_mesh is not None and
+                          window_mesh>=min_coverage_pct),
         "actual_scene_draw_calls": latest.get(
             "previous_frame_scene_draw_calls", 0) > 0,
-        "actual_uploaded_mesh_draw_calls": latest.get(
-            "previous_frame_scene_mesh_draw_calls", 0) > 0,
+        "actual_uploaded_mesh_draw_calls": (
+            window_draws is not None and window_draws>0),
         "missing_mesh_fallback_within_limit": (
-            latest.get("previous_frame_scene_missing_mesh_draw_calls")
-            is not None
-            and latest["previous_frame_scene_missing_mesh_draw_calls"]
-            <= max_missing_mesh_draws),
+            window_missing is not None and
+            window_missing<=max_missing_mesh_draws),
     }
     return {
         "schema": "ogl.inworld.acceptance.v2",
@@ -65,6 +69,10 @@ def assess(report: dict, min_snapshots: int = 3,
                 "previous_frame_scene_draw_calls"),
             "last_mesh_draw_calls": latest.get(
                 "previous_frame_scene_mesh_draw_calls"),
+            "region_min_texture_coverage_pct": window_texture,
+            "region_min_mesh_coverage_pct": window_mesh,
+            "region_min_mesh_draw_calls": window_draws,
+            "region_max_missing_mesh_draw_calls": window_missing,
             "last_mesh_fallback_draw_calls": latest.get(
                 "previous_frame_scene_missing_mesh_draw_calls"),
             "last_missing_mesh_objects": latest.get(

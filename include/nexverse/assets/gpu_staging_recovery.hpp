@@ -50,6 +50,22 @@ public:
         deferred_.erase(id);
         attempts_.erase(id);
     }
+    // Synchronize the worker's blocked-ID set with the recovery queue.
+    // Still-desired blocked assets keep their cooldown; removed assets
+    // cannot remain permanently excluded across a camera/LOD change.
+    void synchronize(std::unordered_set<std::string>& blocked,
+                     const std::unordered_set<std::string>& desired)
+    {
+        prune(desired);
+        for(auto it=blocked.begin();it!=blocked.end();)
+        {
+            // An orphan blocked ID (no scheduled release) can never
+            // recover; unblock it so the planner can reevaluate it.
+            if(!desired.contains(*it)||!deferred_.contains(*it))
+                it=blocked.erase(it);
+            else ++it;
+        }
+    }
     void prune(const std::unordered_set<std::string>& desired)
     {
         for(auto it=deferred_.begin();it!=deferred_.end();)
