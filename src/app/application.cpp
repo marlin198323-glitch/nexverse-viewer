@@ -42,6 +42,8 @@
 #include "nexverse/protocol/caps.hpp"
 #include "nexverse/protocol/firestorm_compat.hpp"
 #include "nexverse/protocol/firestorm_region_lease.hpp"
+#include "nexverse/protocol/firestorm_region_read.hpp"
+#include "nexverse/protocol/firestorm_inventory_gallery.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
 #include "nexverse/protocol/event_queue_recovery.hpp"
 #include "nexverse/protocol/caps_world_events.hpp"
@@ -154,6 +156,7 @@ struct CapsRuntimeState
     std::vector<std::string> owned_ids;
     std::vector<std::string> allowed_ids;
     std::vector<std::string> blocked_ids;
+    std::map<std::string,std::string,std::less<>> experience_names;
 };
 
 struct FrameMetrics
@@ -355,6 +358,7 @@ struct InputContext
 {
     LoginUiState* login = nullptr;
     nexverse::protocol::ExperienceUiState* experience = nullptr;
+    bool* outfits = nullptr;
     bool* simulation_ready = nullptr;
     bool exclusive_fullscreen = false;
     int windowed_x = 100;
@@ -448,6 +452,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
     {
         if(context && context->experience && context->experience->open)
             context->experience->close();
+        else if(context && context->outfits && *context->outfits)
+            *context->outfits=false;
         else
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         return;
@@ -459,6 +465,17 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         {
             ui.toggle(context->login && context->login->authenticated,
                       context->simulation_ready && *context->simulation_ready);
+            if(ui.open &&context->outfits)*context->outfits=false;
+            return;
+        }
+        if(key==GLFW_KEY_F9 &&context->outfits)
+        {
+            if(context->login &&context->login->authenticated &&
+               context->simulation_ready &&*context->simulation_ready)
+            {
+                *context->outfits=!*context->outfits;
+                if(*context->outfits)ui.close();
+            }
             return;
         }
         if(ui.open)
@@ -1473,7 +1490,7 @@ void render_world_hud(
     renderer.text(card_x+12.0f*scale,
                   rail_y+rail_h-24.0f*scale,
                   8.0f*scale,
-                  "Erlebnisse [F8]",
+                  "Erlebnisse [F8]   Outfits [F9]",
                   theme::text_muted);
 
     // Bottom action bar, visually aligned with the original NexVerse UI.
@@ -1523,6 +1540,49 @@ void render_world_hud(
 
 // Firestorm Experiences: real read-only floater, available only after a
 // live simulator scene is ready. No accidental Purchase/Allow/Block actions.
+// The inventory skeleton is populated by the authenticated OpenSim
+// login reply. Thumbnail images require a later region inventory fetch,
+// not a made-up placeholder, and outfit editing remains disabled.
+void render_outfit_gallery(
+    UiRenderer& renderer,int width,int height,
+    const std::vector<nexverse::protocol::OutfitGalleryFolder>& folders)
+{
+    const float w=static_cast<float>(std::max(width,1));
+    const float h=static_cast<float>(std::max(height,1));
+    const float scale=std::clamp(h/1080.0f,0.75f,1.5f);
+    const float pw=std::min(630.0f*scale,w-32.0f);
+    const float ph=500.0f*scale;
+    const float x=(w-pw)*0.5f, y=std::max(30.0f,(h-ph)*0.5f);
+    renderer.rect(0,0,w,h,Color{0,0.009f,0.025f,0.57f},0.0f);
+    renderer.rect(x,y,pw,ph,Color{0.014f,0.032f,0.057f,0.98f},11.0f*scale);
+    renderer.text(x+22.0f*scale,y+24.0f*scale,
+                  17.0f*scale,"Outfit-Galerie",theme::text);
+    renderer.text(x+22.0f*scale,y+59.0f*scale,
+                  9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
+                  theme::cyan);
+    renderer.text(x+22.0f*scale,y+86.0f*scale,
+                  9.5f*scale,folders.empty()?
+                  "Keine Outfit-Ordner im Login-Inventar":
+                  std::to_string(folders.size())+" Outfit-Ordner erkannt",
+                  theme::text_muted);
+    for(std::size_t i=0U;i<std::min(folders.size(),std::size_t{10U});++i)
+    {
+        const float yy=y+(115.0f+static_cast<float>(i)*30.0f)*scale;
+        renderer.rect(x+22.0f*scale,yy,pw-44.0f*scale,
+                      27.0f*scale,Color{0.021f,0.050f,0.082f,0.98f},
+                      5.0f*scale);
+        renderer.text(x+31.0f*scale,yy+7.0f*scale,
+                      9.5f*scale,folders[i].name,theme::text);
+        renderer.text(x+pw-115.0f*scale,yy+7.0f*scale,
+                      7.5f*scale,"Vorschau -",theme::text_muted);
+    }
+    renderer.text(x+22.0f*scale,y+ph-44.0f*scale,
+                  8.4f*scale,"Thumbnails und Tragen erfordern Inventar-Asset-Fetch",
+                  theme::warning);
+    renderer.text(x+22.0f*scale,y+ph-24.0f*scale,
+                  8.3f*scale,"F9 / ESC schließen",theme::text_muted);
+}
+
 void render_experience_floater(
     UiRenderer& renderer,int width,int height,
     const nexverse::protocol::ExperienceUiState& ui,
@@ -1593,8 +1653,11 @@ void render_experience_floater(
             renderer.text(x+32.0f*scale,y+
                           (181.0f+static_cast<float>(i)*31.0f)*scale,
                           9.2f*scale,
-                          std::to_string(i+1U)+". ID "+
-                          ids[i].substr(0U,8U)+" (Name nicht geladen)",
+                          std::to_string(i+1U)+". "+
+                          (caps.experience_names.contains(ids[i])
+                              ? caps.experience_names.at(ids[i])
+                              : ("ID "+ids[i].substr(0U,8U)+
+                                 " (Name nicht geladen)")),
                           theme::text_muted);
         }
     }
@@ -2670,6 +2733,7 @@ int Application::run(bool enable_developer_modules)
 
     LoginUiState login_ui;
     protocol::ExperienceUiState experience_ui;
+    bool outfit_gallery_open=false;
     InputContext input_context{&login_ui};
     glfwSetWindowUserPointer(window, &input_context);
     glfwSetCharCallback(window, character_callback);
@@ -2702,6 +2766,7 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point last_self_movement_log{};
     bool simulation_ready = false;
     input_context.experience=&experience_ui;
+    input_context.outfits=&outfit_gallery_open;
     input_context.simulation_ready=&simulation_ready;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
@@ -3533,6 +3598,9 @@ int Application::run(bool enable_developer_modules)
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
     protocol::FirestormRegionLease firestorm_region_lease;
+    std::vector<std::future<protocol::FirestormRegionRead>>
+        firestorm_region_read_futures;
+    std::uint64_t firestorm_region_read_started_epoch=0U;
     protocol::RegionMaterialScope material_scope;
     std::future<protocol::CapabilityDiscoveryResult> region_material_discovery_future;
     std::uint64_t region_material_discovery_epoch = 0U;
@@ -4709,6 +4777,7 @@ int Application::run(bool enable_developer_modules)
             {
                 world_ready_logged = false;
                 experience_ui.close();
+                outfit_gallery_open=false;
             }
             else if (!world_ready_logged)
             {
@@ -4741,7 +4810,8 @@ int Application::run(bool enable_developer_modules)
                     glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
                 const auto pressed = [&](int key)
                 {
-                    return focused && !experience_ui.open &&
+                    return focused &&!experience_ui.open &&
+                           !outfit_gallery_open &&
                            glfwGetKey(window, key) == GLFW_PRESS;
                 };
                 protocol::MovementKeys keys;
@@ -4914,7 +4984,78 @@ int Application::run(bool enable_developer_modules)
                 caps_state.owned_ids.clear();
                 caps_state.allowed_ids.clear();
                 caps_state.blocked_ids.clear();
+                caps_state.experience_names.clear();
                 experience_ui.close();
+            }
+            // Region-specific Firestorm read CAPS. The existing login
+            // EventQueue remains independent and is never joined here.
+            // No std::async future is destroyed while still running on the
+            // render thread: only completed tasks are erased.
+            for(auto it=firestorm_region_read_futures.begin();
+                it!=firestorm_region_read_futures.end();)
+            {
+                if(it->wait_for(std::chrono::milliseconds{0})!=
+                   std::future_status::ready)
+                {
+                    ++it;
+                    continue;
+                }
+                try
+                {
+                    auto reply=it->get();
+                    if(reply.discovered &&
+                       firestorm_region_lease.matches(reply.issued_epoch))
+                    {
+                        std::scoped_lock lock{caps_mutex};
+                        if(firestorm_region_lease.matches(reply.issued_epoch))
+                        {
+                            caps_state.firestorm_caps=reply.available;
+                            if(reply.owned)
+                            {
+                                caps_state.owned_ids=reply.owned->ids;
+                                caps_state.owned_experiences=reply.owned->ids.size();
+                                caps_state.owned_experiences_read=true;
+                                caps_state.experience_acquire_offered=
+                                    reply.owned->purchase_price.has_value();
+                            }
+                            if(reply.resident)
+                            {
+                                caps_state.allowed_ids=reply.resident->allowed;
+                                caps_state.blocked_ids=reply.resident->blocked;
+                                caps_state.allowed_experiences=
+                                    reply.resident->allowed.size();
+                                caps_state.blocked_experiences=
+                                    reply.resident->blocked.size();
+                                caps_state.resident_experiences_read=true;
+                            }
+                            caps_state.experience_names=std::move(reply.display_names);
+                        }
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Firestorm region read-only discovery failed");
+                }
+                it=firestorm_region_read_futures.erase(it);
+            }
+            // A region may change while older tasks remain in flight.
+            // At most four tasks are outstanding; if saturated, retry the
+            // newest region on a subsequent frame without blocking UI.
+            if(current_firestorm_epoch!=0U &&
+               current_firestorm_epoch!=firestorm_region_read_started_epoch &&
+               !current_region_seed.empty() &&current_region_handle!=0U &&
+               firestorm_region_read_futures.size()<4U)
+            {
+                firestorm_region_read_started_epoch=current_firestorm_epoch;
+                firestorm_region_read_futures.emplace_back(
+                    std::async(std::launch::async,
+                        [transport,seed=current_region_seed,
+                         issued=current_firestorm_epoch,
+                         &firestorm_region_lease]()
+                        {
+                            return protocol::fetch_firestorm_region(
+                                transport,seed,issued,firestorm_region_lease);
+                        }));
             }
             if (material_scope.update(
                     current_region_handle,
@@ -7281,8 +7422,14 @@ int Application::run(bool enable_developer_modules)
                 simulation_ready,
                 welcome_texture);
             if(simulation_ready)
+            {
+                if(outfit_gallery_open &&active_session)
+                    render_outfit_gallery(renderer,window_width,window_height,
+                        protocol::outfits_from_login_skeleton(
+                            active_session->inventory_skeleton));
                 render_experience_floater(renderer,window_width,window_height,
                                           experience_ui,caps_snapshot);
+            }
 
             glfwSwapBuffers(window);
         }
