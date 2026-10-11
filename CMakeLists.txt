@@ -422,6 +422,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-gpu-staging-budget-tests
         COMMAND nexverse-gpu-staging-budget-tests)
 
+    add_executable(nexverse-asset-gpu-pressure-pipeline-tests tests/asset_gpu_pressure_pipeline_tests.cpp)
+    target_link_libraries(nexverse-asset-gpu-pressure-pipeline-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-gpu-pressure-pipeline-tests)
+    add_test(NAME nexverse-asset-gpu-pressure-pipeline-tests COMMAND nexverse-asset-gpu-pressure-pipeline-tests)
+
+    add_executable(nexverse-asset-reuse-history-tests tests/asset_reuse_history_tests.cpp)
+    target_link_libraries(nexverse-asset-reuse-history-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-reuse-history-tests)
+    add_test(NAME nexverse-asset-reuse-history-tests COMMAND nexverse-asset-reuse-history-tests)
+
     add_executable(nexverse-asset-full-residency-tests tests/asset_full_residency_tests.cpp)
     target_link_libraries(nexverse-asset-full-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-asset-full-residency-tests)

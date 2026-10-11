@@ -39,6 +39,12 @@ struct AssetStreamingSnapshot
     std::size_t texture_gpu_staging_deferrals=0U;
     std::size_t texture_gpu_staging_waiting=0U;
     std::size_t texture_gpu_staging_released=0U;
+    std::size_t mesh_gpu_budget_waiting=0U;
+    std::size_t mesh_gpu_budget_released=0U;
+    std::size_t texture_cpu_cached_region_reuse=0U;
+    std::size_t texture_cpu_cached_lod_reuse=0U;
+    std::size_t mesh_cpu_cached_region_reuse=0U;
+    std::size_t mesh_cpu_cached_lod_reuse=0U;
     std::size_t mesh_gpu_upload_failures=0U;
     std::size_t texture_priority_churn=0U;
     std::size_t mesh_priority_churn=0U;
@@ -95,6 +101,12 @@ struct AssetStreamingSnapshot
         field("texture_gpu_staging_deferrals",texture_gpu_staging_deferrals);
         field("texture_gpu_staging_waiting",texture_gpu_staging_waiting);
         field("texture_gpu_staging_released",texture_gpu_staging_released);
+        field("mesh_gpu_budget_waiting",mesh_gpu_budget_waiting);
+        field("mesh_gpu_budget_released",mesh_gpu_budget_released);
+        field("texture_cpu_cached_region_reuse",texture_cpu_cached_region_reuse);
+        field("texture_cpu_cached_lod_reuse",texture_cpu_cached_lod_reuse);
+        field("mesh_cpu_cached_region_reuse",mesh_cpu_cached_region_reuse);
+        field("mesh_cpu_cached_lod_reuse",mesh_cpu_cached_lod_reuse);
         field("mesh_gpu_upload_failures",mesh_gpu_upload_failures);
         field("texture_priority_churn",texture_priority_churn);
         field("mesh_priority_churn",mesh_priority_churn);

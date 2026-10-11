@@ -20,6 +20,7 @@
 #include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/assets/gpu_staging_budget.hpp"
 #include "nexverse/assets/gpu_staging_recovery.hpp"
+#include "nexverse/assets/asset_reuse_history.hpp"
 #include "nexverse/assets/asset_request_fairness.hpp"
 #include "nexverse/assets/asset_scene_coverage.hpp"
 #include "nexverse/assets/asset_streaming_snapshot.hpp"
@@ -3372,6 +3373,8 @@ int Application::run(bool enable_developer_modules)
     constexpr std::size_t shared_gpu_budget_bytes = 384U*1024U*1024U;
     constexpr std::size_t mesh_gpu_budget_bytes = 256U*1024U*1024U;
     std::unordered_set<std::string> mesh_gpu_budget_deferred_ids;
+    assets::GpuStagingRecovery mesh_gpu_budget_recovery;
+    assets::AssetReuseHistory mesh_cpu_reuse_history;
     std::size_t mesh_gpu_budget_deferrals = 0U;
     std::size_t mesh_worker_completions = 0U;
     std::uint64_t mesh_worker_elapsed_ms = 0U;
@@ -3451,6 +3454,7 @@ int Application::run(bool enable_developer_modules)
         256U * 1024U * 1024U;
     std::unordered_set<std::string> texture_budget_deferred_ids;
     assets::GpuStagingRecovery texture_gpu_staging_recovery;
+    assets::AssetReuseHistory texture_cpu_reuse_history;
     std::size_t texture_mip_swaps = 0U;
     std::size_t texture_budget_rejections = 0U;
     std::unordered_set<std::string> object_texture_loaded_ids;
@@ -4614,6 +4618,7 @@ int Application::run(bool enable_developer_modules)
                 mesh_gpu_asset_bytes.clear();
                 mesh_gpu_estimated_bytes = 0U;
                 mesh_gpu_budget_deferred_ids.clear();
+                mesh_gpu_budget_recovery.reset();
                 mesh_request_pacer.reset();
                 mesh_request_fairness.reset();
                 region_material_discovery_started = false;
@@ -5820,6 +5825,10 @@ int Application::run(bool enable_developer_modules)
                     {
                         texture_budget_deferred_ids.insert(
                             object_texture_loading_id);
+                        texture_gpu_staging_recovery.defer(
+                            object_texture_loading_id,
+                            std::chrono::steady_clock::now(),
+                            texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
                         ++texture_budget_rejections;
                         core::warning("Deferred GetTexture GPU upload " +
                             object_texture_loading_id +
@@ -5918,6 +5927,11 @@ int Application::run(bool enable_developer_modules)
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
                         object_texture_retries.success(object_texture_loading_id);
+                        (void)texture_cpu_reuse_history.uploaded(
+                            object_texture_loading_id,material_scope.epoch(),
+                            object_texture_loading_mip,
+                            result.message=="RAM texture cache hit" ||
+                            result.message=="Disk texture cache hit");
                         texture_gpu_staging_recovery.resolved(
                             object_texture_loading_id);
                         if (was_loaded) ++texture_mip_swaps;
@@ -6301,6 +6315,10 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_gpu_staging_recovery.pending()) +
                     " gpu_staging_released=" +
                     std::to_string(texture_gpu_staging_recovery.released()) +
+                    " cpu_cached_region_reuse=" +
+                    std::to_string(texture_cpu_reuse_history.region_cache_hits()) +
+                    " cpu_cached_lod_reuse=" +
+                    std::to_string(texture_cpu_reuse_history.lod_cache_hits()) +
                     " gpu_uploads=" +
                     std::to_string(asset_gpu_upload_gate.count()) +
                     " gpu_uploaded_bytes=" +
@@ -6330,6 +6348,10 @@ int Application::run(bool enable_developer_modules)
             // Already-resident assets receive hysteresis so tiny movement
             // does not cause repeated GPU uploads/evictions.
             const auto mesh_plan_now = std::chrono::steady_clock::now();
+            for(const auto& key:mesh_gpu_budget_recovery.ready(
+                    mesh_plan_now,texture_gpu_used_bytes,
+                    mesh_gpu_estimated_bytes))
+                mesh_gpu_budget_deferred_ids.erase(key);
             if (scene_objects_changed ||
                 mesh_plan_now - last_mesh_residency_plan >=
                     std::chrono::milliseconds{750})
@@ -6359,6 +6381,15 @@ int Application::run(bool enable_developer_modules)
                     mesh_priority_feedback.loaded_bonus(24.0f),
                     &camera_hint);
                 mesh_priority_feedback.observe(mesh_residency.desired_ids);
+                std::unordered_set<std::string> wanted_keys;
+                for(const auto& id:mesh_residency.desired_ids)
+                {
+                    const auto it=mesh_desired_lods.find(id);
+                    if(it!=mesh_desired_lods.end())
+                        wanted_keys.insert(id+"."+
+                            std::string(assets::mesh_lod_name(it->second)));
+                }
+                mesh_gpu_budget_recovery.prune(wanted_keys);
                 if (mesh_residency.desired_ids != desired_before)
                     mesh_gpu_budget_deferred_ids.clear();
 
@@ -6449,9 +6480,12 @@ int Application::run(bool enable_developer_modules)
                             mesh_gpu_estimated_bytes,old_bytes,
                             gpu_bytes,budget))
                     {
-                        mesh_gpu_budget_deferred_ids.insert(
-                            mesh_asset_loading_id+"."+
-                            std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
+                        const auto retry_key=mesh_asset_loading_id+"."+
+                            std::string(assets::mesh_lod_name(mesh_asset_loading_lod));
+                        mesh_gpu_budget_deferred_ids.insert(retry_key);
+                        mesh_gpu_budget_recovery.defer(retry_key,
+                            std::chrono::steady_clock::now(),
+                            texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
                         ++mesh_gpu_budget_deferrals;
                         core::warning("Deferred GetMesh GPU upload due to "
                             "combined mesh/texture byte budget");
@@ -6482,9 +6516,14 @@ int Application::run(bool enable_developer_modules)
                             gpu_submission_end,gpu_bytes,
                             submission_cpu_time);
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
-                        mesh_asset_retries.success(mesh_asset_loading_id+"."+
-                            std::string(assets::mesh_lod_name(
-                                mesh_asset_loading_lod)));
+                        const auto successful_key=mesh_asset_loading_id+"."+
+                            std::string(assets::mesh_lod_name(mesh_asset_loading_lod));
+                        mesh_asset_retries.success(successful_key);
+                        mesh_gpu_budget_recovery.resolved(successful_key);
+                        (void)mesh_cpu_reuse_history.uploaded(
+                            mesh_asset_loading_id,material_scope.epoch(),
+                            static_cast<std::uint32_t>(mesh_asset_loading_lod),
+                            completed_mesh.tier!=assets::MeshCacheTier::network);
                         if (replacement) ++mesh_lod_swaps;
                         if (const auto old = mesh_gpu_asset_bytes.find(
                                 mesh_asset_loading_id);
@@ -6651,6 +6690,14 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(shared_gpu_budget_bytes) +
                     " mesh_budget_deferrals=" +
                     std::to_string(mesh_gpu_budget_deferrals) +
+                    " mesh_budget_waiting=" +
+                    std::to_string(mesh_gpu_budget_recovery.pending()) +
+                    " mesh_budget_released=" +
+                    std::to_string(mesh_gpu_budget_recovery.released()) +
+                    " cpu_cached_region_reuse=" +
+                    std::to_string(mesh_cpu_reuse_history.region_cache_hits()) +
+                    " cpu_cached_lod_reuse=" +
+                    std::to_string(mesh_cpu_reuse_history.lod_cache_hits()) +
                     " demand_dispatches=" +
                     std::to_string(mesh_request_dispatches) +
                     " retry_dispatches=" +
@@ -6738,6 +6785,18 @@ int Application::run(bool enable_developer_modules)
                     texture_gpu_staging_recovery.pending();
                 snapshot.texture_gpu_staging_released=
                     texture_gpu_staging_recovery.released();
+                snapshot.mesh_gpu_budget_waiting=
+                    mesh_gpu_budget_recovery.pending();
+                snapshot.mesh_gpu_budget_released=
+                    mesh_gpu_budget_recovery.released();
+                snapshot.texture_cpu_cached_region_reuse=
+                    texture_cpu_reuse_history.region_cache_hits();
+                snapshot.texture_cpu_cached_lod_reuse=
+                    texture_cpu_reuse_history.lod_cache_hits();
+                snapshot.mesh_cpu_cached_region_reuse=
+                    mesh_cpu_reuse_history.region_cache_hits();
+                snapshot.mesh_cpu_cached_lod_reuse=
+                    mesh_cpu_reuse_history.lod_cache_hits();
                 snapshot.mesh_gpu_upload_failures=
                     mesh_gpu_upload_failures;
                 snapshot.texture_priority_churn=

@@ -47,6 +47,29 @@ class AssetLogReportTest(unittest.TestCase):
             self.assertNotIn("secret", str(summary))
             self.assertNotIn("aaaaaaaa-", str(summary))
 
+    def test_new_gpu_recovery_and_cache_counters(self):
+        with tempfile.TemporaryDirectory() as temp:
+            logfile=Path(temp)/"gpu.log"
+            logfile.write_text(
+                '2026-10-11 17:00:00 [INFO] InWorldAssetSnapshot '
+                '{"schema":"ogl.asset.streaming.v1",'
+                '"mesh_gpu_budget_waiting":4,'
+                '"mesh_gpu_budget_released":2,'
+                '"texture_cpu_cached_region_reuse":3,'
+                '"texture_cpu_cached_lod_reuse":5,'
+                '"mesh_cpu_cached_region_reuse":6,'
+                '"mesh_cpu_cached_lod_reuse":7,'
+                '"session_started_unix_ms":1800000000000,'
+                '"sequence":4,"emitted_unix_ms":1800000060000,'
+                '"secret":"private-caps-token"}\n'
+            )
+            report=read_report(logfile)
+            self.assertEqual(report["max_mesh_gpu_budget_waiting"],4)
+            self.assertEqual(report["max_mesh_gpu_budget_released"],2)
+            self.assertEqual(
+                report["latest_snapshot"]["mesh_cpu_cached_region_reuse"],6)
+            self.assertNotIn("private-caps-token",str(report))
+
     def test_empty_log(self):
         with tempfile.TemporaryDirectory() as temp:
             log = Path(temp) / "empty.log"

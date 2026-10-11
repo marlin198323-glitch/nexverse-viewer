@@ -90,6 +90,12 @@ def read_report(path: Path) -> dict[str, Any]:
                     "texture_gpu_staging_deferrals",
                     "texture_gpu_staging_waiting",
                     "texture_gpu_staging_released",
+                    "mesh_gpu_budget_waiting",
+                    "mesh_gpu_budget_released",
+                    "texture_cpu_cached_region_reuse",
+                    "texture_cpu_cached_lod_reuse",
+                    "mesh_cpu_cached_region_reuse",
+                    "mesh_cpu_cached_lod_reuse",
                     "previous_frame_draw_calls",
                     "previous_frame_visible_objects",
                     "previous_frame_scene_draw_calls",
@@ -168,6 +174,12 @@ def read_report(path: Path) -> dict[str, Any]:
         "max_texture_gpu_staging_released": max(
             (s["texture_gpu_staging_released"] for s in snapshots
              if "texture_gpu_staging_released" in s), default=None),
+        "max_mesh_gpu_budget_waiting": max(
+            (s["mesh_gpu_budget_waiting"] for s in snapshots
+             if "mesh_gpu_budget_waiting" in s), default=None),
+        "max_mesh_gpu_budget_released": max(
+            (s["mesh_gpu_budget_released"] for s in snapshots
+             if "mesh_gpu_budget_released" in s), default=None),
         "peak_missing_mesh_fallback_draws": max(
             (s["previous_frame_scene_missing_mesh_draw_calls"]
              for s in snapshots

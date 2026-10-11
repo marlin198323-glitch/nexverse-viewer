@@ -26,6 +26,12 @@ int main()
     snapshot.emitted_unix_ms=1800000090000ULL;
     snapshot.texture_gpu_staging_waiting=1U;
     snapshot.texture_gpu_staging_released=2U;
+    snapshot.mesh_gpu_budget_waiting=3U;
+    snapshot.mesh_gpu_budget_released=4U;
+    snapshot.texture_cpu_cached_region_reuse=5U;
+    snapshot.texture_cpu_cached_lod_reuse=6U;
+    snapshot.mesh_cpu_cached_region_reuse=7U;
+    snapshot.mesh_cpu_cached_lod_reuse=8U;
     snapshot.previous_frame_scene_missing_mesh_draw_calls=3U;
     snapshot.previous_frame_scene_missing_mesh_objects=2U;
     snapshot.previous_frame_scene_missing_mesh_triangles=36U;
@@ -51,6 +57,10 @@ int main()
        json.find("\"sequence\":7")==std::string::npos ||
        json.find("\"texture_gpu_staging_waiting\":1")==std::string::npos ||
        json.find("\"texture_gpu_staging_released\":2")==std::string::npos ||
+       json.find("\"mesh_gpu_budget_waiting\":3")==std::string::npos ||
+       json.find("\"mesh_gpu_budget_released\":4")==std::string::npos ||
+       json.find("\"texture_cpu_cached_region_reuse\":5")==std::string::npos ||
+       json.find("\"mesh_cpu_cached_lod_reuse\":8")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_draw_calls\":3")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_objects\":2")==std::string::npos ||
        json.find("\"previous_frame_scene_missing_mesh_triangles\":36")==std::string::npos ||

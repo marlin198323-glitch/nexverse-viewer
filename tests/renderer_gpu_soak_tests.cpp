@@ -46,15 +46,28 @@ int main()
                 obj.mesh_id=i%6U==0U ? "never-resident-mesh" :
                     "soak-mesh-"+std::to_string(i);
                 obj.texture_id="soak-texture-"+std::to_string(i%8U);
+                RenderFaceMaterial material;
+                material.texture_id=obj.texture_id;
+                material.color={0.8f,0.7f,0.95f,
+                    i%3U==0U?0.43f:1.0f};
+                material.fullbright=i%4U==0U;
+                material.shiny=static_cast<std::uint8_t>(i%3U);
+                material.repeat_u=1.0f+static_cast<float>(i%3U);
+                material.offset_v=static_cast<float>(i%5U)*0.05f;
+                obj.face_materials[0]=material;
                 objects.push_back(obj);
                 if(i%6U!=0U &&
                    !renderer->set_mesh_asset(obj.mesh_id,geometry))
                     {fail=3;break;}
             }
             for(unsigned i=0U;i<8U&&!fail;++i)
+            {
+                for(std::size_t px=3U;px<image.pixels.size();px+=4U)
+                    image.pixels[px]=i%2U==0U?255U:140U;
                 if(!renderer->set_object_texture(
                     "soak-texture-"+std::to_string(i),image))
                     fail=4;
+            }
             renderer->set_scene_objects(objects);
             renderer->set_camera({{0.0f,0.0f,0.0f},
                 {1.0f,0.0f,0.0f},{0.0f,1.0f,0.0f},
@@ -67,6 +80,12 @@ int main()
             for(unsigned frame=0U;frame<160U&&!fail;++frame)
             {
                 image.pixels[0]=static_cast<std::uint8_t>(frame);
+                for(std::size_t px=3U;px<image.pixels.size();px+=4U)
+                    image.pixels[px]=frame%2U==0U?255U:110U;
+                // Exercise changing face tint/alpha without replacing geometry.
+                auto& material=objects[frame%objects.size()].face_materials[0];
+                if(material)
+                    material->color[3]=frame%2U==0U?0.35f:1.0f;
                 const auto tx="soak-texture-"+std::to_string(frame%8U);
                 if(frame%4U==0U)
                 {
@@ -101,13 +120,14 @@ int main()
                     renderer->remove_mesh_asset(obj.mesh_id);
                     if(!renderer->set_mesh_asset(obj.mesh_id,geometry))
                         fail=9;
-                    renderer->set_scene_objects(objects);
                 }
+                renderer->set_scene_objects(objects);
                 renderer->begin_frame();
                 renderer->render_world(static_cast<double>(frame)*0.016);
                 renderer->end_frame();
                 const auto stats=renderer->diagnostics();
                 if(stats.scene_mesh_draw_calls==0U ||
+                   stats.scene_prim_draw_calls==0U ||
                    stats.scene_missing_mesh_objects!=4U ||
                    stats.scene_missing_mesh_draw_calls<
                        stats.scene_missing_mesh_objects ||
