@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #pragma once
+#include "nexverse/assets/asset_view_priority.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -40,7 +41,8 @@ struct MeshResidencyPlan
     float x, float y, float z,
     const std::unordered_set<std::string>& loaded,
     std::size_t budget = 256U,
-    float keep_loaded_bonus_m = 24.0f)
+    float keep_loaded_bonus_m = 24.0f,
+    const AssetCameraHint* camera = nullptr)
 {
     MeshResidencyPlan plan;
     if (budget == 0U) {
@@ -66,7 +68,9 @@ struct MeshResidencyPlan
         // not a fabricated mesh LOD level.
         const double diameter = std::clamp(
             static_cast<double>(item.diameter), 0.5, 16.0);
-        const double weighted = distance/std::sqrt(diameter);
+        const double weighted = distance/std::sqrt(diameter)*
+            (camera ? view_priority_multiplier(
+                *camera,item.x,item.y,item.z) : 1.0);
         const auto it = min_distance.find(item.id);
         if (it == min_distance.end())
             min_distance.emplace(item.id, weighted);

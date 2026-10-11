@@ -1,6 +1,6 @@
 # OpenGenesisLINK – GPU-Textur-Streaming und Residency
 
-Stand 0.2.0-alpha.61 · Phase 9 (Historie ab alpha.58)
+Stand 0.2.0-alpha.62 · Phase 9 (Historie ab alpha.58)
 Maßgeblich: projectplan.md
 
 ## Ziel und Grenzen
@@ -164,3 +164,24 @@ Die Cache-Budgets gelten für alle LOD-Varianten zusammen. Ein Cachetreffer nach
 Start: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl61-live.log`.
 
 Das Budget verhindert anhand der dokumentierten RGBA8-Mipkettenabschätzung die Annahme neuer Texturen über 256 MiB. Durch Treiber-/Allocator-Overhead ist dies keine exakte gesamte VRAM-Nutzung. Für denselben Texture-Key können unter wechselnder Entfernung unterschiedliche Basisresolutionen nacheinander resident werden. `GetTexture`/Disk speichert dennoch ausschließlich vollständige Assets; die GPU-Textur kann ohne Änderung der UUID aktualisiert werden.
+
+
+## Ausbau alpha.62 – Sichtkegelpriorität, RAM-LRU, gemeinsames Bytebudget
+
+**Block A – Kameraabhängige Asset-Priorität:** Ein weicher Blickrichtungsfaktor gewichtet Textur- und Mesh-Asset-Anfragen relativ zur Third-Person-Kamera. Objekte hinter dem Betrachter werden nicht ausgeblendet; sehr nahe Objekte bleiben grundsätzlich hoch priorisiert. Die bestehenden Entfernungssortierungen und GPU-Residency-Grenzen bleiben erhalten. Das ist keine echte Frustum- oder Occlusion-Culling-Implementierung.
+
+**Block B – CPU-RAM-Texturcache:** Ein threadgeschützter 96-MiB-LRU-Cache hält vollständige dekodierte RGBA8-Bilder pro gültiger UUID vor. Der asynchrone GetTexture-Pfad arbeitet RAM → persistenter Diskcache → HTTP/Decoder. Für kleinere GPU-Mip-Basisbilder wird das dekodierte Original aus dem RAM wiederverwendet. Keine Cache-Speicherung von CAPS-URLs, Tokens oder ungültigen Bildern.
+
+**Block C – gemeinsam begrenzte GPU-Mesh-/Objekttexturbytes:** Geschätztes, softwareseitiges gemeinsames Budget von 384 MiB mit zusätzlich jeweils 256 MiB als Maximalgrenze für Mesh-Buffer und Objekttexturen. Vor GPU-Upload werden bestehende Ressourcen und ersetzte LOD-Varianten eingerechnet. Bei Überschreitung wird ein Mesh-Upload zurückgestellt; Texturen können zuerst niedrig priorisierte Texturen verdrängen. Bei freiwerdendem Speicher werden zurückgestellte Anfragen wieder berücksichtigt. Dies ist ausdrücklich keine vollständige VRAM-Bilanz: Terrain, UI, Treiber-Overhead und weitere Ressourcen sind nicht enthalten.
+
+**Block D – Streaming-Diagnose und Regressionen:** 60-s-Metriken für RAM-Treffer, RAM-Größe/Einträge, GPU-Mesh-/Texturbytes, gemeinsames geschätztes Budget und Deferred Counts. Durchschnittliche Zeit vom Asset-Worker-Start bis zur Verarbeitung der fertigen Future (keine reine Netzwerklatenz). Neue Tests für Kamera-Priorität, sicheren gemeinsamen Budget-Rechenweg sowie den parallelen Textur-RAM-LRU-Cache.
+
+**Verifikation:** C++23-Debug-Build und 38/38 automatisierte CTests erfolgreich. OpenGL-3.3-Welcome-Starttest nach Versionspflege ausführen. Kein bestätigter In-World-Test des NexVerse-Asset-Streamings.
+
+**Bewusst offen:** echte Frustum-/Occlusion-Abfrage, globale inklusive Terrain/UI gemessene VRAM-Budgetierung, inkrementeller J2C-Netzstream, Avatar-Skeleton/Bakes, Bewegungs-Synchronisierung und vollständige Teleport-/Circuit-Behandlung. Bekannte Mesh-/Texture-Serverfehler bleiben in der späteren Fehlerbehebungsphase.
+
+**Nächste 3–4 Blöcke:** Asset-Streaming-Queue/Prioritätsregeln, planbares Prefetching mit Limits, Cache-/Regions-Invalidierung und zusätzliche Mess- und In-World-Integrationsdiagnostik.
+
+Start: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl62-live.log`. Verbindlicher GitHub-Handoff-Branch: `develop-current`.
+
+Die Kamera-Gewichtung ist absichtlich weich: auch Assets im Rücken bleiben ladbar, nahe Objekte werden nicht bestraft. RAM-Cache speichert vollständige RGBA8-Bilder und wird vor dem bestehenden Diskcache angesprochen; Mip-Vorstufen entstehen pro Upload neu. Die GPU-Byte-Zahlen werden aus RGBA-Mipketten und VBO/EBO-Größen errechnet. 384 MiB sind eine von der Anwendung überwachte Obergrenze für Objekttexturen und Meshes, keine exakte VRAM-Gesamtmessung. Das System setzt kein hartes Sichtkegel-Culling um.

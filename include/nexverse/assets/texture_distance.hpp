@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #pragma once
+#include "nexverse/assets/asset_view_priority.hpp"
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -22,7 +23,8 @@ struct TextureDistanceSample
     const std::vector<TextureDistanceSample>& samples,
     float x,float y,float z,
     const std::unordered_set<std::string>& loaded,
-    float hysteresis_m = 8.0f)
+    float hysteresis_m = 8.0f,
+    const AssetCameraHint* camera = nullptr)
 {
     std::unordered_map<std::string,double> distances;
     for(const auto& item:samples)
@@ -34,9 +36,11 @@ struct TextureDistanceSample
         const double dz=static_cast<double>(item.z)-z;
         const double d=std::sqrt(dx*dx+dy*dy+dz*dz);
         if(!std::isfinite(d))continue;
+        const double weighted = d*(camera
+            ? view_priority_multiplier(*camera,item.x,item.y,item.z) : 1.0);
         const auto it=distances.find(item.id);
-        if(it==distances.end())distances.emplace(item.id,d);
-        else it->second=std::min(it->second,d);
+        if(it==distances.end())distances.emplace(item.id,weighted);
+        else it->second=std::min(it->second,weighted);
     }
     std::vector<std::pair<std::string,double>> priority;
     priority.reserve(distances.size());

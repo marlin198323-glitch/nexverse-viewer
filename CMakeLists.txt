@@ -84,6 +84,7 @@ target_link_libraries(nexverse-net PUBLIC NexVerse::Core CURL::libcurl)
 add_library(nexverse-assets
     src/assets/texture_loader.cpp
     src/assets/texture_mip.cpp
+    src/assets/texture_memory_cache.cpp
     src/assets/texture_disk_cache.cpp
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
@@ -404,6 +405,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-lod-policy-tests)
     add_test(NAME nexverse-mesh-lod-policy-tests COMMAND nexverse-mesh-lod-policy-tests)
 
+    add_executable(nexverse-asset-gpu-budget-tests tests/asset_gpu_budget_tests.cpp)
+    target_link_libraries(nexverse-asset-gpu-budget-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-gpu-budget-tests)
+    add_test(NAME nexverse-asset-gpu-budget-tests COMMAND nexverse-asset-gpu-budget-tests)
+
+    add_executable(nexverse-asset-view-priority-tests tests/asset_view_priority_tests.cpp)
+    target_link_libraries(nexverse-asset-view-priority-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-asset-view-priority-tests)
+    add_test(NAME nexverse-asset-view-priority-tests COMMAND nexverse-asset-view-priority-tests)
+
     add_executable(nexverse-mesh-residency-tests tests/mesh_residency_tests.cpp)
     target_link_libraries(nexverse-mesh-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-residency-tests)
@@ -433,6 +444,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-texture-disk-cache-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-disk-cache-tests)
     add_test(NAME nexverse-texture-disk-cache-tests COMMAND nexverse-texture-disk-cache-tests)
+
+    add_executable(nexverse-texture-memory-cache-tests tests/texture_memory_cache_tests.cpp)
+    target_link_libraries(nexverse-texture-memory-cache-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-texture-memory-cache-tests)
+    add_test(NAME nexverse-texture-memory-cache-tests COMMAND nexverse-texture-memory-cache-tests)
 
     add_executable(nexverse-texture-mip-tests tests/texture_mip_tests.cpp)
     target_link_libraries(nexverse-texture-mip-tests PRIVATE NexVerse::Assets)

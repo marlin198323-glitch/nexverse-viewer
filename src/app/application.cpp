@@ -8,6 +8,7 @@
 
 #include "nexverse/assets/texture_loader.hpp"
 #include "nexverse/assets/texture_disk_cache.hpp"
+#include "nexverse/assets/texture_memory_cache.hpp"
 #include "nexverse/assets/texture_request_priority.hpp"
 #include "nexverse/assets/texture_residency.hpp"
 #include "nexverse/assets/texture_distance.hpp"
@@ -16,6 +17,7 @@
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
+#include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
 #include "nexverse/core/version.hpp"
@@ -3349,6 +3351,13 @@ int Application::run(bool enable_developer_modules)
     std::unordered_map<std::string, assets::MeshLod> mesh_gpu_lods;
     std::unordered_map<std::string, std::size_t> mesh_gpu_asset_bytes;
     std::size_t mesh_gpu_estimated_bytes = 0U;
+    constexpr std::size_t shared_gpu_budget_bytes = 384U*1024U*1024U;
+    constexpr std::size_t mesh_gpu_budget_bytes = 256U*1024U*1024U;
+    std::unordered_set<std::string> mesh_gpu_budget_deferred_ids;
+    std::size_t mesh_gpu_budget_deferrals = 0U;
+    std::size_t mesh_worker_completions = 0U;
+    std::uint64_t mesh_worker_elapsed_ms = 0U;
+    std::chrono::steady_clock::time_point mesh_request_started{};
     std::size_t mesh_lod_swaps = 0U;
     std::uint64_t mesh_asset_request_epoch = 0U;
     std::vector<assets::MeshDistanceSample> scene_mesh_samples;
@@ -3387,6 +3396,7 @@ int Application::run(bool enable_developer_modules)
     std::uint32_t terrain_texture_request_material_revision =
         std::numeric_limits<std::uint32_t>::max();
 
+    auto texture_memory_cache = std::make_shared<assets::TextureMemoryCache>();
     std::future<assets::TextureAssetResult> object_texture_future;
     bool object_texture_loading = false;
     std::uint64_t object_texture_request_epoch = 0U;
@@ -3407,6 +3417,10 @@ int Application::run(bool enable_developer_modules)
     std::vector<assets::TextureDistanceSample> scene_texture_samples;
     assets::TextureResidencyPlan texture_residency;
     std::chrono::steady_clock::time_point last_texture_residency_plan{};
+    std::size_t texture_ram_hits = 0U;
+    std::size_t texture_worker_completions = 0U;
+    std::uint64_t texture_worker_elapsed_ms = 0U;
+    std::chrono::steady_clock::time_point texture_request_started{};
     std::size_t texture_cache_hits = 0U;
     std::size_t texture_http_loads = 0U;
     std::size_t texture_gpu_evictions = 0U;
@@ -4533,6 +4547,7 @@ int Application::run(bool enable_developer_modules)
                 mesh_gpu_lods.clear();
                 mesh_gpu_asset_bytes.clear();
                 mesh_gpu_estimated_bytes = 0U;
+                mesh_gpu_budget_deferred_ids.clear();
                 region_material_discovery_started = false;
                 render_materials_started = false;
                 render_materials_get_complete = false;
@@ -5637,6 +5652,14 @@ int Application::run(bool enable_developer_modules)
                 assets::TextureAssetResult result =
                     object_texture_future.get();
                 object_texture_loading = false;
+                if (texture_request_started.time_since_epoch().count()!=0)
+                {
+                    ++texture_worker_completions;
+                    texture_worker_elapsed_ms += static_cast<std::uint64_t>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now()-
+                            texture_request_started).count());
+                }
 
                 if (!material_scope.matches(object_texture_request_epoch))
                 {
@@ -5669,7 +5692,9 @@ int Application::run(bool enable_developer_modules)
                     const auto byte_plan = assets::plan_texture_byte_budget(
                         texture_residency.preferred_ids, texture_gpu_bytes,
                         object_texture_loading_id, next_bytes,
-                        texture_gpu_budget_bytes);
+                        assets::effective_gpu_family_budget(
+                            texture_gpu_budget_bytes,shared_gpu_budget_bytes,
+                            mesh_gpu_estimated_bytes));
                     const bool new_asset =
                         !object_texture_loaded_ids.contains(
                             object_texture_loading_id);
@@ -5700,6 +5725,7 @@ int Application::run(bool enable_developer_modules)
                                 texture_gpu_bytes.erase(it);
                             }
                             ++texture_gpu_evictions;
+                            mesh_gpu_budget_deferred_ids.clear();
                         }
                         const bool was_loaded =
                             object_texture_loaded_ids.contains(
@@ -5713,16 +5739,24 @@ int Application::run(bool enable_developer_modules)
                         if (const auto old = texture_gpu_bytes.find(
                                 object_texture_loading_id);
                             old != texture_gpu_bytes.end())
+                        {
+                            if (next_bytes < old->second)
+                                mesh_gpu_budget_deferred_ids.clear();
                             texture_gpu_used_bytes -= old->second;
+                        }
                         texture_gpu_bytes[object_texture_loading_id] =
                             next_bytes;
                         texture_gpu_used_bytes += next_bytes;
+                        // A texture upload can narrow remaining GPU headroom.
+                        // Reconsider mesh deferrals after later evictions.
                         texture_gpu_mips[object_texture_loading_id] =
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
                         if (was_loaded) ++texture_mip_swaps;
-                        if (result.message == "Disk texture cache hit")
+                        if (result.message == "RAM texture cache hit")
+                            ++texture_ram_hits;
+                        else if (result.message == "Disk texture cache hit")
                             ++texture_cache_hits;
                         else ++texture_http_loads;
                         core::info(
@@ -5772,10 +5806,15 @@ int Application::run(bool enable_developer_modules)
                     texture_budget_deferred_ids.clear();
                     texture_desired_mips = std::move(planned_mips);
                 }
+                const auto view = render_camera_from_agent(render_agent);
+                const assets::AssetCameraHint camera_hint{
+                    view.center.x,view.center.y,view.center.z,
+                    view.at.x,view.at.y,view.at.z};
                 const auto nearby_textures = assets::rank_texture_distances(
                     scene_texture_samples,
                     render_agent.position.x,render_agent.position.y,
-                    render_agent.position.z,object_texture_loaded_ids);
+                    render_agent.position.z,object_texture_loaded_ids,
+                    8.0f,&camera_hint);
                 auto updated_residency = assets::plan_texture_residency(
                     emitter_texture_ids, nearby_textures,
                     object_texture_loaded_ids, max_object_texture_assets);
@@ -5799,6 +5838,7 @@ int Application::run(bool enable_developer_modules)
                     ++evicted;
                 }
                 texture_gpu_evictions += evicted;
+                if(evicted>0U) mesh_gpu_budget_deferred_ids.clear();
                 if(evicted>0U)
                     core::info("GetTexture GPU residency evicted=" +
                         std::to_string(evicted));
@@ -5837,32 +5877,47 @@ int Application::run(bool enable_developer_modules)
                         desired_mip == texture_desired_mips.end()
                             ? 0U : desired_mip->second;
                     object_texture_loading = true;
+                    texture_request_started = std::chrono::steady_clock::now();
                     object_texture_request_epoch = material_scope.epoch();
                     const std::string capability = texture_capability;
                     const std::string requested_id = *texture_id;
                     object_texture_future = std::async(
                         std::launch::async,
                         [transport, capability, requested_id,
-                         mip=object_texture_loading_mip]()
+                         mip=object_texture_loading_mip, texture_memory_cache]()
                         {
                             assets::TextureDiskCache disk{
                                 assets::TextureDiskCache::default_directory()};
                             assets::TextureAssetResult result;
-                            if (const auto cached = disk.load(requested_id))
+                            if (const auto cached =
+                                    texture_memory_cache->load(requested_id))
                             {
                                 result.success = true;
                                 result.asset_id = requested_id;
-                                result.image = *cached;
+                                result.image = std::move(*cached);
+                                result.message = "RAM texture cache hit";
+                            }
+                            else if (const auto disk_cached = disk.load(requested_id))
+                            {
+                                result.success = true;
+                                result.asset_id = requested_id;
+                                result.image = *disk_cached;
                                 result.message = "Disk texture cache hit";
+                                (void)texture_memory_cache->store(
+                                    requested_id,result.image);
                             }
                             else
                             {
                                 assets::TextureAssetLoader loader{transport};
                                 result=loader.fetch_rgba(capability,requested_id);
-                                // Preserve full resolution on disk even if
-                                // this view uses only a low-res base mip.
+                                // Both tiers store full decoded image, never
+                                // the reduced GPU upload mip.
                                 if(result.success && result.image.valid())
+                                {
+                                    (void)texture_memory_cache->store(
+                                        requested_id,result.image);
                                     (void)disk.store(requested_id,result.image);
+                                }
                             }
                             if(result.success && result.image.valid() && mip>0U)
                             {
@@ -5886,8 +5941,19 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::seconds{60})
             {
                 last_texture_telemetry = texture_plan_now;
-                core::info("GetTexture streaming metrics: disk_hits=" +
-                    std::to_string(texture_cache_hits) +
+                core::info("GetTexture streaming metrics: ram_hits=" +
+                    std::to_string(texture_ram_hits) +
+                    " ram_assets=" +
+                    std::to_string(texture_memory_cache->count()) +
+                    " ram_bytes=" +
+                    std::to_string(texture_memory_cache->bytes()) +
+                    " worker_completions=" +
+                    std::to_string(texture_worker_completions) +
+                    " avg_worker_elapsed_ms=" +
+                    std::to_string(texture_worker_completions
+                        ? texture_worker_elapsed_ms/texture_worker_completions
+                        : 0U) +
+                    " disk_hits=" + std::to_string(texture_cache_hits) +
                     " network_loads=" + std::to_string(texture_http_loads) +
                     " gpu_evictions=" + std::to_string(texture_gpu_evictions) +
                     " mip_swaps=" +
@@ -5917,13 +5983,20 @@ int Application::run(bool enable_developer_modules)
                     scene_mesh_samples,
                     render_agent.position.x, render_agent.position.y,
                     render_agent.position.z, mesh_desired_lods);
+                const auto view = render_camera_from_agent(render_agent);
+                const assets::AssetCameraHint camera_hint{
+                    view.center.x,view.center.y,view.center.z,
+                    view.at.x,view.at.y,view.at.z};
+                const auto desired_before = mesh_residency.desired_ids;
                 mesh_residency = assets::plan_mesh_residency(
                     scene_mesh_samples,
                     render_agent.position.x,
                     render_agent.position.y,
                     render_agent.position.z,
                     mesh_asset_loaded_ids,
-                    mesh_gpu_asset_budget);
+                    mesh_gpu_asset_budget,24.0f,&camera_hint);
+                if (mesh_residency.desired_ids != desired_before)
+                    mesh_gpu_budget_deferred_ids.clear();
 
                 // Evict in small batches to avoid long OpenGL stalls. The
                 // next frame can immediately start loading newly relevant
@@ -5942,6 +6015,8 @@ int Application::run(bool enable_developer_modules)
                         mesh_gpu_asset_bytes.erase(it);
                     }
                     ++mesh_gpu_evictions;
+                    mesh_gpu_budget_deferred_ids.clear();
+                    texture_budget_deferred_ids.clear();
                     ++evicted;
                 }
                 if (evicted > 0U)
@@ -5959,6 +6034,14 @@ int Application::run(bool enable_developer_modules)
                     std::future_status::ready)
             {
                 auto completed_mesh = mesh_asset_future.get();
+                if (mesh_request_started.time_since_epoch().count()!=0)
+                {
+                    ++mesh_worker_completions;
+                    mesh_worker_elapsed_ms += static_cast<std::uint64_t>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now()-
+                            mesh_request_started).count());
+                }
                 assets::MeshAssetResult result = std::move(completed_mesh.asset);
                 if (!material_scope.matches(mesh_asset_request_epoch))
                 {
@@ -5983,6 +6066,28 @@ int Application::run(bool enable_developer_modules)
                         result.geometry.indices.size()*sizeof(std::uint32_t);
                     const bool replacement =
                         mesh_gpu_lods.contains(mesh_asset_loading_id);
+                    const auto current_bytes = mesh_gpu_asset_bytes.find(
+                        mesh_asset_loading_id);
+                    const std::size_t old_bytes =
+                        current_bytes==mesh_gpu_asset_bytes.end()
+                            ? 0U : current_bytes->second;
+                    const std::size_t budget =
+                        assets::effective_gpu_family_budget(
+                            mesh_gpu_budget_bytes,shared_gpu_budget_bytes,
+                            texture_gpu_used_bytes);
+                    if (!assets::can_replace_gpu_bytes(
+                            mesh_gpu_estimated_bytes,old_bytes,
+                            gpu_bytes,budget))
+                    {
+                        mesh_gpu_budget_deferred_ids.insert(
+                            mesh_asset_loading_id+"."+
+                            std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
+                        ++mesh_gpu_budget_deferrals;
+                        core::warning("Deferred GetMesh GPU upload due to "
+                            "combined mesh/texture byte budget");
+                    }
+                    else
+                    {
                     render::RenderMeshGeometry geometry;
                     geometry.vertices = std::move(result.geometry.vertices);
                     geometry.indices = std::move(result.geometry.indices);
@@ -6000,6 +6105,8 @@ int Application::run(bool enable_developer_modules)
                             mesh_gpu_estimated_bytes -= old->second;
                         mesh_gpu_asset_bytes[mesh_asset_loading_id] = gpu_bytes;
                         mesh_gpu_estimated_bytes += gpu_bytes;
+                        if (gpu_bytes < old_bytes)
+                            texture_budget_deferred_ids.clear();
                         mesh_gpu_lods[mesh_asset_loading_id] =
                             mesh_asset_loading_lod;
                         switch (completed_mesh.tier)
@@ -6022,6 +6129,7 @@ int Application::run(bool enable_developer_modules)
                             "." + std::string(assets::mesh_lod_name(mesh_asset_loading_lod)));
                         core::warning("GetMesh GPU upload failed for " +
                             mesh_asset_loading_id);
+                    }
                     }
                 }
                 else
@@ -6053,8 +6161,11 @@ int Application::run(bool enable_developer_modules)
                         mesh_asset_loaded_ids.size() >= mesh_gpu_asset_budget)
                         continue;
                     if (mesh_asset_failed_ids.contains(id + "." +
+                        std::string(assets::mesh_lod_name(lod))) ||
+                        mesh_gpu_budget_deferred_ids.contains(id + "." +
                         std::string(assets::mesh_lod_name(lod)))) continue;
                     mesh_asset_loading_id = id;
+                    mesh_request_started = std::chrono::steady_clock::now();
                     mesh_asset_loading_lod = lod;
                     mesh_asset_request_epoch = material_scope.epoch();
                     const std::string cap = scoped_get_mesh_uri;
@@ -6093,6 +6204,18 @@ int Application::run(bool enable_developer_modules)
                     " ram_assets=" + std::to_string(mesh_memory_cache->count()) +
                     " lod_swaps=" + std::to_string(mesh_lod_swaps) +
                     " gpu_estimated_bytes=" + std::to_string(mesh_gpu_estimated_bytes) +
+                    " shared_gpu_estimated_bytes=" +
+                    std::to_string(mesh_gpu_estimated_bytes +
+                        texture_gpu_used_bytes) +
+                    " shared_gpu_byte_budget=" +
+                    std::to_string(shared_gpu_budget_bytes) +
+                    " mesh_budget_deferrals=" +
+                    std::to_string(mesh_gpu_budget_deferrals) +
+                    " worker_completions=" +
+                    std::to_string(mesh_worker_completions) +
+                    " avg_worker_elapsed_ms=" +
+                    std::to_string(mesh_worker_completions
+                        ? mesh_worker_elapsed_ms/mesh_worker_completions : 0U) +
                     " gpu_resident=" +
                     std::to_string(mesh_asset_loaded_ids.size()) +
                     " gpu_budget=" + std::to_string(mesh_gpu_asset_budget));
