@@ -12,6 +12,7 @@
 #include "nexverse/assets/texture_residency.hpp"
 #include "nexverse/assets/texture_distance.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
+#include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
@@ -3338,7 +3339,8 @@ int Application::run(bool enable_developer_modules)
     std::string scoped_get_texture_uri;
     std::string scoped_get_mesh_uri;
     std::string scoped_get_mesh_alt_uri;
-    std::future<assets::MeshAssetResult> mesh_asset_future;
+    auto mesh_memory_cache = std::make_shared<assets::MeshMemoryCache>();
+    std::future<assets::CachedMeshResult> mesh_asset_future;
     std::string mesh_asset_loading_id;
     std::uint64_t mesh_asset_request_epoch = 0U;
     std::vector<assets::MeshDistanceSample> scene_mesh_samples;
@@ -3347,6 +3349,11 @@ int Application::run(bool enable_developer_modules)
     constexpr std::size_t mesh_gpu_asset_budget = 256U;
     std::unordered_set<std::string> mesh_asset_loaded_ids;
     std::unordered_set<std::string> mesh_asset_failed_ids;
+    std::size_t mesh_ram_hits = 0U;
+    std::size_t mesh_disk_hits = 0U;
+    std::size_t mesh_network_loads = 0U;
+    std::size_t mesh_gpu_evictions = 0U;
+    std::chrono::steady_clock::time_point last_mesh_telemetry{};
     std::future<protocol::RenderMaterialsResult> render_materials_future;
     std::uint64_t render_materials_get_epoch = 0U;
     std::uint64_t render_materials_post_epoch = 0U;
@@ -5768,6 +5775,7 @@ int Application::run(bool enable_developer_modules)
                     if (evicted >= 8U) break;
                     world_renderer->remove_mesh_asset(id);
                     mesh_asset_loaded_ids.erase(id);
+                    ++mesh_gpu_evictions;
                     ++evicted;
                 }
                 if (evicted > 0U)
@@ -5784,7 +5792,8 @@ int Application::run(bool enable_developer_modules)
                 mesh_asset_future.wait_for(std::chrono::seconds{0}) ==
                     std::future_status::ready)
             {
-                assets::MeshAssetResult result = mesh_asset_future.get();
+                auto completed_mesh = mesh_asset_future.get();
+                assets::MeshAssetResult result = std::move(completed_mesh.asset);
                 if (!material_scope.matches(mesh_asset_request_epoch))
                 {
                     core::info("Discarded stale GetMesh response");
@@ -5806,6 +5815,12 @@ int Application::run(bool enable_developer_modules)
                             mesh_asset_loading_id, geometry))
                     {
                         mesh_asset_loaded_ids.insert(mesh_asset_loading_id);
+                        switch (completed_mesh.tier)
+                        {
+                        case assets::MeshCacheTier::memory: ++mesh_ram_hits; break;
+                        case assets::MeshCacheTier::disk: ++mesh_disk_hits; break;
+                        case assets::MeshCacheTier::network: ++mesh_network_loads; break;
+                        }
                         core::info(
                             "GetMesh loaded " + mesh_asset_loading_id +
                             "; " + result.message +
@@ -5844,14 +5859,38 @@ int Application::run(bool enable_developer_modules)
                     const std::string alt_cap = scoped_get_mesh_alt_uri;
                     mesh_asset_future = std::async(
                         std::launch::async,
-                        [transport, cap, alt_cap, id]()
+                        [transport, cap, alt_cap, id, mesh_memory_cache]()
                         {
-                            return assets::MeshAssetLoader{transport}
-                                .fetch(cap, id, alt_cap);
+                            assets::MeshDiskCache disk{
+                                assets::MeshDiskCache::default_directory()};
+                            return assets::load_mesh_cached(id,
+                                *mesh_memory_cache,disk,
+                                [&transport,&cap,&alt_cap,&id]()
+                                {
+                                    return assets::MeshAssetLoader{transport}
+                                        .fetch(cap,id,alt_cap);
+                                });
                         });
                     core::info("GetMesh request started for " + id);
                     break;
                 }
+            }
+
+            if (last_mesh_telemetry.time_since_epoch().count() == 0 ||
+                mesh_plan_now - last_mesh_telemetry >=
+                    std::chrono::seconds{60})
+            {
+                last_mesh_telemetry = mesh_plan_now;
+                core::info("GetMesh streaming metrics: ram_hits=" +
+                    std::to_string(mesh_ram_hits) +
+                    " disk_hits=" + std::to_string(mesh_disk_hits) +
+                    " network_loads=" + std::to_string(mesh_network_loads) +
+                    " gpu_evictions=" + std::to_string(mesh_gpu_evictions) +
+                    " ram_bytes=" + std::to_string(mesh_memory_cache->bytes()) +
+                    " ram_assets=" + std::to_string(mesh_memory_cache->count()) +
+                    " gpu_resident=" +
+                    std::to_string(mesh_asset_loaded_ids.size()) +
+                    " gpu_budget=" + std::to_string(mesh_gpu_asset_budget));
             }
 
             world_renderer->set_point_lights(scene_point_lights);

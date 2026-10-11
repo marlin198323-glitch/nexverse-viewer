@@ -175,3 +175,20 @@ die tatsächliche Anzahl von Meshes der NexVerse-Region.
   bleiben eigenständige Entwicklungsblöcke.
 
 Live-Test: ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl51-live.log
+
+
+## alpha.59 – Mesh-Cache-Pipeline · 11.10.2026
+
+Die neuen Dateien `include/nexverse/assets/mesh_cache.hpp` und
+`src/assets/mesh_cache.cpp` kapseln Disk- und RAM-Residency
+unabhängig vom OpenGL-Backend. Ein Worker-Future liefert
+`CachedMeshResult` mit typisierter Herkunft aus Memory/Disk/Netz.
+CPU-Geometrie überlebt dadurch GPU-Mesh-Eviction, sofern sie noch
+im 64-MiB-RAM-LRU oder 512-MiB-Disk-LRU enthalten ist.
+
+Die GPU erhält weiterhin nur Daten aus der gültigen
+Region-Epoche und Desired-Residency. Keine neue
+Mesh-LOD-Decodierung, Rigging, Skinning, Animesh oder
+Behebung der zuvor defekten Serverassets. Test:
+`tests/mesh_cache_tests.cpp`; 33/33 CTests grün,
+OpenGL-Welcome-Smoke erfolgreich; In-World-Test offen.

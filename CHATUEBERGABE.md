@@ -1,6 +1,6 @@
 # OpenGenesisLINK Viewer – Chat-Übergabe
 
-Stand: 10.10.2026
+Stand: 11.10.2026
 
 ## 1. Projekt
 
@@ -31,7 +31,7 @@ Keine destruktiven Resets/Cleans gegen den lokalen Stand.
 
 ## 3. Aktueller Code-Stand
 
-Version: `0.2.0-alpha.58`
+Version: `0.2.0-alpha.59`
 
 Letzter wesentlicher Codecommit vor den Planungscommits:
 `6f4d9c4 feat: support OpenSim planar texture mapping`
@@ -896,3 +896,42 @@ Speicherbudget und anschließend Avatar-Funktionssysteme.
 
 Live-Befehl:
 ./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl58-live.log
+
+
+## 0.2.0-alpha.59 – GitHub-Handoff · 11.10.2026
+
+**Block A – persistente Mesh-Dateien:** 512 MiB Diskbudget,
+Versionmagic OGLMESH1, Little-Endian, UUID-gebundene FNV64-
+Integritätsprüfung, Größen-/Index-/Face-Checks und MTime-LRU.
+Keine CAPS-Token/URL-Cachedaten.
+
+**Block B – Mesh-RAM-LRU:** threadgeschützte CPU-Geometry-
+Residency mit 64 MiB Bytebudget und LRU-Eviction. Durch
+GPU-Eviction entfernte Meshes können ohne HTTP erneut
+aus dem RAM geladen werden.
+
+**Block C – Integration:** asynchroner Ladepfad RAM → Disk →
+GetMesh2/GetMesh; Region-/Epochenschutz und GPU-Budget 256
+Meshes (max. acht Evictions je Planung) unverändert.
+
+**Block D – Telemetrie und Tests:** getypte Cacheherkunft,
+60s-Metriken über erfolgreiche GPU-Uploads nach Quelle,
+CPU-RAM-Bytes und GPU-Slots. Manipulations-, Neustart-,
+UUID-, LRU-/Budget- und Fehler-Fallback-Tests.
+CMake Debug C++23, **33/33 CTests bestanden**,
+OpenGL 3.3 GUI-Starttest auf NVIDIA RTX 4070 SUPER mit
+NexVerse-Welcome erfolgreich; Timeout 124 erwartungsgemäß.
+
+**Noch offen:** In-World-Abnahme, echtes Mesh-LOD-Streaming,
+GPU/CPU-Bytebudget und Texture-Mip-Streaming.
+Avatar-LocalID, WASD, Skeleton/Bakes, defekte Server-Mesh-/
+Texturassets und Regions-Teleport bleiben auf Nutzerwunsch
+bis zur Bugfixphase zurückgestellt.
+`projectplan.md` bleibt verbindlich.
+Live: `./build/debug/nexverse-viewer 2>&1 | tee /tmp/ogl59-live.log`.
+
+Arbeitsstand zu Beginn: `b5271bc` auf `develop-current`.
+Nächste 3–4 Blöcke: echte Mesh-LOD-/Mip-Stufen und
+GPU-/CPU-Bytebudgets. Vor jedem weiteren Commit
+Git-Status prüfen, keine destruktiven Resets/Cleans;
+CMake Debug, CTest und GUI-Smoke nach Änderungen.

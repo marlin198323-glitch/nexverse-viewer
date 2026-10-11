@@ -87,3 +87,42 @@ Limits:
 Neue Tests: texture_disk_cache_tests, texture_distance_tests;
 mesh_residency_tests deckt jetzt Size-Weight ab.
 Gesamt 32/32 Tests erfolgreich.
+
+
+## Ausbau alpha.59 – Mesh-RAM-/Disk-Cache · 11.10.2026
+
+Die Phase-9-Assetkette für Meshes lautet: RAM (64 MiB LRU) → Disk
+(512 MiB LRU) → authentifizierter GetMesh2/GetMesh-CAPS-Abruf.
+Die Caches enthalten dekodierte `MeshGeometry` (Vertices, Indices,
+Face-Ranges) und nicht die ursprünglichen LLSD/zlib-Assets.
+GetMesh-CAPS-URLs oder Passwörter werden nicht gespeichert.
+
+Der persistente Cache unter
+`$XDG_CACHE_HOME/opengenesislink/meshes-v1` oder
+`$HOME/.cache/opengenesislink/meshes-v1` verwendet
+Magic `OGLMESH1`, Little-Endian, feste Zähl- und Größenlimits
+und einen UUID-gebundenen FNV64-Inhaltshash. Die Prüfsumme
+ist nicht kryptografisch. Nach Dateigrößen-/Hashfehlern,
+Fremd-UUID oder ungültiger Geometrie wird neu heruntergeladen.
+Limits: 200.000 Vertices, 1.200.000 Indices, 64 Face-Ranges,
+rund 11,2 MiB Geometriedaten je Asset. Symlink-Dateien
+werden bei Cache-Lesezugriffen nicht befolgt.
+
+RAM wird durch threadgeschützte echte LRU nach Bytes eviktiert;
+Disk durch Last-Write-Time als Access-Näherung. Cachetreffer
+bleiben auch nach GPU-Eviction oder Regionswechsel verfügbar.
+Bei GPU-Upload gelten weiter die bestehenden Region-Epochen,
+aktuelle Residency und 256-Mesh-Slots. Pro Runde werden bis
+zu acht entfernte GPU-Meshes freigegeben.
+
+`GetMesh streaming metrics` erfasst erfolgreiche GPU-Uploads
+nach Quelle RAM/Disk/Netz, GPU-Evictions und RAM-/GPU-Belegung.
+Nicht in die GPU hochgeladene Antworten zählen nicht als
+erfolgreicher Netzwerk-GPU-Load.
+
+Tests: `nexverse-mesh-cache-tests` mit Datei-/Hash-Manipulation,
+Neustart, UUID-Bindung, Disk-/RAM-LRU, Cache-Fallback und
+Fehlerfällen. Gesamt: 33/33 CTests und Linux-GL3.3-Smoke.
+Offen: echter authentifizierter NexVerse-Mesh-Sichttest,
+LOD-Chunk-/Texture-Mip-Streaming, echte GPU-Bytebudgets,
+Asset-Revision/ETag, Rigging und die gesonderte Bugfixphase.

@@ -86,6 +86,7 @@ add_library(nexverse-assets
     src/assets/texture_disk_cache.cpp
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
+    src/assets/mesh_cache.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
 target_include_directories(nexverse-assets PUBLIC
@@ -391,6 +392,11 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-mesh-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-loader-tests)
     add_test(NAME nexverse-mesh-loader-tests COMMAND nexverse-mesh-loader-tests)
+
+    add_executable(nexverse-mesh-cache-tests tests/mesh_cache_tests.cpp)
+    target_link_libraries(nexverse-mesh-cache-tests PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-mesh-cache-tests)
+    add_test(NAME nexverse-mesh-cache-tests COMMAND nexverse-mesh-cache-tests)
 
     add_executable(nexverse-mesh-residency-tests tests/mesh_residency_tests.cpp)
     target_link_libraries(nexverse-mesh-residency-tests PRIVATE NexVerse::Assets)
