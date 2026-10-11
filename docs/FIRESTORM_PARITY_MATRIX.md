@@ -211,3 +211,19 @@ Aktuell abgeglichene Quellen: OpenGenesisLINK main
 885fa72a10fec770d6dc1220f08766437159a084 und offizieller
 Firestorm Releasebranch Firestorm_7.2.4
 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+
+
+## Alpha.87 – Server-Inventory BulkUpdateInventory
+
+| Firestorm-Einzelfunktion | Protokoll / OGL | Status |
+|---|---|---|
+| CAPS BulkUpdateInventory Event | Validierter AgentData/ItemData/FolderData Eventparser | tested_synthetic, Live unbestätigt |
+| Folder Cache-Invalidierung | Owner- und epochgebundene MainThread Inbox mit begrenztem Speicher | tested_synthetic |
+| F10 Inhaltsaktualisierung | Dirty Folder und HTTP Invalidation-Revision; CAPS nachladen | tested_synthetic |
+| F9 Outfit-Galerie-Aktualisierung | Stale Reply Ablehnung und read-only Refresh mit Coalescing | tested_synthetic |
+| F10 Einzelitem Parent-Validierung | FetchInventory2 mit geprüftem erwarteten parent_id | tested_synthetic |
+| Teleport auf neue Region | Alter EventQueue-Poll wird invalidiert | partial: Neuer Circuit/EventQueue offen |
+| Vollständige Firestorm-Inventory-Edits und Outfit-Wear | Noch keine Wear-/COF-Mutation | not_implemented |
+
+Quellen: OpenGenesisLINK main ed37b9db720924c1d7105ea499a8c96430e9b7ea;
+Firestorm Firestorm_7.2.4 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.

@@ -1489,3 +1489,61 @@ Attachment-/Appearance-Rechtemodell und Lifecycle; interaktive InWorld-
 Abnahme inkl. Avatar, Bewegung, Mesh und EventQueue. Projektplan und
 Firestorm-Funktionsbaseline bleiben verbindlich.
 Branch: develop-current, Repo: marlin198323-glitch/nexverse-viewer.
+
+
+## 0.2.0-alpha.87 – Firestorm/OpenSim Inventory EventQueue und Rechte · 11.10.2026
+
+**Block 1 – echter Server-EventQueue-Vertrag:** Die OpenGenesisLINK
+EventQueueGetHandlers.cs sendet BulkUpdateInventory mit AgentData.AgentID,
+ItemData.ItemID/FolderID/OwnerID und FolderData.FolderID/ParentID.
+Null-UUID-Folderdaten sind beim Item-Event Dummy-Records, kein
+Inventarordner. Der neue Parser firestorm_inventory_events.cpp prüft
+den authentifizierten Agent, einzelne Itembesitzer, UUID-Formate sowie
+Arraygrenzen bis 512. Ungültige/fremde Daten werden nicht übernommen.
+
+**Block 2 – Thread-/Regionsgrenzen:** Eine mutexgeschützte
+InventoryEventInbox übergibt bis zu 256 eindeutige Folder-IDs vom
+EventQueue-Netzwerkthread an den OpenGL-Main-Thread. Bei Overflow
+wird ein begrenzter vollständiger erneuter read-only Abruf markiert.
+Alte Regionsepochen werden abgelehnt. Ein veralteter Login-
+EventQueue-Poll wird nach Teleport/Crossing nicht weiter betrieben.
+Die vollständige neue LLUDP-/CAPS-EventQueue-Anmeldung ist noch offen.
+
+**Block 3 – F9/F10 inkrementelle Aktualisierung:** Echte Eventhints
+invalidieren betroffene F10-Folder und markieren diese für einen
+erneuten CAPS-Request. Eine Invalidierungsrevision schützt die
+asynchronen F10-Antworten vor einem neueren Ereignis. Für F9 werden
+veraltete FetchInventoryDescendents2-Antworten ebenso abgelehnt;
+eine begrenzte read-only Refresh-Anfrage folgt einem Ereignis
+frühestens zwei Sekunden nach der letzten Abfrage. Kein Event wird
+direkt als Inventardaten oder ein erfolgreicher Wear-Vorgang benutzt.
+
+**Block 4 – F10 Item-Folder- und Auswahlprüfung:** FetchInventory2
+validiert optional die parent_id eines im ausgewählten F10-Folder
+angefragten Items zusätzlich zu Besitzer und Region. Eine ungültige
+erwartete Folder-UUID blockiert bereits vor HTTP. Verschobene Items
+oder verspätete Ergebnisse dürfen nicht als aktuelle Itemdetails
+unter anderem ausgewähltem Item erscheinen. F9 bleibt ownergebunden.
+
+Die neuen Negativtests pruefen synthetische EventQueue-Responses mit
+Fremd-Owner, falschen Foldern, Dummy-Foldern, falschem Parent, zu
+grossen Arrays, Regionsepoche und Overflow. Debug C++23 plus nun
+81 CTests sind vor Release komplett erneut auszuführen. Ein
+bestandenes CTest ist nur tested_synthetic, nicht live_verified.
+
+Geprüfte Codequelle OpenGenesisLINK main:
+ed37b9db720924c1d7105ea499a8c96430e9b7ea.
+Gegenüber Alpha.86 nur ein Economy-/Hypergrid-Commit; Inventory-
+Protokoll unverändert. Firestorm offizieller Releasebranch
+Firestorm_7.2.4:
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+OGL ist weiterhin ein eigenständiger C++23-Viewer, kein vollständiger
+Firestorm-Quellcodefork. Firestorm-Funktionsparität ist verbindlich.
+
+Nächste Blöcke: Regionswechsel einschließlich neuem Simulator-
+Circuit und CAPS/EventQueue-Lifecycle; authentifizierte Avatar-,
+WASD- und Mesh-InWorld-Abnahme; sonstige Inventory-LLUDP-Änderungs-
+und Löschpfade; COF-/Wearables-/Attachment-Protokoll mit tatsächlichen
+Serverrechten und einem Avatar-Appearance-Readback. Projektplan
+und Firestorm-Paritätsmatrix bleiben verbindlich.
+GitHub Branch: develop-current (nicht develop).

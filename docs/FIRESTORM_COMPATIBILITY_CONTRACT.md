@@ -173,3 +173,17 @@ Vier zusammengehörende Firestorm-Paritätsblöcke:
 **Tests und Grenzen:** Für Alpha.85 wurden neue CTests `firestorm-inventory-items-tests` und `firestorm-inventory-tree-wear-tests` integriert sowie Forget-/COF-/F10-Owner-/Region-Regressionen erweitert. Insgesamt 80 CTests geplant und im finalen Debug-C++23-Versions-Neubau mit echten GPU-Tests zu prüfen. Ein synthetischer HTTP-Fixture-Test ist `tested_synthetic`, nicht `live_verified`. Der GUI-Welcome-Smoke verifiziert nicht die post-login F8/F9/F10-Fenster; echtes NexVerse-InWorld-Testing, Avatar, Bewegung, EventQueue/Teleport, Meshes und Outfit-Wear bleiben als nicht abgenommen markiert.
 
 **Nächste 3–4 Blöcke Alpha.86:** Echte Firestorm-COF-/Wearable-Asset- und Attachment-Transaktion anhand `llappearancemgr.cpp` und OpenGenesisLINK-Serverrechten entwerfen/implementieren und mit Live-Avatar-Readback absichern; den F10-Baum um gezielten Item-Readback und Folder-EventQueue-Änderungen ergänzen; Experience-Consent-/Avatar-/Permission-Dialoge gegen aktuellen Simulator robuster machen; authentifizierte In-World-Abnahme (Avatar, WASD, Mesh und EventQueue) mit realem Grid-Zugang priorisieren. Volle Firestorm-Funktionsparität bleibt die verbindliche Baseline.
+
+
+## Alpha.87 – OpenGenesisLINK Inventory Event-Vertrag
+
+EventQueueGetHandlers.cs, OpenGenesisLINK main
+ed37b9db720924c1d7105ea499a8c96430e9b7ea, sendet
+BulkUpdateInventory als AgentData-AgentID, ItemData-ItemID/FolderID/
+OwnerID und ggf. FolderData-FolderID/ParentID. Die synthetische
+Null-UUID-FolderData beim Item-Event ist zu ignorieren. OGL akzeptiert
+die Nachricht nur als epochgebundenes Readback-Invalidierungssignal;
+der serverautorisierte CAPS-GET/POST liefert den eigentlichen Zustand.
+FetchInventory2 liest im F10 zusätzlich die parent_id. Der Viewer
+führt keine automatische Inventory- oder COF-Mutation aus; ein neuer
+Region-Circuit/EventQueue-Wiederaufbau bleibt noch unvollständig.

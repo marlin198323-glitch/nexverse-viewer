@@ -31,6 +31,7 @@ struct InventoryTreeSnapshot
 struct InventoryFolderRead
 {
     std::uint64_t epoch=0U;
+    std::uint64_t invalidation_revision=0U;
     std::string folder_id;
     bool valid=false;
     std::uint64_t version=0;

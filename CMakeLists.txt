@@ -121,6 +121,7 @@ add_library(nexverse-protocol
     src/protocol/firestorm_experience_permissions.cpp
     src/protocol/firestorm_inventory_items.cpp
     src/protocol/firestorm_inventory_tree.cpp
+    src/protocol/firestorm_inventory_events.cpp
     src/protocol/firestorm_outfit_wear_preflight.cpp
     src/protocol/firestorm_inventory_gallery.cpp
     src/protocol/firestorm_inventory_fetch.cpp
@@ -370,6 +371,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-firestorm-inventory-tree-wear-tests)
     add_test(NAME nexverse-firestorm-inventory-tree-wear-tests
         COMMAND nexverse-firestorm-inventory-tree-wear-tests)
+
+    add_executable(nexverse-firestorm-inventory-events-tests
+        tests/firestorm_inventory_events_tests.cpp)
+    target_link_libraries(nexverse-firestorm-inventory-events-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-inventory-events-tests)
+    add_test(NAME nexverse-firestorm-inventory-events-tests
+        COMMAND nexverse-firestorm-inventory-events-tests)
 
     add_executable(nexverse-firestorm-inventory-items-tests
         tests/firestorm_inventory_items_tests.cpp)

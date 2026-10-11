@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <set>
+#include <limits>
 
 namespace nexverse::protocol
 {
@@ -30,10 +31,12 @@ std::optional<std::string> build_fetch_inventory2_request(
 }
 InventoryItemFetch parse_fetch_inventory2(
     const LlsdValue& response,std::string_view owner,
-    const std::vector<std::string>& ids)
+    const std::vector<std::string>& ids,std::string_view expected_parent)
 {
     InventoryItemFetch output;
-    if(!uuid_to_bytes(owner)||!response.is_map())return output;
+    if(!uuid_to_bytes(owner)||!response.is_map()||
+       (!expected_parent.empty()&&!uuid_to_bytes(expected_parent)))
+        return output;
     const auto* agent=response.find("agent_id");
     const auto* items=response.find("items");
     if(!agent||uuid_to_bytes(agent->as_string())!=uuid_to_bytes(owner)||
@@ -51,22 +54,35 @@ InventoryItemFetch parse_fetch_inventory2(
         const auto* perm=item.find("permissions");
         if(!id||!uuid_to_bytes(id->as_string())||
            !requested.contains(std::string{id->as_string()})||
-           !seen.insert(std::string{id->as_string()}).second ||
+           seen.contains(std::string{id->as_string()}) ||
            !name||name->type!=LlsdType::string||
            name->string_value.empty()||name->string_value.size()>128U ||
            !type||type->type!=LlsdType::integer ||
+           type->integer_value<std::numeric_limits<std::int32_t>::min()||
+           type->integer_value>std::numeric_limits<std::int32_t>::max()||
            !inv||inv->type!=LlsdType::integer ||
+           inv->integer_value<std::numeric_limits<std::int32_t>::min()||
+           inv->integer_value>std::numeric_limits<std::int32_t>::max()||
            !perm||!perm->is_map())
             continue;
         const auto* item_owner=perm->find("owner_id");
         if(!item_owner||
            uuid_to_bytes(item_owner->as_string())!=uuid_to_bytes(owner))
             continue;
+        if(!expected_parent.empty())
+        {
+            const auto* parent=item.find("parent_id");
+            if(!parent||
+               uuid_to_bytes(parent->as_string())!=
+                   uuid_to_bytes(expected_parent))
+                continue;
+        }
         std::string clean{name->string_value};
         clean.erase(std::remove_if(clean.begin(),clean.end(),
             [](unsigned char ch){return ch<32U||ch==127U;}),
             clean.end());
         if(clean.empty())continue;
+        seen.insert(std::string{id->as_string()});
         const auto* asset=item.find("asset_id");
         output.items.push_back({std::string{id->as_string()},
             asset&&uuid_to_bytes(asset->as_string())
@@ -82,10 +98,12 @@ InventoryItemFetch fetch_inventory2(
     const std::shared_ptr<net::IHttpTransport>& transport,
     std::string_view uri,std::string_view owner,
     const std::vector<std::string>& ids,
-    std::uint64_t epoch,const FirestormRegionLease& lease)
+    std::uint64_t epoch,const FirestormRegionLease& lease,
+    std::string_view expected_parent)
 {
     if(!transport||!lease.matches(epoch)||!is_valid_http_uri(uri)||
-       uri.size()>4096U||uri.find('#')!=std::string_view::npos)
+       uri.size()>4096U||uri.find('#')!=std::string_view::npos||
+       (!expected_parent.empty()&&!uuid_to_bytes(expected_parent)))
         return {};
     const auto body=build_fetch_inventory2_request(owner,ids);
     if(!body)return {};
@@ -95,6 +113,6 @@ InventoryItemFetch fetch_inventory2(
     if(!lease.matches(epoch)||!response.ok())return {};
     const auto parsed=parse_llsd_xml(response.body);
     if(!parsed.ok())return {};
-    return parse_fetch_inventory2(*parsed.value,owner,ids);
+    return parse_fetch_inventory2(*parsed.value,owner,ids,expected_parent);
 }
 }

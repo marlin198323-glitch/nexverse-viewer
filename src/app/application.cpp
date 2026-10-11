@@ -47,6 +47,7 @@
 #include "nexverse/protocol/firestorm_inventory_sync.hpp"
 #include "nexverse/protocol/firestorm_inventory_items.hpp"
 #include "nexverse/protocol/firestorm_inventory_tree.hpp"
+#include "nexverse/protocol/firestorm_inventory_events.hpp"
 #include "nexverse/protocol/firestorm_outfit_wear_preflight.hpp"
 #include "nexverse/protocol/firestorm_experience_permissions.hpp"
 #include "nexverse/protocol/caps_event_dispatcher.hpp"
@@ -3222,6 +3223,7 @@ int Application::run(bool enable_developer_modules)
     std::map<std::string,std::chrono::steady_clock::time_point,std::less<>>
         inventory_last_requested;
     bool inventory_refresh_requested=false;
+    std::uint64_t inventory_dirty_revision=0U;
     std::size_t inventory_item_selection=0U;
     bool inventory_item_detail_requested=false;
     std::future<protocol::InventoryItemFetch> inventory_item_detail_future;
@@ -3277,6 +3279,7 @@ int Application::run(bool enable_developer_modules)
     input_context.simulation_ready=&simulation_ready;
     protocol::PacketDispatcher packet_dispatcher;
     protocol::CapsEventDispatcher caps_event_dispatcher;
+    protocol::InventoryEventInbox inventory_events;
 
     caps_event_dispatcher.register_handler(
         "EnableSimulator",
@@ -4125,6 +4128,8 @@ int Application::run(bool enable_developer_modules)
     protocol::FirestormInventorySync gallery_inventory_sync;
     std::future<protocol::OutfitInventoryRead> gallery_sync_future;
     std::uint64_t gallery_sync_issued_epoch=0U;
+    std::uint64_t gallery_sync_dirty_revision=0U;
+    bool gallery_force_refresh=false;
     auto last_gallery_sync=std::chrono::steady_clock::now();
     std::vector<std::future<GalleryTextureReply>> gallery_image_futures;
     std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>
@@ -4568,6 +4573,9 @@ int Application::run(bool enable_developer_modules)
                                  &caps_state,
                                  &ext_environment_payload,
                                  &caps_event_dispatcher,
+                                 &inventory_events,
+                                 inventory_owner=active_session->agent_id,
+                                 initial_handle,
                                  &world_model,
                                  &world_mutex]()
                                 {
@@ -4937,8 +4945,22 @@ int Application::run(bool enable_developer_modules)
                                             }
                                         };
 
+                                    // Never keep polling the old region's
+                                    // EventQueue after a crossing/teleport.
+                                    const auto still_origin=[&]()
+                                    {
+                                        if(!firestorm_region_lease.matches(
+                                               firestorm_issued_epoch))
+                                            return false;
+                                        std::scoped_lock lock{world_mutex};
+                                        return world_model.region().handle==
+                                                   initial_handle &&
+                                            world_model.region().seed_capability==
+                                                   seed_capability;
+                                    };
                                     while (!caps_stop.load())
                                     {
+                                        if(!still_origin())break;
                                         const auto batch = service.poll_event_queue(
                                             event_queue_uri,
                                             acknowledgement,
@@ -5011,6 +5033,12 @@ int Application::run(bool enable_developer_modules)
 
                                             for (const auto& event : batch.events)
                                             {
+                                                if(!still_origin())break;
+                                                if(event.message=="BulkUpdateInventory")
+                                                    (void)inventory_events.enqueue(
+                                                        event,inventory_owner,
+                                                        firestorm_issued_epoch,
+                                                        firestorm_region_lease);
                                                 (void)caps_event_dispatcher.dispatch(event);
                                             }
                                             continue;
@@ -5552,6 +5580,9 @@ int Application::run(bool enable_developer_modules)
                 inventory_folder_contents.clear();
                 inventory_last_requested.clear();
                 inventory_refresh_requested=false;
+                inventory_dirty_revision=0U;
+                inventory_events.reset();
+                gallery_force_refresh=false;
                 inventory_item_selection=0U;
                 inventory_item_detail_requested=false;
                 inventory_item_detail.reset();
@@ -5565,6 +5596,36 @@ int Application::run(bool enable_developer_modules)
                     inventory_parent=active_session->inventory_root_id;
                 }
                 experience_ui.close();
+            }
+            // BulkUpdateInventory over the current EventQueue is a
+            // server-origin change *hint*, never direct trusted content.
+            // Main-thread only: invalidate precisely affected read caches.
+            const auto dirty=inventory_events.drain(
+                current_firestorm_epoch,firestorm_region_lease);
+            if(!dirty.empty())
+            {
+                ++inventory_dirty_revision;
+                if(dirty.full_refresh)
+                {
+                    inventory_folder_contents.clear();
+                    inventory_last_requested.clear();
+                    inventory_fetched_folders.clear();
+                }
+                else
+                {
+                    for(const auto& folder:dirty.folders)
+                    {
+                        inventory_folder_contents.erase(folder);
+                        inventory_last_requested.erase(folder);
+                    }
+                }
+                inventory_item_detail.reset();
+                inventory_item_detail_id.clear();
+                inventory_item_detail_status="Inventaraenderung: neu laden";
+                gallery_force_refresh=true;
+                core::info("Firestorm inventory change hint accepted; folders="+
+                    std::to_string(dirty.folders.size())+
+                    (dirty.full_refresh?"; full resync":"; targeted refresh"));
             }
             // Region-specific Firestorm read CAPS. The existing login
             // EventQueue remains independent and is never joined here.
@@ -5767,7 +5828,8 @@ int Application::run(bool enable_developer_modules)
                 {
                     auto update=gallery_sync_future.get();
                     if(firestorm_region_lease.matches(
-                           gallery_sync_issued_epoch) &&update.valid)
+                           gallery_sync_issued_epoch) &&update.valid &&
+                       gallery_sync_dirty_revision==inventory_dirty_revision)
                     {
                         std::scoped_lock lock{caps_mutex};
                         if(gallery_inventory_sync.merge(
@@ -5824,11 +5886,16 @@ int Application::run(bool enable_developer_modules)
             if(outfit_gallery_open && !gallery_sync_future.valid() &&
                !gallery_inventory_cap.empty()&&active_session &&
                firestorm_region_lease.matches(current_firestorm_epoch)&&
-               std::chrono::steady_clock::now()-last_gallery_sync >=
-                   std::chrono::seconds{30})
+               (std::chrono::steady_clock::now()-last_gallery_sync >=
+                    std::chrono::seconds{30} ||
+                (gallery_force_refresh &&
+                 std::chrono::steady_clock::now()-last_gallery_sync >=
+                    std::chrono::seconds{2})))
             {
                 last_gallery_sync=std::chrono::steady_clock::now();
                 gallery_sync_issued_epoch=current_firestorm_epoch;
+                gallery_sync_dirty_revision=inventory_dirty_revision;
+                gallery_force_refresh=false;
                 auto outfits=protocol::outfits_from_login_skeleton(
                     active_session->inventory_skeleton);
                 if(outfits.size()>16U)outfits.resize(16U);
@@ -5923,13 +5990,15 @@ int Application::run(bool enable_developer_modules)
                 try
                 {
                     auto reply=inventory_folder_future.get();
-                    if(firestorm_region_lease.matches(reply.epoch))
+                    if(firestorm_region_lease.matches(reply.epoch) &&
+                       reply.invalidation_revision==inventory_dirty_revision)
                     {
                         // Cache failed/unsupported capability attempts for
                         // this epoch too: avoid tight HTTP retry loops.
                         inventory_fetched_folders.insert(reply.folder_id);
                     }
-                    if(firestorm_region_lease.matches(reply.epoch)&&reply.valid)
+                    if(firestorm_region_lease.matches(reply.epoch)&&reply.valid &&
+                       reply.invalidation_revision==inventory_dirty_revision)
                     {
                         (void)protocol::merge_inventory_folder_read(
                             inventory_tree,inventory_folder_contents,reply);
@@ -5962,11 +6031,14 @@ int Application::run(bool enable_developer_modules)
                      owner=active_session->agent_id,
                      parent=inventory_parent,
                      issued=current_firestorm_epoch,
+                     revision=inventory_dirty_revision,
                      &firestorm_region_lease]()
                     {
-                        return protocol::fetch_inventory_folder_children(
+                        auto reply=protocol::fetch_inventory_folder_children(
                             transport,cap,owner,parent,issued,
                             firestorm_region_lease);
+                        reply.invalidation_revision=revision;
+                        return reply;
                     });
             }
             // F10 individual item details use the same authenticated
@@ -5979,9 +6051,17 @@ int Application::run(bool enable_developer_modules)
                 try
                 {
                     auto reply=inventory_item_detail_future.get();
+                    const auto folder=inventory_folder_contents.find(
+                        inventory_parent);
+                    const bool selected_is_current=
+                        folder!=inventory_folder_contents.end() &&
+                        inventory_item_selection<folder->second.items.size() &&
+                        folder->second.items[inventory_item_selection].item_id==
+                            inventory_item_detail_id;
                     if(firestorm_region_lease.matches(
                            inventory_item_detail_epoch) &&
-                       inventory_item_detail_folder==inventory_parent)
+                       inventory_item_detail_folder==inventory_parent &&
+                       selected_is_current)
                     {
                         inventory_item_detail.reset();
                         for(const auto& item:reply.items)
@@ -6024,12 +6104,13 @@ int Application::run(bool enable_developer_modules)
                         std::launch::async,
                         [transport,cap=gallery_inventory_items_cap,
                          owner=active_session->agent_id,id,
+                         folder=inventory_parent,
                          epoch=current_firestorm_epoch,
                          &firestorm_region_lease]()
                         {
                             return protocol::fetch_inventory2(
                                 transport,cap,owner,{id},epoch,
-                                firestorm_region_lease);
+                                firestorm_region_lease,folder);
                         });
                 }
             }

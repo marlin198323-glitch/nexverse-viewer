@@ -24,6 +24,7 @@ struct Http : nexverse::net::IHttpTransport
             {"agent_id",LlsdValue::uuid(AGENT)},
             {"items",LlsdValue::array({LlsdValue::map({
                 {"item_id",LlsdValue::uuid(A)},
+                {"parent_id",LlsdValue::uuid(ASSET)},
                 {"name",LlsdValue::string("Shirt")},
                 {"asset_id",LlsdValue::uuid(ASSET)},
                 {"type",LlsdValue::integer(5)},
@@ -52,6 +53,17 @@ int main()
        fetched.items[0].asset_id!=ASSET||
        http->requests!=1)
         return 2;
+    const auto scoped=fetch_inventory2(http,
+        "https://sim.test/FetchInventory2",AGENT,{A},epoch,lease,ASSET);
+    if(!scoped.valid||scoped.items.size()!=1U||http->requests!=2)
+        return 5;
+    const auto moved=fetch_inventory2(http,
+        "https://sim.test/FetchInventory2",AGENT,{A},epoch,lease,A);
+    if(!moved.valid||!moved.items.empty()||http->requests!=3)
+        return 6;
+    if(fetch_inventory2(http,"https://sim.test/FetchInventory2",
+        AGENT,{A},epoch,lease,"invalid").valid||http->requests!=3)
+        return 7;
     const auto evil=parse_fetch_inventory2(LlsdValue::map({
         {"agent_id",LlsdValue::uuid(AGENT)},
         {"items",LlsdValue::array({LlsdValue::map({
@@ -68,7 +80,7 @@ int main()
     const auto changed=lease.enter(8U,4U,"https://sim.test/new");
     (void)changed;
     if(fetch_inventory2(http,"https://sim.test/FetchInventory2",
-        AGENT,{A},epoch,lease).valid ||http->requests!=1)
+        AGENT,{A},epoch,lease).valid ||http->requests!=3)
         return 4;
     std::cout<<"FetchInventory2 owner scoped, bounded item fetch, invalid owner"
                 " and stale region rejected\n";

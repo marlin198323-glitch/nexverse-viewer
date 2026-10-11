@@ -15,10 +15,12 @@ struct InventoryItemFetch
     const std::vector<std::string>& item_ids);
 [[nodiscard]] InventoryItemFetch parse_fetch_inventory2(
     const LlsdValue& response,std::string_view authenticated_owner,
-    const std::vector<std::string>& item_ids);
+    const std::vector<std::string>& item_ids,
+    std::string_view expected_parent_folder={});
 [[nodiscard]] InventoryItemFetch fetch_inventory2(
     const std::shared_ptr<net::IHttpTransport>& transport,
     std::string_view capability_uri,std::string_view authenticated_owner,
     const std::vector<std::string>& item_ids,
-    std::uint64_t issued_epoch,const FirestormRegionLease& lease);
+    std::uint64_t issued_epoch,const FirestormRegionLease& lease,
+    std::string_view expected_parent_folder={});
 }
