@@ -392,6 +392,12 @@ struct AvatarAppearanceData
     std::uint32_t flags = 0U;
 };
 
+struct AvatarAttachmentData
+{
+    std::string object_id;
+    std::uint8_t attachment_point = 0U;
+};
+
 struct AvatarAppearanceMessage
 {
     std::string avatar_id;
@@ -399,6 +405,11 @@ struct AvatarAppearanceMessage
     std::vector<std::uint8_t> texture_entry;
     std::vector<std::uint8_t> visual_params;
     std::vector<AvatarAppearanceData> appearance_data;
+    // Firestorm modern Trusted Low 158 optional-tail blocks:
+    // AppearanceHover Variable (LLVector3) then AttachmentBlock Variable
+    // (LLUUID + U8 attachment point). Legacy OpenSim senders may omit tail.
+    std::vector<Vec3> hover_heights;
+    std::vector<AvatarAttachmentData> attachments;
 };
 
 struct IncomingLocalChat

@@ -71,10 +71,13 @@ struct AvatarState
     Vec3 position;
     Quaternion rotation;
     std::uint32_t local_id = 0U;
+    bool position_known = false;
     bool trial_appearance = false;
     std::vector<std::uint8_t> texture_entry;
     std::vector<std::uint8_t> visual_params;
     std::vector<protocol::AvatarAppearanceData> appearance_data;
+    std::vector<Vec3> hover_heights;
+    std::vector<protocol::AvatarAttachmentData> attachments;
 };
 
 struct ObjectState
@@ -193,6 +196,7 @@ struct WorldSnapshot
     RegionState region;
     AgentState agent;
     AgentProfileState agent_profile;
+    std::optional<protocol::AvatarAppearanceMessage> self_appearance;
     std::map<std::string, AvatarState, std::less<>> avatars;
     std::map<std::uint32_t, ObjectState> objects;
     TerrainState terrain;
@@ -211,7 +215,14 @@ public:
     void begin_region_transition(const RegionUpdate& update);
     void apply_agent(const AgentUpdate& update);
     void set_agent_profile(AgentProfileState profile);
+    // Authenticated self appearance is not a second avatar entity.
+    [[nodiscard]] bool apply_self_appearance(
+        protocol::AvatarAppearanceMessage appearance);
     void upsert_avatar(AvatarState avatar);
+    // Pose-only packets must not erase AppearanceData, COF versions,
+    // baked texture entries or attachment blocks already received.
+    void update_avatar_transform(const std::string& id,Vec3 position,
+                                 Quaternion rotation,std::uint32_t local_id);
     void remove_avatar(const std::string& id);
     void upsert_object(ObjectState object);
     void remove_object(std::uint32_t local_id);
@@ -225,6 +236,8 @@ public:
     [[nodiscard]] const RegionState& region() const noexcept;
     [[nodiscard]] const AgentState& agent() const noexcept;
     [[nodiscard]] const AgentProfileState& agent_profile() const noexcept;
+    [[nodiscard]] const std::optional<protocol::AvatarAppearanceMessage>&
+        self_appearance() const noexcept;
     [[nodiscard]] const TerrainState& terrain() const noexcept;
     [[nodiscard]] const ParcelState& parcel() const noexcept;
     [[nodiscard]] const EnvironmentState& environment() const noexcept;
@@ -240,6 +253,7 @@ private:
     RegionState region_;
     AgentState agent_;
     AgentProfileState agent_profile_;
+    std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
     std::uint32_t object_revision_ = 0U;

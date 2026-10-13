@@ -70,6 +70,58 @@ int main()
     avatar.position = {130.0f, 128.0f, 25.0f};
     world.upsert_avatar(std::move(avatar));
 
+    // SelfAvatar appearance is a distinct readback, not a second
+    // avatar in the list. Changing region invalidates appearance.
+    nexverse::protocol::AvatarAppearanceMessage own;
+    own.avatar_id=world.agent().agent_id;
+    own.texture_entry={1U,2U};
+    own.visual_params={2U,3U,4U};
+    own.hover_heights={{0.0f,0.0f,0.25f}};
+    own.attachments={{"22222222-2222-2222-2222-222222222222",5U}};
+    if(!world.apply_self_appearance(own) ||
+       !world.self_appearance() ||
+       world.self_appearance()->hover_heights.front().z!=0.25f ||
+       world.snapshot().self_appearance->attachments.size()!=1U)
+        return 15;
+    AvatarState fake_self;
+    fake_self.id=world.agent().agent_id;
+    world.upsert_avatar(std::move(fake_self));
+    if(world.avatars().size()!=1U)return 16;
+    auto wrong=own;
+    wrong.avatar_id="22222222-2222-2222-2222-222222222222";
+    if(world.apply_self_appearance(std::move(wrong)))return 17;
+    if(world.self_appearance()->avatar_id!=world.agent().agent_id)
+        return 18;
+
+    // Full/Compressed/Terse/Coarse updates share a pose-only WorldModel
+    // method; appearance is preserved even if it arrived before pose.
+    AvatarState pending;
+    pending.id="remote-avatar";
+    pending.visual_params={17U,23U};
+    pending.texture_entry={0x12U,0x34U};
+    pending.appearance_data={{2U,412U,0U}};
+    pending.hover_heights={{0.0f,0.0f,0.5f}};
+    pending.attachments={{"99999999-9999-9999-9999-999999999999",3U}};
+    world.upsert_avatar(std::move(pending));
+    if(world.avatars().at("remote-avatar").position_known)return 19;
+    world.update_avatar_transform(
+        "remote-avatar",{130.0f,129.0f,28.0f},{},901U);
+    const auto& populated=world.avatars().at("remote-avatar");
+    if(!populated.position_known || populated.local_id!=901U ||
+       populated.appearance_data.size()!=1U ||
+       populated.appearance_data.front().cof_version!=412U ||
+       populated.attachments.size()!=1U ||
+       populated.texture_entry.size()!=2U)return 20;
+    world.update_avatar_transform(
+        "remote-avatar",{131.0f,130.0f,28.0f},{},0U);
+    if(world.avatars().at("remote-avatar").local_id!=901U ||
+       world.avatars().at("remote-avatar").position.x!=131.0f ||
+       world.avatars().at("remote-avatar").visual_params.size()!=2U)
+        return 21;
+    world.update_avatar_transform(
+        world.agent().agent_id,{0.0f,0.0f,0.0f},{},999U);
+    if(world.avatars().contains(world.agent().agent_id))return 22;
+    world.remove_avatar("remote-avatar");
     nexverse::world::ObjectState object;
     object.local_id = 42U;
     object.id = "object-uuid";
@@ -148,6 +200,7 @@ int main()
         world.environment().available ||
         !world.avatars().empty() ||
         !world.objects().empty() ||
+        world.self_appearance().has_value() ||
         world.agent().present)
     {
         std::cerr << "WorldModel region transition invalidation failed\n";
@@ -155,7 +208,8 @@ int main()
     }
 
     world.reset();
-    if (world.ready() || world.region().connected || world.agent().present)
+    if (world.ready() || world.region().connected || world.agent().present ||
+        world.self_appearance().has_value())
     {
         std::cerr << "WorldModel reset failed\n";
         return 7;

@@ -241,3 +241,22 @@ Eigenschaften und ist kein Ersatz für einen Firestorm-
 Wearables-/Bake-/Animation-Readback. Neue lokale Golden-Tests
 prüfen auch State, Camera- und FarClip-Offsets der unveränderten
 114-Byte-AgentUpdate-Nutzdaten.
+
+
+## Alpha.92 – Trusted AvatarAppearance Low 158 vollen Tail lesen
+
+Offizielle Firestorm-Message-Order: Sender Single ID LLUUID,
+IsTrial BOOL; ObjectData Single TextureEntry Variable2;
+VisualParam Variable U8; AppearanceData Variable
+AppearanceVersion U8, CofVersion S32, Flags U32;
+AppearanceHover Variable HoverHeight LLVector3 (3*F32);
+AttachmentBlock Variable ID LLUUID, AttachmentPoint U8.
+OGL akzeptiert vollen Tail mit geprüften Blockgrenzen und
+den legacy OpenSim-No-Tail-Fall. Fehlt bei vorhandenem Hover-
+Zähler der abschließende Attachment-Zähler, ist das Paket
+ungültig. Avatar-COF- und Attachment-Wire-Blöcke sind
+Readback-Metadaten, keine legitime Bestätigung von Wear,
+Bake, Attach oder einem voll geriggten Renderer.
+Appearance wird pro authentifizierter SelfAgentID getrennt
+gespeichert und bei Regionsepochenwechsel verworfen;
+Pose-only-Pakete löschen keine Textur-/COF-Daten mehr.

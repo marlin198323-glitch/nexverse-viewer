@@ -14,6 +14,7 @@ void WorldModel::reset()
     region_ = {};
     agent_ = {};
     agent_profile_ = {};
+    self_appearance_.reset();
     avatars_.clear();
     objects_.clear();
     object_revision_ = 0U;
@@ -57,6 +58,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
+    self_appearance_.reset();
 
     apply_region(update);
     region_.generation = generation;
@@ -79,13 +81,42 @@ void WorldModel::set_agent_profile(AgentProfileState profile)
     agent_profile_ = std::move(profile);
 }
 
+bool WorldModel::apply_self_appearance(
+    protocol::AvatarAppearanceMessage appearance)
+{
+    if (agent_.agent_id.empty() ||
+        appearance.avatar_id != agent_.agent_id)
+        return false;
+    self_appearance_ = std::move(appearance);
+    // Remove any erroneously cached self entity, e.g. from a
+    // pre-login appearance update; the self render path uses agent_.
+    avatars_.erase(agent_.agent_id);
+    return true;
+}
+
 void WorldModel::upsert_avatar(AvatarState avatar)
 {
-    if (avatar.id.empty())
+    if (avatar.id.empty() ||
+        (!agent_.agent_id.empty() && avatar.id == agent_.agent_id))
     {
         return;
     }
     avatars_[avatar.id] = std::move(avatar);
+}
+
+void WorldModel::update_avatar_transform(
+    const std::string& id,Vec3 position,
+    Quaternion rotation,std::uint32_t local_id)
+{
+    if(id.empty() ||
+       (!agent_.agent_id.empty() && id == agent_.agent_id))
+        return;
+    auto& avatar=avatars_[id];
+    avatar.id=id;
+    avatar.position=position;
+    avatar.rotation=rotation;
+    if(local_id!=0U)avatar.local_id=local_id;
+    avatar.position_known=true;
 }
 
 void WorldModel::remove_avatar(const std::string& id)
@@ -187,6 +218,8 @@ const GridState& WorldModel::grid() const noexcept { return grid_; }
 const RegionState& WorldModel::region() const noexcept { return region_; }
 const AgentState& WorldModel::agent() const noexcept { return agent_; }
 const AgentProfileState& WorldModel::agent_profile() const noexcept { return agent_profile_; }
+const std::optional<protocol::AvatarAppearanceMessage>&
+WorldModel::self_appearance() const noexcept { return self_appearance_; }
 const TerrainState& WorldModel::terrain() const noexcept { return terrain_; }
 const ParcelState& WorldModel::parcel() const noexcept { return parcel_; }
 const EnvironmentState& WorldModel::environment() const noexcept { return environment_; }
@@ -213,6 +246,7 @@ WorldSnapshot WorldModel::snapshot() const
     value.region = region_;
     value.agent = agent_;
     value.agent_profile = agent_profile_;
+    value.self_appearance = self_appearance_;
     value.avatars = avatars_;
     value.objects = objects_;
     value.terrain = terrain_;

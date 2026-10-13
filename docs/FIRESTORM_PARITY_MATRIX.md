@@ -286,3 +286,20 @@ Quellen Firestorm Firestorm_7.2.4 @
 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
 OpenGenesisLINK main @
 953063775933b6d7fab4f746d055587b8d74f2ea.
+
+
+## Alpha.92 – Firestorm Low 158 / Appearance- und Avatar-Pose-Handoff
+
+| Bereich | OGL-Implementierung | Abnahme |
+|---|---|---|
+| AvatarAppearance Sender/IsTrial | gültige Nachricht, eigene AgentID getrennt, remote appearance Readback | tested_synthetic; Live offen |
+| AppearanceData (COF und Flags) | read-only gespeichert, bei ObjectUpdate-Pose erhalten | tested_synthetic, Wear-Transaktion fehlt |
+| AppearanceHover Variable | LLVector3-Float-Prüfung, Proxy-Z-Versatz -2m..2m | code+fixture; echtes Körper-Skinning fehlt |
+| AttachmentBlock Variable | LLUUID/AttachmentPoint geparst, begrenzt, gespeichert | tested_synthetic, 3D-Attachments fehlen |
+| WorldModel-Pose | gemeinsamer update_avatar_transform für Full/Compressed/Coarse/Terse | tested_synthetic, echte Regionen offen |
+| SelfAppearance | getrennte WorldSnapshot-Daten, kein Avatar-Geisterproxy | tested_synthetic, Live-Readback offen |
+| Vollständiger Firestorm-Avatar | gebackene Texturen, Skin, Skeleton, Animation, Outfit-Wear | not_implemented |
+
+Quellen: Firestorm Firestorm_7.2.4 scripts/messages/message_template.msg;
+OpenGenesisLINK main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
+OGL nutzt Firestorm als Standard-Funktionsbaseline.

@@ -1514,7 +1514,8 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     }
 
     const std::size_t appearance_count = payload[offset++];
-    if (offset + appearance_count * 9U != payload.size())
+    if (appearance_count > 16U ||
+        appearance_count > (payload.size() - offset) / 9U)
     {
         return std::nullopt;
     }
@@ -1531,6 +1532,45 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
         message.appearance_data.push_back(data);
     }
 
+    // The current Firestorm message_template.msg contains TWO additional
+    // variable-size blocks after AppearanceData. Previously OGL compared
+    // the remaining bytes against 9*N and rejected every modern packet
+    // carrying a hover or attachment block. Accept the older OpenSim
+    // no-tail form, but require complete, bounded modern blocks when present.
+    if (offset == payload.size()) return message;
+    const std::size_t hover_count = payload[offset++];
+    if (hover_count > 16U ||
+        hover_count > (payload.size() - offset) / 12U)
+        return std::nullopt;
+    message.hover_heights.reserve(hover_count);
+    for (std::size_t index = 0U; index < hover_count; ++index)
+    {
+        Vec3 hover;
+        hover.x = read_f32(payload, offset);
+        hover.y = read_f32(payload, offset + 4U);
+        hover.z = read_f32(payload, offset + 8U);
+        if (!std::isfinite(hover.x) || !std::isfinite(hover.y) ||
+            !std::isfinite(hover.z))
+            return std::nullopt;
+        message.hover_heights.push_back(hover);
+        offset += 12U;
+    }
+    if (offset >= payload.size()) return std::nullopt;
+    const std::size_t attachment_count = payload[offset++];
+    if (attachment_count > 64U ||
+        attachment_count != (payload.size() - offset) / 17U ||
+        (payload.size() - offset) % 17U != 0U)
+        return std::nullopt;
+    message.attachments.reserve(attachment_count);
+    for (std::size_t index = 0U; index < attachment_count; ++index)
+    {
+        AvatarAttachmentData attachment;
+        attachment.object_id = uuid_from_bytes(payload, offset);
+        if (attachment.object_id.empty()) return std::nullopt;
+        offset += 16U;
+        attachment.attachment_point = payload[offset++];
+        message.attachments.push_back(std::move(attachment));
+    }
     return message;
 }
 

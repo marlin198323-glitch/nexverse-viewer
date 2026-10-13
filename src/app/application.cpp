@@ -3652,19 +3652,8 @@ int Application::run(bool enable_developer_modules)
                         continue;
                     }
 
-                    world::AvatarState avatar;
-                    avatar.id = entry.id;
-                    avatar.position = entry.position;
-                    avatar.rotation = entry.rotation;
-                    avatar.local_id = entry.local_id;
-
-                    if (const auto existing = world_model.avatars().find(entry.id);
-                        existing != world_model.avatars().end())
-                    {
-                        avatar.name = existing->second.name;
-                    }
-
-                    world_model.upsert_avatar(std::move(avatar));
+                    world_model.update_avatar_transform(
+                        entry.id,entry.position,entry.rotation,entry.local_id);
                     continue;
                 }
 
@@ -3746,19 +3735,8 @@ int Application::run(bool enable_developer_modules)
                         continue;
                     }
 
-                    world::AvatarState avatar;
-                    avatar.id = entry.id;
-                    avatar.position = entry.position;
-                    avatar.rotation = entry.rotation;
-                    avatar.local_id = entry.local_id;
-
-                    if (const auto existing = world_model.avatars().find(entry.id);
-                        existing != world_model.avatars().end())
-                    {
-                        avatar.name = existing->second.name;
-                    }
-
-                    world_model.upsert_avatar(std::move(avatar));
+                    world_model.update_avatar_transform(
+                        entry.id,entry.position,entry.rotation,entry.local_id);
                     continue;
                 }
 
@@ -3904,10 +3882,8 @@ int Application::run(bool enable_developer_modules)
                             continue;
                         }
 
-                        world::AvatarState avatar = existing;
-                        avatar.position = update.position;
-                        avatar.rotation = update.rotation;
-                        world_model.upsert_avatar(std::move(avatar));
+                        world_model.update_avatar_transform(
+                            id,update.position,update.rotation,update.local_id);
                         break;
                     }
                     continue;
@@ -4005,19 +3981,13 @@ int Application::run(bool enable_developer_modules)
 
                 seen.push_back(coarse_avatar.agent_id);
 
-                world::AvatarState avatar;
-                avatar.id = coarse_avatar.agent_id;
-                avatar.position = coarse_avatar.position;
-
+                protocol::Quaternion rotation{};
                 if (const auto existing =
                         world_model.avatars().find(coarse_avatar.agent_id);
                     existing != world_model.avatars().end())
-                {
-                    avatar.name = existing->second.name;
-                    avatar.rotation = existing->second.rotation;
-                }
-
-                world_model.upsert_avatar(std::move(avatar));
+                    rotation=existing->second.rotation;
+                world_model.update_avatar_transform(
+                    coarse_avatar.agent_id,coarse_avatar.position,rotation,0U);
             }
 
             std::vector<std::string> stale;
@@ -4050,26 +4020,39 @@ int Application::run(bool enable_developer_modules)
 
             std::scoped_lock lock{world_mutex};
             if (!world_model.region().connected)
-            {
                 return;
-            }
 
             avatar_packets.fetch_add(1U, std::memory_order_relaxed);
 
+            if (appearance->avatar_id == world_model.agent().agent_id)
+            {
+                const bool first=!world_model.self_appearance().has_value();
+                if (world_model.apply_self_appearance(*appearance) && first)
+                    core::info("AvatarAppearance SELF server readback accepted; "
+                               "texture_entry_bytes="+
+                               std::to_string(appearance->texture_entry.size())+
+                               "; visual_params="+
+                               std::to_string(appearance->visual_params.size())+
+                               "; attachment_blocks="+
+                               std::to_string(appearance->attachments.size())+
+                               "; provisional proxy remains (skinning unavailable)");
+                return;
+            }
+
             world::AvatarState avatar;
             avatar.id = appearance->avatar_id;
-
             if (const auto existing =
                     world_model.avatars().find(appearance->avatar_id);
                 existing != world_model.avatars().end())
-            {
                 avatar = existing->second;
-            }
-
             avatar.trial_appearance = appearance->trial;
             avatar.texture_entry = appearance->texture_entry;
             avatar.visual_params = appearance->visual_params;
             avatar.appearance_data = appearance->appearance_data;
+            avatar.hover_heights = appearance->hover_heights;
+            avatar.attachments = appearance->attachments;
+            // Appearance-only updates can precede a position. Keep the
+            // metadata, but do not create a visible ghost at (0,0,0).
             world_model.upsert_avatar(std::move(avatar));
         });
 
@@ -6849,10 +6832,18 @@ int Application::run(bool enable_developer_modules)
 
                 if (render_agent.present)
                 {
+                    // Server-reported appearance hover shifts the visual
+                    // proxy only; do not alter simulator-authoritative agent
+                    // coordinates or the collision/physics position.
+                    float self_hover=0.0f;
+                    if (const auto& appearance=world_model.self_appearance();
+                        appearance && !appearance->hover_heights.empty())
+                        self_hover=std::clamp(
+                            appearance->hover_heights.front().z,-2.0f,2.0f);
                     avatar_proxy_update.push_back({
                         {render_agent.position.x,
                          render_agent.position.y,
-                         render_agent.position.z},
+                         render_agent.position.z+self_hover},
                         {render_agent.rotation.x,
                          render_agent.rotation.y,
                          render_agent.rotation.z,
@@ -6862,11 +6853,14 @@ int Application::run(bool enable_developer_modules)
                 for (const auto& [id, avatar] : world_model.avatars())
                 {
                     if (id == render_agent.agent_id ||
+                        !avatar.position_known ||
                         avatar_proxy_update.size() >= 64U) continue;
+                    const float hover=avatar.hover_heights.empty()?0.0f:
+                        std::clamp(avatar.hover_heights.front().z,-2.0f,2.0f);
                     avatar_proxy_update.push_back({
                         {avatar.position.x,
                          avatar.position.y,
-                         avatar.position.z},
+                         avatar.position.z+hover},
                         {avatar.rotation.x,
                          avatar.rotation.y,
                          avatar.rotation.z,

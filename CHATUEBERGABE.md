@@ -1814,3 +1814,99 @@ Teleports; serverseitige OGL-IAR/Appearance-Spezifikationen
 für Wearables/COF und Attachments vergleichen.
 Branch develop-current, Repository
 marlin198323-glitch/nexverse-viewer, projectplan.md maßgeblich.
+
+
+## Alpha.92 – Firestorm AvatarAppearance Hover/Attachments und sauberer SelfAvatar · 13.10.2026
+
+**Block 1 – gültige moderne Firestorm-AvatarAppearance-Pakete lesen:**
+Der OGL-Decoder für Trusted Low 158 verlangte bislang,
+dass die Nutzdaten bereits nach dem AppearanceData-Block
+mit 9 Bytes je Eintrag enden. Der offizielle Firestorm-Branch
+Firestorm_7.2.4 hat seit Langem zusätzlich AppearanceHover
+Variable mit LLVector3 (12 Byte je Datensatz) und
+AttachmentBlock Variable mit LLUUID + U8 AttachmentPoint
+(17 Byte je Datensatz). Solche vollständigen Nachrichten
+wurden vom bisherigen OGL-Decoder verworfen.
+Der neue Decoder liest beide Blöcke samt Anzahl, begrenzt
+maximal 16 Hover- und 64 Attachment-Datensätze,
+prüft exakte Blocklängen, gültige finite Floatwerte
+und blockiert Restbytes, fehlende zweite Zähler und
+abgeschnittene Attachment-IDs. Er akzeptiert weiterhin
+das alte OpenSim-No-Tail-Format. Der Decoder behandelt
+serverseitige Attachment-Metadaten ausschließlich als
+Readback, NICHT als vollzogenen Wear-/Attach-Vorgang.
+
+**Block 2 – eigene Appearance ist kein zweiter Avatar:**
+WorldModel verwaltet das vom Server für die authentifizierte
+AgentID gesendete AvatarAppearance-Readback getrennt von
+der Liste fremder Avatar-Entities. Nur exakt die AgentID
+darf self_appearance setzen; fremde Daten werden abgelehnt.
+Self Appearance und die remote-Avatar-Map werden bei
+WorldModel.reset und bei begin_region_transition getrennt
+invalidiert. WorldSnapshot gibt die eigene Appearance
+für spätere COF-/Bake-/Skinned-Avatar-Stufen weiter.
+Der AvatarAppearance-LLUDP-Handler protokolliert das
+erste Self-Readback der Region mit Anzahl Texturbytes,
+VisualParams und Attachments OHNE private UUIDs/Assetinhalte.
+Ein gültiges Self-Paket wird nicht mehr als fremder Avatar
+in der Weltobjektliste gespeichert. Die vorhandene
+7-Teile-Self-Geometrie bleibt ausdrücklich nur ein Proxy.
+
+**Block 3 – remote appearance nicht durch Pose-Pakete verlieren:**
+ObjectUpdate, ObjectUpdateCompressed, ImprovedTerseObjectUpdate
+und CoarseLocationUpdate aktualisieren Position/Rotation
+über die neue zentrale WorldModel.update_avatar_transform-
+Methode; diese erhält den bereits empfangenen COF-
+Versionsstand, Textur-Einträge, VisualParams und
+Attachment-/Hover-Blöcke, auch wenn AvatarAppearance
+vor ObjectUpdate eintrifft. Ein neuer Remote-Avatar hat
+position_known=false, bis ein echter Positionsevent
+eintrifft. Reine Appearance-Hinweise erzeugen deshalb
+keinen sichtbaren Proxy als Phantomavatar bei (0,0,0).
+Bei CoarseLocationUpdate bleibt die vorhandene LocalID
+bestehen. SelfAvatar-Pose wird darüber grundsätzlich
+nicht als fremde Entity verdoppelt.
+
+**Block 4 – minimale optische Hover-Parität und Tests:**
+Der aktuelle Renderer positioniert den provisorischen
+Avatar-Proxy um den Server-HoverHeight-Z-Wert (bounded
+-2m..2m) höher/tiefer. Die serverautoritative Position
+im WorldModel und die Collision-/Bewegungskoordinaten
+werden dadurch NIE verändert; Skelett und echte
+Baked-Wearable-/Skins-Textur-Projektion bleiben offen.
+Die bestehenden Decoder-/WorldModel-Tests wurden um
+moderne Hover-/Attachment-Blöcke, Legacy-Fallback,
+bösartige/abgeschnittene/überlange Blockvarianten,
+NaN-Hover, korrekte SelfAgent-Grenzen, WorldSnapshot,
+Regionswechsel-Invalidierung und unveränderte
+Appearance bei Pose-/Coarse-Updates erweitert.
+
+**Quellen:** FirestormViewer/phoenix-firestorm,
+Firestorm_7.2.4,
+scripts/messages/message_template.msg (Trusted
+AvatarAppearance Low 158: Sender, ObjectData,
+VisualParam, AppearanceData, AppearanceHover,
+AttachmentBlock). Offizieller OpenGenesisLINK Server
+opengenesislink/opengenesislinkserver main am
+13.10.2026: c29f3e5a70ccc0971b22371f1d13fd1de23be240.
+Server-IAR- und OGL-Portal-Arbeit ist keine
+automatische Viewer-Appearance/Bake-Reparatur.
+
+**Abnahme:** Vollständiger C++23-Linux-Debug-Build,
+83 CTests mit NVIDIA GPU und GUI-Smoke,
+Python-Bausteine und Git-Diff-Check.
+Die bisherigen lokalen Daten sind nur synthetisch;
+eine reale Alpha.92-Login-/SelfAvatar-Appearance-
+Abnahme benötigt einen Benutzerlogin in NexVerse.
+Kein Test beweist fertige Firestorm-Avatarkleidung,
+Rigging, Mesh-Skeleton, Skinning, Animation, COF
+Wear oder Attachment-Rendering.
+
+**Nächster Schritt:** Regionbasierte echte
+SelfAppearance-Readbacks und ihre COF-Version in den
+frischen Logs nach Anmeldung validieren; danach
+GPU-Baked-Skin-Layering, LLAvatarSkeleton/Animation,
+Appearance-Cache, COF-Outfit-/Attachment-Transaktion
+mit echten Serverrechten, Mesh-Live-Probleme und
+echten Regionswechsel testen.
+Branch develop-current. projectplan.md maßgeblich.

@@ -773,6 +773,55 @@ int main()
         return 17;
     }
 
+    // Firestorm modern Trusted Low 158 adds AppearanceHover Variable
+    // (one LLVector3 per block) and AttachmentBlock Variable (UUID+U8).
+    auto complete_appearance=appearance_payload;
+    complete_appearance.push_back(1U); // one hover record
+    append_u32_vec(complete_appearance,0x00000000U);
+    append_u32_vec(complete_appearance,0x00000000U);
+    append_u32_vec(complete_appearance,0x3e800000U); // +0.25f visual hover
+    complete_appearance.push_back(1U);
+    const auto attachment_id=uuid_to_bytes(
+        "66666666-6666-6666-6666-666666666666");
+    complete_appearance.insert(
+        complete_appearance.end(),attachment_id->begin(),attachment_id->end());
+    complete_appearance.push_back(5U);
+    const auto modern=decode_avatar_appearance(complete_appearance);
+    if(!modern || modern->hover_heights.size()!=1U ||
+       modern->hover_heights.front().z!=0.25f ||
+       modern->attachments.size()!=1U ||
+       modern->attachments.front().object_id!=
+           "66666666-6666-6666-6666-666666666666" ||
+       modern->attachments.front().attachment_point!=5U)
+        return 107;
+    auto empty_tail=appearance_payload;
+    empty_tail.push_back(0U); // zero hover
+    empty_tail.push_back(0U); // zero attachments
+    const auto empty_appearance=decode_avatar_appearance(empty_tail);
+    if(!empty_appearance || !empty_appearance->attachments.empty() ||
+       !empty_appearance->hover_heights.empty())return 108;
+    auto truncated=complete_appearance;
+    truncated.pop_back();
+    if(decode_avatar_appearance(truncated))return 109;
+    truncated=complete_appearance;
+    truncated.resize(appearance_payload.size()+1U); // missing second block
+    if(decode_avatar_appearance(truncated))return 110;
+    auto nan_hover=complete_appearance;
+    const auto hover_begin=appearance_payload.size()+1U;
+    nan_hover[hover_begin+8U]=0U;
+    nan_hover[hover_begin+9U]=0U;
+    nan_hover[hover_begin+10U]=0xc0U;
+    nan_hover[hover_begin+11U]=0x7fU; // quiet NaN
+    if(decode_avatar_appearance(nan_hover))return 111;
+    auto excessive=complete_appearance;
+    excessive[appearance_payload.size()]=17U;
+    if(decode_avatar_appearance(excessive))return 112;
+    excessive=complete_appearance;
+    excessive[appearance_payload.size()+1U+12U]=65U;
+    if(decode_avatar_appearance(excessive))return 113;
+    excessive=complete_appearance;
+    excessive.push_back(0x5aU);
+    if(decode_avatar_appearance(excessive))return 114;
     auto append_u64_vec = [](std::vector<std::uint8_t>& out, std::uint64_t value)
     {
         for (unsigned int i = 0U; i < 8U; ++i)

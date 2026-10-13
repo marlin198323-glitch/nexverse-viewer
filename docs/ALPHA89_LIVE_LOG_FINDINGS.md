@@ -47,3 +47,15 @@ Der neue thread-sichere SelfAvatar-Terse/WASD-Monitor
 protokolliert im Fall einer neuen Session Bestätigung oder
 Stillstand. Keine vorherige synthetische GPU-/CTest-Prüfung
 beweist tatsächliche WASD-Bewegung oder gebackene Kleidung.
+
+
+## Alpha.92 – Erwartete Live-Telemetrie
+
+Nach erfolgreichem Login und bestätigtem AvatarAppearance Low 158
+wird für die EIGENE AgentID einmal je Region
+'AvatarAppearance SELF server readback accepted' geschrieben.
+Dabei erscheinen nur Byte-/Eintragszahlen, niemals Anmelde-
+Tokens oder Attachment-UUIDs. Die Logzeile belegt ausschließlich
+Empfang der Metadaten, keine korrekt gerenderte Skin/Outfit-Bake.
+Nach neuer Alpha.92-Sitzung sind Self-Readback, Avatar-motion-
+Evidence, echte Bewegung und Avatarposition gesondert abzunehmen.
