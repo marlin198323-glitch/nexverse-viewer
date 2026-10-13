@@ -110,3 +110,15 @@ after the development block; synthetic High20 fixtures
 and original GL GPU pose tests alone do not prove
 OpenSim animation clips, correct inworld locomotion,
 avatar outfits or COF.
+
+## Alpha.97 – echte inworld UI weiterhin zu verifizieren
+
+Der OpenGL-UI-Test beweist pixelbasiert, dass das neue
+Menü und die InWorld-Floater mit echtem GLSL/Fonts gerendert
+werden, und die Unit-Testserie beweist die Klick-Zuordnung.
+Dies ist NICHT identisch mit einem authentifizierten
+NexVerse-Login. ChatFromSimulator/ChatFromViewer/TeleportFinish
+und aktuelle Inventar/COF-Fenster müssen mit Login und
+echtem Simulator im nächsten Live-Durchlauf getestet werden.
+Die GUI deaktiviert unfertige Firestorm-Features,
+anstatt klickbare Schein-Buttons zu rendern.

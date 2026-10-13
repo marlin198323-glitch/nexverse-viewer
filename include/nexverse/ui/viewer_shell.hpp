@@ -1,0 +1,232 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.
+ */
+#pragma once
+#include <algorithm>
+#include <array>
+#include <charconv>
+#include <cmath>
+#include <optional>
+#include <cstddef>
+#include <string>
+#include <string_view>
+
+namespace nexverse::ui
+{
+// This is the real in-world mouse hit layout. A menu/toolbar never
+// advertises a functionality that is not wired to an explicit action.
+enum class ViewerAction {
+    none, close, chat, move, teleport, inventory, outfits,
+    experiences, region, map, avatar, settings, help,
+    send_chat, send_teleport, fullscreen, focus_chat,
+    focus_teleport_x, focus_teleport_y, focus_teleport_z,
+    refresh_inventory, disabled
+};
+enum class ViewerWindow {
+    none,chat,move,teleport,region,map,avatar,settings,help
+};
+struct ViewerShellState
+{
+    ViewerWindow window=ViewerWindow::none;
+    int open_menu=-1;
+    std::string chat_draft;
+    std::string status_text;
+    bool chat_submit_requested=false;
+    bool teleport_submit_requested=false;
+    std::array<std::string,3> teleport_coords{"128","128","25"};
+    int teleport_focus=0;
+    void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
+    [[nodiscard]] bool input_captured() const noexcept
+    {return window!=ViewerWindow::none;}
+};
+struct ViewerMenuItem
+{
+    std::string_view label;
+    ViewerAction action;
+};
+inline constexpr std::array<std::string_view,5> menu_labels{
+    "Avatar","Kommunikation","Welt","Ansicht","Hilfe"
+};
+inline constexpr std::array<std::array<ViewerMenuItem,4>,5> menu_items{{
+    {{{"Avatarstatus",ViewerAction::avatar},
+      {"Inventar",ViewerAction::inventory},
+      {"Outfit-Galerie",ViewerAction::outfits},
+      {"",ViewerAction::none}}},
+    {{{"Lokaler Chat",ViewerAction::chat},
+      {"Erlebnisse",ViewerAction::experiences},
+      {"Freunde (geplant)",ViewerAction::disabled},
+      {"",ViewerAction::none}}},
+    {{{"Region",ViewerAction::region},
+      {"Karte",ViewerAction::map},
+      {"Teleport",ViewerAction::teleport},
+      {"",ViewerAction::none}}},
+    {{{"Bewegung",ViewerAction::move},
+      {"Einstellungen",ViewerAction::settings},
+      {"Vollbild [F11]",ViewerAction::fullscreen},
+      {"",ViewerAction::none}}},
+    {{{"Steuerung",ViewerAction::help},
+      {"Systemstatus",ViewerAction::region},
+      {"",ViewerAction::none},
+      {"",ViewerAction::none}}}
+}};
+inline constexpr std::array<std::string_view,7> action_labels{
+    "Chat","Bewegen","Teleport","Inventar","Outfits","Erlebnisse","Karte"
+};
+inline constexpr std::array<ViewerAction,7> action_commands{
+    ViewerAction::chat,ViewerAction::move,ViewerAction::teleport,
+    ViewerAction::inventory,ViewerAction::outfits,
+    ViewerAction::experiences,ViewerAction::map
+};
+inline constexpr std::array<ViewerAction,7> navigation_commands{
+    ViewerAction::region,ViewerAction::teleport,ViewerAction::disabled,
+    ViewerAction::disabled,ViewerAction::disabled,
+    ViewerAction::inventory,ViewerAction::disabled
+};
+struct ViewerShellLayout
+{
+    float width=1.0f,height=1.0f,scale=1.0f;
+    float panel_x=0.0f,panel_y=0.0f,panel_w=0.0f,panel_h=0.0f;
+    explicit ViewerShellLayout(int w,int h) noexcept
+    {
+        width=static_cast<float>(std::max(w,1));
+        height=static_cast<float>(std::max(h,1));
+        scale=std::clamp(height/1080.0f,0.74f,1.50f);
+        panel_w=std::min(740.0f*scale,width-32.0f);
+        panel_h=std::min(490.0f*scale,height-130.0f*scale);
+        panel_x=(width-panel_w)*0.5f;
+        panel_y=(height-panel_h)*0.5f;
+    }
+    [[nodiscard]] static bool inside(
+        double px,double py,float x,float y,float w,float h) noexcept
+    {return px>=x && py>=y && px<=x+w && py<=y+h;}
+    [[nodiscard]] ViewerAction hit(
+        double x,double y,const ViewerShellState& state,
+        int* menu_change=nullptr) const noexcept
+    {
+        if(menu_change)*menu_change=-2;
+        if(state.window!=ViewerWindow::none)
+        {
+            if(inside(x,y,panel_x+panel_w-56.0f*scale,
+                      panel_y+10.0f*scale,46.0f*scale,36.0f*scale))
+                return ViewerAction::close;
+            if(state.window==ViewerWindow::chat)
+            {
+                if(inside(x,y,panel_x+panel_w-170.0f*scale,
+                          panel_y+panel_h-92.0f*scale,
+                          145.0f*scale,48.0f*scale))
+                    return ViewerAction::send_chat;
+                if(inside(x,y,panel_x+26.0f*scale,
+                          panel_y+panel_h-92.0f*scale,
+                          panel_w-212.0f*scale,48.0f*scale))
+                    return ViewerAction::focus_chat;
+            }
+            if(state.window==ViewerWindow::teleport)
+            {
+                if(inside(x,y,panel_x+panel_w-170.0f*scale,
+                          panel_y+panel_h-100.0f*scale,
+                          145.0f*scale,48.0f*scale))
+                    return ViewerAction::send_teleport;
+                const float input_y=panel_y+155.0f*scale;
+                for(int i=0;i<3;++i)
+                    if(inside(x,y,panel_x+(30.0f+170.0f*static_cast<float>(i))*scale,
+                              input_y,155.0f*scale,50.0f*scale))
+                        return i==0?ViewerAction::focus_teleport_x:
+                               i==1?ViewerAction::focus_teleport_y:
+                                    ViewerAction::focus_teleport_z;
+            }
+            if(state.window==ViewerWindow::settings&&
+               inside(x,y,panel_x+30.0f*scale,panel_y+155.0f*scale,
+                      190.0f*scale,44.0f*scale))
+                return ViewerAction::fullscreen;
+            // Modal panel consumes all clicks, including outside, so
+            // buttons underneath cannot accidentally operate.
+            return ViewerAction::none;
+        }
+        const std::array<float,5> menu_x{18.0f,145.0f,310.0f,448.0f,572.0f};
+        for(std::size_t i=0;i<menu_x.size();++i)
+            if(inside(x,y,menu_x[i]*scale,66.0f*scale,
+                      (i==1?151.0f:120.0f)*scale,30.0f*scale))
+            {
+                if(menu_change)*menu_change=static_cast<int>(i);
+                return ViewerAction::none;
+            }
+        if(state.open_menu>=0 &&
+           static_cast<std::size_t>(state.open_menu)<menu_items.size())
+        {
+            const auto index=static_cast<std::size_t>(state.open_menu);
+            for(std::size_t row=0;row<menu_items[index].size();++row)
+            {
+                const auto& item=menu_items[index][row];
+                if(item.action==ViewerAction::none)continue;
+                if(inside(x,y,menu_x[index]*scale,
+                          (104.0f+39.0f*static_cast<float>(row))*scale,
+                          240.0f*scale,36.0f*scale))
+                    return item.action;
+            }
+            // Click outside dropdown dismisses menu, but never
+            // activates an underlying world or toolbar action.
+            if(menu_change)*menu_change=-3;
+            return ViewerAction::none;
+        }
+        // Left navigation: all seven entries are visible; unavailable
+        // ones are visually disabled and never trigger fake panels.
+        const float nav_y=98.0f*scale+12.0f*scale+34.0f*scale;
+        for(std::size_t i=0;i<navigation_commands.size();++i)
+            if(inside(x,y,18.0f*scale,
+                      nav_y+50.0f*scale*static_cast<float>(i),
+                      178.0f*scale,48.0f*scale))
+                return navigation_commands[i];
+        const float bottom_y=height-58.0f*scale+11.0f*scale;
+        const float bottom_x=214.0f*scale;
+        for(std::size_t i=0;i<action_commands.size();++i)
+            if(inside(x,y,bottom_x+104.0f*scale*static_cast<float>(i),
+                      bottom_y,96.0f*scale,34.0f*scale))
+                return action_commands[i];
+        return ViewerAction::none;
+    }
+};
+// Reject invalid/out-of-region coordinates before an explicit teleport
+// click ever reaches the OpenSim outbound queue.
+[[nodiscard]] inline std::optional<std::array<float,3>>
+valid_teleport_target(const ViewerShellState& state,
+                      unsigned region_width,unsigned region_height) noexcept
+{
+    std::array<float,3> target{};
+    for(std::size_t i=0;i<target.size();++i)
+    {
+        const auto& field=state.teleport_coords[i];
+        if(field.empty()||field.size()>18U)return std::nullopt;
+        const auto result=std::from_chars(field.data(),
+            field.data()+field.size(),target[i],
+            std::chars_format::general);
+        if(result.ec!=std::errc{} ||
+           result.ptr!=field.data()+field.size() ||
+           !std::isfinite(target[i]))return std::nullopt;
+    }
+    const float max_x=static_cast<float>(
+        std::clamp(region_width,1U,4096U));
+    const float max_y=static_cast<float>(
+        std::clamp(region_height,1U,4096U));
+    if(target[0]<0.0f||target[0]>=max_x||
+       target[1]<0.0f||target[1]>=max_y||
+       target[2]<-100.0f||target[2]>4096.0f)
+        return std::nullopt;
+    return target;
+}
+inline constexpr ViewerWindow window_for_action(ViewerAction action) noexcept
+{
+    switch(action)
+    {
+    case ViewerAction::chat:return ViewerWindow::chat;
+    case ViewerAction::move:return ViewerWindow::move;
+    case ViewerAction::teleport:return ViewerWindow::teleport;
+    case ViewerAction::region:return ViewerWindow::region;
+    case ViewerAction::map:return ViewerWindow::map;
+    case ViewerAction::avatar:return ViewerWindow::avatar;
+    case ViewerAction::settings:return ViewerWindow::settings;
+    case ViewerAction::help:return ViewerWindow::help;
+    default:return ViewerWindow::none;
+    }
+}
+}

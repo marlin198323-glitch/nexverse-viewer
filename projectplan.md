@@ -1,8 +1,67 @@
 # NexVerse Viewer – Projektplan
 
-Stand: 11.10.2026
+Stand: 13.10.2026
 Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
+
+---
+
+## VERBINDLICH: Funktionsentwicklung und Viewer-Oberfläche parallel (13.10.2026)
+
+**HÖCHSTE PROJEKTREGEL:** JEDER neue Entwicklungsblock implementiert **gleichzeitig**
+(1) Protokoll/Serverintegration, (2) WorldModel/Geschäftslogik,
+(3) OpenGL-/Welt-Darstellung wo zutreffend, (4) **sichtbare Viewer-Oberfläche**
+mit Menüeintrag, Button, Dialog/Floater und zum Benutzer passenden
+Rückmeldungen, (5) echte Verknüpfung der GUI-Aktion mit der Funktion und
+(6) Tests für Funktion UND Klickpfad. **Keine fertige Funktion ohne
+funktionierenden UI-Zugang als abgeschlossen bezeichnen.**
+Der bisherige Zustand mit sichtbaren, aber toten Menüeinträgen
+wird systematisch beseitigt. Verbindliche visuelle Referenz
+ist die vom Nutzer vorgegebene NexVerse-OGL-Gestaltung (Silber/Weiß,
+Cyan/Blau und Violett/Magenta auf Schwarz); Bedien-/Menüstruktur
+und Standardfunktionsumfang von Firestorm bleiben Grundlage.
+OpenGenesisLINK Server definiert Protokoll-, Rollen- und Featureverträge.
+
+**Umsetzungsregel pro "weiter":** Möglichst 8–12 in sich integrierte
+Arbeitspakete in EINEM getesteten Releaseblock, mit GitHub-Commit auf
+develop-current. *Jedes* Backend-Feature erhält möglichst im selben Block
+seine konkrete Oberfläche mit klickbaren Einträgen und Aktionen.
+Falls ein Backend noch nicht existiert: ausgegraut und als "in Arbeit"
+bezeichnen, niemals einen wirkungslosen Button als fertig darstellen.
+Dazu gehört auch umgekehrt: UI-Wunsch ohne funktionierenden
+Backend-Handler nicht als vollständig freigeben.
+
+**Abnahmekriterien für jede Benutzerfunktion (alle Pflicht):**
+- Firestorm-Funktionsverhalten/Standardmenü verglichen; OpenSim/
+  OpenGenesisLINK-Protokollverfügbarkeit und Rechte überprüft
+- Oberfläche sichtbar an der korrekten Stelle (obere Menüs, linke
+  Navigation, unteres Dock oder Kontextfenster), mit eindeutigem Namen
+- Button/Reiter/Maus-Klick treffsicher; Tastatur und ESC,
+  zurück/schließen funktionieren; keine unsichtbaren Klickflächen
+- Daten kommen aus echter WorldModel-/API-/CAPS-/Inventarquelle,
+  keine hardcodierten "Erfolg"-Werte
+- Klickaktion erreicht den vorhandenen Handler (SendQueue/
+  CAPS/Welt/Window), Fehler und "nicht bereit" werden sichtbar
+- Keine falschen Erfolgsmeldungen vor Serverbestätigung;
+  keine Input-Fokus-Leaks in WASD/Chat oder durch Modal-Fenster
+- Rendering auf 16:9, 21:9 und 32:9; Fullscreen mit F11
+  umschaltbar; Linux/Windows/macOS Ziel weiter prüfen
+- UI-Interaktionstests, GL-Screens und Backend-Regressionen,
+  am Ende echter InWorld-Test sobald Simulatorzugang vorliegt
+- Projektplan, info.md, CHATUEBERGABE.md, Firestorm-Paritätsmatrix
+  und **docs/VIEWER_UI_PARITY_PLAN.md** im selben Commit aktualisiert
+
+**Parallele Arbeitsstränge:** Avatar-/Animation-/Outfits-/COF-Backend
++ Avatar-Fenster/Appearance/Outfit-Buttons; Chat-LLUDP+
+Chat-Fenster/Freunde/Sitzung; Inventar-CAPS+
+klickbarer Ordner-/Item-Browser; Teleport/Region+
+Koordinaten-/Karten-/Orte-Fenster; Bewegung/Kamera+
+sichtbare Controls; World-/Renderer-Updates+
+Ansicht-/Grafikfenster; Gruppen/Events/Friends+
+entsprechende sichtbare Firestorm-Menüs nur bei
+implementiertem Backend. UI-Navigation und
+Fenster sind damit **kein nachgelagerter Projektabschnitt**,
+sondern ein fester Teil aller weiteren Projektphasen.
 
 ---
 
@@ -4591,3 +4650,83 @@ Joint-Rotation-Quaternions; serverseitige AnimationList mit
 AnimationSource und Sit/Stand/COF koppeln; danach GPU-
 SkinNormal-Transformation, Animation blending und
 NexVerse-E2E mit authentifiziertem Benutzerlogin.
+
+## Alpha.97 – NexVerse/Firestorm UI parallel zu Live-Funktionen (13.10.2026)
+
+Der Nutzer verlangt, dass Menüs, Buttons, Links, klickbare
+Fenster und NexVerse-Design zeitgleich zur Backend-Entwicklung
+funktionieren. Alpha.97 integriert im selben Release folgende
+UI-/Netzwerk-/Fenster-/Test-Blöcke, nicht nur eine UI-Mockup-Datei:
+
+1. Eigene ui/viewer_shell.hpp mit gemeinsamer Zustands-/Hitbox-
+   Geometrie für Top-Menü, linke Navigationsleiste, Bottom-Dock
+   und modale Floater. Das verhindert auseinanderdriftende
+   sichtbare Buttons und unsichtbare Klickbereiche.
+2. Fest sichtbare obere Menüs Avatar / Kommunikation / Welt /
+   Ansicht / Hilfe samt anklickbaren Dropdown-Einträgen,
+   aktivem Selektionsstil und korrekt ausgegrauten Funktionen.
+3. Sieben Dock-Aktionen (Chat, Bewegen, Teleport, Inventar,
+   Outfits, Erlebnisse, Karte), die auf bestehende Protokoll-
+   oder echte Fenstermodule verlinken – keine falschen
+   Sprechen/Bauen-Buttons als fertige User-Aktion.
+4. Bestehende linke Rail Welt/Orte/Inventar ist anklickbar.
+   Freunde/Gruppen/Events/Marketplace sichtbar, aber "IN ARBEIT"
+   und inaktiv, solange API/Funktionshandler fehlen.
+5. Neue echte OpenGL-Fenster: Lokaler Chat, Teleport-
+   Koordinaten, Region/Simulator-Daten, Mini-Region-Karte,
+   Avatar-Status, Grafik/Einstellungen und Steuerung/Hilfe.
+   Neues ui/viewer_shell_render.cpp und Header.
+   NexVerse Dark/Cyan/Violett im vorhandenen UI-Renderer.
+6. Inworld ChatInput mit UTF8, Backspace, Enter, Senden,
+   Sendewarteschlange via LocalChatMessage (echtes
+   ChatFromViewer LLUDP), und Status ohne erfundene
+   Zustellbestätigung; kein Schreiben des Chatinhalts in Logs.
+7. Eingehende ChatFromSimulator-Nachrichten mit sender, text,
+   max. 48 Zeilen im lokalen Viewer-Fenster (mutex protected),
+   Empfang bleibt im aktuellen Simulator-Circuit.
+8. Teleport-Fenster mit editierbaren X/Y/Z-Feldern,
+   TAB/Backspace/Enter, strenger Koordinaten-/Region-
+   Bereichsprüfung; expliziter Benutzerklick sendet
+   vorhandenes TeleportLocation OutboundCommand in denselben
+   autorisierten RegionHandle; kein simuliertes TeleportFinish.
+9. Live-WorldModel-Statusfenster mit tatsächlicher Region,
+   Terrain-/Parcel-/Objektzahl/Avataren und Position;
+   Karte benutzt nur wirkliche Remote- und Self-Positionen,
+   nennt sich bewusst Regionsausschnitt, NICHT globale Karte.
+   Avatar-Fenster zeigt echt empfangene Appearance,
+   Animations-/Attachment-Zahlen.
+10. Bestehende F8-Experiences-, F9-Outfit- und F10-Inventar-
+    Floater per Klick verknüpft. Outfit- und Inventarfenster
+    besitzen nun echte X-Schließen-Buttons. Inventar erhält
+    Oeffnen/Zurueck/Aktualisieren mit nutzbarer Klickfunktion.
+11. Modale Fenster halten die WASD-/Tastensteuerung von
+    der Welt fern und blockieren Click-through; ESC und
+    F6 Chat / F7 Region / F8–F10 Bestand / F11 Vollbild.
+    Breite via Height-Scale bleibt auf 16:9, 21:9 und 32:9
+    konsistent, sowohl Koordinaten als auch Zeichenfläche.
+12. Neue UI-Unit- und echte GL-Render-Tests mit synthetischen
+    Daten/Viewportgrößen. Es bleibt Pflicht, die tatsächlichen
+    Menüs nach NexVerse InWorld-Login zusätzlich visuell
+    zu prüfen. Nur ein lokaler GUI-Smoke beweist diesen
+    vollständigen Benutzerfluss NICHT.
+
+**Abgrenzung:** Original Firestorm Full-Funktionsparität
+ist NICHT erreicht; private/externen Links, Freunde,
+Gruppen, Events, Marketplace, Bauen und Sprachchat
+werden nicht als funktionierend vorgetäuscht.
+Unveränderte offene Kernentwicklung: Firestorm LLKeyframeMotion
+Assetclips, Avatar-Shape-Morphs, tatsächliche COF/Wear-
+Transaktionen, Attachments-Bone-Rotation und Live-Welt-
+Bewegung. **Ab Alpha.98 muss jedes dieser Features
+im SELBEN Block Menü/Fenster/Button/Status und
+Funktions- + UI-Tests erhalten, nicht nur C++-Backend.**
+
+Quellen:
+- FirestormViewer/phoenix-firestorm, Firestorm_7.2.4
+  SHA 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+- opengenesislink/opengenesislinkserver main,
+  SHA 4a2fc74e245bb948181db301b15246f915828fbc
+  (13.10.26 19:18Z, neue oglGetRegionDimensions LSL API –
+  kein automatischer Viewer-UI-Endpunkt).
+- docs/VIEWER_UI_PARITY_PLAN.md ist ab jetzt der
+  verbindliche UI-Paritäts-/Klickstatus pro Funktion.

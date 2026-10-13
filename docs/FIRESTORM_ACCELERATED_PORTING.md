@@ -63,3 +63,13 @@ meshes, GLSL weights and baked UVs. Actual LLKeyframeMotion
 assets, loop/priority/blend and custom animations remain
 the next critical milestone. Source references and wire
 tests: docs/ALPHA96_SERVER_ANIMATION.md.
+
+## Alpha.97 – parallele optische Viewer-Entwicklung verpflichtend
+
+Ab jetzt zu jedem technischen Paket denselben visuellen
+Funktionsumfang implementieren: Firestorm-konformer
+Menüeintrag, NexVerse-Style-Floater, klickbare Buttons,
+funktionierender Eingabe-/Backendhandler, ehrlicher Status,
+GUI-/GPU-Regressionsprüfung und Widescreen.
+Keine alleinige Backend-Arbeit bis die GUI Wochen später
+nachgereicht wird. Details docs/VIEWER_UI_PARITY_PLAN.md.

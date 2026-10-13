@@ -320,3 +320,16 @@ Late remote animations pending up to 64 entries do NOT
 create visible world actors. Firestorm animation-standard
 UUIDs select only temporary local poses, NOT the real
 animation asset track, priority and blend.
+
+## Alpha.97 – UI und Serverrechte sind eine gemeinsame Schnittstelle
+
+Firestorm-Funktionsentwicklung darf nicht losgelöst von deren
+Viewer-Menü/Floater/Tastatur-/Maustasten-Funktion erfolgen.
+Bereits implementierte CAPS-/WorldModel-Funktionen benötigen
+sichtbare und korrekt verdrahtete GUI-EntryPoints.
+Chat/Teleport gelten als ausdrückliche Nutzer-Requests
+im authentifizierten Weltkontext, keine automatischen Sends.
+Region-Karte zeigt nur real bekannte lokale Positionen.
+Backends ohne Rechte/Antwort bleiben sichtbar deaktiviert.
+Gemischte UI- und Netzwerk-/Renderer-Tests sind
+für zukünftige Blöcke Pflicht.

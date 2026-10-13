@@ -172,6 +172,7 @@ target_compile_definitions(nexverse-render PUBLIC GLFW_INCLUDE_NONE)
 
 add_library(nexverse-ui
     src/ui/ui_renderer.cpp
+    src/ui/viewer_shell_render.cpp
     src/ui/welcome_page.cpp
     src/app/application.cpp
 )
@@ -485,6 +486,24 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-avatar-animation-tests)
     add_test(NAME nexverse-avatar-animation-tests
         COMMAND nexverse-avatar-animation-tests)
+
+    add_executable(nexverse-viewer-shell-tests
+        tests/viewer_shell_tests.cpp)
+    target_link_libraries(nexverse-viewer-shell-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-viewer-shell-tests)
+    add_test(NAME nexverse-viewer-shell-tests
+        COMMAND nexverse-viewer-shell-tests)
+
+    add_executable(nexverse-viewer-shell-gl-tests
+        tests/viewer_shell_gl_tests.cpp)
+    target_link_libraries(nexverse-viewer-shell-gl-tests
+        PRIVATE NexVerse::UI glfw glad::glad)
+    nexverse_enable_warnings(nexverse-viewer-shell-gl-tests)
+    add_test(NAME nexverse-viewer-shell-gl-tests
+        COMMAND nexverse-viewer-shell-gl-tests)
+    set_tests_properties(nexverse-viewer-shell-gl-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
 
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)

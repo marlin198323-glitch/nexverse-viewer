@@ -358,3 +358,20 @@ OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
 | Standard ANIM_AGENT UUIDs | Walk/Run/Jump/Fly/Sit/Hover recognized | Source-based UUID assertions |
 | Real GL skeleton | Original 3 LLM weight meshes draw six provisional poses | NVIDIA GL regression |
 | Keyframe priority/morph/asset playback | Not implemented | Cannot claim full Firestorm animation |
+
+## Alpha.97 – GUI-Pflicht: Firestorm-Funktionsbaseline sichtbar im Viewer
+
+| Firestorm-Oberfläche | OGL real verknüpft | Einschränkung |
+|---|---|---|
+| Top-Menüs & Toolbar | 5 Dropdown-Menüs, aktive untere Aktionsleiste | Noch nicht alle Firestorm-Menüpunkte |
+| Avatar | Live Avatar-, Appearance- und Animations-Readback-Floater | Kein COF/Wear-Write |
+| Kommunikation | LocalChatWindow / LLUDP send/receive | IM/Friends/Voice fehlen |
+| Welt/Orte | Region, regionale Mini-Karte, Teleport-XYZ | keine globale Webmap oder LMs |
+| Inventar/Outfits | Bestehende CAPS-Viewer-Floater + klickbare Buttons | Wear/preflight nur lesend |
+| Erlebnisse | Bestehender CAPS Experience-Floater | keine ungeprüften Kaufaktionen |
+| Ansicht | Hilfefenster, F11 Fullscreen | Preferences-Umfang unvollständig |
+| Unimplementierte Menüs | Freunde/Gruppen/Events/Marketplace inaktiv | kein falsches "funktioniert" |
+| Responsive Test & GL | 3 Größen, tatsächliche Modal-/Texturzeichnung | authentifiziertes NexVerse E2E offen |
+
+Ab jetzt doc/VIEWER_UI_PARITY_PLAN.md als Pflichtdokument
+zusammen mit Projektplan bei jedem Backend-/UI-Block aktualisieren.

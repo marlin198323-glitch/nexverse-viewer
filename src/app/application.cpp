@@ -71,6 +71,8 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
+#include "nexverse/ui/viewer_shell.hpp"
+#include "nexverse/ui/viewer_shell_render.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
@@ -82,6 +84,7 @@
 #include <array>
 #include <cmath>
 #include <chrono>
+#include <deque>
 #include <exception>
 #include <future>
 #include <limits>
@@ -390,6 +393,7 @@ struct LoginUiState
 struct InputContext
 {
     LoginUiState* login = nullptr;
+    nexverse::ui::ViewerShellState* viewer_shell=nullptr;
     nexverse::protocol::ExperienceUiState* experience = nullptr;
     bool* outfits = nullptr;
     std::size_t* outfit_selection = nullptr;
@@ -479,6 +483,23 @@ void erase_last_utf8(std::string& target)
 void character_callback(GLFWwindow* window, unsigned int codepoint)
 {
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if(context && context->viewer_shell &&
+       context->viewer_shell->window==nexverse::ui::ViewerWindow::chat)
+    {
+        append_utf8(context->viewer_shell->chat_draft,
+                    static_cast<char32_t>(codepoint),500U);
+        return;
+    }
+    if(context && context->viewer_shell &&
+       context->viewer_shell->window==nexverse::ui::ViewerWindow::teleport)
+    {
+        auto& shell=*context->viewer_shell;
+        const char32_t c=static_cast<char32_t>(codepoint);
+        if((c>=U'0'&&c<=U'9')||c==U'.'||c==U'-')
+            append_utf8(shell.teleport_coords[
+                static_cast<std::size_t>(shell.teleport_focus)],c,18U);
+        return;
+    }
     if (context == nullptr || context->login == nullptr || context->login->busy) return;
 
     LoginUiState& state = *context->login;
@@ -499,6 +520,14 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
+        if(context && context->viewer_shell &&
+           (context->viewer_shell->window!=
+                nexverse::ui::ViewerWindow::none||
+            context->viewer_shell->open_menu>=0))
+        {
+            context->viewer_shell->close();
+            return;
+        }
         if(context &&context->permission_consent &&
            context->permission_consent->pending())
             context->permission_consent->cancel();
@@ -511,6 +540,50 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         else
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         return;
+    }
+    if(context && context->viewer_shell &&
+       context->login && context->login->authenticated &&
+       context->simulation_ready && *context->simulation_ready &&
+       action==GLFW_PRESS)
+    {
+        auto& shell=*context->viewer_shell;
+        if(key==GLFW_KEY_F6||key==GLFW_KEY_F7)
+        {
+            const auto which=key==GLFW_KEY_F6
+                ?nexverse::ui::ViewerWindow::chat
+                :nexverse::ui::ViewerWindow::region;
+            shell.window=shell.window==which
+                ?nexverse::ui::ViewerWindow::none:which;
+            shell.open_menu=-1;
+            if(shell.window!=nexverse::ui::ViewerWindow::none)
+            {
+                if(context->outfits)*context->outfits=false;
+                if(context->inventory_open)*context->inventory_open=false;
+                if(context->experience)context->experience->close();
+            }
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::chat)
+        {
+            if(key==GLFW_KEY_ENTER||key==GLFW_KEY_KP_ENTER)
+                shell.chat_submit_requested=true;
+            else if(key==GLFW_KEY_BACKSPACE)
+                erase_last_utf8(shell.chat_draft);
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::teleport)
+        {
+            if(key==GLFW_KEY_TAB)
+                shell.teleport_focus=(shell.teleport_focus+1)%3;
+            else if(key==GLFW_KEY_ENTER||key==GLFW_KEY_KP_ENTER)
+                shell.teleport_submit_requested=true;
+            else if(key==GLFW_KEY_BACKSPACE)
+                erase_last_utf8(shell.teleport_coords[
+                    static_cast<std::size_t>(shell.teleport_focus)]);
+            return;
+        }
+        if(shell.window!=nexverse::ui::ViewerWindow::none &&
+           key!=GLFW_KEY_F11)return;
     }
     if(context && context->experience && action==GLFW_PRESS)
     {
@@ -776,6 +849,107 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
 
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if(context &&context->viewer_shell&&context->simulation_ready &&
+       *context->simulation_ready&&context->login &&
+       context->login->authenticated &&
+       !(context->experience&&context->experience->open) &&
+       !(context->outfits&&*context->outfits) &&
+       !(context->inventory_open&&*context->inventory_open))
+    {
+        int width=0,height=0;
+        glfwGetWindowSize(window,&width,&height);
+        double mx=0.0,my=0.0;
+        glfwGetCursorPos(window,&mx,&my);
+        auto& shell=*context->viewer_shell;
+        const nexverse::ui::ViewerShellLayout layout{width,height};
+        int menu_change=-2;
+        const auto command=layout.hit(mx,my,shell,&menu_change);
+        if(menu_change>=0)
+        {
+            shell.open_menu=shell.open_menu==menu_change
+                ?-1:menu_change;
+            return;
+        }
+        if(menu_change==-3)
+        {
+            shell.open_menu=-1;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::close)
+        {
+            shell.close();return;
+        }
+        if(command==nexverse::ui::ViewerAction::send_chat)
+        {
+            shell.chat_submit_requested=true;return;
+        }
+        if(command==nexverse::ui::ViewerAction::send_teleport)
+        {
+            shell.teleport_submit_requested=true;return;
+        }
+        if(command==nexverse::ui::ViewerAction::focus_teleport_x||
+           command==nexverse::ui::ViewerAction::focus_teleport_y||
+           command==nexverse::ui::ViewerAction::focus_teleport_z)
+        {
+            shell.teleport_focus=
+                command==nexverse::ui::ViewerAction::focus_teleport_x?0:
+                command==nexverse::ui::ViewerAction::focus_teleport_y?1:2;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::fullscreen)
+        {
+            shell.open_menu=-1;
+            key_callback(window,GLFW_KEY_F11,0,GLFW_PRESS,0);
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::inventory||
+           command==nexverse::ui::ViewerAction::outfits||
+           command==nexverse::ui::ViewerAction::experiences)
+        {
+            shell.close();
+            if(command==nexverse::ui::ViewerAction::inventory &&
+               context->inventory_open)
+            {
+                *context->inventory_open=true;
+                if(context->inventory_selection)
+                    *context->inventory_selection=0U;
+            }
+            else if(command==nexverse::ui::ViewerAction::outfits &&
+                    context->outfits)
+            {
+                *context->outfits=true;
+                if(context->outfit_selection)
+                    *context->outfit_selection=0U;
+            }
+            else if(command==nexverse::ui::ViewerAction::experiences&&
+                    context->experience)
+                context->experience->toggle(true,true);
+            if(context->experience&&
+               command!=nexverse::ui::ViewerAction::experiences)
+                context->experience->close();
+            if(context->inventory_open&&
+               command!=nexverse::ui::ViewerAction::inventory)
+                *context->inventory_open=false;
+            if(context->outfits&&
+               command!=nexverse::ui::ViewerAction::outfits)
+                *context->outfits=false;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::disabled)return;
+        const auto open=nexverse::ui::window_for_action(command);
+        if(open!=nexverse::ui::ViewerWindow::none)
+        {
+            shell.window=open;
+            shell.open_menu=-1;
+            if(context->experience)context->experience->close();
+            if(context->inventory_open)*context->inventory_open=false;
+            if(context->outfits)*context->outfits=false;
+            return;
+        }
+        if(shell.input_captured()||
+           command==nexverse::ui::ViewerAction::focus_chat)
+            return;
+    }
     if(context && context->experience && context->experience->open &&
        context->login && context->login->authenticated)
     {
@@ -837,6 +1011,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         const float x=(static_cast<float>(w)-panel_w)*0.5f;
         const float y=std::max(30.0f,
             (static_cast<float>(h)-500.0f*scale)*0.5f);
+        if(point_inside(px,py,x+panel_w-55.0f*scale,
+                        y+10.0f*scale,45.0f*scale,35.0f*scale))
+        {
+            *context->outfits=false;
+            return;
+        }
         if(point_inside(px,py,x+22.0f*scale,y+115.0f*scale,
                         425.0f*scale,300.0f*scale))
         {
@@ -856,6 +1036,53 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         const float pw=std::min(690.0f*sc,static_cast<float>(ww)-32.0f);
         const float xx=(static_cast<float>(ww)-pw)*0.5f;
         const float yy=std::max(30.0f,(static_cast<float>(hh)-520.0f*sc)*0.5f);
+        if(point_inside(mx,my,xx+pw-55.0f*sc,yy+10.0f*sc,
+                        45.0f*sc,35.0f*sc))
+        {
+            *context->inventory_open=false;
+            return;
+        }
+        for(std::size_t idx=0U;idx<3U;++idx)
+        {
+            if(!point_inside(mx,my,
+                xx+(23.0f+145.0f*static_cast<float>(idx))*sc,
+                yy+(520.0f-72.0f)*sc,135.0f*sc,35.0f*sc))
+                continue;
+            if(idx==2U&&context->inventory_refresh_requested)
+                *context->inventory_refresh_requested=true;
+            else
+            {
+                auto& parent=*context->inventory_parent;
+                auto& selected=*context->inventory_selection;
+                if(idx==0U)
+                {
+                    std::vector<std::string> folders;
+                    for(const auto& [id,node]:context->inventory_tree->folders)
+                        if(node.parent_id==parent)folders.push_back(id);
+                    if(selected<folders.size())
+                    {
+                        parent=folders[selected];
+                        selected=0U;
+                        if(context->inventory_item_selection)
+                            *context->inventory_item_selection=0U;
+                    }
+                }
+                else
+                {
+                    const auto current=
+                        context->inventory_tree->folders.find(parent);
+                    if(current!=context->inventory_tree->folders.end() &&
+                       !current->second.parent_id.empty())
+                    {
+                        parent=current->second.parent_id;
+                        selected=0U;
+                        if(context->inventory_item_selection)
+                            *context->inventory_item_selection=0U;
+                    }
+                }
+            }
+            return;
+        }
         if(context->inventory_item_selection &&
            point_inside(mx,my,xx+pw*0.51f+12.0f*sc,yy+145.0f*sc,
                         pw*0.48f-20.0f*sc,270.0f*sc))
@@ -1445,14 +1672,16 @@ void render_world_hud(
     const nexverse::protocol::CircuitStatus& circuit,
     const FrameMetrics& frame_metrics,
     const nexverse::render::RenderDiagnostics& render_diagnostics,
-    const nexverse::core::SystemMemoryMetrics& memory_metrics)
+    const nexverse::core::SystemMemoryMetrics& memory_metrics,
+    const nexverse::ui::ViewerShellState& shell,
+    bool inventory_open,bool outfit_open,bool experiences_open)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
 
     // Vertical scaling keeps the world viewport wide on 21:9 and 32:9.
     const float scale = std::clamp(h / 1080.0f, 0.74f, 1.50f);
-    const float top_h = 66.0f * scale;
+    const float top_h = 98.0f * scale;
     const float bottom_h = 58.0f * scale;
     const float left_w = 190.0f * scale;
     const float right_w = 268.0f * scale;
@@ -1577,13 +1806,13 @@ void render_world_hud(
         theme::text_muted);
 
     const std::array<std::pair<std::string_view, std::string_view>, 7> navigation{{
-        {"Welt", "Region und Umgebung"},
-        {"Orte", "Favoriten und Ziele"},
-        {"Freunde", "Kontakte und Naehe"},
-        {"Gruppen", "Communities"},
-        {"Events", "Veranstaltungen"},
-        {"Inventar", "Objekte und Assets"},
-        {"Marketplace", "NexVerse entdecken"}
+        {"Welt", "Region ansehen"},
+        {"Orte", "Teleport-Ziel"},
+        {"Freunde", "Noch nicht bereit"},
+        {"Gruppen", "Noch nicht bereit"},
+        {"Events", "Noch nicht bereit"},
+        {"Inventar", "Ordner und Items"},
+        {"Marketplace", "Noch nicht bereit"}
     }};
 
     float nav_y = rail_y + 34.0f * scale;
@@ -1597,7 +1826,18 @@ void render_world_hud(
             scale * 0.84f,
             navigation[index].first,
             navigation[index].second,
-            index == 0U);
+            (index==0U&&shell.window==nexverse::ui::ViewerWindow::region)||
+            (index==1U&&shell.window==nexverse::ui::ViewerWindow::teleport)||
+            (index==5U&&inventory_open));
+        if(nexverse::ui::navigation_commands[index]==nexverse::ui::ViewerAction::disabled)
+        {
+            renderer.rect(margin+6.0f*scale,nav_y,
+                          left_w-12.0f*scale,47.0f*scale,
+                          Color{0.008f,0.018f,0.035f,0.56f},
+                          7.0f*scale);
+            renderer.text(margin+18.0f*scale,nav_y+31.0f*scale,
+                          7.7f*scale,"IN ARBEIT",theme::warning);
+        }
         nav_y += 50.0f * scale;
     }
 
@@ -1774,32 +2014,35 @@ void render_world_hud(
         with_alpha(theme::cyan, 0.45f),
         0.0f);
 
-    const std::array<std::string_view, 7> actions{
-        "Chat", "Sprechen", "Bewegen", "Teleport", "Inventar", "Bauen", "Karte"
-    };
-
-    float action_x = left_w + margin * 2.0f;
-    for (const auto action : actions)
+    float action_x = 214.0f * scale;
+    for(std::size_t index=0U;
+        index<nexverse::ui::action_labels.size();++index)
     {
-        const float action_w =
-            std::max(
-                72.0f * scale,
-                renderer.text_width(9.0f * scale, action) + 28.0f * scale);
+        const auto action=nexverse::ui::action_labels[index];
+        const auto command=nexverse::ui::action_commands[index];
+        const bool selected=
+            (command==nexverse::ui::ViewerAction::inventory&&inventory_open)||
+            (command==nexverse::ui::ViewerAction::outfits&&outfit_open)||
+            (command==nexverse::ui::ViewerAction::experiences&&experiences_open)||
+            (shell.window!=nexverse::ui::ViewerWindow::none&&
+             nexverse::ui::window_for_action(command)==shell.window);
+        const float action_w=96.0f*scale;
 
         renderer.rect(
             action_x,
             h - bottom_h + 11.0f * scale,
             action_w,
             34.0f * scale,
-            Color{0.020f, 0.045f, 0.080f, 0.90f},
+            selected?Color{0.055f,0.170f,0.235f,0.96f}
+                    :Color{0.020f, 0.045f, 0.080f, 0.90f},
             8.0f * scale);
         renderer.text(
             action_x + 14.0f * scale,
             h - bottom_h + 20.0f * scale,
             9.0f * scale,
             action,
-            theme::text_muted);
-        action_x += action_w + 8.0f * scale;
+            selected?theme::cyan:theme::text_muted);
+        action_x += 104.0f * scale;
     }
 }
 
@@ -1826,6 +2069,11 @@ void render_outfit_gallery(
     renderer.rect(x,y,pw,ph,Color{0.014f,0.032f,0.057f,0.98f},11.0f*scale);
     renderer.text(x+22.0f*scale,y+24.0f*scale,
                   17.0f*scale,"Outfit-Galerie",theme::text);
+    renderer.rect(x+pw-55.0f*scale,y+10.0f*scale,
+                  45.0f*scale,35.0f*scale,
+                  Color{0.16f,0.050f,0.087f,1.0f},8.0f*scale);
+    renderer.text(x+pw-40.0f*scale,y+17.0f*scale,
+                  12.0f*scale,"X",theme::text);
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
                   theme::cyan);
@@ -1951,6 +2199,11 @@ void render_inventory_tree(
     renderer.rect(x,y,pw,ph,Color{0.014f,0.032f,0.057f,0.99f},11.0f*scale);
     renderer.text(x+23.0f*scale,y+25.0f*scale,
         18.0f*scale,"Inventar / Inventory",theme::text);
+    renderer.rect(x+pw-55.0f*scale,y+10.0f*scale,
+                  45.0f*scale,35.0f*scale,
+                  Color{0.16f,0.050f,0.087f,1.0f},8.0f*scale);
+    renderer.text(x+pw-40.0f*scale,y+17.0f*scale,
+                  12.0f*scale,"X",theme::text);
     renderer.text(x+23.0f*scale,y+60.0f*scale,
         9.0f*scale,"Firestorm-Struktur aus authentifiziertem Login und CAPS",
         theme::cyan);
@@ -2015,11 +2268,18 @@ void render_inventory_tree(
                 8.5f*scale,line,theme::cyan);
         }
     }
-    renderer.text(x+23.0f*scale,y+ph-55.0f*scale,8.5f*scale,
-        "Auf/Ab Ordner | J/K Gegenstand | I Details | Enter Ordner | Links zurueck",
-        theme::cyan);
-    renderer.text(x+23.0f*scale,y+ph-32.0f*scale,8.0f*scale,
-        "R aktualisieren | F10/ESC schliessen | Nur lesend; kein Outfit-Wear",
+    const std::array<std::string_view,3U> buttons{
+        "Ordner oeffnen","Zurueck","Aktualisieren"};
+    for(std::size_t i=0U;i<buttons.size();++i)
+    {
+        const float bx=x+(23.0f+145.0f*static_cast<float>(i))*scale;
+        renderer.rect(bx,y+ph-72.0f*scale,135.0f*scale,35.0f*scale,
+                      Color{0.030f,0.092f,0.155f,0.95f},6.0f*scale);
+        renderer.text(bx+9.0f*scale,y+ph-60.0f*scale,8.8f*scale,
+                      buttons[i],theme::text);
+    }
+    renderer.text(x+23.0f*scale,y+ph-24.0f*scale,8.0f*scale,
+        "F10 / ESC schliessen | J/K Items | I Details | Read-only",
         theme::text_muted);
 }
 
@@ -2166,7 +2426,9 @@ void render_shell(
     const nexverse::render::RenderDiagnostics& render_diagnostics,
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     bool simulation_ready,
-    unsigned int welcome_texture)
+    unsigned int welcome_texture,
+    const nexverse::ui::ViewerShellState& shell,
+    bool inventory_open,bool outfit_open,bool experiences_open)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -2196,7 +2458,7 @@ void render_shell(
             circuit,
             frame_metrics,
             render_diagnostics,
-            memory_metrics);
+            memory_metrics,shell,inventory_open,outfit_open,experiences_open);
         return;
     }
 
@@ -3211,6 +3473,7 @@ int Application::run(bool enable_developer_modules)
     glfwGetWindowSize(window, &window_width, &window_height);
 
     LoginUiState login_ui;
+    ui::ViewerShellState viewer_shell;
     protocol::ExperienceUiState experience_ui;
     protocol::ExperiencePermissionConsent experience_consent;
     std::optional<protocol::ExperiencePermissionRequest>
@@ -3270,6 +3533,7 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point last_self_movement_log{};
     protocol::MovementFeedbackMonitor movement_feedback;
     bool simulation_ready = false;
+    input_context.viewer_shell=&viewer_shell;
     input_context.experience=&experience_ui;
     input_context.outfits=&outfit_gallery_open;
     input_context.outfit_selection=&outfit_selection;
@@ -3394,6 +3658,8 @@ int Application::run(bool enable_developer_modules)
         });
 
     std::atomic_uint32_t local_chat_received{0U};
+    std::mutex chat_history_mutex;
+    std::deque<std::string> chat_history;
     std::atomic_bool region_handshake_world_logged{false};
     std::atomic_bool movement_complete_world_logged{false};
     std::atomic_uint32_t terrain_packets{0U};
@@ -3515,12 +3781,24 @@ int Application::run(bool enable_developer_modules)
 
     packet_dispatcher.register_handler(
         protocol::msg_chat_from_simulator,
-        [&local_chat_received](const protocol::DecodedPacket& packet)
+        [&local_chat_received,&chat_history_mutex,&chat_history](
+            const protocol::DecodedPacket& packet)
         {
-            if (protocol::decode_chat_from_simulator(packet.payload).has_value())
-            {
-                local_chat_received.fetch_add(1U, std::memory_order_relaxed);
-            }
+            const auto incoming=protocol::decode_chat_from_simulator(
+                packet.payload);
+            if(!incoming)return;
+            local_chat_received.fetch_add(1U,std::memory_order_relaxed);
+            // Real simulator chat is displayed locally, never written
+            // verbatim to logs; bounded to prevent memory exhaustion.
+            std::string sender=incoming->from_name.substr(0U,60U);
+            std::string message=incoming->message.substr(0U,360U);
+            for(auto* raw:{&sender,&message})
+                for(char& ch:*raw)
+                    if(ch=='\n'||ch=='\r'||ch=='\t')ch=' ';
+            std::scoped_lock lock{chat_history_mutex};
+            chat_history.push_back((sender.empty()?"System":sender)+
+                                   ": "+message);
+            while(chat_history.size()>48U)chat_history.pop_front();
         });
 
     packet_dispatcher.register_handler(
@@ -4620,6 +4898,63 @@ int Application::run(bool enable_developer_modules)
         {
             glfwPollEvents();
 
+            // Real UI commands are queued on the render/main thread,
+            // never from a network callback or a login-only mockup.
+            if(viewer_shell.chat_submit_requested)
+            {
+                viewer_shell.chat_submit_requested=false;
+                auto msg=viewer_shell.chat_draft;
+                const auto last=msg.find_last_not_of(" \r\n\t");
+                if(last==std::string::npos)
+                {
+                    viewer_shell.status_text="Bitte eine Nachricht eingeben.";
+                }
+                else if(!simulation_ready||!login_ui.authenticated)
+                {
+                    viewer_shell.status_text="Nur in verbundener Welt moeglich.";
+                }
+                else
+                {
+                    msg.erase(last+1U);
+                    const auto first=msg.find_first_not_of(" \r\n\t");
+                    msg.erase(0U,first);
+                    if(outbound_queue.push(protocol::LocalChatMessage{
+                        std::move(msg),protocol::LocalChatType::normal,0}))
+                    {
+                        viewer_shell.chat_draft.clear();
+                        viewer_shell.status_text="Chat-Nachricht in Sendewarteschlange.";
+                    }
+                    else viewer_shell.status_text=
+                        "Netzwerk-Warteschlange voll: erneut versuchen.";
+                }
+            }
+            if(viewer_shell.teleport_submit_requested)
+            {
+                viewer_shell.teleport_submit_requested=false;
+                world::RegionState dest_region;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    dest_region=world_model.region();
+                }
+                const auto coords=ui::valid_teleport_target(
+                    viewer_shell,dest_region.size_x,dest_region.size_y);
+                if(!simulation_ready||!login_ui.authenticated||
+                   !dest_region.connected||dest_region.handle==0U)
+                    viewer_shell.status_text=
+                        "Keine aktive Simulatorverbindung.";
+                else if(!coords)
+                    viewer_shell.status_text=
+                        "Ungueltiges Ziel: X/Y im Regionbereich, Z -100..4096.";
+                else if(outbound_queue.push(protocol::TeleportLocation{
+                    dest_region.handle,
+                    {(*coords)[0],(*coords)[1],(*coords)[2]},
+                    {1.0f,0.0f,0.0f}}))
+                    viewer_shell.status_text=
+                        "Teleport angefordert (Simulatorbestaetigung ausstehend).";
+                else viewer_shell.status_text=
+                    "Netzwerk-Warteschlange voll: erneut versuchen.";
+            }
+
             const auto frame_now = std::chrono::steady_clock::now();
             const double raw_frame_ms =
                 std::chrono::duration<double, std::milli>(
@@ -5572,6 +5907,7 @@ int Application::run(bool enable_developer_modules)
 
             if (!simulation_ready)
             {
+                viewer_shell.close();
                 world_ready_logged = false;
                 experience_ui.close();
                 outfit_gallery_open=false;
@@ -5607,7 +5943,8 @@ int Application::run(bool enable_developer_modules)
                     glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
                 const auto pressed = [&](int key)
                 {
-                    return focused &&!experience_ui.open &&
+                    return focused && !viewer_shell.input_captured() &&
+                           !experience_ui.open &&
                            !outfit_gallery_open&&!inventory_tree_open &&
                            glfwGetKey(window, key) == GLFW_PRESS;
                 };
@@ -8986,9 +9323,53 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics,
                 memory_metrics,
                 simulation_ready,
-                welcome_texture);
+                welcome_texture,viewer_shell,
+                inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)
             {
+                ui::ViewerShellView shell_view;
+                shell_view.avatar_name=login_ui.username;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    const auto& region=world_model.region();
+                    const auto& agent=world_model.agent();
+                    shell_view.region_name=region.name;
+                    shell_view.region_connected=region.connected;
+                    shell_view.region_width=region.size_x;
+                    shell_view.region_height=region.size_y;
+                    shell_view.agent_position={
+                        agent.position.x,agent.position.y,agent.position.z};
+                    shell_view.avatar_present=agent.present;
+                    shell_view.objects=world_model.objects().size();
+                    shell_view.remote_avatars=world_model.avatars().size();
+                    shell_view.terrain_patches=
+                        world_model.terrain().valid_patch_count;
+                    shell_view.terrain_ready=world_model.terrain().available;
+                    shell_view.parcel_ready=world_model.parcel().available;
+                    shell_view.appearance_ready=
+                        world_model.self_appearance().has_value();
+                    shell_view.animations=world_model.self_animations()
+                        ?world_model.self_animations()->animations.size():0U;
+                    shell_view.attachments=world_model.self_appearance()
+                        ?world_model.self_appearance()->attachments.size():0U;
+                    if(viewer_shell.window==ui::ViewerWindow::map)
+                        for(const auto& [id,avatar]:world_model.avatars())
+                        {
+                            (void)id;
+                            if(avatar.position_known)
+                                shell_view.avatar_positions.push_back({
+                                    avatar.position.x,avatar.position.y});
+                        }
+                }
+                if(viewer_shell.window==ui::ViewerWindow::chat)
+                {
+                    std::scoped_lock lock{chat_history_mutex};
+                    shell_view.chat_lines.assign(
+                        chat_history.begin(),chat_history.end());
+                }
+                ui::render_viewer_shell(
+                    renderer,window_width,window_height,
+                    viewer_shell,shell_view);
                 if(outfit_gallery_open &&active_session)
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
