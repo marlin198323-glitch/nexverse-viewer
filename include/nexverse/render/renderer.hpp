@@ -203,6 +203,11 @@ struct RenderAvatarProxy
     RenderVec3 position;
     RenderQuaternion rotation;
     bool is_self = false;
+    // From server AvatarAppearance TextureEntry, only Head/Upper/Lower.
+    // Empty slot uses the provisional flat proxy tint.
+    std::array<std::string,3U> baked_texture_ids{};
+    // Local simulator ObjectUpdate avatar ID, for children/attachments.
+    std::uint32_t local_id = 0U;
 };
 
 struct RenderCamera
@@ -297,6 +302,8 @@ struct RenderDiagnostics
     // and separate from world-object scene mesh draw accounting.
     std::uint64_t avatar_proxy_draw_calls = 0U;
     std::uint64_t self_avatar_proxy_draw_calls = 0U;
+    std::uint64_t avatar_baked_texture_draw_calls = 0U;
+    std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
 };
 
 enum class GpuUploadFailure

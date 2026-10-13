@@ -59,3 +59,18 @@ Tokens oder Attachment-UUIDs. Die Logzeile belegt ausschließlich
 Empfang der Metadaten, keine korrekt gerenderte Skin/Outfit-Bake.
 Nach neuer Alpha.92-Sitzung sind Self-Readback, Avatar-motion-
 Evidence, echte Bewegung und Avatarposition gesondert abzunehmen.
+
+
+## Alpha.93 – notwendiger authentifizierter NexVerse-Test
+
+Neue Alpha.93-Logzeile bei echtem GPU-Head/Upper/Lower-Bake-Draw:
+'Avatar SELF Head/Upper/Lower baked TEXTURE submitted to OpenGL'.
+Die Logzeile zählt tatsächliche Drawcalls, nicht nur
+Asset-IDs oder den Empfang von AvatarAppearance.
+Sie behauptet ausdrücklich kein Firestorm-Skeleton-
+Skinning oder UV-Korrektheit. Voraussetzung:
+User-Login, Server-AvatarAppearance mit expliziten
+Bake-Face-UUIDs, erfolgreiche GetTexture und GPU-Residency.
+Ohne diese Live-Sitzung bleiben Avatar-Bake und WASD
+not_live_verified. AvatarAttachment-Parent-Pose hat
+bislang ebenfalls nur reproduzierbare Unit-/GPU-Tests.

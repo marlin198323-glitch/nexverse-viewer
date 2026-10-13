@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/material_pass.hpp"
 #include "nexverse/render/particle_motion.hpp"
@@ -3105,6 +3106,8 @@ public:
         diagnostics_.scene_missing_mesh_triangles = 0U;
         diagnostics_.avatar_proxy_draw_calls = 0U;
         diagnostics_.self_avatar_proxy_draw_calls = 0U;
+        diagnostics_.avatar_baked_texture_draw_calls = 0U;
+        diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -3996,7 +3999,41 @@ public:
                         {0.16f, 0.21f, 0.33f},
                         {0.08f, 0.13f, 0.24f}
                     }};
-                    const auto tint = colors[part.color];
+                    // Transition toward baked Firestorm appearance using
+                    // the already resident GetTexture OpenGL cache. Head
+                    // -> baked face 8; torso/arms -> 9; legs -> 10. This
+                    // is NOT UV-correct skeleton skinning or outfit wear.
+                    const std::size_t baked_slot=part.color==0U?0U:
+                        part.color==3U?2U:1U;
+                    const auto& baked_id=avatar.baked_texture_ids[baked_slot];
+                    bool baked=false;
+                    if(!baked_id.empty())
+                    {
+                        const auto tex=object_textures_.find(baked_id);
+                        if(tex!=object_textures_.end() && tex->second!=0U)
+                        {
+                            glActiveTexture(GL_TEXTURE4);
+                            glBindTexture(GL_TEXTURE_2D,tex->second);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectTexture"),4);
+                            baked=true;
+                        }
+                    }
+                    glUniform1i(glGetUniformLocation(
+                        program_,"uUseObjectTexture"),
+                        baked?GL_TRUE:GL_FALSE);
+                    glUniform2f(glGetUniformLocation(
+                        program_,"uObjectRepeat"),1.0f,1.0f);
+                    glUniform2f(glGetUniformLocation(
+                        program_,"uObjectOffset"),0.0f,0.0f);
+                    glUniform1f(glGetUniformLocation(
+                        program_,"uObjectRotation"),0.0f);
+                    glUniform1i(glGetUniformLocation(
+                        program_,"uObjectAlphaMode"),2);
+                    glUniform1f(glGetUniformLocation(
+                        program_,"uObjectAlphaCutoff"),0.015f);
+                    const auto tint = baked
+                        ? RenderVec3{1.0f,1.0f,1.0f} : colors[part.color];
                     const float shade = avatar.is_self ? 1.0f : 0.72f;
                     glUniform3f(
                         glGetUniformLocation(program_,
@@ -4010,14 +4047,23 @@ public:
                     ++diagnostics_.avatar_proxy_draw_calls;
                     if(avatar.is_self)
                         ++diagnostics_.self_avatar_proxy_draw_calls;
+                    if(baked)
+                    {
+                        ++diagnostics_.avatar_baked_texture_draw_calls;
+                        if(avatar.is_self)
+                            ++diagnostics_.self_avatar_baked_texture_draw_calls;
+                    }
                     diagnostics_.triangles +=
                         static_cast<std::uint64_t>(gpu.index_count / 3);
                 }
             }
             glBindVertexArray(0U);
+            glUniform1i(glGetUniformLocation(
+                program_,"uUseObjectTexture"),GL_FALSE);
             glUniform1i(
                 glGetUniformLocation(program_, "uOverrideColor"),
                 GL_FALSE);
+            glActiveTexture(GL_TEXTURE0);
         }
 
         draw_soft_particles(time_seconds, multiply(projection, view));
@@ -4557,6 +4603,17 @@ private:
         if (found == scene_object_index_.end() ||
             found->second == index)
         {
+            // OpenSim attachments use the avatar's simulator local-id as
+            // their root parent. The avatar is intentionally not a prim
+            // in scene_object_index_. Resolve the child through the live
+            // self/remote avatar transform to follow WASD/teleport movement.
+            // Not a skeletal attachment point yet: skeleton/rig is pending.
+            if(const auto* avatar=find_attachment_avatar_parent(
+                   avatar_proxies_,object.parent_id))
+                return multiply(
+                    multiply(translation(avatar->position),
+                             quaternion_rotation(avatar->rotation)),
+                    local_pose);
             return local_pose;
         }
 

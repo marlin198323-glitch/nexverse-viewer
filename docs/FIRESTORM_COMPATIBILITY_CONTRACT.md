@@ -260,3 +260,22 @@ Bake, Attach oder einem voll geriggten Renderer.
 Appearance wird pro authentifizierter SelfAgentID getrennt
 gespeichert und bei Regionsepochenwechsel verworfen;
 Pose-only-Pakete löschen keine Textur-/COF-Daten mehr.
+
+
+## Alpha.93 – echte BakedTextures nur aus expliziten TextureEntry-Faces
+
+Firestorm ETextureIndex Baked Head 8, Upper 9, Lower 10,
+Eyes 11, Skirt 19, Hair 20, LeftArm 40, LeftLeg 41,
+Aux1/2/3 42/43/44. TextureEntry-Default-Face oder
+Farb-/UV-Override sind KEIN Nachweis einer Bake.
+Der Decoder besitzt nun eigene texture_id_overridden[64]
+Indikatoren. NullUUIDs und IMG_USE_BAKED_*
+Placeholder-IDs dürfen keine GetTexture-Aufträge
+auslösen. Die gültigen Head/Upper/Lower-UUIDs nehmen
+an der bestehenden GPU-Asset-Budgetverwaltung teil.
+OpenGL-Proxy-Drawcalls mit tatsächlichem Texture-Sampling
+werden separat gezählt. Ein UV-korrektes Mesh-Skinning
+und Firestorm-Rig/Körper/COF steht weiter aus.
+Ein vom Simulator bestätigter AvatarAttachment-
+ParentLocalID ist im Renderer Parent-Transform,
+noch nicht LLAvatarJoint-AttachmentPoint.

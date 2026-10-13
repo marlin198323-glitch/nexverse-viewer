@@ -62,6 +62,10 @@ struct TextureEntry
 {
     TextureEntryDefaultFace default_face;
     std::array<std::optional<TextureEntryDefaultFace>, 64> face_overrides;
+    // Distinguish an explicitly supplied face texture UUID from color/UV
+    // overrides which simply inherit default_face.texture_id. Required
+    // for avatar bake slots, which must never fetch the inherited default.
+    std::array<bool,64> texture_id_overridden{};
 
     [[nodiscard]] const TextureEntryDefaultFace& face(
         std::size_t index) const noexcept

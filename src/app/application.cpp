@@ -65,6 +65,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
@@ -3398,6 +3399,7 @@ int Application::run(bool enable_developer_modules)
     std::atomic_bool parcel_live_logged{false};
     bool world_ready_logged = false;
     bool self_avatar_proxy_gl_logged=false;
+    bool self_avatar_bake_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
@@ -5701,6 +5703,7 @@ int Application::run(bool enable_developer_modules)
                 gallery_gpu_textures.clear();
                 outfit_gallery_open=false;
                 self_avatar_proxy_gl_logged=false;
+                self_avatar_bake_gl_logged=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
                 inventory_folder_contents.clear();
@@ -6840,6 +6843,10 @@ int Application::run(bool enable_developer_modules)
                         appearance && !appearance->hover_heights.empty())
                         self_hover=std::clamp(
                             appearance->hover_heights.front().z,-2.0f,2.0f);
+                    std::array<std::string,3U> baked_ids{};
+                    if(const auto& self=world_model.self_appearance();self)
+                        baked_ids=protocol::extract_avatar_bakes(
+                            self->texture_entry).visible_body();
                     avatar_proxy_update.push_back({
                         {render_agent.position.x,
                          render_agent.position.y,
@@ -6848,7 +6855,7 @@ int Application::run(bool enable_developer_modules)
                          render_agent.rotation.y,
                          render_agent.rotation.z,
                          render_agent.rotation.w},
-                        true});
+                        true,baked_ids,self_avatar_local_id});
                 }
                 for (const auto& [id, avatar] : world_model.avatars())
                 {
@@ -6865,7 +6872,10 @@ int Application::run(bool enable_developer_modules)
                          avatar.rotation.y,
                          avatar.rotation.z,
                          avatar.rotation.w},
-                        false});
+                        false,
+                        protocol::extract_avatar_bakes(
+                            avatar.texture_entry).visible_body(),
+                        avatar.local_id});
                 }
 
                 const world::RegionState& region =
@@ -7795,6 +7805,10 @@ int Application::run(bool enable_developer_modules)
             for (const auto& emitter : scene_particle_emitters)
                 emitter_texture_ids.push_back(emitter.texture_id);
             const auto texture_plan_now = std::chrono::steady_clock::now();
+            // Baked Head/Upper/Lower textures travel through the same
+            // budgeted GetTexture, residency, cache and region lifecycle as
+            // existing scene material textures. Recompute per-frame because
+            // appearance can arrive without a world-object revision.
             for(const auto& ready_id:texture_gpu_staging_recovery.ready(
                     texture_plan_now,texture_gpu_used_bytes,
                     mesh_gpu_estimated_bytes))
@@ -7808,10 +7822,17 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::milliseconds{750})
             {
                 last_texture_residency_plan = texture_plan_now;
+                auto resident_texture_samples=scene_texture_samples;
+                for(const auto& avatar:avatar_proxy_update)
+                    for(const auto& baked:avatar.baked_texture_ids)
+                        if(!baked.empty())
+                            resident_texture_samples.push_back({
+                                baked,avatar.position.x,
+                                avatar.position.y,avatar.position.z});
                 const std::unordered_set<std::string> active_particles{
                     emitter_texture_ids.begin(),emitter_texture_ids.end()};
                 auto planned_mips = assets::plan_texture_mip_levels(
-                    scene_texture_samples,render_agent.position.x,
+                    resident_texture_samples,render_agent.position.x,
                     render_agent.position.y,render_agent.position.z,
                     texture_desired_mips,active_particles);
                 texture_lod_dwell.prune(planned_mips);
@@ -7838,7 +7859,7 @@ int Application::run(bool enable_developer_modules)
                     view.center.x,view.center.y,view.center.z,
                     view.at.x,view.at.y,view.at.z};
                 const auto nearby_textures = assets::rank_texture_distances(
-                    scene_texture_samples,
+                    resident_texture_samples,
                     render_agent.position.x,render_agent.position.y,
                     render_agent.position.z,object_texture_loaded_ids,
                     texture_priority_feedback.loaded_bonus(8.0f),
@@ -8717,6 +8738,16 @@ int Application::run(bool enable_developer_modules)
                     "Avatar SELF placeholder geometry actually submitted to OpenGL; "
                     "this is NOT a baked Firestorm avatar appearance; draws="+
                     std::to_string(render_diagnostics.self_avatar_proxy_draw_calls));
+            }
+            if(simulation_ready&&!self_avatar_bake_gl_logged &&
+               render_diagnostics.self_avatar_baked_texture_draw_calls>0U)
+            {
+                self_avatar_bake_gl_logged=true;
+                core::info(
+                    "Avatar SELF Head/Upper/Lower baked TEXTURE submitted to OpenGL; "
+                    "transitional proxy, NOT skinned Firestorm skeleton; draws="+
+                    std::to_string(
+                        render_diagnostics.self_avatar_baked_texture_draw_calls));
             }
             const core::SystemMemoryMetrics memory_metrics =
                 core::system_memory_metrics();

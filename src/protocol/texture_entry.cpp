@@ -546,7 +546,10 @@ parse_texture_entry(
             result.default_face;
 
         if (texture_ids[face].has_value())
+        {
+            result.texture_id_overridden[face]=true;
             resolved.texture_id = *texture_ids[face];
+        }
         if (colors[face].has_value())
             resolved.color = *colors[face];
         if (repeat_u_values[face].has_value())

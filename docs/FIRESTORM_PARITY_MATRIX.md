@@ -303,3 +303,20 @@ OpenGenesisLINK main @
 Quellen: Firestorm Firestorm_7.2.4 scripts/messages/message_template.msg;
 OpenGenesisLINK main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
 OGL nutzt Firestorm als Standard-Funktionsbaseline.
+
+
+## Alpha.93 – Firestorm baked Avatar-Texturen und Attachment-Root
+
+| Funktion | OGL-Implementierung | Abnahme |
+|---|---|---|
+| Firestorm Avatar-Bake-Faces 8/9/10, übrige 8 Slots | 11 UUID Face-Indizes, 3 sichtbare; nur echte explizite Overwrites | Unit-Tests; kein NexVerse-Livebeleg |
+| Baked Skin GetTexture | Priorisiert wie prim/material assets, gemeinsamer Budget-/Mip-/Retry-/GPU-Pfad | Pipeline code+tests; Grid offen |
+| Baked Head/Upper/Lower | Tatsächliche OpenGL-Textur-Shader-Samples an Proxy | GPU test; noch nicht SL-Skinned |
+| Fallback bei fehlenden Bakes | Farbproxy bleibt sichtbar, kein Blinddownload von IMG_USE_BAKED-* | GPU test + parser fixture |
+| Avatar parent local-id | Attached Prim Root folgt Self-/Remote-Avatar Pose | CPU lookup test; Live offen |
+| Firestorm-Skeleton/RigMesh, richtige Bake-UV und AttachmentPoint | Weiterhin kein echtes Skinning oder Bones | not_implemented |
+| COF/Wear und AvatarAnimation | Weiterhin keine vollständigen Aktionen | not_implemented |
+
+Firestorm-Releasespezifikation: LLAvatarAppearanceDefines ETextureIndex
+und IMG_USE_BAKED_* in Branch Firestorm_7.2.4.
+OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.

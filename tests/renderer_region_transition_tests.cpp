@@ -1,4 +1,5 @@
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/avatar_attachment_anchor.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -19,6 +20,19 @@ int main()
         reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {glfwDestroyWindow(window);glfwTerminate();return 1;}
     using namespace nexverse::render;
+    // Attachment parent binding is based on simulator local IDs,
+    // never on remote UUID heuristics or absolute object position.
+    const std::array<RenderAvatarProxy,2U> anchors{{
+        {{4.0f,2.0f,1.0f},{0.0f,0.0f,0.0f,1.0f},true,{},51U},
+        {{8.0f,4.0f,1.0f},{0.0f,0.0f,0.0f,1.0f},false,{},52U}
+    }};
+    if(find_attachment_avatar_parent(anchors,0U) ||
+       find_attachment_avatar_parent(anchors,999U) ||
+       !find_attachment_avatar_parent(anchors,51U) ||
+       find_attachment_avatar_parent(anchors,51U)->position.x!=4.0f ||
+       !find_attachment_avatar_parent(anchors,52U) ||
+       find_attachment_avatar_parent(anchors,52U)->position.x!=8.0f)
+        return 23;
     int error=0;
     {
         auto renderer=create_legacy_opengl_renderer();
@@ -86,6 +100,32 @@ int main()
                    with_avatar.self_avatar_proxy_draw_calls!=7U ||
                    with_avatar.scene_mesh_draw_calls!=3U||
                    glGetError()!=GL_NO_ERROR)error=18;
+                // A baked texture already resident in the shared
+                // GetTexture GPU table must be sampled by all 7 body
+                // proxy draw calls; absent assets revert to color tint.
+                if(!renderer->set_object_texture("avatar-bake",opaque))
+                    error=20;
+                if(!error)
+                {
+                    RenderAvatarProxy textured;
+                    textured.position={3.0f,0.0f,0.0f};
+                    textured.is_self=true;
+                    textured.local_id=53U;
+                    textured.baked_texture_ids={
+                        "avatar-bake","avatar-bake","avatar-bake"};
+                    renderer->set_avatar_proxies({textured});
+                    const auto baked_frame=render();
+                    if(baked_frame.avatar_proxy_draw_calls!=7U ||
+                       baked_frame.avatar_baked_texture_draw_calls!=7U ||
+                       baked_frame.self_avatar_baked_texture_draw_calls!=7U ||
+                       glGetError()!=GL_NO_ERROR)error=21;
+                    renderer->remove_object_texture("avatar-bake");
+                    const auto fallback=render();
+                    if(fallback.avatar_proxy_draw_calls!=7U ||
+                       fallback.avatar_baked_texture_draw_calls!=0U ||
+                       fallback.self_avatar_baked_texture_draw_calls!=0U ||
+                       glGetError()!=GL_NO_ERROR)error=22;
+                }
                 renderer->set_avatar_proxies({});
                 const auto cleared_avatar=render();
                 if(cleared_avatar.avatar_proxy_draw_calls!=0U ||

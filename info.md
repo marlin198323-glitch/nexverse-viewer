@@ -2673,3 +2673,122 @@ Appearance-Cache, COF-Outfit-/Attachment-Transaktion
 mit echten Serverrechten, Mesh-Live-Probleme und
 echten Regionswechsel testen.
 Branch develop-current. projectplan.md maßgeblich.
+
+
+## Alpha.93 – Firestorm baked Head/Upper/Lower auf OpenGL-Avatar-Proxy; Avatar-Parent-Transform · 13.10.2026
+
+**Block 1 – Firestorm Avatar-TextureEntry-Face-Indizes mit gültigen
+Bakes:** Der offizielle Firestorm 7.2.4 LLAvatarAppearanceDefines
+benennt als gebackene Textur-FACES: Head=8, Upper=9, Lower=10,
+Eyes=11, Skirt=19, Hair=20, LeftArm=40, LeftLeg=41,
+Aux1=42, Aux2=43, Aux3=44. Neuer
+include/nexverse/protocol/avatar_bakes.hpp liest alle 11 nur
+aus der bereits streng validierten TextureEntry des
+AvatarAppearance-Server-Readback. Der TextureEntry-Parser
+merkt jetzt für jede Face ausdrücklich, ob eine Texture-UUID
+per Face-Bitfield übergeben wurde. Ein geerbter Default-
+Texture-Eintrag, bloßer Color-/UV-Override, Zero-UUID oder
+offizielle Firestorm IMG_USE_BAKED_*-Placeholder-UUID
+erzeugt damit ausdrücklich KEINEN falschen Baked-Asset-
+Download. Sichtbar in der provisorischen Avatar-Geometrie
+sind jetzt die Slots Head/Upper/Lower; alle übrigen acht
+werden bereits sicher identifiziert, aber noch nicht gerendert.
+
+**Block 2 – echte GetTexture-Residency für Avatar-Bakes:**
+Der Avatar-Proxy erhält die drei gültigen serverseitigen
+Head/Upper/Lower Asset-UUIDs. Sie werden beim bestehenden
+750-ms-Prioritäts-/Mip-/Cache-/Budgetplan als nahe
+Avatar-Textur-Samples zusammen mit den Weltobjekt-
+Materialtexturen berücksichtigt. Dadurch erfolgen Abruf,
+Retry, Disk-/RAM-Cache und GPU-Upload über die
+bestehende GetTexture-Protokoll-/LLUDP-CAPS-Pipeline,
+ohne unkontrollierte parallele Avatar-HTTP-Worker oder
+die bisherigen Material-/Region-Circuit-Budgets zu
+umgehen. Der kombinierte Prioritätsvektor wird nur
+während einer tatsächlichen Residency-Planung aufgebaut,
+nicht in jedem Frame. Ändert AvatarAppearance bei
+unveränderter Objektliste eine Bake, wird sie beim
+nächsten Planner-Durchlauf erkannt. Auch Resident-
+Texturen fremder Avatare werden entsprechend eingeplant.
+
+**Block 3 – tatsächliche GL-Baked-Textur-Draws am
+provisorischen Körper:** Der Legacy-OpenGL3.3-Renderer
+verwendet beim Head-Teil die BakedHead-ID, beim Torso
+und Armen die BakedUpper-ID, bei den Beinen die
+BakedLower-ID; die bestehende OpenGL-Objekttextur-
+GPU-Tabelle liefert das resident GL_TEXTURE_2D.
+Es werden richtige Shader-Textursamples gezeichnet
+und die temporäre Textur-/Shaderbindung wieder
+sauber zurückgesetzt. Wenn UUID fehlt oder nicht
+GPU-resident ist, bleibt der vorherige untexturierte
+Farbproxy sichtbar. Zusätzlich wurden
+avatar_baked_texture_draw_calls und
+self_avatar_baked_texture_draw_calls in RenderDiagnostics
+als echte glDrawElements-Zähler eingeführt. Der Viewer
+meldet nach tatsächlichem Self-Draw einmal je Region
+eine privacy-sichere Logzeile. GPU-Regression mit
+residiertem Testtexturasset beweist sieben Textur-
+Drawcalls, mit Entfernen desselben Assets null
+Textur-Drawcalls und weiterhin sieben Proxy-Draws.
+**Diese vereinfachte UV-Darstellung ist noch KEIN
+originales Firestorm-Avatar-Skelett, keine korrekte
+UV-Körperprojektion und kein Avatar-Mesh-Skinning.**
+
+**Block 4 – Attachment-Root-Transform über echte
+Simulator-Local-IDs:** Bei SceneObject.parent_id mit
+passender gebundener Avatar-LocalID wird der
+Objekt-Root an die aktuelle Avatarposition und
+Rotation gebunden. Zuvor fand die Renderer-
+Parent-Resolver-Funktion nur Parent-PRIMs; ein
+Attachment an einem Avatar-Root wurde wie ein
+losgelöstes Weltobjekt positioniert. Die neue
+find_attachment_avatar_parent-Hilfe ist strikt
+nach lokalen Nichtnull-IDs gebunden, verarbeitet
+Self- und andere Avatare ohne UUID-Raten und fällt
+bei nicht bekanntem Parent auf bisherigen Verhalten
+zurück. Echte Attachment-Punkte der Firestorm-
+Skelettknochen, Attachment-Animationen,
+Attachments mit bereits eigenen Prim-Hierarchien,
+BoneOffsets und Fashion/Wear COF liegen weiterhin
+auf dem nächsten Projektplan-Abschnitt.
+
+**Tests/Abnahme:** Test-TextureEntry-Face-Bitfields
+für 8/9/10, non-baked Default-Face, offizielle
+IMG_USE_BAKED-Placeholder und Null-UUID,
+GPU-Residency und fehlende Textur, 7 vs 0
+Textur-Drawcalls, SelfAvatar-Zähler,
+Attachment-LocalID-Matching und Unbekannt/Null
+als Negativfälle; komplette C++23 Debug-Build-/CTest-
+und Python-Regressionen sowie GPU- und GUI-Smoke
+durchführen. Aktuell KEIN neuer authentifizierter
+Grid-Login nach Alpha.92-Smoke; BakedAsset-Live-
+Render und Avatarbewegung können deshalb noch
+NICHT live_verified behauptet werden.
+
+**Quellen:** offizieller Firestorm Branch
+Firestorm_7.2.4:
+indra/llappearance/llavatarappearancedefines.h,
+indra/llappearance/llavatarappearancedefines.cpp
+(Face-Indices) und
+indra/llcommon/indra_constants.cpp
+(IMG_USE_BAKED_* Platzhalter).
+OpenGenesisLINK Server GitHub
+opengenesislink/opengenesislinkserver,
+Main-Stand c29f3e5a70ccc0971b22371f1d13fd1de23be240
+(am 13.10.2026 beim Codeabgleich).
+OpenGenesisLINK bleibt OpenSim-Grundprotokoll;
+Firestorm ist die verbindliche Standard-Funktionsbaseline,
+kein bereits vollständig übernommener Source-Fork.
+
+**Nächste 3–4 Blöcke:** reale Alpha.93-NexVerse-Session
+mit AvatarAppearance-Bakes und drei GPU-Textur-
+Drawcalls testen; korrektes SL-/Firestorm-
+Avatar-Skeleton und RigMesh-VertexWeights,
+BakedTexture-UV und Wearable-Assets;
+AttachmentPoint-/Skeleton-Joint-Transforms;
+authentifizierter COF-Outfit- und Avatar-Bake-
+Readback ohne ungeprüfte Mutation. Anschließend
+Teleport zwischen Regionen und Mesh-HTTP-404-
+Assets im Grid nachprüfen.
+Branch develop-current; zuerst CHATUEBERGABE.md,
+projectplan.md maßgeblich.

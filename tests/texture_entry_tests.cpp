@@ -1,4 +1,5 @@
 #include "nexverse/protocol/texture_entry.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"
 
 #include <bit>
 #include <cstdint>
@@ -248,6 +249,45 @@ int main()
         std::cerr << "Per-face TextureEntry inheritance mismatch\n";
         return 5;
     }
+
+    // Firestorm LLAvatarAppearanceDefines::ETextureIndex:
+    // Head=8, Upper=9, Lower=10. Encode explicit LLTextureEntry
+    // face bitfield overrides, followed by the existing valid TE tail.
+    std::vector<std::uint8_t> avatar_te;
+    avatar_te.insert(avatar_te.end(),bytes.begin(),bytes.begin()+16);
+    avatar_te.insert(avatar_te.end(),{0x82U,0U}); // 1 << 8
+    append_uuid(avatar_te,"11111111-1111-1111-1111-111111111111");
+    avatar_te.insert(avatar_te.end(),{0x84U,0U}); // 1 << 9
+    append_uuid(avatar_te,"22222222-2222-2222-2222-222222222222");
+    avatar_te.insert(avatar_te.end(),{0x88U,0U}); // 1 << 10
+    append_uuid(avatar_te,"24daea5f-0539-cfcf-047f-fbc40b2786ba");
+    avatar_te.push_back(0U);
+    avatar_te.insert(avatar_te.end(),bytes.begin()+17,bytes.end());
+    const auto parsed_avatar=nexverse::protocol::parse_texture_entry(avatar_te);
+    const auto baked=nexverse::protocol::extract_avatar_bakes(avatar_te);
+    if(!parsed_avatar ||
+       !parsed_avatar->texture_id_overridden[8U] ||
+       !parsed_avatar->texture_id_overridden[9U] ||
+       !parsed_avatar->texture_id_overridden[10U] ||
+       parsed_avatar->texture_id_overridden[11U] ||
+       baked.ids[0]!="11111111-1111-1111-1111-111111111111" ||
+       baked.ids[1]!="22222222-2222-2222-2222-222222222222" ||
+       !baked.ids[2].empty() ||
+       baked.valid_count()!=2U)
+    {
+        std::cerr << "Avatar baked face mapping/placeholder suppression failed\n";
+        return 6;
+    }
+    const auto no_bakes=nexverse::protocol::extract_avatar_bakes(bytes);
+    if(no_bakes.valid_count()!=0U ||
+       nexverse::protocol::extract_avatar_bakes(
+           std::span<const std::uint8_t>{}).valid_count()!=0U)
+        return 7;
+    // A zero UUID provided explicitly must never become a GetTexture job.
+    auto invalid=avatar_te;
+    std::fill(invalid.begin()+18,invalid.begin()+34,0U);
+    if(!nexverse::protocol::extract_avatar_bakes(invalid).ids[0].empty())
+        return 8;
 
     std::cout << "TextureEntry tests passed\n";
     return 0;
