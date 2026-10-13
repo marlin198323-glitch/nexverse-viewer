@@ -402,3 +402,13 @@ Ein GitHub-Preflight aus scripts/check_opengenesislink_server.py
 ist vor und nach jedem Entwicklungsblock Pflicht.
 Pin-Revision + Entscheidungen stehen in
 docs/OPENGENESISLINK_INTEGRATION_MATRIX.md.
+
+## Alpha.100 – Animationsasset-Transfer im OGL Core
+
+Low153 TransferRequest über echte CircuitQueue, Low154 TransferInfo
+und High17 TransferPacket mit streng geprüftem Status und Payload.
+Notfound -2, Epoch-Reset, bounded Out-of-Order Rekonstruktion,
+Clip-Decoder und GPU-Laufzeit pro High20-Sequence vorhanden.
+Avatar-Animationsfenster zeigt echte Download-/Fehler-
+und Clip-Jointanzahl, Download erneut per Button.
+E2E gegen einen authentifizierten Server ist weiterhin offen.

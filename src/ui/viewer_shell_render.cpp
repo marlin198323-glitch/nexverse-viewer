@@ -264,7 +264,7 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(0,"Vom OpenSim-Simulator gemeldete Animationen.",
              theme::text);
         line(1,"Aktive Animationen: "+std::to_string(v.animation_entries.size())+
-             " (High20, AnimationList)");
+             " / geladene Clips: "+std::to_string(v.animation_cache_size));
         for(std::size_t i=0U;i<std::min(
             v.animation_entries.size(),std::size_t{8U});++i)
         {
@@ -288,16 +288,30 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                 v.animation_entries[state.animation_selected];
             r.text(x+28.0f*sc,y+ph-82.0f*sc,9.4f*sc,
                    "Ausgewaehlt: "+compact(id,38U),theme::cyan);
+            const auto status=
+                state.animation_selected<v.animation_asset_status.size()
+                ?v.animation_asset_status[state.animation_selected]
+                :std::string{"Warten auf Transfer"};
             r.text(x+28.0f*sc,y+ph-57.0f*sc,8.5f*sc,
-                   "Server-Sequenz: "+std::to_string(sequence)+
-                   "  |  Clip-Asset: noch nicht geladen",
-                   theme::text_muted);
+                   "Sequenz: "+std::to_string(sequence)+" | "+
+                   compact(status,57U),
+                   v.selected_animation_retryable?
+                       theme::warning:theme::text_muted);
+            r.rect(x+pw-197.0f*sc,y+ph-100.0f*sc,
+                   172.0f*sc,38.0f*sc,
+                   v.selected_animation_retryable
+                     ?Color{0.070f,0.166f,0.242f,0.97f}
+                     :Color{0.022f,0.037f,0.054f,0.92f},7.0f*sc);
+            r.text(x+pw-180.0f*sc,y+ph-89.0f*sc,9.0f*sc,
+                   "Download erneut",
+                   v.selected_animation_retryable?
+                       theme::cyan:theme::text_muted);
         }
         if(v.animation_entries.size()>8U)
             r.text(x+28.0f*sc,y+ph-111.0f*sc,8.0f*sc,
                    "Weitere aktive Animationen vorhanden.",theme::warning);
         r.text(x+28.0f*sc,y+ph-28.0f*sc,8.0f*sc,
-               "Nur lesend: Asset-Clips und Start/Stop noch offen",
+               "Server-Readback: manuelles Start/Stop noch nicht freigegeben",
                theme::warning);
     }
     else if(state.window==ViewerWindow::settings)

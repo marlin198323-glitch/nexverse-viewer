@@ -27,6 +27,9 @@ struct ViewerShellView
     std::size_t remote_avatars=0U,animations=0U,attachments=0U;
     // Server-reported full active snapshot, not an available clip library.
     std::vector<std::pair<std::string,std::int32_t>> animation_entries;
+    std::vector<std::string> animation_asset_status;
+    std::size_t animation_cache_size=0U;
+    bool selected_animation_retryable=false;
     std::vector<std::array<float,2>> avatar_positions;
     std::vector<std::string> chat_lines;
 };

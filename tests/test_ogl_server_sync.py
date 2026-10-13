@@ -24,6 +24,8 @@ class ServerSyncTests(unittest.TestCase):
                 "VIEWER_CORE_INVENTORY_THUMBNAIL",
             "doc/NexVerse/FIRESTORM_INVENTORY_THUMBNAIL_09310.md":
                 "VIEWER_CORE_INVENTORY_THUMBNAIL",
+            "tools/diagnostics/ogl_cross_region_chat_smoke.lsl":
+                "SERVER_ONLY_LSL_CHAT_TEST",
             "unknown/NewFeature.cs":"MANUAL_REVIEW"}
         for name,expected in cases.items():
             with self.subTest(name=name): self.assertEqual(MOD.classify(name),expected)

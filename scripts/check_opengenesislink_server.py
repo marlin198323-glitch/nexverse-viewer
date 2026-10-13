@@ -15,6 +15,8 @@ BASE=ROOT/"docs/OPENGENESISLINK_SERVER_BASELINE.json"
 
 def classify(path):
     x=path.lower()
+    if "cross_region_chat_smoke" in x:
+        return "SERVER_ONLY_LSL_CHAT_TEST"
     if "cross_region_lsl_chat" in x or "crossregionchat" in x:
         return "SERVER_ONLY_LSL_CHAT"
     if "touch_hold" in x or "touchhold" in x:

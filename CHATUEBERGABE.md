@@ -2589,3 +2589,80 @@ Die Revision nach Quellenreview in die
 Server-Baseline übernommen. Alpha.99 fokussiert
 weiter die Viewer-Core-Chatmodi und
 korrekte GUI, keinen IAR-Servercode-Port.
+
+## Alpha.100 – Server-Animationsassets + GPU + sichtbarer Viewer (13.10.2026)
+
+Pflicht-Preflight: Vor Beginn OGL develop-current bf2c02b sowie
+OpenGenesisLINK main 2254d2b3733c5fb171e6e608bc909ff1ef8a7acd
+live abgeglichen. Beim Release vor GitHub Push main erneut prüfen.
+Firestorm Tag Firestorm_7.2.4 scripts/messages/message_template.msg
+und Server OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
+(HandleTransferRequest, MakeAssetRequest, SendAsset,
+SendAssetNotFound) sind die Quelldokumente.
+
+1. CORE, kein optionales Plugin: LLUDP TransferRequest Low153.
+   TransferID UUID16, ChannelType S32=2, SourceType S32=2,
+   Priority F32, Params Variable2=AssetID UUID16+AssetType
+   Animation S32=20. Kein erfundener HTTP-/CAPS-GetAsset-Endpunkt.
+2. Server-Antwort TransferInfo Low154 und TransferPacket High17,
+   korrekte Var2-Offsets Info byte32, Packet byte28,
+   strict Bounds, UUID/Channel/Type/Status/Size/Packet-Order.
+   Status -2 bei OpenGenesisLINK SendAssetNotFound/Size0
+   erscheint sofort als Fehler statt nur Timeout.
+3. Neuer AnimationTransferInbox: Mutex, aktuelle RegionEpoch,
+   TransferID, max 2 MiB, max 4096 Chunks, 4 Pending,
+   16 Responses, out-of-order Rekonstruktion, Duplicate-
+   Checks und Konflikt-Abbruch, stale TransferID ignoriert.
+   Kein nicht gepruefter Clip wird gecacht.
+4. Ein realer laufender Request ueber authentifizierten
+   LLUDP OutboundCommandQueue/CircuitConnection, eingehende
+   Info/Packet via PacketDispatcher. Nur aktive High20
+   SelfAnimation UUIDs werden angefragt. Max 10s Timeout,
+   keine unendliche Auto-Retry-Schleife.
+5. Region-/Sim-Wechsel loescht alle Pending-Daten und Clip
+   Cache. Bis 64 immutable Clips pro Region; CPU
+   Firestorm LLKeyframeMotion Decoder validiert echte Bytes.
+6. Renderer: auf echte Firestorm Head/Upper/Lower LLM 133-
+   Joint GPU-Weights angewandte Clip-Kurven, Auswahl nach
+   Clip-Prioritaet. Keine ungepruefte UUID als Assetdaten.
+   Animationsbeginn wird pro Avatar+AnimUUID+SequenceID
+   verankert, statt bei globaler Viewer-Laufzeit zu starten.
+7. Optischer Viewer im GLEICHEN Block: Avatar>Animationen,
+   Dock>Animationen, markierbare Zeilen, Server-Sequence,
+   Live-Transferstatus, Asset geladen/N Joints,
+   Asset fehlt/ungültig/Timeout und aktiver Download
+   erneut-Button nur bei Fehler. Keine Fake-Play-/Stop-Klicks.
+8. Testfälle mit echtem Firestorm/OpenSim Low153/Low154/
+   High17 WireGolden, valide LLKeyframeMotion v1 Payload,
+   Info nach Chunks, Duplikate, Out-of-Order, falsche
+   IDs/Size/Type/Var2, -2 Notfound, Epoch-Reset,
+   UI-Klick-/OpenGL- und original GPU Joint-Skin-Test.
+9. Alle Projektdokumente, Versionsdatei und Projektplan
+   im selben Github Commit aktualisiert.
+
+Noch offen: Echte authentifizierte NexVerse InWorld-Tests
+der AnimationAssetTransfers und GPU-Bewegung, Firestorm-
+vollständiges Priority-/Fade-/Blend-Layering, IK,
+AnimationSource-Sit, Gesicht, COF/Wear; nicht als
+live validiert ausgeben. Alpha.101: Live-Protokoll-
+Pruefung und parallele UI/COF-/ScriptEditor-Fortsetzung.
+Jeder neue Block weiterhin mit vorangehender und
+abschließender aktueller OpenGenesisLINK GitHub main Prüfung.
+
+## Alpha.100 wiederholter Server-GitHub-Releaseabgleich
+
+Beim vorletzten Live-GitHub-Preflight neue Server SHA
+689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3
+(13.10.2026 20:25:25 UTC) ermittelt. Ein Commit nach
+2254d2b: doc/NexVerse/CROSS_REGION_LSL_CHAT_09312.md,
+tools/ci/verify_cross_region_chat.py,
+tools/diagnostics/ogl_cross_region_chat_smoke.lsl.
+CHAT01/CHAT02 erhalten einen LSL-Testwuerfel fuer
+Region-A/Region-B, Chat Kanal0 und /7, Distanzfilter
+20m, NexBus, Prozessgrenzen. Dokumentations-/Test-
+Aenderung, KEINE neue LLUDP Client-Schnittstelle.
+Einordnung SERVER-ONLY/Operator-Test, OGL Standard-
+ChatFromViewer unveraendert. Die Smoke-Prozedur wurde
+nicht real mit zwei Simulatoren ausgefuehrt und darf
+nicht als PASS bewertet werden. Reviewed-SHA nach
+Quellvergleich im Baseline-Ledger aktualisiert.

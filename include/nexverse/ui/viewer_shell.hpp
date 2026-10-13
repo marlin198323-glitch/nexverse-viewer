@@ -23,7 +23,7 @@ enum class ViewerAction {
     send_chat, send_teleport, fullscreen, focus_chat,
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
     refresh_inventory, animations, select_animation,
-    chat_whisper, chat_say, chat_shout, disabled
+    chat_whisper, chat_say, chat_shout, retry_animation, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -57,6 +57,7 @@ struct ViewerShellState
     std::array<std::string,3> teleport_coords{"128","128","25"};
     int teleport_focus=0;
     std::size_t animation_selected=0U;
+    bool animation_retry_requested=false;
     void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
     [[nodiscard]] bool input_captured() const noexcept
     {return window!=ViewerWindow::none;}
@@ -160,6 +161,10 @@ struct ViewerShellLayout
             }
             if(state.window==ViewerWindow::animations)
             {
+                if(inside(x,y,panel_x+panel_w-197.0f*scale,
+                          panel_y+panel_h-100.0f*scale,
+                          172.0f*scale,38.0f*scale))
+                    return ViewerAction::retry_animation;
                 for(std::size_t i=0U;i<8U;++i)
                     if(inside(x,y,panel_x+26.0f*scale,
                               panel_y+(130.0f+31.0f*static_cast<float>(i))*scale,

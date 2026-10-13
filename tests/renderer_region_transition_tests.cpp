@@ -267,6 +267,10 @@ int main()
                                     nexverse::protocol::AvatarMotion::idle;
                                 walking_avatar.animation_from_server=false;
                                 walking_avatar.keyframe_clip=std::move(clip);
+                                // Actual LLUDP clip playback is anchored
+                                // to the current AnimationSequenceID, not
+                                // the viewer process uptime.
+                                walking_avatar.keyframe_elapsed_seconds=0.8f;
                                 renderer->set_avatar_proxies({walking_avatar});
                                 const auto keyframed=render();
                                 if(keyframed.avatar_keyframe_skin_draw_calls!=3U||

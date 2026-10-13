@@ -487,6 +487,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-animation-tests
         COMMAND nexverse-avatar-animation-tests)
 
+    add_executable(nexverse-animation-asset-transfer-tests
+        tests/animation_asset_transfer_tests.cpp)
+    target_link_libraries(nexverse-animation-asset-transfer-tests
+        PRIVATE NexVerse::Protocol NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-animation-asset-transfer-tests)
+    add_test(NAME nexverse-animation-asset-transfer-tests
+        COMMAND nexverse-animation-asset-transfer-tests)
+
     add_executable(nexverse-firestorm-keyframe-motion-tests
         tests/firestorm_keyframe_motion_tests.cpp)
     target_link_libraries(nexverse-firestorm-keyframe-motion-tests

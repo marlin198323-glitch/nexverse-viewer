@@ -226,6 +226,9 @@ struct RenderAvatarProxy
     // verified animation asset is available; High20 UUID alone is not
     // proof that the actual keyframe bytes were downloaded.
     std::shared_ptr<const assets::FirestormKeyframeMotion> keyframe_clip;
+    // Seconds since this server animation sequence began, not app uptime.
+    // Negative = procedural fallback / no known server clip start.
+    float keyframe_elapsed_seconds=-1.0f;
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD

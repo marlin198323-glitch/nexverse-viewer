@@ -421,3 +421,14 @@ Die Revision nach Quellenreview in die
 Server-Baseline übernommen. Alpha.99 fokussiert
 weiter die Viewer-Core-Chatmodi und
 korrekte GUI, keinen IAR-Servercode-Port.
+
+## Alpha.100 – serverkompatible TransferWire statt erfundener GetAsset-CAP
+
+Geprüfter OpenGenesisLINK Server: LLClientView.cs aktuelle main.
+TransferRequest Low153: UUID16 + Channel2 + Source2 + Priority
++ Variable2(UUID16 Asset, S32 Type20).
+Info Low154 Variable2-Offset32, High17 Packet Variable2-Offset28.
+OpenGenesisLINK fehlendes Asset: Info Status -2 Size0
+und 20-Byte Params echo. RegionEpoch/TransferID sind
+Pflichtgrenzen; Fremd-/Alt-Circuit-Pakete nicht übernehmen.
+Keine Animation-Payload im High20 AnimationList.

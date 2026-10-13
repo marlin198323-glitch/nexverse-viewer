@@ -875,6 +875,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
             shell.open_menu=-1;
             return;
         }
+        if(command==nexverse::ui::ViewerAction::retry_animation)
+        {
+            shell.animation_retry_requested=true;
+            return;
+        }
         if(command==nexverse::ui::ViewerAction::select_animation)
         {
             const float first=shell.window==
@@ -3554,6 +3559,24 @@ int Application::run(bool enable_developer_modules)
     std::optional<protocol::LoginSession> active_session;
 
     protocol::OutboundCommandQueue outbound_queue{512U};
+    protocol::AnimationTransferInbox animation_transfers;
+    std::map<std::string,std::shared_ptr<const assets::FirestormKeyframeMotion>,
+             std::less<>> loaded_animation_clips;
+    std::map<std::string,std::string,std::less<>> failed_animation_clips;
+    std::set<std::string,std::less<>> animation_attempted;
+    std::string animation_active_request;
+    // Per agent/animation/SequenceID launch epoch. Without this
+    // a newly fetched clip samples against process uptime and can
+    // jump into the middle of a motion on first appearance.
+    struct AnimationPlaybackAnchor
+    {
+        std::int32_t sequence=0;
+        std::chrono::steady_clock::time_point started{};
+    };
+    std::map<std::string,AnimationPlaybackAnchor,std::less<>>
+        animation_playback_anchors;
+    std::chrono::steady_clock::time_point animation_request_started{};
+    std::uint64_t animation_asset_epoch=0U;
     world::WorldModel world_model;
     std::mutex world_mutex;
     std::uint32_t self_avatar_local_id = 0U;
@@ -3577,6 +3600,22 @@ int Application::run(bool enable_developer_modules)
     input_context.permission_busy=&experience_permission_busy;
     input_context.simulation_ready=&simulation_ready;
     protocol::PacketDispatcher packet_dispatcher;
+    packet_dispatcher.register_handler(
+        protocol::msg_transfer_info,
+        [&animation_transfers](const protocol::DecodedPacket& packet)
+        {
+            if(const auto info=protocol::decode_animation_transfer_info(
+                packet.payload))
+                animation_transfers.on_info(*info);
+        });
+    packet_dispatcher.register_handler(
+        protocol::msg_transfer_packet,
+        [&animation_transfers](const protocol::DecodedPacket& packet)
+        {
+            if(const auto part=protocol::decode_animation_transfer_packet(
+                packet.payload))
+                animation_transfers.on_packet(*part);
+        });
     protocol::CapsEventDispatcher caps_event_dispatcher;
     protocol::InventoryEventInbox inventory_events;
 
@@ -4928,6 +4967,26 @@ int Application::run(bool enable_developer_modules)
 
             // Real UI commands are queued on the render/main thread,
             // never from a network callback or a login-only mockup.
+            if(viewer_shell.animation_retry_requested)
+            {
+                viewer_shell.animation_retry_requested=false;
+                std::string selected_id;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    if(const auto& active=world_model.self_animations();
+                       active && viewer_shell.animation_selected<
+                                active->animations.size())
+                        selected_id=active->animations[
+                            viewer_shell.animation_selected].id;
+                }
+                if(!selected_id.empty() &&
+                   failed_animation_clips.contains(selected_id))
+                {
+                    failed_animation_clips.erase(selected_id);
+                    animation_attempted.erase(selected_id);
+                    viewer_shell.status_text="Animation wird erneut angefordert.";
+                }
+            }
             if(viewer_shell.chat_submit_requested)
             {
                 viewer_shell.chat_submit_requested=false;
@@ -6112,6 +6171,7 @@ int Application::run(bool enable_developer_modules)
             render::RenderEnvironment environment_update;
             std::vector<render::RenderSceneObject> scene_object_update;
             std::vector<render::RenderAvatarProxy> avatar_proxy_update;
+            std::set<std::string,std::less<>> active_playback_anchor_keys;
             std::vector<render::RenderPointLight> scene_point_lights;
             std::vector<render::RenderParticleEmitter> scene_particle_emitters;
             std::vector<std::string> scene_texture_update;
@@ -6146,6 +6206,89 @@ int Application::run(bool enable_developer_modules)
                 current_region_handle,current_region_generation,
                 current_region_seed);
             gallery_inventory_sync.enter(current_firestorm_epoch);
+            if(animation_asset_epoch!=current_firestorm_epoch)
+            {
+                // Reject all old-region TransferInfo/Packets, with no
+                // stale clip adoption across distinct simulator sessions.
+                animation_transfers.reset(current_firestorm_epoch);
+                loaded_animation_clips.clear();
+                failed_animation_clips.clear();
+                animation_attempted.clear();
+                animation_playback_anchors.clear();
+                animation_active_request.clear();
+                animation_request_started={};
+                animation_asset_epoch=current_firestorm_epoch;
+            }
+            // Consume only validated, completed LLKeyframeMotion payloads.
+            // The decoder does NOT accept arbitrary other asset types.
+            while(auto completed=animation_transfers.pop())
+            {
+                if(completed->clip)
+                {
+                    if(loaded_animation_clips.size()>=64U)
+                        loaded_animation_clips.erase(
+                            loaded_animation_clips.begin());
+                    loaded_animation_clips.insert_or_assign(
+                        completed->asset_id,completed->clip);
+                    failed_animation_clips.erase(completed->asset_id);
+                    core::info("AnimationAsset LLUDP transfer decoded; joints="+
+                        std::to_string(completed->clip->joints.size()));
+                }
+                else
+                {
+                    failed_animation_clips.insert_or_assign(
+                        completed->asset_id,completed->error);
+                    core::warning("AnimationAsset decode/transfer rejected");
+                }
+                if(animation_active_request==completed->asset_id)
+                    animation_active_request.clear();
+            }
+            if(!animation_active_request.empty()&&
+               std::chrono::steady_clock::now()-animation_request_started>
+                    std::chrono::seconds{10})
+            {
+                failed_animation_clips.insert_or_assign(
+                    animation_active_request,"Transfer timeout or server rejected asset");
+                animation_transfers.reset(current_firestorm_epoch);
+                animation_active_request.clear();
+            }
+            // One outstanding transfer at a time avoids monopolising
+            // the LLUDP reliable queue; assets are immutable UUIDs.
+            // Prefetch only *active* self animation IDs, never guess
+            // opaque inventory items or unauthenticated asset URLs.
+            if(simulation_ready&&login_ui.authenticated&&
+               current_firestorm_epoch!=0U &&
+               animation_active_request.empty()&&
+               outbound_queue.size()<480U)
+            {
+                std::vector<std::string> active_ids;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    if(const auto& live=world_model.self_animations();live)
+                        for(const auto& entry:live->animations)
+                            active_ids.push_back(entry.id);
+                }
+                for(const auto& id:active_ids)
+                {
+                    if(loaded_animation_clips.contains(id)||
+                       failed_animation_clips.contains(id)||
+                       animation_attempted.contains(id))continue;
+                    protocol::AnimationAssetRequest request{
+                        id,protocol::random_animation_transfer_id()};
+                    if(!animation_transfers.begin(
+                        current_firestorm_epoch,request))continue;
+                    if(!outbound_queue.push(request))
+                    {
+                        animation_transfers.reset(current_firestorm_epoch);
+                        break;
+                    }
+                    animation_attempted.insert(id);
+                    animation_active_request=id;
+                    animation_request_started=
+                        std::chrono::steady_clock::now();
+                    break;
+                }
+            }
             if(active_session&&inventory_tree.count()==0U)
             {
                 inventory_tree=protocol::inventory_tree_from_login(
@@ -7368,6 +7511,34 @@ int Application::run(bool enable_developer_modules)
                             known.value_or(local_fallback);
                     }
                     else avatar_proxy_update.back().motion=local_fallback;
+                    if(const auto& active=world_model.self_animations();active)
+                    {
+                        // Prefer the highest-priority *validated* fetched
+                        // asset. Server High20 sequence is not a priority.
+                        int best=-1;
+                        for(const auto& entry:active->animations)
+                            if(const auto it=loaded_animation_clips.find(entry.id);
+                               it!=loaded_animation_clips.end()&&
+                               it->second->priority>best)
+                            {
+                                best=it->second->priority;
+                                avatar_proxy_update.back().keyframe_clip=it->second;
+                                const auto key=render_agent.agent_id+":"+entry.id;
+                                auto& anchor=animation_playback_anchors[key];
+                                if(anchor.started==
+                                     std::chrono::steady_clock::time_point{}||
+                                   anchor.sequence!=entry.sequence)
+                                {
+                                    anchor.started=std::chrono::steady_clock::now();
+                                    anchor.sequence=entry.sequence;
+                                }
+                                avatar_proxy_update.back().keyframe_elapsed_seconds=
+                                    std::chrono::duration<float>(
+                                      std::chrono::steady_clock::now()-anchor.started
+                                    ).count();
+                                active_playback_anchor_keys.insert(key);
+                            }
+                    }
                     if(const auto& appearance=world_model.self_appearance();
                        appearance)
                         for(const auto& attachment:appearance->attachments)
@@ -7413,10 +7584,42 @@ int Application::run(bool enable_developer_modules)
                             known.value_or(remote_fallback);
                     }
                     else avatar_proxy_update.back().motion=remote_fallback;
+                    if(avatar.animations)
+                    {
+                        int best=-1;
+                        for(const auto& entry:avatar.animations->animations)
+                            if(const auto it=loaded_animation_clips.find(entry.id);
+                               it!=loaded_animation_clips.end()&&
+                               it->second->priority>best)
+                            {
+                                best=it->second->priority;
+                                avatar_proxy_update.back().keyframe_clip=it->second;
+                                const auto key=id+":"+entry.id;
+                                auto& anchor=animation_playback_anchors[key];
+                                if(anchor.started==
+                                     std::chrono::steady_clock::time_point{}||
+                                   anchor.sequence!=entry.sequence)
+                                {
+                                    anchor.started=std::chrono::steady_clock::now();
+                                    anchor.sequence=entry.sequence;
+                                }
+                                avatar_proxy_update.back().keyframe_elapsed_seconds=
+                                    std::chrono::duration<float>(
+                                      std::chrono::steady_clock::now()-anchor.started
+                                    ).count();
+                                active_playback_anchor_keys.insert(key);
+                            }
+                    }
                     for(const auto& attachment:avatar.attachments)
                         avatar_proxy_update.back().attachments.emplace(
                             attachment.object_id,attachment.attachment_point);
                 }
+
+                for(auto it=animation_playback_anchors.begin();
+                    it!=animation_playback_anchors.end();)
+                    if(!active_playback_anchor_keys.contains(it->first))
+                        it=animation_playback_anchors.erase(it);
+                    else ++it;
 
                 const world::RegionState& region =
                     world_model.region();
@@ -9392,6 +9595,35 @@ int Application::run(bool enable_developer_modules)
                             world_model.self_animations()->animations)
                             shell_view.animation_entries.emplace_back(
                                 item.id,item.sequence);
+                    // Build the floater status exclusively from
+                    // authenticated LLUDP reply and decoded bytes.
+                    shell_view.animation_cache_size=loaded_animation_clips.size();
+                    for(const auto& [asset_id,sequence]:
+                        shell_view.animation_entries)
+                    {
+                        (void)sequence;
+                        if(const auto loaded=loaded_animation_clips.find(asset_id);
+                           loaded!=loaded_animation_clips.end())
+                            shell_view.animation_asset_status.push_back(
+                                "Clip geladen: "+
+                                std::to_string(loaded->second->joints.size())+
+                                " Joints");
+                        else if(failed_animation_clips.contains(asset_id))
+                            shell_view.animation_asset_status.push_back(
+                                "Fehler: "+failed_animation_clips.at(asset_id));
+                        else if(animation_active_request==asset_id)
+                            shell_view.animation_asset_status.push_back(
+                                "LLUDP AssetTransfer laeuft");
+                        else
+                            shell_view.animation_asset_status.push_back(
+                                "Noch nicht angefordert");
+                    }
+                    if(viewer_shell.animation_selected<
+                        shell_view.animation_entries.size())
+                        shell_view.selected_animation_retryable=
+                            failed_animation_clips.contains(
+                              shell_view.animation_entries[
+                                viewer_shell.animation_selected].first);
                     shell_view.attachments=world_model.self_appearance()
                         ?world_model.self_appearance()->attachments.size():0U;
                     if(viewer_shell.window==ui::ViewerWindow::map)

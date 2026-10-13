@@ -145,3 +145,13 @@ Sagen/Rufen ist mit UI und korrektem LLUDP
 gekoppelt, aber nicht mit einem neuen
 NexVerse-Login im Simulator erprobt.
 Keine aktuelle InWorld-E2E-Behauptung.
+
+## Alpha.100 – Live-Abnahme offen
+
+Ein originärer LLUDP AssetTransfer ist im Viewer nun
+mit Firestorm-KeyframeGPU und Animations-Floater verknüpft.
+Alle Golden Wire-/Chunk-/NotFound-/GPU-Tests sind
+synthetisch. Für Alpha.100 wurde keine neue
+authentifizierte NexVerse-InWorld-Sitzung ausgeführt.
+Tatsächlich ausgelieferte Animationsassets und laufende
+Bewegungen müssen dort gesondert geprüft werden.

@@ -149,3 +149,32 @@ Die Revision nach Quellenreview in die
 Server-Baseline übernommen. Alpha.99 fokussiert
 weiter die Viewer-Core-Chatmodi und
 korrekte GUI, keinen IAR-Servercode-Port.
+
+## Alpha.100 – Client/Server Quellenlage
+
+Serverquelle OpenGenesisLINK LLClientView.cs main
+SHA 2254d2b3733c5fb171e6e608bc909ff1ef8a7acd.
+MakeAssetRequest via TransferRequest SourceType.Asset2,
+SendAsset Info/Packet, -2 bei missing. Viewer-CORE:
+LLUDP Transfer, validierter Clip-Cache und Avatar-Floater.
+Kein C# Code im Viewer, keine direkte AssetService
+URL und kein optionales Pflichtplugin.
+Vor Release Hauptbranch erneut überprüfen.
+
+## Alpha.100 wiederholter Server-GitHub-Releaseabgleich
+
+Beim vorletzten Live-GitHub-Preflight neue Server SHA
+689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3
+(13.10.2026 20:25:25 UTC) ermittelt. Ein Commit nach
+2254d2b: doc/NexVerse/CROSS_REGION_LSL_CHAT_09312.md,
+tools/ci/verify_cross_region_chat.py,
+tools/diagnostics/ogl_cross_region_chat_smoke.lsl.
+CHAT01/CHAT02 erhalten einen LSL-Testwuerfel fuer
+Region-A/Region-B, Chat Kanal0 und /7, Distanzfilter
+20m, NexBus, Prozessgrenzen. Dokumentations-/Test-
+Aenderung, KEINE neue LLUDP Client-Schnittstelle.
+Einordnung SERVER-ONLY/Operator-Test, OGL Standard-
+ChatFromViewer unveraendert. Die Smoke-Prozedur wurde
+nicht real mit zwei Simulatoren ausgefuehrt und darf
+nicht als PASS bewertet werden. Reviewed-SHA nach
+Quellvergleich im Baseline-Ledger aktualisiert.

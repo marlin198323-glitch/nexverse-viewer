@@ -5,6 +5,7 @@
 #pragma once
 
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/animation_asset_transfer.hpp"
 
 #include <cstddef>
 #include <deque>
@@ -17,7 +18,8 @@ namespace nexverse::protocol
 using OutboundCommand = std::variant<
     AgentUpdateData,
     LocalChatMessage,
-    TeleportLocation>;
+    TeleportLocation,
+    AnimationAssetRequest>;
 
 class OutboundCommandQueue
 {

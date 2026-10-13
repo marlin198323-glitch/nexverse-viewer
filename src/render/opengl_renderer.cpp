@@ -4204,8 +4204,14 @@ public:
                             : (avatar.moving
                                 ? nexverse::protocol::AvatarMotion::walk
                                 : nexverse::protocol::AvatarMotion::idle);
+                    const double animation_time=
+                        avatar.keyframe_clip &&
+                        avatar.keyframe_elapsed_seconds>=0.0f
+                            ?static_cast<double>(
+                                 avatar.keyframe_elapsed_seconds)
+                            :time_seconds;
                     const auto posed=avatar_joint_deformations(
-                        avatar_bind_rig_,motion,time_seconds,
+                        avatar_bind_rig_,motion,animation_time,
                         avatar.keyframe_clip.get());
                     // Disable until a specific valid body mesh/palette is
                     // bound, keeping unrelated scene objects unaffected.

@@ -99,3 +99,12 @@ als VIEWER-CORE, LSL Neighborzustellung
 SERVER-ONLY. OpenGenesisLINK-Native LSL-
 Funktionen erst bei integriertem Scripteditor
 als Editorfunktionen ergänzen.
+
+## Alpha.100 – UI und echte AnimationAsset Transfers gleichzeitig
+
+Original Firestorm AssetTransfer Low153/154 High17 im
+LLUDP Core, AssetType Animation20 und validierte Bytes
+zum LLKeyframeMotion-Decoder und Original-LLM GPU.
+Im gleichen Release GUI-Transfer-/Fehler-/Retry-Funktion
+und Test auf echte Klickwege. Prioritäten/Sit/Layer-
+Mixing nach wie vor schrittweise zu portieren.

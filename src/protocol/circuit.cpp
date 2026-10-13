@@ -328,6 +328,14 @@ CircuitStatus CircuitConnection::run(
                                 sequence,
                                 status);
                         }
+                        else if constexpr (std::is_same_v<T, AnimationAssetRequest>)
+                        {
+                            auto packet=encode_animation_asset_transfer(
+                                sequence,value);
+                            sent=!packet.empty()&&send_reliable(
+                                socket,tracker,std::move(packet),
+                                sequence,status);
+                        }
                         else if constexpr (std::is_same_v<T, TeleportLocation>)
                         {
                             auto packet = encode_teleport_location_request(

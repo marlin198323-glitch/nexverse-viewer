@@ -78,6 +78,9 @@ int main()
                  l.panel_y+l.panel_h-80.0f*sc,s)!=
            ViewerAction::send_teleport)return 16;
         s.window=ViewerWindow::animations;
+        if(l.hit(l.panel_x+l.panel_w-100.0f*sc,
+                 l.panel_y+l.panel_h-82.0f*sc,s)!=
+           ViewerAction::retry_animation)return 34;
         if(l.hit(l.panel_x+42.0f*sc,l.panel_y+149.0f*sc,s)!=
            ViewerAction::select_animation)return 28;
         s.window=ViewerWindow::settings;

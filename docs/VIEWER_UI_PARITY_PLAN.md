@@ -110,3 +110,11 @@ Vor jedem weiteren UI-/Featureblock
 aktuellen OpenGenesisLINK main SHA
 und OGL Github develop-current SHA prüfen.
 Siehe docs/OPENGENESISLINK_INTEGRATION_MATRIX.md.
+
+## Alpha.100 – GUI und LLUDP AnimationAsset synchron
+
+Avatar>Animationen / Dock>Animationen: sichtbar und klickbar,
+aktuelle AnimID/Sequence, tatsächlicher Transfer-Status,
+gültiger Clip und Jointanzahl, Fehler und Retry-Button.
+Nur bei Fehler erneut laden; kein vermeintlicher Start/Stop.
+Viewport/GL Regression und Protokoll-Golden-Test, Live noch offen.
