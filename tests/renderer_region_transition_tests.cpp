@@ -1,5 +1,6 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
+#include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -125,6 +126,69 @@ int main()
                        fallback.avatar_baked_texture_draw_calls!=0U ||
                        fallback.self_avatar_baked_texture_draw_calls!=0U ||
                        glGetError()!=GL_NO_ERROR)error=22;
+                }
+                // Three complete Firestorm-layout bind-pose meshes replace
+                // the 7 box/sphere proxy draw calls and sample the original
+                // baked Head/Upper/Lower slots through the same shader.
+                if(!renderer->set_object_texture("avatar-bake",opaque))
+                    error=24;
+                RenderMeshGeometry body;
+                body.vertices={
+                    0.0f,0.0f,1.7f, 0.0f,0.0f,1.0f, 0.0f,0.0f,
+                    0.0f,0.1f,1.7f, 0.0f,0.0f,1.0f, 0.0f,1.0f,
+                    0.1f,0.0f,1.7f, 0.0f,0.0f,1.0f, 1.0f,0.0f};
+                body.indices={0U,1U,2U};
+                for(std::size_t slot=0U;slot<3U;++slot)
+                    if(!renderer->set_avatar_body_mesh(slot,body))
+                        error=25;
+                if(!error)
+                {
+                    const auto anatomical=render();
+                    if(anatomical.avatar_anatomical_mesh_draw_calls!=3U ||
+                       anatomical.self_avatar_anatomical_mesh_draw_calls!=3U ||
+                       anatomical.avatar_proxy_draw_calls!=0U ||
+                       anatomical.avatar_baked_texture_draw_calls!=3U ||
+                       glGetError()!=GL_NO_ERROR)error=26;
+                    // With installed Firestorm resource files, the GPU
+                    // test also uploads the real 7,186-triangle anatomical
+                    // bind-pose meshes (never a synthetic primitive proxy).
+                    if(const auto dir=
+                       nexverse::assets::find_firestorm_avatar_character_directory();
+                       dir)
+                    {
+                        const std::array<std::string,3U> filenames{
+                            "avatar_head.llm","avatar_upper_body.llm",
+                            "avatar_lower_body.llm"};
+                        for(std::size_t slot=0U;slot<filenames.size();++slot)
+                        {
+                            const auto asset=
+                                nexverse::assets::load_firestorm_avatar_llm(
+                                    *dir/filenames[slot]);
+                            if(!asset || asset->indices.size()<3000U)
+                            {
+                                error=28;
+                                break;
+                            }
+                            if(!renderer->set_avatar_body_mesh(slot,{
+                                asset->vertices,asset->indices,{}}))
+                            {
+                                error=29;
+                                break;
+                            }
+                        }
+                        if(!error)
+                        {
+                            const auto original=render();
+                            if(original.self_avatar_anatomical_mesh_draw_calls!=3U ||
+                               original.self_avatar_baked_texture_draw_calls!=3U ||
+                               glGetError()!=GL_NO_ERROR)error=30;
+                        }
+                    }
+                    renderer->remove_object_texture("avatar-bake");
+                    const auto untextured=render();
+                    if(untextured.avatar_anatomical_mesh_draw_calls!=3U ||
+                       untextured.avatar_baked_texture_draw_calls!=0U ||
+                       glGetError()!=GL_NO_ERROR)error=27;
                 }
                 renderer->set_avatar_proxies({});
                 const auto cleared_avatar=render();

@@ -74,3 +74,17 @@ Bake-Face-UUIDs, erfolgreiche GetTexture und GPU-Residency.
 Ohne diese Live-Sitzung bleiben Avatar-Bake und WASD
 not_live_verified. AvatarAttachment-Parent-Pose hat
 bislang ebenfalls nur reproduzierbare Unit-/GPU-Tests.
+
+
+## Alpha.94 – neu eingefuehrte Real-Mesh-Live-Indikatoren
+
+Lokaler Start bestaetigt:
+Firestorm original skeleton bind joints=133; attachment slots=55;
+OGLRenderer Firestorm ORIGINAL three-part avatar bind-pose
+meshes GPU-resident; triangles=7186.
+Nur nach echtem NexVerse Login/World-Ready wird das
+separate Self-Avatar-GPU-Zaehlereignis
+Avatar SELF Firestorm original .llm bind-pose MESH
+actually drawn in GPU protokolliert.
+Dies wurde NOCH NICHT im angemeldeten Grid gemessen.
+Keine behauptete Animation oder vollständige Firestorm-Paritaet.

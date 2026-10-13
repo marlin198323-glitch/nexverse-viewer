@@ -279,3 +279,18 @@ und Firestorm-Rig/Körper/COF steht weiter aus.
 Ein vom Simulator bestätigter AvatarAttachment-
 ParentLocalID ist im Renderer Parent-Transform,
 noch nicht LLAvatarJoint-AttachmentPoint.
+
+
+## Alpha.94 – Originalresource Trust Boundary
+
+Nur lokale, benutzerkontrollierte Firestorm-Laufzeitdateien
+Linden Binary Mesh 1.0 und avatar_skeleton.xml/avatar_lad.xml
+werden benutzt. No automatic asset download, no hidden
+redistributed Firestorm blobs, no script execution through
+file names. Strenge Binaer- und XML-Datenbudgets,
+Endianness, Finiteness, Count und Index checks.
+Full 3-Mesh-GPU-Upload required to replace 7-part fallback.
+AttachmentPoint nur bei verifizierter Avatar-LocalID und
+serverseitiger Objekt-UUID; mScreen-Objekte NICHT im
+3D-Weltraum zeichnen. Rig hat nur Bind-Pose, Skinning
+bleibt offen.

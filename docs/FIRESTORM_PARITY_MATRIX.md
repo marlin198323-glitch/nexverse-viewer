@@ -320,3 +320,17 @@ OGL nutzt Firestorm als Standard-Funktionsbaseline.
 Firestorm-Releasespezifikation: LLAvatarAppearanceDefines ETextureIndex
 und IMG_USE_BAKED_* in Branch Firestorm_7.2.4.
 OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
+
+
+## Alpha.94 – echte Firestorm-Body- und Skeleton-Assetintegration
+
+| Standardfunktion | OGL-Stand | Beweis / Grenze |
+|---|---|---|
+| Linden Binary Mesh 1.0 | original .llm lesen, bound-checks | real unit tests |
+| Head/Upper/Lower | 3 Originalmeshes, 4320 Vertices, 7186 Dreiecke | OpenGL Real-Asset-Tests; kein animiertes Skinning |
+| Original UV / Baked Face 8/9/10 | bekannte GetTexture-Shaderbindung | GPU resident/fallback verified |
+| Original Firestorm-Skeleton | 133 Bones/Jointnames und statische Bind-Pose | Real XML reader test; keine Live-Skinning |
+| Attachment-Bind-Points | 55 Slots, echte UUID/LID-Bindung | Parser/GPU tests, live pending |
+| HUD Attachments | mScreen slots 31-38 nicht als 3D-Weltobjekte | noch kein 2D-HUD |
+| InWorld Bewegung, Wear, COF, real rigging | weiter ausstehend | not_live_verified |
+| Full Firestorm Source Parity | NICHT full-fork; Originalressourcen integriert | weitere Quelle-/Lizenz-Pruefung |

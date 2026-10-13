@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace nexverse::render
 {
@@ -143,6 +144,7 @@ struct RenderParticleEmitter
 struct RenderSceneObject
 {
     std::uint32_t local_id = 0U;
+    std::string object_id; // server object UUID; attachment identification
     std::uint32_t parent_id = 0U;
     RenderPrimitiveKind kind = RenderPrimitiveKind::box;
     std::string mesh_id;
@@ -208,6 +210,17 @@ struct RenderAvatarProxy
     std::array<std::string,3U> baked_texture_ids{};
     // Local simulator ObjectUpdate avatar ID, for children/attachments.
     std::uint32_t local_id = 0U;
+    // Strictly server-provided AttachmentBlock ID -> point mapping.
+    std::unordered_map<std::string,std::uint8_t> attachments{};
+};
+
+// Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
+// attachment points are intentionally excluded from world scene rendering.
+struct RenderAvatarBindRig
+{
+    std::array<RenderVec3,64U> attachment_offsets{};
+    std::array<bool,64U> available{};
+    std::array<bool,64U> is_hud{};
 };
 
 struct RenderCamera
@@ -303,6 +316,8 @@ struct RenderDiagnostics
     std::uint64_t avatar_proxy_draw_calls = 0U;
     std::uint64_t self_avatar_proxy_draw_calls = 0U;
     std::uint64_t avatar_baked_texture_draw_calls = 0U;
+    std::uint64_t avatar_anatomical_mesh_draw_calls = 0U;
+    std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
 };
 
@@ -371,6 +386,13 @@ public:
         const std::vector<RenderSceneObject>& objects) = 0;
     virtual void set_avatar_proxies(
         const std::vector<RenderAvatarProxy>& avatars) = 0;
+    virtual void set_avatar_bind_rig(
+        const RenderAvatarBindRig& rig)=0;
+    // Readable Firestorm Linden Binary Mesh 1.0 head/upper/lower bind pose.
+    // Three real original UV meshes replace the 7-part geometry proxy once
+    // all required files have passed validation and GPU upload.
+    [[nodiscard]] virtual bool set_avatar_body_mesh(
+        std::size_t slot,const RenderMeshGeometry& geometry)=0;
     virtual void set_point_lights(
         const std::vector<RenderPointLight>& lights) = 0;
     virtual void set_particle_emitters(

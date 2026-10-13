@@ -88,6 +88,8 @@ add_library(nexverse-assets
     src/assets/texture_disk_cache.cpp
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
+    src/assets/firestorm_avatar_mesh.cpp
+    src/assets/firestorm_avatar_rig.cpp
     src/assets/mesh_cache.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
@@ -501,6 +503,13 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-loader-tests)
     add_test(NAME nexverse-texture-loader-tests COMMAND nexverse-texture-loader-tests)
 
+    add_executable(nexverse-firestorm-avatar-mesh-tests
+        tests/firestorm_avatar_mesh_tests.cpp)
+    target_link_libraries(nexverse-firestorm-avatar-mesh-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-avatar-mesh-tests)
+    add_test(NAME nexverse-firestorm-avatar-mesh-tests
+        COMMAND nexverse-firestorm-avatar-mesh-tests)
     add_executable(nexverse-mesh-loader-tests tests/mesh_loader_tests.cpp)
     target_link_libraries(nexverse-mesh-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-loader-tests)
@@ -625,7 +634,7 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_executable(nexverse-renderer-region-transition-tests
         tests/renderer_region_transition_tests.cpp)
     target_link_libraries(nexverse-renderer-region-transition-tests
-        PRIVATE NexVerse::Render glfw glad::glad)
+        PRIVATE NexVerse::Render NexVerse::Assets glfw glad::glad)
     nexverse_enable_warnings(nexverse-renderer-region-transition-tests)
     add_test(NAME nexverse-renderer-region-transition-tests
         COMMAND nexverse-renderer-region-transition-tests)

@@ -3080,6 +3080,32 @@ public:
                 std::min(lights.size(), max_active_lights)));
     }
 
+    [[nodiscard]] bool set_avatar_body_mesh(
+        std::size_t slot,const RenderMeshGeometry& geometry) override
+    {
+        if(slot>=avatar_body_meshes_.size() ||
+           geometry.vertices.size()<24U||
+           geometry.vertices.size()%8U!=0U||
+           geometry.indices.size()<3U||
+           geometry.indices.size()%3U!=0U)
+            return false;
+        MeshData source;
+        source.vertices=geometry.vertices;
+        source.indices=geometry.indices;
+        GpuMesh candidate;
+        if(!upload_mesh(candidate,source))
+            return false;
+        destroy_mesh(avatar_body_meshes_[slot]);
+        avatar_body_meshes_[slot]=std::move(candidate);
+        return true;
+    }
+
+    void set_avatar_bind_rig(
+        const RenderAvatarBindRig& rig) override
+    {
+        avatar_bind_rig_=rig;
+    }
+
     void set_avatar_proxies(
         const std::vector<RenderAvatarProxy>& avatars) override
     {
@@ -3107,6 +3133,8 @@ public:
         diagnostics_.avatar_proxy_draw_calls = 0U;
         diagnostics_.self_avatar_proxy_draw_calls = 0U;
         diagnostics_.avatar_baked_texture_draw_calls = 0U;
+        diagnostics_.avatar_anatomical_mesh_draw_calls = 0U;
+        diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
 
         glViewport(0, 0, width_, height_);
@@ -3375,6 +3403,24 @@ public:
             visible_objects.reserve(scene_objects_.size());
             for (std::size_t index = 0U; index < scene_objects_.size(); ++index)
             {
+                // Firestorm HUD points (31-38) must never draw as world
+                // objects at avatar coordinates. A proper HUD renderer is
+                // a separate UI phase; do not leak an offscreen HUD here.
+                const auto& entity=scene_objects_[index];
+                bool hud=false;
+                if(!entity.object_id.empty() && entity.parent_id!=0U)
+                {
+                    if(const auto* avatar=find_attachment_avatar_parent(
+                           avatar_proxies_,entity.parent_id))
+                    {
+                        const auto attached=avatar->attachments.find(
+                            entity.object_id);
+                        if(attached!=avatar->attachments.end() &&
+                           attached->second<avatar_bind_rig_.is_hud.size())
+                            hud=avatar_bind_rig_.is_hud[attached->second];
+                    }
+                }
+                if(hud)continue;
                 const Mat4 model = scene_model(index);
                 if (!scene_object_visible(model, scene_objects_[index]))
                     continue;
@@ -3974,11 +4020,84 @@ public:
                 {{0.0f,  0.15f, 0.43f}, {0.25f, 0.24f, 0.79f}, false, 3U},
                 {{0.0f, 0.0f, 0.77f}, {0.33f, 0.46f, 0.24f}, false, 1U}
             }};
+            const bool anatomical_ready=std::all_of(
+                avatar_body_meshes_.begin(),avatar_body_meshes_.end(),
+                [](const GpuMesh& mesh)
+                {return mesh.vao!=0U&&mesh.index_count>0;});
             for (const auto& avatar : avatar_proxies_)
             {
                 const Mat4 parent = multiply(
                     translation(avatar.position),
                     quaternion_rotation(avatar.rotation));
+                if(anatomical_ready)
+                {
+                    // Actual Firestorm avatar_head/upper/lower .llm
+                    // meshes have bind-pose world-relative coordinates,
+                    // preserved original UVs and normals. Future stages
+                    // add skeleton animation/weight-driven deformation;
+                    // the original body's triangles already render now.
+                    const Mat4 mvp=multiply(
+                        projection,multiply(view,parent));
+                    glUniformMatrix4fv(
+                        glGetUniformLocation(program_,"uMvp"),
+                        1,GL_FALSE,mvp.value.data());
+                    for(std::size_t slot=0U;slot<3U;++slot)
+                    {
+                        const auto& gpu=avatar_body_meshes_[slot];
+                        const auto& id=avatar.baked_texture_ids[slot];
+                        bool baked=false;
+                        if(!id.empty())
+                        {
+                            const auto found=object_textures_.find(id);
+                            if(found!=object_textures_.end() &&
+                               found->second!=0U)
+                            {
+                                glActiveTexture(GL_TEXTURE4);
+                                glBindTexture(GL_TEXTURE_2D,found->second);
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uObjectTexture"),4);
+                                baked=true;
+                            }
+                        }
+                        glUniform1i(glGetUniformLocation(
+                            program_,"uUseObjectTexture"),
+                            baked?GL_TRUE:GL_FALSE);
+                        glUniform2f(glGetUniformLocation(
+                            program_,"uObjectRepeat"),1.0f,1.0f);
+                        glUniform2f(glGetUniformLocation(
+                            program_,"uObjectOffset"),0.0f,0.0f);
+                        glUniform1f(glGetUniformLocation(
+                            program_,"uObjectRotation"),0.0f);
+                        glUniform1i(glGetUniformLocation(
+                            program_,"uObjectAlphaMode"),2);
+                        glUniform1f(glGetUniformLocation(
+                            program_,"uObjectAlphaCutoff"),0.015f);
+                        const RenderVec3 tint=baked
+                            ? RenderVec3{1.0f,1.0f,1.0f}
+                            : (slot==1U ? RenderVec3{0.70f,0.67f,0.63f}
+                               :RenderVec3{0.83f,0.73f,0.68f});
+                        const float shade=avatar.is_self?1.0f:0.75f;
+                        glUniform3f(glGetUniformLocation(
+                            program_,"uOverrideColorValue"),
+                            tint.x*shade,tint.y*shade,tint.z*shade);
+                        glBindVertexArray(gpu.vao);
+                        glDrawElements(GL_TRIANGLES,gpu.index_count,
+                                       GL_UNSIGNED_INT,nullptr);
+                        ++diagnostics_.draw_calls;
+                        ++diagnostics_.avatar_anatomical_mesh_draw_calls;
+                        if(avatar.is_self)
+                            ++diagnostics_.self_avatar_anatomical_mesh_draw_calls;
+                        if(baked)
+                        {
+                            ++diagnostics_.avatar_baked_texture_draw_calls;
+                            if(avatar.is_self)
+                                ++diagnostics_.self_avatar_baked_texture_draw_calls;
+                        }
+                        diagnostics_.triangles+=static_cast<std::uint64_t>(
+                            gpu.index_count/3);
+                    }
+                    continue;
+                }
                 for (const auto& part : parts)
                 {
                     const GpuMesh& gpu = part.round
@@ -4140,6 +4259,7 @@ public:
         destroy_mesh(prism_mesh_);
         destroy_mesh(sphere_mesh_);
         destroy_mesh(torus_mesh_);
+        for(auto& body:avatar_body_meshes_)destroy_mesh(body);
 
         for (auto& [key, mesh] : profile_mesh_cache_)
         {
@@ -4610,10 +4730,22 @@ private:
             // Not a skeletal attachment point yet: skeleton/rig is pending.
             if(const auto* avatar=find_attachment_avatar_parent(
                    avatar_proxies_,object.parent_id))
-                return multiply(
-                    multiply(translation(avatar->position),
-                             quaternion_rotation(avatar->rotation)),
-                    local_pose);
+            {
+                Mat4 root=multiply(
+                    translation(avatar->position),
+                    quaternion_rotation(avatar->rotation));
+                if(!object.object_id.empty())
+                {
+                    const auto it=avatar->attachments.find(object.object_id);
+                    if(it!=avatar->attachments.end() &&
+                       it->second<avatar_bind_rig_.available.size() &&
+                       avatar_bind_rig_.available[it->second] &&
+                       !avatar_bind_rig_.is_hud[it->second])
+                        root=multiply(root,translation(
+                            avatar_bind_rig_.attachment_offsets[it->second]));
+                }
+                return multiply(root,local_pose);
+            }
             return local_pose;
         }
 
@@ -4804,6 +4936,7 @@ private:
     GpuMesh prism_mesh_;
     GpuMesh sphere_mesh_;
     GpuMesh torus_mesh_;
+    std::array<GpuMesh,3U> avatar_body_meshes_{};
 
     GLuint terrain_vao_ = 0U;
     GLuint terrain_vbo_ = 0U;
@@ -4829,6 +4962,7 @@ private:
     RenderEnvironment environment_;
     std::vector<RenderSceneObject> scene_objects_;
     std::vector<RenderAvatarProxy> avatar_proxies_;
+    RenderAvatarBindRig avatar_bind_rig_{};
     std::vector<RenderPointLight> point_lights_;
     std::vector<RenderParticleEmitter> particle_emitters_;
     std::unordered_map<std::uint32_t,

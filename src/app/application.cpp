@@ -14,6 +14,8 @@
 #include "nexverse/assets/texture_distance.hpp"
 #include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
+#include "nexverse/assets/firestorm_avatar_mesh.hpp"
+#include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
@@ -3400,6 +3402,7 @@ int Application::run(bool enable_developer_modules)
     bool world_ready_logged = false;
     bool self_avatar_proxy_gl_logged=false;
     bool self_avatar_bake_gl_logged=false;
+    bool self_avatar_original_mesh_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
@@ -4419,6 +4422,70 @@ int Application::run(bool enable_developer_modules)
             return 13;
         }
 
+        // Bind the original Firestorm 133-joint rest hierarchy and 55
+        // attachment slot positions. This is skeletal attachment-point
+        // positioning, not yet driven by in-world animations.
+        if(const auto dir=assets::find_firestorm_avatar_character_directory();
+            dir)
+        {
+            if(const auto rig=assets::load_firestorm_avatar_rig(*dir);rig)
+            {
+                render::RenderAvatarBindRig bound;
+                for(std::size_t i=0U;i<bound.available.size();++i)
+                {
+                    const auto& offset=rig->attachment_bind_offsets[i];
+                    bound.attachment_offsets[i]={
+                        offset[0],offset[1],offset[2]};
+                    bound.available[i]=rig->attachment_available[i];
+                    bound.is_hud[i]=rig->attachment_is_hud[i];
+                }
+                world_renderer->set_avatar_bind_rig(bound);
+                core::info("Firestorm original skeleton bind joints="+
+                    std::to_string(rig->joints.size())+
+                    "; attachment slots="+
+                    std::to_string(rig->attachment_count)+
+                    " (HUD points excluded from 3D scene)");
+            }
+            else core::warning("Firestorm avatar skeleton definition "
+                "could not be loaded; neutral avatar attachment roots used");
+        }
+        // The first-party Firestorm asset format is used directly: read
+        // original resident .llm meshes and send their real triangles,
+        // normals and UVs to the OpenGL renderer. No additional file is
+        // downloaded from untrusted grid servers, no assets are committed.
+        if(const auto dir=
+               assets::find_firestorm_avatar_character_directory();dir)
+        {
+            std::size_t uploaded=0U;
+            std::size_t triangles=0U;
+            const std::array<std::string_view,3U> body_files{
+                "avatar_head.llm","avatar_upper_body.llm",
+                "avatar_lower_body.llm"};
+            for(std::size_t slot=0U;slot<body_files.size();++slot)
+            {
+                const auto asset=assets::load_firestorm_avatar_llm(
+                    *dir/std::string(body_files[slot]));
+                if(!asset || !asset->valid())break;
+                render::RenderMeshGeometry geometry;
+                geometry.vertices=asset->vertices;
+                geometry.indices=asset->indices;
+                if(!world_renderer->set_avatar_body_mesh(slot,geometry))
+                    break;
+                ++uploaded;
+                triangles+=geometry.indices.size()/3U;
+            }
+            if(uploaded==3U)
+                core::info("OGLRenderer Firestorm ORIGINAL three-part "
+                    "avatar bind-pose meshes GPU-resident; triangles="+
+                    std::to_string(triangles)+
+                    "; animation and bone skinning still pending");
+            else core::warning(
+                "Firestorm avatar .llm loading incomplete; "
+                "seven-part fallback proxy remains active");
+        }
+        else core::warning(
+            "Firestorm character assets unavailable; using provisional avatar "
+            "geometry (set NEXVERSE_AVATAR_ASSETS to Firestorm's root)");
         ui::UiRenderer renderer;
         if (!renderer.initialize(window_width, window_height))
         {
@@ -5704,6 +5771,7 @@ int Application::run(bool enable_developer_modules)
                 outfit_gallery_open=false;
                 self_avatar_proxy_gl_logged=false;
                 self_avatar_bake_gl_logged=false;
+                self_avatar_original_mesh_gl_logged=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
                 inventory_folder_contents.clear();
@@ -6856,6 +6924,11 @@ int Application::run(bool enable_developer_modules)
                          render_agent.rotation.z,
                          render_agent.rotation.w},
                         true,baked_ids,self_avatar_local_id});
+                    if(const auto& appearance=world_model.self_appearance();
+                       appearance)
+                        for(const auto& attachment:appearance->attachments)
+                            avatar_proxy_update.back().attachments.emplace(
+                                attachment.object_id,attachment.attachment_point);
                 }
                 for (const auto& [id, avatar] : world_model.avatars())
                 {
@@ -6876,6 +6949,9 @@ int Application::run(bool enable_developer_modules)
                         protocol::extract_avatar_bakes(
                             avatar.texture_entry).visible_body(),
                         avatar.local_id});
+                    for(const auto& attachment:avatar.attachments)
+                        avatar_proxy_update.back().attachments.emplace(
+                            attachment.object_id,attachment.attachment_point);
                 }
 
                 const world::RegionState& region =
@@ -6987,6 +7063,7 @@ int Application::run(bool enable_developer_modules)
 
                         render::RenderSceneObject render_object;
                         render_object.local_id = object.local_id;
+                        render_object.object_id = object.id;
                         render_object.parent_id = object.parent_id;
                         render_object.kind =
                             render_primitive_kind(object.shape);
@@ -8739,13 +8816,21 @@ int Application::run(bool enable_developer_modules)
                     "this is NOT a baked Firestorm avatar appearance; draws="+
                     std::to_string(render_diagnostics.self_avatar_proxy_draw_calls));
             }
+            if(simulation_ready&&!self_avatar_original_mesh_gl_logged &&
+               render_diagnostics.self_avatar_anatomical_mesh_draw_calls>=3U)
+            {
+                self_avatar_original_mesh_gl_logged=true;
+                core::info(
+                    "Avatar SELF Firestorm original .llm bind-pose MESH actually "
+                    "drawn in GPU: 3 body meshes; not yet animated or skinned");
+            }
             if(simulation_ready&&!self_avatar_bake_gl_logged &&
                render_diagnostics.self_avatar_baked_texture_draw_calls>0U)
             {
                 self_avatar_bake_gl_logged=true;
                 core::info(
                     "Avatar SELF Head/Upper/Lower baked TEXTURE submitted to OpenGL; "
-                    "transitional proxy, NOT skinned Firestorm skeleton; draws="+
+                    "original UV/body when .llm available, NOT yet skinned; draws="+
                     std::to_string(
                         render_diagnostics.self_avatar_baked_texture_draw_calls));
             }

@@ -2029,3 +2029,103 @@ Teleport zwischen Regionen und Mesh-HTTP-404-
 Assets im Grid nachprüfen.
 Branch develop-current; zuerst CHATUEBERGABE.md,
 projectplan.md maßgeblich.
+
+
+## Alpha.94 (13.10.2026) – BESCHLEUNIGTER FIRESTORM ORIGINAL-BODY MILESTONE
+
+Verbindlicher Modus ab hier: Bei "weiter" acht bis zwoelf technisch
+zusammenhaengende Module/Pakete in einem integrierten, lokal gebauten
+und getesteten GitHub-Commit fertigstellen, sofern realistisch.
+Immer CHATUEBERGABE.md zuerst, dann projectplan.md, danach Code,
+CTest/Python/GPU und Commit/Push; keine erfundenen Live-Nachweise.
+
+Paket 1: Firestorm Linden Binary Mesh 1.0 Originalparser in
+include/nexverse/assets/firestorm_avatar_mesh.hpp und
+src/assets/firestorm_avatar_mesh.cpp; das Firestorm-
+LLPolyMeshSharedData::loadMesh On-Disk-Layout mit Header,
+Gewicht/Detail-Flags, Position, Rotation, Scale, spaltenweise
+Positionen/Normals/Binormals, originale UVs, F32-Weighs, Dreieckindices,
+JointNames. 8MiB-Dateibudget, <=20000 Vertices, <=256 JointNames,
+finite Floatwerte und sichere Index-/Längenbegrenzungen.
+Firestorms Gewichte sind 1-basiert und teilweise sparse (Upper-
+Body-Mesh kennt Weight 14 bei 12 JointNames), nicht als direkten
+C++-Index benutzen. MorphTargets nur unparsed trailing, spaeter.
+
+Paket 2: Keine erfundenen Avatarformen oder unerlaubte Binärpakete:
+Original Firestorm-Ressourcen ueber NEXVERSE_AVATAR_ASSETS,
+assets/character oder bestehendes ~/firestorm/character erkennen.
+Ohne lokale Ressourcen bleibt alter 7-Teile-Farbproxy sichtbar.
+Fuer Windows/macOS ist ein gepruefter Packaging-Pfad weiter offen.
+
+Paket 3: Drei ORIGINAL Firestorm Kopf/Ober-/Unterkoerper-.llm-
+Meshdateien geladen (4.320 Vertices, 7.186 Dreiecke);
+speichern Original-UV und SkinGewicht-/Joint-Informationen.
+
+Paket 4: Renderer set_avatar_body_mesh fuer 3 GPU-Meshes mit
+realen VAO/VBO/EBO und Original-UVs; Ersatz der 7 Kasten-Draws
+durch drei realistische Body-Draws, wenn alle 3 vorhanden sind.
+Separat gemessene avatar_anatomical_mesh_draw_calls,
+self_avatar_anatomical_mesh_draw_calls, atomare Uploads,
+OpenGL Cleanup und 7-Proxy-Fallback.
+
+Paket 5: Head/Upper/Lower verwenden weiterhin die schon
+funktionierende GetTexture/Firestorm Baked-UUID-GPU-Tabelle.
+Fehlende gebackene Texturen nutzen sichtbare neutrale Tints;
+keine ungepruefte externe URL oder parallele Downloadpipeline.
+
+Paket 6: Original avatar_skeleton.xml geladen und validiert:
+133 Joint-/Bone-Knoten mit Eltern, lokaler Translation,
+Euler-Angaben und Restbindpositionen (XML-Tiefen-/Bytegrenzen).
+Rotationsgetriebenes Skinning ist NOCH NICHT implementiert.
+
+Paket 7: Original avatar_lad.xml mit 55 Attachment IDs,
+Joint-Namen und BindOffsets; mRoot (Avatar-Center)
+und mScreen (HUD) sind virtuelle Frames und keine
+physikalischen Skeleton-Bones.
+
+Paket 8: SceneObject Original-UUID + WorldModel-
+AvatarAppearance AttachmentBlock ID/Point + validierte
+Avatar-LocalID zum Bind-Pose-Ankern der Objekt-Root-Pose.
+Firestorm-HUD Attachments IDs 31–38 sind nicht als
+3D-Weltobjekte zu zeichnen; eine separate 2D-HUD-Pipeline fehlt.
+
+Paket 9: Lokale originale Firestorm-Binaries in echten Unit-
+und GL-Regressionen: .llm-, Skeleton- und Attachment-
+Daten; bösartige Header/Abbruch/Count; echter Upload
+aller originalen 7.186 Dreiecke mit OpenGL 3.3;
+separate Textur-Bind/Fallback Draws. CTest auf CI
+ohne installierte Firestorm-Assets markiert SKIP 77
+statt fälschlich FAIL oder bestanden zu behaupten.
+
+Paket 10: Lokaler GUI-Smoke unter Linux NVIDIA
+RTX4070 SUPER: Startup meldet 133 Skeleton-Joints,
+55 Attachment-Punkte und 7.186 GPU-residente
+Original-Avatar-Dreiecke; NexVerse-Welcome geladen.
+Eine echte neue angemeldete InWorld-Session fand
+NICHT statt: Bewegung/Skin/COF/3D-Welt und echte
+Avatar-Self-Draws noch nicht live_verified.
+
+**WICHTIG:** Dies ist nun direkte Integration ORIGINALER
+Firestorm-Avatarressourcen/Formate, aber OGL ist nach
+wie vor eine separate C++23-Anwendung und kein
+vollstaendiger Firestorm-Quellcodefork.
+Nicht als fertig deklarieren: LLJoint-Weight-Skinning,
+Animations-/Facial-/WearableMorph-Pipeline,
+HUD-UI, COF-Wear-Rechte/Mutationen, weitere
+Firestorm-Funktionsparitaet, volle Plattformassets
+und Login-/Regionswechsel-E2E.
+
+**Naechste schnelle Phase:** Original Firestorm Vertex
+Weights + JointNames auf mPelvis/Spine/Head/
+Arme/Beine mit deformierender CPU/GPU-Pose,
+LLAnimation und Shape-Morph-Parametern; danach
+echte NexVerse Live-Sitzung, COF/Wear/
+Attachments, Mesh-Live-Defekte, Teleport.
+Keine weiteren provisorischen Ersatz-Avatarformen.
+
+Quellen: FirestormViewer/phoenix-firestorm,
+Branch Firestorm_7.2.4, Commit
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d,
+insbesondere LLPolyMesh, avatar_lad.xml,
+avatar_skeleton.xml. OpenGenesisLINK Server
+ist OpenSim- und Protokollreferenz.
