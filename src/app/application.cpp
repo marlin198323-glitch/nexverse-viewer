@@ -64,6 +64,7 @@
 #include "nexverse/protocol/region_material_scope.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
+#include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
@@ -3264,6 +3265,7 @@ int Application::run(bool enable_developer_modules)
     std::uint32_t self_avatar_local_id = 0U;
     std::uint64_t self_avatar_region_handle = 0U;
     std::chrono::steady_clock::time_point last_self_movement_log{};
+    protocol::MovementFeedbackMonitor movement_feedback;
     bool simulation_ready = false;
     input_context.experience=&experience_ui;
     input_context.outfits=&outfit_gallery_open;
@@ -3838,6 +3840,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_local_id,
          &self_avatar_region_handle,
          &last_self_movement_log,
+         &movement_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -3874,6 +3877,15 @@ int Application::run(bool enable_developer_modules)
                             current.agent_id, current.session_id,
                             update.position, update.rotation, current.present});
                         const auto now = std::chrono::steady_clock::now();
+                        const auto evidence=movement_feedback.server_position(
+                            update.position,now);
+                        if(evidence==protocol::MovementEvidence::server_position_changed)
+                            core::info("Avatar motion VERIFIED: simulator self-position changed "
+                                       "after WASD input (>=0.25m); appearance not verified");
+                        else if(evidence==protocol::MovementEvidence::server_position_stalled)
+                            core::warning("Avatar motion NOT VERIFIED: directional AgentUpdate "
+                                          "sent, but 3+ server position samples remained "
+                                          "stationary for at least 4 seconds");
                         if (now - last_self_movement_log >
                                 std::chrono::seconds{2})
                         {
@@ -4615,6 +4627,7 @@ int Application::run(bool enable_developer_modules)
                         active_session = std::move(result.session);
                         login_ui.authenticated = true;
                         movement_controller.reset();
+                        movement_feedback.reset();
                         movement_heading_initialized = false;
                         last_reported_control_flags = 0U;
                         {
@@ -5379,6 +5392,7 @@ int Application::run(bool enable_developer_modules)
                             (void)circuit_future.get();
                         outbound_queue.clear();
                         movement_controller.reset();
+                        movement_feedback.reset();
                         movement_heading_initialized=false;
                         last_reported_control_flags=0U;
                         {
@@ -5523,6 +5537,7 @@ int Application::run(bool enable_developer_modules)
                 auto update = movement_controller.step(
                     keys, std::chrono::duration<float>(
                         now - last_agent_update).count());
+                movement_feedback.outbound_controls(update.control_flags,now);
                 agent_for_camera.rotation = update.body_rotation;
                 {
                     std::scoped_lock lock{world_mutex};

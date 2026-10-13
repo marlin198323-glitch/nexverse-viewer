@@ -3993,3 +3993,84 @@ Vier zusammenhaengende Aenderungsbloecke sind im GitHub-Quellstand vorbereitet:
 **Quellen:** FirestormViewer/phoenix-firestorm, branch Firestorm_7.2.4, scripts/messages/message_template.msg (RemoveInventoryItem 270, RemoveInventoryFolder 276, RemoveInventoryObjects 284). OpenGenesisLINK Server main 953063775933b6d7fab4f746d055587b8d74f2ea (IClientInventory.cs und Scene.Inventory.cs als Sendepfade). Der neue Server hat zudem ein optionales OGLViewerAdvisorModule; Viewerkennung `OpenGenesisLINK Viewer` bleibt kompatibel, sagt aber nichts ueber Funktionsparitaet aus.
 
 **Naechste Prioritaet:** Build/Test/Paketlayout live pruefen, Alpha.89 AgentUpdate-WASD-Positionsdelta aus neuer Live-Session pruefen, SelfAvatar/Appearance und Mesh-Skinning, danach vollstaendige Inventar-COF/Wear-Transaktionen und End-to-End Teleport. Firestorm bleibt Funktionsbaseline, nicht austauschbar.
+
+
+## 0.2.0-alpha.91 – Build-Hotfix, avatar server motion evidence und LLUDP-Regression · 13.10.2026
+
+**Block 1 – Alpha.90 erstmals echt auf Linux gebaut:** Am 13.10.2026
+war Desktop Commander auf jam-MS-7D28 wieder erreichbar.
+Der vorher per GitHub veröffentlichte unbuilt-Stand Alpha.90 enthielt
+einen Compilerfehler in firestorm_inventory_events_tests.cpp:
+ein lokales SESSION-Lambda-Standardargument. Die UUID-Konstante
+wurde in den Namespace-Scope verschoben. Anschließend liefen
+83/83 CTests mit echter NVIDIA-GL-Umgebung erfolgreich.
+Damit ist der unveränderte Alpha.90-Paketpfad erstmals gebaut
+und synthetisch abgenommen. Der alte Hinweis committed_unbuilt
+bleibt als historischer Zwischenstatus erhalten; Alpha.91 löst ihn ab.
+
+**Block 2 – WASD-Reaktion des Simulators endlich getrennt messen:**
+Neue header-only, mutex-geschützte
+protocol::MovementFeedbackMonitor verarbeitet unidirektionale
+AgentUpdate-WASD-ControlFlags auf dem UI-Thread und echte
+serverautoritierte Self-ImprovedTerseObjectUpdate-Positionen
+auf dem LLUDP-Worker. Nach wenigstens 25 cm Netto-Positionsänderung
+in einer zusammenhängenden Bewegungsanforderung wird genau ein
+"Avatar motion VERIFIED" protokolliert (nur serverbasierte
+Positionsreaktion, ausdrücklich nicht Avatar-Bake/Animation).
+Nach mindestens 4 Sekunden und 3 Terse-Samples ohne
+Positionsänderung wird genau eine präzise WARN-Protokollmeldung
+ausgegeben, keine voreilige Bewegungsfreigabe.
+Gegensinnige Tasten und reine Rotation zählen NICHT als
+Fortbewegung. Bei neuer Eingabe und beim Regionen-/Login-Circuit-
+Reset werden alte Ergebnisse nicht fortgeschrieben. Der Monitor
+manipuliert WorldModel oder Network-Payload nie. Deterministische
+Tests prüfen Tasten, Stillstand, bestätigten Positionsdelta,
+Warnungs-/Bestätigungs-Deduplizierung, neue Eingaben und
+Teleport-Reset. **Eine frische authentifizierte Alpha.91-
+InWorld-Session wurde nicht durchgeführt**, keine echte WASD-
+Freigabe behauptet.
+
+**Block 3 – zusätzliche sichere Server-Inventory-Varianten:**
+Die Alpha.90-Parser für Firestorm RemoveInventoryItem (Low 270),
+RemoveInventoryFolder (Low 276), RemoveInventoryObjects (Low 284)
+wurden um Live-ähnliche Grenzwert-Regressionen für 64 gültige
+UUIDs, 65 ungültige, zwei Variablenblöcke mit insgesamt 64
+UUIDs, unpassende Nachrichtentypen und gebrochene Blocklängen
+erweitert. Selbst valide Meldungen sind weiterhin nur
+Readback-Invalidierungen; nicht die Freigabe, Servergegenstände
+ohne Rückleseprüfung zu löschen.
+
+**Block 4 – kompletter Firestorm-AgentUpdate-Wire-Golden-Test:**
+Der bisherige Test prüfte 114-Byte-Nutzdaten und den
+ControlFlags-Offset. Jetzt werden zusätzlich BodyRotation
+LLQuaternion x/y/z, HeadRotation x/y/z, State, CameraCenter
+und CameraAt, FarClip sowie Flags bytegenau gegen Firestorms
+High-4-Layout geprüft. Dadurch fällt erneut eine
+versehentliche 16-Byte-Quaternion oder vertauschte Camera-
+und Controls-Position bei CI/CTest sofort auf.
+
+**Aktuelle Quellreferenzen:** FirestormViewer/phoenix-firestorm
+Firestorm_7.2.4 @ 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+OpenGenesisLINK/opengenesislinkserver main @
+953063775933b6d7fab4f746d055587b8d74f2ea.
+Auf Serverseite gibt es inzwischen unter anderem
+OGLViewerAdvisor und IAR/Portal-Protokolle; diese sind nicht
+mit einem vollständig implementierten Avatar-Wear/Appearance-
+Protokoll gleichzusetzen.
+
+**Abnahme:** Alpha.91 C++23 Build und alle CTests samt GPU-
+Tests auf DISPLAY=:0 durchführen; Python Regression und GUI
+Welcome-Smoke prüfen. Neues Logszenario hat nach 11.10.2026
+bislang keine authentifizierte Sitzung. Nicht freigegeben:
+echte NexVerse-WASD-/Teleport-Live-Abnahme, Firestorm Avatar
+Bakes/Skeleton/Outfit-Wear/COF, fehlende Assets und originale
+Firestorm-Vollparität.
+
+**Folgepriorität:** Neue OGL-Login-Session starten, WASD
+mindestens fünf Sekunden halten und auf die neue Avatar-
+Motion-Diagnose prüfen; danach Position, SelfAvatar und
+Textures/Mesh-Readback; echte zwei-Regionen-Circuit-/CAPS-
+Teleports; serverseitige OGL-IAR/Appearance-Spezifikationen
+für Wearables/COF und Attachments vergleichen.
+Branch develop-current, Repository
+marlin198323-glitch/nexverse-viewer, projectplan.md maßgeblich.

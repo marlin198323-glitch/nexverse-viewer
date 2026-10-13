@@ -1,4 +1,5 @@
 #include "nexverse/protocol/movement_controls.hpp"
+#include "nexverse/protocol/movement_feedback.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -90,6 +91,48 @@ int main()
         std::cerr << "Initial simulator heading not preserved\n";
         return 9;
     }
+    // Server-side motion verification: input bits are not sufficient.
+    // Only an actual server position delta >=0.25m can confirm movement.
+    using Clock=std::chrono::steady_clock;
+    const auto t=Clock::time_point{};
+    MovementFeedbackMonitor feedback;
+    if(feedback.server_position({10.0f,20.0f,30.0f},t)!=
+       MovementEvidence::none)return 10;
+    feedback.outbound_controls(control_turn_left,t); // rotate only
+    if(feedback.server_position({10.0f,20.0f,30.0f},
+                                t+std::chrono::seconds{5})!=
+       MovementEvidence::none)return 11;
+    feedback.outbound_controls(control_at_pos,t);
+    for(int i=1;i<=2;++i)
+        if(feedback.server_position({10.0f,20.0f,30.0f},
+                      t+std::chrono::seconds{i})!=MovementEvidence::none)
+            return 12;
+    if(feedback.server_position({10.0f,20.0f,30.0f},
+               t+std::chrono::seconds{5})!=
+       MovementEvidence::server_position_stalled)return 13;
+    if(feedback.server_position({10.0f,20.0f,30.0f},
+               t+std::chrono::seconds{6})!=MovementEvidence::none)
+        return 14; // stalled report deduplicated
+    if(feedback.server_position({10.0f,20.3f,30.0f},
+               t+std::chrono::seconds{7})!=
+       MovementEvidence::server_position_changed)return 15;
+    if(feedback.server_position({10.0f,20.6f,30.0f},
+               t+std::chrono::seconds{8})!=MovementEvidence::none)
+        return 16; // confirmed report deduplicated
+    feedback.outbound_controls(0U,t+std::chrono::seconds{9});
+    feedback.outbound_controls(control_at_pos,t+std::chrono::seconds{10});
+    if(feedback.server_position({10.3f,20.6f,30.0f},
+               t+std::chrono::seconds{11})!=
+       MovementEvidence::server_position_changed)return 17;
+    feedback.reset();
+    if(feedback.server_position({20.0f,20.0f,30.0f},
+               t+std::chrono::seconds{30})!=MovementEvidence::none)
+        return 18; // teleports are not WASD evidence
+    feedback.outbound_controls(control_at_pos|control_at_neg,
+               t+std::chrono::seconds{32});
+    if(feedback.server_position({20.0f,20.0f,30.0f},
+               t+std::chrono::seconds{40})!=MovementEvidence::none)
+        return 19; // opposing controls cancel
     std::cout << "Avatar controls and rotation tests passed\n";
     return 0;
 }

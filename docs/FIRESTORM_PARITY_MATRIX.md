@@ -270,3 +270,19 @@ OpenGenesisLINK main @ 16d219f142926c7e00327e4ca91ecb1f8fc213e6.
 | Wear, COF, Bakes und echtes Avatar-Outfit | nicht implementiert | not_implemented |
 
 Firestorm message_template.msg (Branch Firestorm_7.2.4) und OpenGenesisLINK main 953063775933b6d7fab4f746d055587b8d74f2ea herangezogen. Da Linux-Desktop offline, Build und CTests noch ausstehend.
+
+
+## Alpha.91 – Firestorm-Kompatibilitätsnachweise (13.10.2026)
+
+| Firestorm-Funktion | OGL-Entwicklung | Status |
+|---|---|---|
+| AgentUpdate High 4 | Vollständige Body-/HeadQuaternion 12 Byte, State, Camera-/Far-/Controls-/Flags-Golden-Offsets | lokal CTest, Realgrid noch offen |
+| Bewegung / Positionsantwort | Neuer thread-sicherer WASD/Terse-Deltamonitor mit 4-s/3-Samples-Stillstandwarnung | lokal CTest, Live noch offen |
+| RemoveInventoryItem/Folder/Objects | Agent-/Session-gebundene Readback-Invalidierung, 64/65-ID-Grenze | lokal CTest; Live noch offen |
+| Regions-/Login-Reset | Movement-Monitor wird beim Circuit-Neustart zurückgesetzt | Source-Test, echter Teleport offen |
+| Avatar Bake/Skeleton/Outfits/Attachments | kein vollständiger Firestorm-Ersatz | not_implemented |
+
+Quellen Firestorm Firestorm_7.2.4 @
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
+OpenGenesisLINK main @
+953063775933b6d7fab4f746d055587b8d74f2ea.

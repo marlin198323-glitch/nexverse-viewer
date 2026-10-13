@@ -226,3 +226,18 @@ wiki.secondlife.com/wiki/Message_Layout.
 ## Alpha.90 – Server-origin LLUDP RemoveInventory semantics
 
 RemoveInventoryItem (Low 270) und RemoveInventoryFolder (Low 276) haben je AgentData Single (AgentID UUID16, SessionID UUID16) und eine Variable-Liste mit U8 count, count*LLUUID16. RemoveInventoryObjects (Low 284) hat AgentData Single, dann FolderData Variable und ItemData Variable; jeder Listenzaehler U8. Obergrenze OGL 64 IDs, keine Null-UUIDs, keine Daten hinter dem letzten Block. Jede Nachricht ist nur ein Readback-Invalidierungshinweis fuer die authentifizierte aktuelle WorldModel-Sitzung, keine lokal autorisierte Delete-Bestaetigung. Bei unbekanntem Parent immer vollstaendiger CAPS-Resync. Einspeisung erfolgt region-epoch-geprueft ueber InventoryEventInbox. Ohne Linux-Build bleibt Alpha.90 committed_unbuilt.
+
+
+## Alpha.91 – SelfAvatar-Motion nicht mit Avatar-Appearance verwechseln
+
+AgentUpdate wird mit dem unveränderten Linden-High-4-Wire-Layout
+gesendet. Nur ein Simulator-ImprovedTerseObjectUpdate mit der
+gebundenen SelfAvatar-LocalID, passendem Regionhandle und
+mindestens 0.25 m Positionsdelta nach WASD zählt als
+beobachtete Bewegung. Drei weiterhin stationäre Terse-Samples
+und vier Sekunden halten den Fall ohne Bestätigung fest.
+Die Messung verwendet keine Pixel-/Avatar-Skeleton-
+Eigenschaften und ist kein Ersatz für einen Firestorm-
+Wearables-/Bake-/Animation-Readback. Neue lokale Golden-Tests
+prüfen auch State, Camera- und FarClip-Offsets der unveränderten
+114-Byte-AgentUpdate-Nutzdaten.

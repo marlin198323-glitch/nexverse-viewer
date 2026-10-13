@@ -4,6 +4,7 @@
 #include <vector>
 using namespace nexverse::protocol;
 constexpr auto OWNER="11111111-1111-1111-1111-111111111111";
+constexpr auto SESSION="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 constexpr auto OTHER="22222222-2222-2222-2222-222222222222";
 constexpr auto FOLDER="33333333-3333-3333-3333-333333333333";
 constexpr auto PARENT="44444444-4444-4444-4444-444444444444";
@@ -97,7 +98,6 @@ int main()
 
     // Firestorm Linden Unencoded, Low 270/276/284: exact AgentData
     // (agent/session UUID) and bounded InventoryData/FolderData counts.
-    constexpr auto SESSION="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
     const auto removal=[&](MessageId type,std::string_view agent=OWNER,
                            std::string_view session=SESSION)
     {
@@ -148,6 +148,32 @@ int main()
     auto malformed_objects=removal(msg_remove_inventory_objects);
     malformed_objects.payload.pop_back(); // mandatory second variable count
     if(parse_inventory_remove_hint(malformed_objects,OWNER,SESSION))return 28;
+    // Boundaries for 64 actual UUIDs, including a dual-block packet.
+    // The server may send many removals but never unbounded data.
+    auto boundary=removal(msg_remove_inventory_item);
+    boundary.payload[32U]=64U;
+    const auto one=uuid_to_bytes(ITEM);
+    for(unsigned i=1U;i<64U;++i)
+        boundary.payload.insert(boundary.payload.end(),
+                                one->begin(),one->end());
+    if(!parse_inventory_remove_hint(boundary,OWNER,SESSION))return 33;
+    boundary.payload[32U]=65U;
+    if(parse_inventory_remove_hint(boundary,OWNER,SESSION))return 34;
+    auto two_blocks=removal(msg_remove_inventory_objects);
+    two_blocks.payload[32U]=63U;
+    two_blocks.payload.resize(33U);
+    for(unsigned i=0U;i<63U;++i)
+        two_blocks.payload.insert(two_blocks.payload.end(),
+                                  one->begin(),one->end());
+    two_blocks.payload.push_back(1U);
+    two_blocks.payload.insert(two_blocks.payload.end(),
+                              one->begin(),one->end());
+    if(!parse_inventory_remove_hint(two_blocks,OWNER,SESSION))return 35;
+    two_blocks.payload[two_blocks.payload.size()-17U]=2U;
+    if(parse_inventory_remove_hint(two_blocks,OWNER,SESSION))return 36;
+    auto unrelated=removal(msg_remove_inventory_item);
+    unrelated.header.message={MessageFrequency::high,4U};
+    if(parse_inventory_remove_hint(unrelated,OWNER,SESSION))return 37;
     // Full invalidation supersedes pending targeted folders, coalesces
     // repeated delete hints and never survives an epoch transition.
     const auto removal_epoch=lease.enter(7U,2U,"https://example.test/cap3");

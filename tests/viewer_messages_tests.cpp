@@ -208,6 +208,41 @@ int main()
         return 104;
     }
 
+    // Golden field map from Firestorm message_template.msg for High 4:
+    // two quaternion vectors (3 * F32 each), state U8, four camera vec3,
+    // Far F32, ControlFlags U32, Flags U8. Every offset is independent
+    // of the viewer decoder: a parse-only test would miss symmetry bugs.
+    update.body_rotation={0.25f,-0.5f,0.75f,1.0f};
+    update.head_rotation={0.1f,0.2f,0.3f,1.0f};
+    update.state=0x5aU;
+    update.camera_at_axis={0.7f,0.0f,0.0f};
+    update.far_clip=192.5f;
+    update.flags=0x81U;
+    const auto exact=decode_lludp_packet(
+        encode_agent_update(42U,session,update));
+    if(!exact.ok() || exact.packet->payload.size()!=114U)return 105;
+    const auto& golden=exact.packet->payload;
+    const auto f32=[&](std::size_t offset)
+    {
+        const std::uint32_t raw=
+            static_cast<std::uint32_t>(golden[offset]) |
+            (static_cast<std::uint32_t>(golden[offset+1U])<<8U) |
+            (static_cast<std::uint32_t>(golden[offset+2U])<<16U) |
+            (static_cast<std::uint32_t>(golden[offset+3U])<<24U);
+        return std::bit_cast<float>(raw);
+    };
+    if(f32(32U)!=0.25f || f32(36U)!=-0.5f ||
+       f32(40U)!=0.75f || f32(44U)!=0.1f ||
+       f32(48U)!=0.2f || f32(52U)!=0.3f ||
+       golden[56U]!=0x5aU ||
+       f32(57U)!=128.0f || f32(61U)!=128.0f ||
+       f32(65U)!=30.0f || f32(69U)!=0.7f ||
+       f32(105U)!=192.5f || golden[113U]!=0x81U)
+    {
+        std::cerr<<"AgentUpdate field offsets mismatch Firestorm wire\n";
+        return 106;
+    }
+
     LocalChatMessage outgoing;
     outgoing.message = "Hallo NexVerse";
     outgoing.type = LocalChatType::normal;

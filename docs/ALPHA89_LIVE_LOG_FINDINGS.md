@@ -36,3 +36,14 @@ Asset-Residency. Änderungen in Alpha.89 wurden zu diesem Zeitpunkt
 nur mit C++/Python-GPU-Fixtures abgenommen, nicht durch neuen
 Avatar-Login. Für den nächsten Live-Test Viewer neu starten,
 Anmeldung und WASD testen sowie live InWorldAssetSnapshots prüfen.
+
+
+## Alpha.91-Hinweis – neuer, noch unbestätigter Live-Nachweis
+
+Seit der 11.10.2026-Alpha.88-Session war beim aktuellen lokalen
+Quellstand bis zur Entwicklung von Alpha.91 kein neuer
+authentifizierter NexVerse-Login in der Viewerlog-Datei vorhanden.
+Der neue thread-sichere SelfAvatar-Terse/WASD-Monitor
+protokolliert im Fall einer neuen Session Bestätigung oder
+Stillstand. Keine vorherige synthetische GPU-/CTest-Prüfung
+beweist tatsächliche WASD-Bewegung oder gebackene Kleidung.
