@@ -21,10 +21,10 @@ enum class ViewerAction {
     experiences, region, map, avatar, settings, help,
     send_chat, send_teleport, fullscreen, focus_chat,
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
-    refresh_inventory, disabled
+    refresh_inventory, animations, select_animation, disabled
 };
 enum class ViewerWindow {
-    none,chat,move,teleport,region,map,avatar,settings,help
+    none,chat,move,teleport,region,map,avatar,animations,settings,help
 };
 struct ViewerShellState
 {
@@ -36,6 +36,7 @@ struct ViewerShellState
     bool teleport_submit_requested=false;
     std::array<std::string,3> teleport_coords{"128","128","25"};
     int teleport_focus=0;
+    std::size_t animation_selected=0U;
     void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
     [[nodiscard]] bool input_captured() const noexcept
     {return window!=ViewerWindow::none;}
@@ -48,35 +49,41 @@ struct ViewerMenuItem
 inline constexpr std::array<std::string_view,5> menu_labels{
     "Avatar","Kommunikation","Welt","Ansicht","Hilfe"
 };
-inline constexpr std::array<std::array<ViewerMenuItem,4>,5> menu_items{{
+inline constexpr std::array<std::array<ViewerMenuItem,5>,5> menu_items{{
     {{{"Avatarstatus",ViewerAction::avatar},
       {"Inventar",ViewerAction::inventory},
       {"Outfit-Galerie",ViewerAction::outfits},
+      {"Animationen",ViewerAction::animations},
       {"",ViewerAction::none}}},
     {{{"Lokaler Chat",ViewerAction::chat},
       {"Erlebnisse",ViewerAction::experiences},
       {"Freunde (geplant)",ViewerAction::disabled},
+      {"",ViewerAction::none},
       {"",ViewerAction::none}}},
     {{{"Region",ViewerAction::region},
       {"Karte",ViewerAction::map},
       {"Teleport",ViewerAction::teleport},
+      {"",ViewerAction::none},
       {"",ViewerAction::none}}},
     {{{"Bewegung",ViewerAction::move},
       {"Einstellungen",ViewerAction::settings},
       {"Vollbild [F11]",ViewerAction::fullscreen},
+      {"",ViewerAction::none},
       {"",ViewerAction::none}}},
     {{{"Steuerung",ViewerAction::help},
       {"Systemstatus",ViewerAction::region},
       {"",ViewerAction::none},
+      {"",ViewerAction::none},
       {"",ViewerAction::none}}}
 }};
-inline constexpr std::array<std::string_view,7> action_labels{
-    "Chat","Bewegen","Teleport","Inventar","Outfits","Erlebnisse","Karte"
+inline constexpr std::array<std::string_view,8> action_labels{
+    "Chat","Bewegen","Teleport","Inventar","Outfits","Erlebnisse","Karte",
+    "Animationen"
 };
-inline constexpr std::array<ViewerAction,7> action_commands{
+inline constexpr std::array<ViewerAction,8> action_commands{
     ViewerAction::chat,ViewerAction::move,ViewerAction::teleport,
     ViewerAction::inventory,ViewerAction::outfits,
-    ViewerAction::experiences,ViewerAction::map
+    ViewerAction::experiences,ViewerAction::map,ViewerAction::animations
 };
 inline constexpr std::array<ViewerAction,7> navigation_commands{
     ViewerAction::region,ViewerAction::teleport,ViewerAction::disabled,
@@ -120,6 +127,14 @@ struct ViewerShellLayout
                           panel_y+panel_h-92.0f*scale,
                           panel_w-212.0f*scale,48.0f*scale))
                     return ViewerAction::focus_chat;
+            }
+            if(state.window==ViewerWindow::animations)
+            {
+                for(std::size_t i=0U;i<8U;++i)
+                    if(inside(x,y,panel_x+26.0f*scale,
+                              panel_y+(130.0f+31.0f*static_cast<float>(i))*scale,
+                              panel_w-52.0f*scale,29.0f*scale))
+                        return ViewerAction::select_animation;
             }
             if(state.window==ViewerWindow::teleport)
             {
@@ -226,6 +241,7 @@ inline constexpr ViewerWindow window_for_action(ViewerAction action) noexcept
     case ViewerAction::avatar:return ViewerWindow::avatar;
     case ViewerAction::settings:return ViewerWindow::settings;
     case ViewerAction::help:return ViewerWindow::help;
+    case ViewerAction::animations:return ViewerWindow::animations;
     default:return ViewerWindow::none;
     }
 }

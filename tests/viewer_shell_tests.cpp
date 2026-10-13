@@ -22,6 +22,8 @@ int main()
         s.open_menu=0;
         if(l.hit(40.0f*sc,153.0f*sc,s)!=ViewerAction::inventory)
             return 2;
+        if(l.hit(40.0f*sc,230.0f*sc,s)!=ViewerAction::animations)
+            return 27;
         s.open_menu=2;
         if(l.hit(328.0f*sc,190.0f*sc,s)!=ViewerAction::teleport)
             return 3;
@@ -62,6 +64,9 @@ int main()
         if(l.hit(l.panel_x+l.panel_w-100.0f*sc,
                  l.panel_y+l.panel_h-80.0f*sc,s)!=
            ViewerAction::send_teleport)return 16;
+        s.window=ViewerWindow::animations;
+        if(l.hit(l.panel_x+42.0f*sc,l.panel_y+149.0f*sc,s)!=
+           ViewerAction::select_animation)return 28;
         s.window=ViewerWindow::settings;
         if(l.hit(l.panel_x+50.0f*sc,
                  l.panel_y+175.0f*sc,s)!=
@@ -87,6 +92,8 @@ int main()
     if(valid_teleport_target(state,256U,256U))return 24;
     state.teleport_coords[2U]="-50";
     if(!valid_teleport_target(state,256U,256U))return 25;
+    if(window_for_action(ViewerAction::animations)!=ViewerWindow::animations)
+        return 29;
     if(window_for_action(ViewerAction::inventory)!=ViewerWindow::none ||
        window_for_action(ViewerAction::disabled)!=ViewerWindow::none ||
        window_for_action(ViewerAction::chat)!=ViewerWindow::chat)return 26;

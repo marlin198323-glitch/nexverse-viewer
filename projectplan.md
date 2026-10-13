@@ -4730,3 +4730,72 @@ Quellen:
   kein automatischer Viewer-UI-Endpunkt).
 - docs/VIEWER_UI_PARITY_PLAN.md ist ab jetzt der
   verbindliche UI-Paritäts-/Klickstatus pro Funktion.
+
+## Alpha.98 – LLKeyframeMotion + sichtbares Animationsfenster (13.10.2026)
+
+**Pflicht: Weiter parallel Backend und echte UI.**
+Alpha.98 implementiert gemeinsam Decoder, GPU-Joint-Wiedergabe,
+sichtbare Firestorm/NexVerse-Animationen-Floater, Maus-Interaktion,
+Unit-Tests, GL-Abnahme und Übergabedokumentation.
+
+1. Quellenstand: FirestormViewer/phoenix-firestorm Release
+   Firestorm_7.2.4 @10bd3c9f930c76e1427ddd4ecece6cdf36b4406d;
+   LLKeyframeMotion.cpp/h. OpenGenesisLINKServer main
+   @86148202c69e1eb80f0845b82d39450da5e5d39c;
+   beide am 13.10.26 neu abgefragt.
+2. Format: LLKeyframeMotion Binary Version 1.0 / Legacy 0.1,
+   U16 Version/Sub, S32 Priority, F32 Duration, CString Emote,
+   F32 LoopIn/Out, S32 Loop, F32 EaseIn/Out, U32 HandPose,
+   U32 JointCount, pro Joint CString Name, S32 Priority,
+   S32 RotationCount, Time+Quat XYZ, S32 PositionCount,
+   Time+Pos XYZ, S32 ConstraintCount.
+3. Neuer Reader unter include/nexverse/assets/
+   firestorm_keyframe_motion.hpp mit LE Endian Reader,
+   finite/bounded Zeit-, Position- und Keycount-Pruefung,
+   nur erlaubte Versionen, max 2 MiB, 256 Joints, 32768 Keys,
+   verstaendliche Ablehnung falscher/trunkierter Daten.
+   Legacy Zeit/Rotation als F32 Euler ZYX, modern U16 QuatVec3;
+   Constraint/IK-Pakete aktuell explizit abgelehnt,
+   nicht als fertig vorgetaeuscht.
+4. Animationskurven: normalisierte LLQuaternion-Rekonstruktion,
+   SLERP mit kuerzestem Weg und lineare Position-Interpolation,
+   LoopIn/LoopOut-Zeitberechnung.
+5. Original Firestorm Head/Upper/Lower-GLSL BodyMesh:
+   RenderAvatarProxy besitzt optionale schreibgeschuetzte
+   FirestormKeyframeMotion Referenz. Ist ein validierter Clip
+   vorhanden, wendet der Shader dessen Gelenkrotationen an;
+   mPelvis verarbeitet Positionskurven. Eigene temporäre
+   Fallback-Bewegungen bleiben, wenn kein Clip vorhanden ist.
+   Diagnose: avatar_keyframe_skin_draw_calls.
+6. Das Live-Asset-Fetch per CAPS/AssetTransfer ist NOCH NICHT
+   mit dem Renderer verbunden. High20 liefert AnimID/Sequenz,
+   nicht automatisch Animations-Assetbytes! Ein GPU-Testclip
+   ist kein bestaetigter serverseitiger Animationserfolg.
+7. Viewer-Oberfläche parallel: Dropdown Avatar > Animationen,
+   unteres Dock Animationen. Eigener ViewerWindow::animations
+   mit Liste der echten High20-SelfAvatar AnimUUIDs und
+   signierten AnimSequenceIDs, anklickbare Selektion und
+   Detailstatus. Kein Fake-Play-/Stop-Button, solange Asset,
+   Berechtigung und Server-Stopp noch fehlen.
+8. Maus- und GPU-Test: menu_hit / animation-row selection
+   in 1100/700, FullHD und Ultrawide; GL3.3-Fenster wird
+   sichtbar per ViewerShellRenderer gezeichnet.
+9. Parser-Golden-Tests aus synthetischer echter Binärstruktur,
+   alt/neu, Quaternion/Loop/Position; jede Trunkierung,
+   ungueltige Version/Priority/NaN/Constraints werden abgewiesen.
+10. Renderer GPU-Test mit echtem Firestorm Original-LLM
+    Skeleton/Mesh: explizit bereitgestellter Clip ruft
+    3 tatsaechliche GPU-Skin-Draws auf.
+11. Weiter offene Firestorm-Funktionsparitaet: AssetService-
+    Fetch/Cache, StartStop SequenceID Reset, Prioritaets-
+    und Layer-Blending, Ease/Fade, AnimSources/IK/Constraints,
+    Bone-Normal-Skinning, Rigged-Avatar-Outfits/COF und
+    Live-End-to-End NexVerse-Login.
+12. Folgeblock Alpha.99 MUSS AnimationAsset-Fetch +
+    Cache/Playback UND die passende GUI-Clip/Fehler/Loading/
+    Priority/Loop-Anzeige in demselben GitHub-Commit enthalten.
+
+Wichtige Dokumente:
+docs/VIEWER_UI_PARITY_PLAN.md, docs/ALPHA98_KEYFRAME_AND_UI.md,
+docs/FIRESTORM_PARITY_MATRIX.md und projectplan.md
+werden bei jedem weiteren Block aktualisiert.

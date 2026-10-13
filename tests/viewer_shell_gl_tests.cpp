@@ -42,11 +42,14 @@ int main()
             view.attachments=5U;
             view.avatar_positions={{64.0f,120.0f},{160.0f,140.0f}};
             view.chat_lines={"Tester: Hallo NexVerse","Andere: Hallo OGL"};
+            view.animation_entries={
+                {"6ed24bd8-91aa-4b12-ccc7-c97c857ab4e0",4},
+                {"aec4610c-757f-bc4e-c092-c6e9caf18daf",6}};
             ViewerShellState state;
             for(const auto panel:{
                 ViewerWindow::none,ViewerWindow::chat,ViewerWindow::teleport,
                 ViewerWindow::region,ViewerWindow::map,ViewerWindow::avatar,
-                ViewerWindow::settings,ViewerWindow::help,ViewerWindow::move})
+                ViewerWindow::animations,ViewerWindow::settings,ViewerWindow::help,ViewerWindow::move})
             {
                 glViewport(0,0,1280,800);
                 glClearColor(0.0f,0.0f,0.0f,1.0f);

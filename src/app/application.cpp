@@ -875,6 +875,19 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
             shell.open_menu=-1;
             return;
         }
+        if(command==nexverse::ui::ViewerAction::select_animation)
+        {
+            const float first=shell.window==
+                nexverse::ui::ViewerWindow::animations
+                    ?layout.panel_y+130.0f*layout.scale:0.0f;
+            if(first>0.0f)
+            {
+                const auto row=static_cast<std::size_t>(
+                    (my-first)/(31.0f*layout.scale));
+                shell.animation_selected=std::min(row,std::size_t{7U});
+            }
+            return;
+        }
         if(command==nexverse::ui::ViewerAction::close)
         {
             shell.close();return;
@@ -9350,6 +9363,12 @@ int Application::run(bool enable_developer_modules)
                         world_model.self_appearance().has_value();
                     shell_view.animations=world_model.self_animations()
                         ?world_model.self_animations()->animations.size():0U;
+                    if(viewer_shell.window==ui::ViewerWindow::animations &&
+                       world_model.self_animations())
+                        for(const auto& item:
+                            world_model.self_animations()->animations)
+                            shell_view.animation_entries.emplace_back(
+                                item.id,item.sequence);
                     shell_view.attachments=world_model.self_appearance()
                         ?world_model.self_appearance()->attachments.size():0U;
                     if(viewer_shell.window==ui::ViewerWindow::map)

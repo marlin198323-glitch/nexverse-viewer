@@ -34,6 +34,7 @@ std::string_view window_title(ViewerWindow window)
     case ViewerWindow::region:return "Region und Simulator";
     case ViewerWindow::map:return "Karte der Region";
     case ViewerWindow::avatar:return "Mein Avatar";
+    case ViewerWindow::animations:return "Aktive Avataranimationen";
     case ViewerWindow::settings:return "Viewer-Einstellungen";
     case ViewerWindow::help:return "Hilfe / Tastatur";
     default:return "";
@@ -236,6 +237,47 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(4,"Attachments: "+std::to_string(v.attachments));
         line(7,"Outfits: Avatar > Outfit-Galerie (nur lesend)",
              theme::warning);
+    }
+    else if(state.window==ViewerWindow::animations)
+    {
+        line(0,"Vom OpenSim-Simulator gemeldete Animationen.",
+             theme::text);
+        line(1,"Aktive Animationen: "+std::to_string(v.animation_entries.size())+
+             " (High20, AnimationList)");
+        for(std::size_t i=0U;i<std::min(
+            v.animation_entries.size(),std::size_t{8U});++i)
+        {
+            const float yy=y+(130.0f+31.0f*static_cast<float>(i))*sc;
+            const bool selected=i==state.animation_selected;
+            r.rect(x+26.0f*sc,yy,pw-52.0f*sc,29.0f*sc,
+                   selected?Color{0.053f,0.151f,0.220f,0.98f}
+                           :Color{0.021f,0.052f,0.084f,0.96f},5.0f*sc);
+            const auto& [id,seq]=v.animation_entries[i];
+            r.text(x+35.0f*sc,yy+8.0f*sc,9.1f*sc,
+                   compact(id,38U),selected?theme::cyan:theme::text);
+            r.text(x+pw-135.0f*sc,yy+8.0f*sc,9.1f*sc,
+                   "Seq "+std::to_string(seq),theme::text_muted);
+        }
+        if(v.animation_entries.empty())
+            line(3,"Noch kein aktiver Animationssatz empfangen.",
+                 theme::warning);
+        if(state.animation_selected<v.animation_entries.size())
+        {
+            const auto& [id,sequence]=
+                v.animation_entries[state.animation_selected];
+            r.text(x+28.0f*sc,y+ph-82.0f*sc,9.4f*sc,
+                   "Ausgewaehlt: "+compact(id,38U),theme::cyan);
+            r.text(x+28.0f*sc,y+ph-57.0f*sc,8.5f*sc,
+                   "Server-Sequenz: "+std::to_string(sequence)+
+                   "  |  Clip-Asset: noch nicht geladen",
+                   theme::text_muted);
+        }
+        if(v.animation_entries.size()>8U)
+            r.text(x+28.0f*sc,y+ph-111.0f*sc,8.0f*sc,
+                   "Weitere aktive Animationen vorhanden.",theme::warning);
+        r.text(x+28.0f*sc,y+ph-28.0f*sc,8.0f*sc,
+               "Nur lesend: Asset-Clips und Start/Stop noch offen",
+               theme::warning);
     }
     else if(state.window==ViewerWindow::settings)
     {

@@ -73,3 +73,13 @@ funktionierender Eingabe-/Backendhandler, ehrlicher Status,
 GUI-/GPU-Regressionsprüfung und Widescreen.
 Keine alleinige Backend-Arbeit bis die GUI Wochen später
 nachgereicht wird. Details docs/VIEWER_UI_PARITY_PLAN.md.
+
+## Alpha.98 – Animation-Asset-Pfad plus GUI gleichzeitig
+
+Ein echter LLKeyframeMotion-Binärdecoder, F32/U16-Curves,
+Quaternion-SLERP/Loop, original Firestorm GPU JointMatrices
+bei bereitgestelltem Clip sowie Avatar>Animationen-Menue,
+anklickbare Live-Animationsliste und GPU-Tests
+wurden gemeinsam integriert. Fehlender Server-Asset-
+Download und Priority-/Blend-Vollwiedergabe bleiben
+naechster Block zusammen mit UI-Status/Fehleraktionen.

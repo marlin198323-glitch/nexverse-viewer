@@ -333,3 +333,19 @@ Region-Karte zeigt nur real bekannte lokale Positionen.
 Backends ohne Rechte/Antwort bleiben sichtbar deaktiviert.
 Gemischte UI- und Netzwerk-/Renderer-Tests sind
 für zukünftige Blöcke Pflicht.
+
+## Alpha.98 – KeyframeMotion v1.0/0.1 und UI
+
+Originalformat gemaess Firestorm 7.2.4
+LLKeyframeMotion.cpp: U16 Version/Sub, S32 Priority,
+F32 Duration, CString Emote, F32 LoopIn/LoopOut,
+S32 Loop, F32 EaseIn/EaseOut, U32 HandPose und
+U32 JointCount. Jointname Cstring, Priority S32,
+S32 KeyCount, bei v1.0 U16 quantisierte
+Time/QuaternionVec3XYZ und PositionXYZ;
+bei v0.1 float Zeiten und EulerXYZ/PoseXYZ.
+Der aktuelle Decoder lehnt IK/Constraint-Clips ab.
+High20 AnimUUID ist kein heruntergeladener Clip.
+Die GUI zeigt UUID/Sequence nur als readback,
+manueller Start/Stop deaktiviert, bis Rechte
+und tatsächlicher Assetdownload implementiert sind.

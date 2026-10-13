@@ -186,12 +186,16 @@ Mat4 rotation_y(float angle)
 // LLAvatarAnimation assets. WorldModel and movement physics are untouched.
 std::vector<Mat4> avatar_joint_deformations(
     const nexverse::render::RenderAvatarBindRig& rig,
-    nexverse::protocol::AvatarMotion motion,double seconds)
+    nexverse::protocol::AvatarMotion motion,double seconds,
+    const nexverse::assets::FirestormKeyframeMotion* keyframe=nullptr)
 {
     using nexverse::protocol::AvatarMotion;
     std::vector<Mat4> transforms;
     if(rig.joints.empty()||rig.joints.size()>256U)return transforms;
     transforms.reserve(rig.joints.size());
+    const float clip_time=keyframe
+        ?nexverse::assets::firestorm_clip_time(
+            *keyframe,static_cast<float>(seconds)):0.0f;
     const bool running=motion==AvatarMotion::run;
     const bool walking=motion==AvatarMotion::walk||running;
     const float rate=running?11.0f:7.5f;
@@ -239,9 +243,31 @@ std::vector<Mat4> avatar_joint_deformations(
             else if(joint.name=="mHipLeft"||joint.name=="mHipRight")
                 pitch=-0.10f;
         }
-        const Mat4 local=multiply(
-            translation(joint.local),
-            multiply(rotation_y(pitch),rotation_z(yaw)));
+        // Actual LLKeyframeMotion has priority over the procedural
+        // fallback for bones that carry real sampled curves.
+        Mat4 rotation=multiply(rotation_y(pitch),rotation_z(yaw));
+        RenderVec3 local_offset=joint.local;
+        if(keyframe)
+        {
+            for(const auto& track:keyframe->joints)
+            {
+                if(track.name!=joint.name)continue;
+                if(!track.rotations.empty())
+                {
+                    const auto q=nexverse::assets::sample_firestorm_rotation(
+                        track,clip_time);
+                    rotation=quaternion_rotation({q.x,q.y,q.z,q.w});
+                }
+                if(!track.positions.empty()&&joint.name=="mPelvis")
+                {
+                    const auto p=nexverse::assets::sample_firestorm_position(
+                        track,clip_time);
+                    local_offset=add(local_offset,{p.x,p.y,p.z});
+                }
+                break;
+            }
+        }
+        const Mat4 local=multiply(translation(local_offset),rotation);
         const Mat4 world=joint.parent>=0 &&
             static_cast<std::size_t>(joint.parent)<transforms.size()
             ? multiply(transforms[static_cast<std::size_t>(joint.parent)],
@@ -3273,6 +3299,7 @@ public:
         diagnostics_.avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.avatar_locally_animated_skin_draw_calls = 0U;
         diagnostics_.avatar_server_selected_skin_draw_calls = 0U;
+        diagnostics_.avatar_keyframe_skin_draw_calls = 0U;
         diagnostics_.self_avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
@@ -4178,7 +4205,8 @@ public:
                                 ? nexverse::protocol::AvatarMotion::walk
                                 : nexverse::protocol::AvatarMotion::idle);
                     const auto posed=avatar_joint_deformations(
-                        avatar_bind_rig_,motion,time_seconds);
+                        avatar_bind_rig_,motion,time_seconds,
+                        avatar.keyframe_clip.get());
                     // Disable until a specific valid body mesh/palette is
                     // bound, keeping unrelated scene objects unaffected.
                     glUniform1i(glGetUniformLocation(
@@ -4279,6 +4307,8 @@ public:
                                 ++diagnostics_.avatar_locally_animated_skin_draw_calls;
                             if(avatar.animation_from_server)
                                 ++diagnostics_.avatar_server_selected_skin_draw_calls;
+                            if(avatar.keyframe_clip)
+                                ++diagnostics_.avatar_keyframe_skin_draw_calls;
                             if(avatar.is_self)
                                 ++diagnostics_.self_avatar_weighted_skin_draw_calls;
                         }

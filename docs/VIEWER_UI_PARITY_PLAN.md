@@ -77,3 +77,19 @@ OpenGenesisLINK/OpenSim das Protokoll.
   Avatar, Settings und alle anderen Fenster in echtem GPU-Test.
 - Ein echter Grid-Live UI-Durchlauf (NexVerse Login/World)
   ist erforderlich und steht noch aus.
+
+## Alpha.98 – parallele Keyframe-/Animationsfenster-Entwicklung
+
+- Sichtbare GUI: Avatar > Animationen und Animationen-Dock.
+- Klick auf Zeile: echte aktive Server-AnimUUID und
+  signierte SequenceID aus WorldModel anzeigen und auswählen.
+- Nicht vorgetaeuscht: Animationsasset/Start/Stop steht als
+  "noch nicht geladen" bzw. nur lesend, solange no CAP-Fetch.
+- Parser: Firestorm v1.0/v0.1, Curve/Loop/Slerp-Kern implementiert.
+- Renderer: wenn ein realer Clip extern bereitgestellt wird,
+  Original-LLM-Avatar/GPU-Skeleton kurvenbasiert verformbar.
+- Tests: ViewerShellLayout (3 Groessen), OpenGL Floater,
+  Golden-Clip-Decoder sowie GPU echtes Firestorm LLM.
+- E2E Grid-Login/Animation Asset-Download noch offen.
+- Alpha.99: Download/Cache/Fade-Priority-Playback nur mit
+  gleichzeitiger UI-Status-/Fehler-/Clip-Anzeige weiterentwickeln.

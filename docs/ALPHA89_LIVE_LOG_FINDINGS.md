@@ -122,3 +122,14 @@ und aktuelle Inventar/COF-Fenster müssen mit Login und
 echtem Simulator im nächsten Live-Durchlauf getestet werden.
 Die GUI deaktiviert unfertige Firestorm-Features,
 anstatt klickbare Schein-Buttons zu rendern.
+
+## Alpha.98 – echter Animation-Keyframe-Code, Live noch offen
+
+Neue Firestorm-Animation-Assets lassen sich synthetisch
+decodieren und 3 originalgewichtete LLM GPU Draws pro
+Avatarframe pruefen. Neues Fenster Avatar > Animationen
+zeigt echte Self High20 ID/Sequence, sobald authentifiziert.
+Ein frischer NexVerse InWorld Login hat auch fuer Alpha.98
+nicht stattgefunden. Echt geladene Animation-Assets,
+automatische Playback/Priority sowie Outfits nicht
+als live-verifiziert ausweisen.

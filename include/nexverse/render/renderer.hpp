@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_map>
 #include "nexverse/protocol/avatar_animation.hpp"
+#include "nexverse/assets/firestorm_keyframe_motion.hpp"
 
 namespace nexverse::render
 {
@@ -221,6 +222,10 @@ struct RenderAvatarProxy
     bool moving=false; // drive provisional local locomotion, not server truth
     protocol::AvatarMotion motion=protocol::AvatarMotion::idle;
     bool animation_from_server=false;
+    // Optional decoded LLKeyframeMotion asset. Populated only when a
+    // verified animation asset is available; High20 UUID alone is not
+    // proof that the actual keyframe bytes were downloaded.
+    std::shared_ptr<const assets::FirestormKeyframeMotion> keyframe_clip;
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
@@ -337,6 +342,7 @@ struct RenderDiagnostics
     std::uint64_t avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t avatar_locally_animated_skin_draw_calls = 0U;
     std::uint64_t avatar_server_selected_skin_draw_calls = 0U;
+    std::uint64_t avatar_keyframe_skin_draw_calls = 0U;
     std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;

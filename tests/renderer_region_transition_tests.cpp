@@ -249,6 +249,31 @@ int main()
                                     error=35;break;
                                 }
                             }
+                            if(!error)
+                            {
+                                auto clip=std::make_shared<
+                                    nexverse::assets::FirestormKeyframeMotion>();
+                                clip->duration=2.0f;
+                                clip->loop=true;
+                                clip->loop_in=0.5f;
+                                clip->loop_out=1.5f;
+                                nexverse::assets::MotionJoint knee;
+                                knee.name="mKneeLeft";
+                                knee.rotations={{
+                                    0.0f,{0.0f,0.0f,0.0f,1.0f}},
+                                    {2.0f,{0.0f,0.38f,0.0f,0.925f}}};
+                                clip->joints.push_back(std::move(knee));
+                                walking_avatar.motion=
+                                    nexverse::protocol::AvatarMotion::idle;
+                                walking_avatar.animation_from_server=false;
+                                walking_avatar.keyframe_clip=std::move(clip);
+                                renderer->set_avatar_proxies({walking_avatar});
+                                const auto keyframed=render();
+                                if(keyframed.avatar_keyframe_skin_draw_calls!=3U||
+                                   keyframed.self_avatar_weighted_skin_draw_calls!=3U||
+                                   keyframed.avatar_server_selected_skin_draw_calls!=0U||
+                                   glGetError()!=GL_NO_ERROR)error=36;
+                            }
                         }
                     }
                     renderer->remove_object_texture("avatar-bake");

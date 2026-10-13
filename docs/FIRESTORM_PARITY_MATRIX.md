@@ -375,3 +375,14 @@ OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
 
 Ab jetzt doc/VIEWER_UI_PARITY_PLAN.md als Pflichtdokument
 zusammen mit Projektplan bei jedem Backend-/UI-Block aktualisieren.
+
+## Alpha.98 – KeyframeMotion und Animations-Viewer
+
+| Firestorm Feature | OGL Entwicklung | Fehlender Rest |
+|---|---|---|
+| LLKeyframeMotion v1.0 | LE-Daten, Quat/Position, Zeiten, Loop | IK-Constraints |
+| Legacy LLKeyframeMotion v0.1 | F32 Euler-/Positionskurven | volle Asset-Paritaet |
+| Kurven-Sampling | SLERP/linear/LoopInOut | Fade- und Priority-Blending |
+| Original LLM GPU | echter Clip sampled in JointMatrices | Live-Asset-Fetch |
+| Avatar > Animationen / Dock | echte High20 UUID/Sequence-Daten | manueller Play/Stop |
+| Responsive ViewerShell | 16:9, 21:9, 32:9, echter GL-Test | Login-E2E |

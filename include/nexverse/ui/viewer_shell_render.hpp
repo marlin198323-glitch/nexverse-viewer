@@ -7,6 +7,7 @@
 #include "nexverse/ui/ui_renderer.hpp"
 #include <array>
 #include <cstdint>
+#include <utility>
 #include <string>
 #include <vector>
 namespace nexverse::ui
@@ -24,6 +25,8 @@ struct ViewerShellView
     std::uint32_t region_width=256U,region_height=256U;
     std::size_t objects=0U,terrain_patches=0U;
     std::size_t remote_avatars=0U,animations=0U,attachments=0U;
+    // Server-reported full active snapshot, not an available clip library.
+    std::vector<std::pair<std::string,std::int32_t>> animation_entries;
     std::vector<std::array<float,2>> avatar_positions;
     std::vector<std::string> chat_lines;
 };
