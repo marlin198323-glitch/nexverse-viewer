@@ -487,6 +487,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-animation-tests
         COMMAND nexverse-avatar-animation-tests)
 
+    add_executable(nexverse-object-touch-tests
+        tests/object_touch_tests.cpp)
+    target_link_libraries(nexverse-object-touch-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-object-touch-tests)
+    add_test(NAME nexverse-object-touch-tests
+        COMMAND nexverse-object-touch-tests)
+
     add_executable(nexverse-animation-asset-transfer-tests
         tests/animation_asset_transfer_tests.cpp)
     target_link_libraries(nexverse-animation-asset-transfer-tests

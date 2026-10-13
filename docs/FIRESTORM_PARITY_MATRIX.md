@@ -412,3 +412,14 @@ Clip-Decoder und GPU-Laufzeit pro High20-Sequence vorhanden.
 Avatar-Animationsfenster zeigt echte Download-/Fehler-
 und Clip-Jointanzahl, Download erneut per Button.
 E2E gegen einen authentifizierten Server ist weiterhin offen.
+
+## Alpha.101 – Prim Touch/Grab und Chatkanal
+
+| Firestorm Standard | OGL Core | Noch offen |
+|---|---|---|
+| ObjectGrab Low117 | reales LLUDP Reliable, SurfaceInfo Count 0 | exakte Face-/UV-Parameter |
+| ObjectDeGrab Low119 | reales LLUDP Reliable bei Maus-Release | Live-Skript-Eventnachweis |
+| OpenGenesisLINK stationaeres Touch-Hold | Viewer muss nur Grab halten | echtes LSL TouchSmoke durchfuehren |
+| Welt -> Objekte beruehren | Live WorldModel Root-Prims bis 15m | 3D Ray Picking und Child-Prim |
+| Chat /7 Beep | Parser fuer Signed-Channel im ChatFromViewer | zwei Regionen CHAT01/CHAT02 noch NICHT verifiziert |
+| UI/Backend gemeinsam | aktiver Button und sichtbarer Status | COF-Wear und ScriptEditor folgen |

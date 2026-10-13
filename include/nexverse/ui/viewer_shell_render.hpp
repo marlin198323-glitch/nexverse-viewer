@@ -30,6 +30,14 @@ struct ViewerShellView
     std::vector<std::string> animation_asset_status;
     std::size_t animation_cache_size=0U;
     bool selected_animation_retryable=false;
+    struct NearbyObjectRow
+    {
+        std::uint32_t local_id=0U;
+        float distance_metres=0.0f;
+        std::string object_id;
+    };
+    std::vector<NearbyObjectRow> nearby_objects;
+
     std::vector<std::array<float,2>> avatar_positions;
     std::vector<std::string> chat_lines;
 };

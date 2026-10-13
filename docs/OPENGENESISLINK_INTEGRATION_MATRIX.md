@@ -178,3 +178,19 @@ ChatFromViewer unveraendert. Die Smoke-Prozedur wurde
 nicht real mit zwei Simulatoren ausgefuehrt und darf
 nicht als PASS bewertet werden. Reviewed-SHA nach
 Quellvergleich im Baseline-Ledger aktualisiert.
+
+## Alpha.101 – Source-Review Touch-Hold und ScriptChannel
+
+Geprüfter Server-HEAD vor Entwicklung
+689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3.
+OpenGenesisLINK LLClientView.cs
+HandleObjectGrab, HandleObjectDeGrab und
+doc/OpenGenesisLINK/LSL_TOUCH_HOLD_COMPAT.md:
+Die Stationaer-Touch-Wiederholung (~100ms) ist
+serverseitig. OGL implementiert nur die echten
+clientseitigen ObjectGrab/DeGrab-Pakete und
+lebendige Fensteroberfläche, nicht einen
+Simulator-C#-Timer als Viewer-Plugin.
+CHAT01/CHAT02: /7 Beep muss korrekten
+ChatFromViewer S32 Channel 7 senden;
+NexBus Routing bleibt Server-only.

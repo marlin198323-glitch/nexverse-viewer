@@ -35,6 +35,7 @@ std::string_view window_title(ViewerWindow window)
     case ViewerWindow::map:return "Karte der Region";
     case ViewerWindow::avatar:return "Mein Avatar";
     case ViewerWindow::animations:return "Aktive Avataranimationen";
+    case ViewerWindow::objects:return "Objekte in der Naehe";
     case ViewerWindow::settings:return "Viewer-Einstellungen";
     case ViewerWindow::help:return "Hilfe / Tastatur";
     default:return "";
@@ -258,6 +259,44 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(4,"Attachments: "+std::to_string(v.attachments));
         line(7,"Outfits: Avatar > Outfit-Galerie (nur lesend)",
              theme::warning);
+    }
+    else if(state.window==ViewerWindow::objects)
+    {
+        line(0,"Reale Objekte der verbundenen Region (bis 15 m).",
+             theme::text);
+        line(1,"Objekt waehlen, dann BERUEHREN gedrueckt halten.",
+             theme::text_muted);
+        for(std::size_t i=0U;i<v.nearby_objects.size()&&i<5U;++i)
+        {
+            const auto& obj=v.nearby_objects[i];
+            const float yy=y+(122.0f+32.0f*static_cast<float>(i))*sc;
+            const bool active=obj.local_id==state.selected_object_id;
+            r.rect(x+27.0f*sc,yy,pw-54.0f*sc,30.0f*sc,
+                active?Color{0.052f,0.168f,0.225f,0.96f}
+                      :Color{0.020f,0.052f,0.082f,0.94f},6.0f*sc);
+            r.text(x+39.0f*sc,yy+9.0f*sc,9.3f*sc,
+                "Prim #"+std::to_string(obj.local_id)+"  ("+
+                std::to_string(static_cast<int>(obj.distance_metres))+
+                " m)",active?theme::cyan:theme::text);
+            r.text(x+pw-325.0f*sc,yy+9.0f*sc,8.5f*sc,
+                compact(obj.object_id,36U),theme::text_muted);
+        }
+        if(v.nearby_objects.empty())
+            line(3,"Keine beruehrbaren Root-Prims im Umkreis.",
+                 theme::warning);
+        r.rect(x+pw-216.0f*sc,y+ph-90.0f*sc,
+               188.0f*sc,43.0f*sc,
+               state.selected_object_id!=0U?
+                   Color{0.055f,0.165f,0.235f,0.98f}:
+                   Color{0.025f,0.045f,0.064f,0.95f},7.0f*sc);
+        r.text(x+pw-198.0f*sc,y+ph-74.0f*sc,10.0f*sc,
+               state.held_object_id!=0U?"BERUEHRUNG AKTIV":"BERUEHREN",
+               state.selected_object_id!=0U?theme::cyan:theme::text_muted);
+        r.text(x+28.0f*sc,y+ph-25.0f*sc,8.2f*sc,
+               state.status_text.empty()?
+                   "Loslassen sendet ObjectDeGrab, kein synthetisches touch().":
+                   compact(state.status_text,76U),
+               state.held_object_id!=0U?theme::cyan:theme::text_muted);
     }
     else if(state.window==ViewerWindow::animations)
     {

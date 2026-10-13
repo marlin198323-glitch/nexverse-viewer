@@ -155,3 +155,13 @@ synthetisch. Für Alpha.100 wurde keine neue
 authentifizierte NexVerse-InWorld-Sitzung ausgeführt.
 Tatsächlich ausgelieferte Animationsassets und laufende
 Bewegungen müssen dort gesondert geprüft werden.
+
+## Alpha.101 – Objektberuehrung UI + Original LLUDP, Live noch offen
+
+LLUDP Low117/119 Pakete und Maus-Press/-Release
+sind nun mit sichtbarer Root-Prim-Liste integriert;
+NexVerse-Testskript ogl_lsl_touch_hold_smoke.lsl
+ist zur spaeteren InWorld-Abnahme vorgesehen.
+Firestorm /7 Beep privater Kanal im Viewer-Core.
+Kein neuer authentifizierter InWorld-Test und
+keine bestaetigten realen touch()/llListen-Skriptereignisse.

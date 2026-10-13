@@ -118,3 +118,21 @@ aktuelle AnimID/Sequence, tatsächlicher Transfer-Status,
 gültiger Clip und Jointanzahl, Fehler und Retry-Button.
 Nur bei Fehler erneut laden; kein vermeintlicher Start/Stop.
 Viewport/GL Regression und Protokoll-Golden-Test, Live noch offen.
+
+## Alpha.101 – sichtbare Objektberuehrung und Kanal-Chat
+
+Neue Bedienoberfläche im NexVerse Viewer:
+Welt > Objekte beruehren (echte Root-Prims <=15m),
+auswählbare Liste mit LocalID und Weltabstand.
+Klick auf BERUEHREN führt ObjectGrab Low117
+aus, gehaltene GLFW-Maustaste wird ohne
+künstliches Timer-spammen vom OpenGenesisLINK
+Server als Touch-Hold behandelt; Release
+führt ObjectDeGrab Low119 aus. Status im
+Floater und ViewerShellLayout Hitboxen, GL3.3 Test.
+Zusätzlich akzeptiert Lokaler Chat jetzt
+Firestorm /7 Beep, /-1729 Private,
+korrekt gesendeter S32 ChatChannel, und
+meldet den Kanal in der UI.
+Noch keine direkte Welt-Ray-Auswahl,
+echter NexVerse Login-Smoketest offen.

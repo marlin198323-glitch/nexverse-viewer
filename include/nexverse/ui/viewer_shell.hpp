@@ -5,6 +5,7 @@
 #pragma once
 #include <algorithm>
 #include <array>
+#include <vector>
 #include <charconv>
 #include <cmath>
 #include <optional>
@@ -23,7 +24,8 @@ enum class ViewerAction {
     send_chat, send_teleport, fullscreen, focus_chat,
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
     refresh_inventory, animations, select_animation,
-    chat_whisper, chat_say, chat_shout, retry_animation, disabled
+    chat_whisper, chat_say, chat_shout, retry_animation,
+    objects, select_object, touch_press, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -43,7 +45,7 @@ enum class ChatDeliveryMode : std::uint8_t {
     return "Sagen";
 }
 enum class ViewerWindow {
-    none,chat,move,teleport,region,map,avatar,animations,settings,help
+    none,chat,move,teleport,region,map,avatar,animations,objects,settings,help
 };
 struct ViewerShellState
 {
@@ -58,6 +60,11 @@ struct ViewerShellState
     int teleport_focus=0;
     std::size_t animation_selected=0U;
     bool animation_retry_requested=false;
+    std::vector<std::uint32_t> nearby_object_ids;
+    std::uint32_t selected_object_id=0U;
+    std::uint32_t held_object_id=0U;
+    bool object_touch_press_requested=false;
+    bool object_touch_release_requested=false;
     void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
     [[nodiscard]] bool input_captured() const noexcept
     {return window!=ViewerWindow::none;}
@@ -84,7 +91,7 @@ inline constexpr std::array<std::array<ViewerMenuItem,5>,5> menu_items{{
     {{{"Region",ViewerAction::region},
       {"Karte",ViewerAction::map},
       {"Teleport",ViewerAction::teleport},
-      {"",ViewerAction::none},
+      {"Objekte beruehren",ViewerAction::objects},
       {"",ViewerAction::none}}},
     {{{"Bewegung",ViewerAction::move},
       {"Einstellungen",ViewerAction::settings},
@@ -158,6 +165,18 @@ struct ViewerShellLayout
                           panel_y+panel_h-92.0f*scale,
                           panel_w-212.0f*scale,48.0f*scale))
                     return ViewerAction::focus_chat;
+            }
+            if(state.window==ViewerWindow::objects)
+            {
+                if(inside(x,y,panel_x+panel_w-216.0f*scale,
+                          panel_y+panel_h-90.0f*scale,
+                          188.0f*scale,43.0f*scale))
+                    return ViewerAction::touch_press;
+                for(std::size_t i=0U;i<5U;++i)
+                    if(inside(x,y,panel_x+27.0f*scale,
+                              panel_y+(122.0f+32.0f*static_cast<float>(i))*scale,
+                              panel_w-54.0f*scale,30.0f*scale))
+                        return ViewerAction::select_object;
             }
             if(state.window==ViewerWindow::animations)
             {
@@ -277,6 +296,7 @@ inline constexpr ViewerWindow window_for_action(ViewerAction action) noexcept
     case ViewerAction::settings:return ViewerWindow::settings;
     case ViewerAction::help:return ViewerWindow::help;
     case ViewerAction::animations:return ViewerWindow::animations;
+    case ViewerAction::objects:return ViewerWindow::objects;
     default:return ViewerWindow::none;
     }
 }

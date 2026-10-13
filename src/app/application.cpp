@@ -525,6 +525,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                 nexverse::ui::ViewerWindow::none||
             context->viewer_shell->open_menu>=0))
         {
+            if(context->viewer_shell->held_object_id!=0U)
+                context->viewer_shell->object_touch_release_requested=true;
             context->viewer_shell->close();
             return;
         }
@@ -846,9 +848,19 @@ bool point_inside(double px, double py, float x, float y, float width, float hei
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int)
 {
-    if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS) return;
-
+    if(button!=GLFW_MOUSE_BUTTON_LEFT)return;
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    // A release must be observed even if the user dragged the mouse
+    // outside the panel, selected a new floater, or closed the panel.
+    if(action==GLFW_RELEASE)
+    {
+        if(context&&context->viewer_shell&&
+           (context->viewer_shell->held_object_id!=0U||
+            context->viewer_shell->object_touch_press_requested))
+            context->viewer_shell->object_touch_release_requested=true;
+        return;
+    }
+    if(action!=GLFW_PRESS)return;
     if(context &&context->viewer_shell&&context->simulation_ready &&
        *context->simulation_ready&&context->login &&
        context->login->authenticated &&
@@ -873,6 +885,26 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         if(menu_change==-3)
         {
             shell.open_menu=-1;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::select_object)
+        {
+            const auto top=layout.panel_y+122.0f*layout.scale;
+            const auto row=static_cast<std::size_t>(
+                std::max(0.0,(my-top)/(32.0f*layout.scale)));
+            if(shell.window==nexverse::ui::ViewerWindow::objects&&
+               row<shell.nearby_object_ids.size() && row<5U)
+            {
+                shell.selected_object_id=shell.nearby_object_ids[row];
+                shell.status_text="Prim #"+
+                    std::to_string(shell.selected_object_id)+" ausgewaehlt.";
+            }
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::touch_press)
+        {
+            if(shell.selected_object_id!=0U&&shell.held_object_id==0U)
+                shell.object_touch_press_requested=true;
             return;
         }
         if(command==nexverse::ui::ViewerAction::retry_animation)
@@ -4967,6 +4999,58 @@ int Application::run(bool enable_developer_modules)
 
             // Real UI commands are queued on the render/main thread,
             // never from a network callback or a login-only mockup.
+            if(viewer_shell.object_touch_press_requested)
+            {
+                viewer_shell.object_touch_press_requested=false;
+                const auto local_id=viewer_shell.selected_object_id;
+                bool touch_allowed=false;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    const auto& a=world_model.agent();
+                    const auto& objects=world_model.objects();
+                    const auto obj=objects.find(local_id);
+                    if(simulation_ready&&a.present&&
+                       world_model.region().connected&&
+                       local_id!=0U&&obj!=objects.end()&&
+                       obj->second.parent_id==0U)
+                    {
+                        const auto& pos=obj->second.position;
+                        const float dx=pos.x-a.position.x;
+                        const float dy=pos.y-a.position.y;
+                        const float dz=pos.z-a.position.z;
+                        touch_allowed=std::isfinite(dx)&&
+                            std::isfinite(dy)&&std::isfinite(dz)&&
+                            dx*dx+dy*dy+dz*dz<=225.0f;
+                    }
+                }
+                if(touch_allowed&&viewer_shell.held_object_id==0U&&
+                   outbound_queue.push(protocol::ObjectTouchCommand{
+                       local_id,protocol::ObjectTouchPhase::begin}))
+                {
+                    viewer_shell.held_object_id=local_id;
+                    viewer_shell.status_text="Beruehrung aktiv: Prim #"+
+                        std::to_string(local_id);
+                }
+                else
+                    viewer_shell.status_text=
+                        "Beruehrung nicht moeglich: Objekt entfernt/zu weit.";
+            }
+            if(viewer_shell.object_touch_release_requested)
+            {
+                if(viewer_shell.held_object_id!=0U)
+                {
+                    if(outbound_queue.push(protocol::ObjectTouchCommand{
+                        viewer_shell.held_object_id,
+                        protocol::ObjectTouchPhase::end}))
+                    {
+                        viewer_shell.held_object_id=0U;
+                        viewer_shell.object_touch_release_requested=false;
+                        viewer_shell.status_text=
+                            "Beruehrung beendet; ObjectDeGrab gesendet.";
+                    }
+                }
+                else viewer_shell.object_touch_release_requested=false;
+            }
             if(viewer_shell.animation_retry_requested)
             {
                 viewer_shell.animation_retry_requested=false;
@@ -6208,6 +6292,14 @@ int Application::run(bool enable_developer_modules)
             gallery_inventory_sync.enter(current_firestorm_epoch);
             if(animation_asset_epoch!=current_firestorm_epoch)
             {
+                // Old simulator LocalIDs have no validity in the next
+                // region. A touch held during teleport must never target
+                // a new simulator using its stale LocalID.
+                viewer_shell.held_object_id=0U;
+                viewer_shell.selected_object_id=0U;
+                viewer_shell.object_touch_press_requested=false;
+                viewer_shell.object_touch_release_requested=false;
+                viewer_shell.nearby_object_ids.clear();
                 // Reject all old-region TransferInfo/Packets, with no
                 // stale clip adoption across distinct simulator sessions.
                 animation_transfers.reset(current_firestorm_epoch);
@@ -9581,6 +9673,42 @@ int Application::run(bool enable_developer_modules)
                     shell_view.avatar_present=agent.present;
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
+
+                    if(viewer_shell.window==ui::ViewerWindow::objects)
+                    {
+                        std::vector<std::pair<float,ui::ViewerShellView::NearbyObjectRow>>
+                            nearby;
+                        nearby.reserve(std::min(
+                            world_model.objects().size(),std::size_t{256U}));
+                        for(const auto& [local_id,obj]:world_model.objects())
+                        {
+                            if(obj.parent_id!=0U||local_id==0U||
+                               obj.pcode!=protocol::pcode_prim)continue;
+                            const float dx=obj.position.x-agent.position.x;
+                            const float dy=obj.position.y-agent.position.y;
+                            const float dz=obj.position.z-agent.position.z;
+                            const float squared=dx*dx+dy*dy+dz*dz;
+                            if(!std::isfinite(squared)||squared>225.0f)
+                                continue;
+                            nearby.push_back({squared,{
+                                local_id,std::sqrt(squared),obj.id}});
+                        }
+                        std::sort(nearby.begin(),nearby.end(),
+                            [](const auto& a,const auto& b)
+                            {
+                                if(a.first!=b.first)return a.first<b.first;
+                                return a.second.local_id<b.second.local_id;
+                            });
+                        viewer_shell.nearby_object_ids.clear();
+                        for(std::size_t i=0U;
+                            i<std::min(nearby.size(),std::size_t{5U});++i)
+                        {
+                            shell_view.nearby_objects.push_back(
+                                nearby[i].second);
+                            viewer_shell.nearby_object_ids.push_back(
+                                nearby[i].second.local_id);
+                        }
+                    }
                     shell_view.terrain_patches=
                         world_model.terrain().valid_patch_count;
                     shell_view.terrain_ready=world_model.terrain().available;

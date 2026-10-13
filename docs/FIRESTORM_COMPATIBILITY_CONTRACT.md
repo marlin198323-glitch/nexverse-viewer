@@ -432,3 +432,24 @@ OpenGenesisLINK fehlendes Asset: Info Status -2 Size0
 und 20-Byte Params echo. RegionEpoch/TransferID sind
 Pflichtgrenzen; Fremd-/Alt-Circuit-Pakete nicht übernehmen.
 Keine Animation-Payload im High20 AnimationList.
+
+## Alpha.101 – Touch-Quellvertrag (OpenGenesisLINK)
+
+Firestorm scripts/messages/message_template.msg:
+ObjectGrab Low117 AgentData UUID AgentID+SessionID,
+ObjectData LocalID U32 GrabOffset LLVector3,
+SurfaceInfo Variable Count; ObjectDeGrab Low119
+AgentData UUID+SessionID, LocalID U32,
+SurfaceInfo Variable Count.
+OpenGenesisLINK LLClientView.cs HandleObjectGrab/
+HandleObjectDeGrab erlaubt leerer SurfaceInfo-Blocks
+und reicht LocalID an OnGrabObject/OnDeGrabObject.
+Tatsächlicher Server-Skript-Heartbeat sendet
+touch() wiederholt solange Grab besteht, der
+Viewer sendet KEINE duplizierenden GrabUpdate
+nur für stationaere Maus.
+Objektliste nur aus RegionWorldModel und bei
+Grab nochmal LocalID/Root/Proximity pruefen,
+Regionswechsel invalidiert.
+ChatFromViewer Skriptkanal /7 wird S32 Channel7,
+kein clientseitiges CrossRegionChat-NexBus.

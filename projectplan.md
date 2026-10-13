@@ -5036,3 +5036,104 @@ ChatFromViewer unveraendert. Die Smoke-Prozedur wurde
 nicht real mit zwei Simulatoren ausgefuehrt und darf
 nicht als PASS bewertet werden. Reviewed-SHA nach
 Quellvergleich im Baseline-Ledger aktualisiert.
+
+## Alpha.101 – Firestorm Objekt-Touch und Skriptkanal-Chat mit nutzbarer GUI (13.10.2026)
+
+Erneuter Live-GitHub-Preflight vor dem Block:
+OpenGenesisLINK main SHA
+689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3
+und OGL develop-current 2820c5d, Arbeitsverzeichnis
+vor Beginn sauber. Neuer Release-GitHub-Check ist Pflicht.
+
+**Block A – Original Firestorm/OpenGenesisLINK Kernprotokoll:**
+Nachrichtenvorlage Firestorm_7.2.4 scripts/messages/
+message_template.msg und Serverquelle
+OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
+Handler HandleObjectGrab, HandleObjectDeGrab,
+HandleObjectGrabUpdate geprüft. Neue
+include/nexverse/protocol/object_touch.hpp baut
+reliable ObjectGrab Low117 mit AgentID/SessionID,
+LocalID, GrabOffset vec3=0 und SurfaceInfo Anzahl 0,
+sowie ObjectDeGrab Low119 mit Agent/Session,
+LocalID und SurfaceInfo Anzahl 0.
+Server akzeptiert leere SurfaceTouchEventArgs, weil
+es sich noch nicht um präzises 3D-Mesh-Face-Picking
+handelt. Kein angenommener FaceIndex/UV/Normal.
+Beide Pakete benutzen die vorhandene
+authentifizierte OutboundQueue/CircuitConnection.
+OpenGenesisLINK erzeugt wiederholte touch()
+bei stehendem Mausklick serverseitig,
+nicht vom Viewer erfundene 100ms-Events.
+
+**Block B – sichtbare Welt-Bedienoberfläche:**
+Welt > Objekte beruehren öffnet einen echten
+ViewerShell-Floater. Der Viewer verwendet nur
+WorldModel-Prims (pcode prim) mit parent_id==0,
+sortiert nach Abstand zu eigener Avatarposition,
+bis fünf Root-Prims in höchstens 15 Metern.
+Anklickbare Zeilen und hervorgehobenes LocalID-Target.
+Objektliste wird unmittelbar aus verbundenem
+Live-Simulatorzustand gefüllt, keine Attrappen.
+Button BERUEHREN unter dem Cursor halten:
+GLFW_PRESS -> ObjectGrab, GLFW_RELEASE ->
+ObjectDeGrab; Release wird auch nach Dragging
+aus dem Fenster oder ESC erfasst.
+Aktive Berührung und Queue-/Erfolgsmeldung
+sind im Fenster sichtbar. Server erhält
+Grab/DeGrab, aber das Echo von touch() aus
+einem echten Skript ist noch nicht beobachtet.
+
+**Block C – Sicherheits- und Regionsschutz:**
+Vor ObjectGrab wird erneut geprüft, dass das
+ausgewählte Root-Prim noch im aktuellen
+WorldModel und innerhalb 15 m existiert,
+die Agentposition verfügbar und Region aktiv ist.
+Nie Child/Attachment zufällig als fremdes Root-Prim
+anfragen, oder LocalID=0/ungültige UUID verwenden.
+Beim Regionswechsel werden Selected/Held/Requests
+verworfen und keine alte LocalID im neuen
+Simulator benutzt. Release über zuverlässig
+gesendetes ObjectDeGrab, wenn Circuit noch läuft.
+Wenn zwischenzeitlich getrennt, greift
+serverseitiger Touch-Hold-Fail-safe; Live-Test offen.
+
+**Block D – Kanal 7 für serverseitigen CHAT01/CHAT02-Test:**
+include/nexverse/protocol/chat_channel_command.hpp
+interpretiert Firestorm Standardnachrichten wie
+/7 Beep und /-1729 Private als lokale Skriptchat-
+Channels und sendet korrekten S32 Channel mit
+ChatFromViewer, keine separate NexBus-Funktion.
+Plain Text bleibt Kanal0, ungültige Kanalkommandos
+oder leere Nachrichten werden nicht gesendet.
+Chat-Floater zeigt angeforderten Kanal an.
+
+**Abnahme:**
+tests/object_touch_tests.cpp prüft LLUDP Low117/119
+mit exakten Originalfeldern, Reliable Flag,
+Agent/Session, LocalID, SurfaceInfo Count=0,
+Inputfailclosed sowie /7 und negative Kanäle.
+tests/viewer_shell_tests.cpp prüft Menü > Objekte,
+Root-Prims Zeilenauswahl und BERUEHREN-Klick auf
+mehreren Screenformaten. ViewerShell OpenGL3.3
+Regression enthält echten Objekt-Floater.
+Vollständige C++-/Python-/GUI-Tests vor Push.
+
+**Grenzen/Nächster Block:**
+Es handelt sich um eine echte berührbare
+Listenauswahl, noch NICHT um Firestorm
+Maus-Raycast im dreidimensionalen Weltobjekt,
+präzises Face-/UV- und ChildPrim-Touching
+oder echten Live-Grenzregionaltest.
+Der serverseitige 100ms-Touch-Hold kann damit
+grundsätzlich ausgelöst werden, Live-Nachweis
+gegen NexVerse benötigt Anmeldung und LSL-
+Testwürfel. Alpha.102 soll Original-Renderer-
+Objekt-Raycast und Face-Hit-Info, danach
+weitere COF-/ScriptEditor-Funktionen stets
+parallel mit sichtbaren Menüs/Fenstern liefern.
+
+OpenGenesisLINK main unbedingt bei jedem
+Entwicklungsblock und unmittelbar vor GitHub
+Commit/Push neu prüfen. Kernstandard nie
+als Zusatzplugin auslagern; Firestorm/LLUDP
+ist Viewer CORE.

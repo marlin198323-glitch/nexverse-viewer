@@ -77,6 +77,24 @@ int main()
         if(l.hit(l.panel_x+l.panel_w-100.0f*sc,
                  l.panel_y+l.panel_h-80.0f*sc,s)!=
            ViewerAction::send_teleport)return 16;
+        s.window=ViewerWindow::objects;
+        s.nearby_object_ids={17U,29U,43U};
+        if(l.hit(l.panel_x+40.0f*sc,
+                 l.panel_y+138.0f*sc,s)!=
+           ViewerAction::select_object)return 35;
+        if(l.hit(l.panel_x+40.0f*sc,
+                 l.panel_y+170.0f*sc,s)!=
+           ViewerAction::select_object)return 36;
+        if(l.hit(l.panel_x+l.panel_w-99.0f*sc,
+                 l.panel_y+l.panel_h-70.0f*sc,s)!=
+           ViewerAction::touch_press)return 37;
+        if(window_for_action(ViewerAction::objects)!=
+            ViewerWindow::objects)return 38;
+        s.window=ViewerWindow::none;
+        s.open_menu=2;
+        if(l.hit(466.0f*sc,244.0f*sc,s)!=
+           ViewerAction::objects)return 39;
+        s.open_menu=-1;
         s.window=ViewerWindow::animations;
         if(l.hit(l.panel_x+l.panel_w-100.0f*sc,
                  l.panel_y+l.panel_h-82.0f*sc,s)!=

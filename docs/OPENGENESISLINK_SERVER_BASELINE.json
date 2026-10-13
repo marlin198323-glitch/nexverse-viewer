@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3",
   "reviewed_utc": "2026-10-13T20:25:25Z",
-  "viewer_version": "0.2.0-alpha.100",
+  "viewer_version": "0.2.0-alpha.101",
   "last_review": "2026-10-13",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [

@@ -6,6 +6,7 @@
 
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/animation_asset_transfer.hpp"
+#include "nexverse/protocol/object_touch.hpp"
 
 #include <cstddef>
 #include <deque>
@@ -19,7 +20,8 @@ using OutboundCommand = std::variant<
     AgentUpdateData,
     LocalChatMessage,
     TeleportLocation,
-    AnimationAssetRequest>;
+    AnimationAssetRequest,
+    ObjectTouchCommand>;
 
 class OutboundCommandQueue
 {

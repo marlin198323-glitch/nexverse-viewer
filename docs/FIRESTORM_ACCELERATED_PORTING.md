@@ -108,3 +108,15 @@ zum LLKeyframeMotion-Decoder und Original-LLM GPU.
 Im gleichen Release GUI-Transfer-/Fehler-/Retry-Funktion
 und Test auf echte Klickwege. Prioritäten/Sit/Layer-
 Mixing nach wie vor schrittweise zu portieren.
+
+## Alpha.101 – Firestorm Grab/DeGrab plus sichtbar Bedienelement
+
+Backend fuer LLUDP ObjectGrab und ObjectDeGrab
+mit echtem Maustasten-Halten/-Loslassen und
+naher Live-Root-Prim-Liste im Welt-Menue
+im selben Entwicklungsblock programmiert.
+Server hat neues stationaeres Touch-Hold,
+daher kein OGL Touch-Timer. Firestorm
+Skript-Kanalchat /7 umgesetzt.
+OpenGL/Maus/PacketGolden Tests gemeinsam;
+echtes InWorld noch offen.
