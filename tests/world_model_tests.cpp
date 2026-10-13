@@ -116,7 +116,9 @@ int main()
         "remote-avatar",{131.0f,130.0f,28.0f},{},0U);
     if(world.avatars().at("remote-avatar").local_id!=901U ||
        world.avatars().at("remote-avatar").position.x!=131.0f ||
-       world.avatars().at("remote-avatar").visual_params.size()!=2U)
+       world.avatars().at("remote-avatar").visual_params.size()!=2U ||
+       world.avatars().at("remote-avatar").last_translation_at==
+           std::chrono::steady_clock::time_point{})
         return 21;
     world.update_avatar_transform(
         world.agent().agent_id,{0.0f,0.0f,0.0f},{},999U);

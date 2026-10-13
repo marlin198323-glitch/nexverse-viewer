@@ -99,6 +99,11 @@ struct RenderMeshGeometry
     std::vector<float> vertices;
     std::vector<std::uint32_t> indices;
     std::vector<RenderMeshFace> faces;
+    // Only original .llm avatar body meshes carry skin data.
+    std::vector<float> skin_weights;
+    // Each weight's integral index is a Firestorm JointRenderData palette
+    // entry; fractional part blends its successor.
+    std::vector<std::uint16_t> skin_palette;
 };
 
 struct RenderPointLight
@@ -212,12 +217,21 @@ struct RenderAvatarProxy
     std::uint32_t local_id = 0U;
     // Strictly server-provided AttachmentBlock ID -> point mapping.
     std::unordered_map<std::string,std::uint8_t> attachments{};
+    bool moving=false; // drive provisional local locomotion, not server truth
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
 // attachment points are intentionally excluded from world scene rendering.
 struct RenderAvatarBindRig
 {
+    struct Joint
+    {
+        std::string name;
+        int parent=-1;
+        RenderVec3 local{};
+        RenderVec3 bind_world{};
+    };
+    std::vector<Joint> joints;
     std::array<RenderVec3,64U> attachment_offsets{};
     std::array<bool,64U> available{};
     std::array<bool,64U> is_hud{};
@@ -317,6 +331,9 @@ struct RenderDiagnostics
     std::uint64_t self_avatar_proxy_draw_calls = 0U;
     std::uint64_t avatar_baked_texture_draw_calls = 0U;
     std::uint64_t avatar_anatomical_mesh_draw_calls = 0U;
+    std::uint64_t avatar_weighted_skin_draw_calls = 0U;
+    std::uint64_t avatar_locally_animated_skin_draw_calls = 0U;
+    std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
 };

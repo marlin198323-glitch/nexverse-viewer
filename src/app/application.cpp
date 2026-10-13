@@ -3403,6 +3403,7 @@ int Application::run(bool enable_developer_modules)
     bool self_avatar_proxy_gl_logged=false;
     bool self_avatar_bake_gl_logged=false;
     bool self_avatar_original_mesh_gl_logged=false;
+    bool self_avatar_weighted_skin_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
@@ -4431,6 +4432,12 @@ int Application::run(bool enable_developer_modules)
             if(const auto rig=assets::load_firestorm_avatar_rig(*dir);rig)
             {
                 render::RenderAvatarBindRig bound;
+                for(const auto& joint:rig->joints)
+                    bound.joints.push_back({
+                        joint.name,joint.parent,
+                        {joint.local[0],joint.local[1],joint.local[2]},
+                        {joint.bind_world[0],joint.bind_world[1],
+                         joint.bind_world[2]}});
                 for(std::size_t i=0U;i<bound.available.size();++i)
                 {
                     const auto& offset=rig->attachment_bind_offsets[i];
@@ -4469,6 +4476,19 @@ int Application::run(bool enable_developer_modules)
                 render::RenderMeshGeometry geometry;
                 geometry.vertices=asset->vertices;
                 geometry.indices=asset->indices;
+                if(const auto rig=assets::load_firestorm_avatar_rig(*dir);
+                   rig)
+                {
+                    const auto palette=assets::firestorm_joint_render_palette(
+                        *rig,asset->joint_names);
+                    if(palette)
+                    {
+                        geometry.skin_weights=asset->skin_weights;
+                        geometry.skin_palette=*palette;
+                    }
+                    else core::warning("Firestorm avatar .llm joint palette "
+                                       "unresolved; bind-pose mesh only");
+                }
                 if(!world_renderer->set_avatar_body_mesh(slot,geometry))
                     break;
                 ++uploaded;
@@ -4478,7 +4498,7 @@ int Application::run(bool enable_developer_modules)
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
                     std::to_string(triangles)+
-                    "; animation and bone skinning still pending");
+                    "; original joint-weight GPU path available, server animation pending");
             else core::warning(
                 "Firestorm avatar .llm loading incomplete; "
                 "seven-part fallback proxy remains active");
@@ -5772,6 +5792,7 @@ int Application::run(bool enable_developer_modules)
                 self_avatar_proxy_gl_logged=false;
                 self_avatar_bake_gl_logged=false;
                 self_avatar_original_mesh_gl_logged=false;
+                self_avatar_weighted_skin_gl_logged=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
                 inventory_folder_contents.clear();
@@ -6924,6 +6945,11 @@ int Application::run(bool enable_developer_modules)
                          render_agent.rotation.z,
                          render_agent.rotation.w},
                         true,baked_ids,self_avatar_local_id});
+                    avatar_proxy_update.back().moving=
+                        (last_reported_control_flags &
+                         (protocol::control_at_pos | protocol::control_at_neg |
+                          protocol::control_left_pos |
+                          protocol::control_left_neg))!=0U;
                     if(const auto& appearance=world_model.self_appearance();
                        appearance)
                         for(const auto& attachment:appearance->attachments)
@@ -6949,6 +6975,12 @@ int Application::run(bool enable_developer_modules)
                         protocol::extract_avatar_bakes(
                             avatar.texture_entry).visible_body(),
                         avatar.local_id});
+                    avatar_proxy_update.back().moving=
+                        avatar.last_translation_at!=
+                            std::chrono::steady_clock::time_point{} &&
+                        std::chrono::steady_clock::now()-
+                            avatar.last_translation_at<
+                            std::chrono::milliseconds{650};
                     for(const auto& attachment:avatar.attachments)
                         avatar_proxy_update.back().attachments.emplace(
                             attachment.object_id,attachment.attachment_point);
@@ -8816,13 +8848,21 @@ int Application::run(bool enable_developer_modules)
                     "this is NOT a baked Firestorm avatar appearance; draws="+
                     std::to_string(render_diagnostics.self_avatar_proxy_draw_calls));
             }
+            if(simulation_ready&&!self_avatar_weighted_skin_gl_logged &&
+               render_diagnostics.self_avatar_weighted_skin_draw_calls>=3U)
+            {
+                self_avatar_weighted_skin_gl_logged=true;
+                core::info("Avatar SELF original Firestorm .llm joint-weights "
+                    "submitted to GPU skin shader: 3 body meshes; "
+                    "procedural local locomotion, server animations pending");
+            }
             if(simulation_ready&&!self_avatar_original_mesh_gl_logged &&
                render_diagnostics.self_avatar_anatomical_mesh_draw_calls>=3U)
             {
                 self_avatar_original_mesh_gl_logged=true;
                 core::info(
                     "Avatar SELF Firestorm original .llm bind-pose MESH actually "
-                    "drawn in GPU: 3 body meshes; not yet animated or skinned");
+                    "drawn in GPU: 3 body meshes; server animation playback pending");
             }
             if(simulation_ready&&!self_avatar_bake_gl_logged &&
                render_diagnostics.self_avatar_baked_texture_draw_calls>0U)
@@ -8830,7 +8870,7 @@ int Application::run(bool enable_developer_modules)
                 self_avatar_bake_gl_logged=true;
                 core::info(
                     "Avatar SELF Head/Upper/Lower baked TEXTURE submitted to OpenGL; "
-                    "original UV/body when .llm available, NOT yet skinned; draws="+
+                    "original UV/body when .llm available, server animation pending; draws="+
                     std::to_string(
                         render_diagnostics.self_avatar_baked_texture_draw_calls));
             }

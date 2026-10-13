@@ -1,6 +1,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
+#include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -138,6 +139,16 @@ int main()
                     0.0f,0.1f,1.7f, 0.0f,0.0f,1.0f, 0.0f,1.0f,
                     0.1f,0.0f,1.7f, 0.0f,0.0f,1.0f, 1.0f,0.0f};
                 body.indices={0U,1U,2U};
+                // Broken Firestorm skin metadata must not overwrite an
+                // existing GPU mesh and must not perform invalid GL work.
+                RenderMeshGeometry invalid_body=body;
+                invalid_body.skin_weights={1.0f,1.0f}; // too short
+                invalid_body.skin_palette={0U,1U};
+                if(renderer->set_avatar_body_mesh(0U,invalid_body))
+                    error=33;
+                invalid_body.skin_weights={3.0f,3.0f,3.0f};
+                if(renderer->set_avatar_body_mesh(0U,invalid_body))
+                    error=34;
                 for(std::size_t slot=0U;slot<3U;++slot)
                     if(!renderer->set_avatar_body_mesh(slot,body))
                         error=25;
@@ -156,6 +167,20 @@ int main()
                        nexverse::assets::find_firestorm_avatar_character_directory();
                        dir)
                     {
+                        const auto rig=nexverse::assets::load_firestorm_avatar_rig(
+                            *dir);
+                        if(!rig)error=31;
+                        RenderAvatarBindRig gpu_rig;
+                        if(rig)
+                        {
+                            for(const auto& j:rig->joints)
+                                gpu_rig.joints.push_back({
+                                    j.name,j.parent,
+                                    {j.local[0],j.local[1],j.local[2]},
+                                    {j.bind_world[0],j.bind_world[1],
+                                     j.bind_world[2]}});
+                            renderer->set_avatar_bind_rig(gpu_rig);
+                        }
                         const std::array<std::string,3U> filenames{
                             "avatar_head.llm","avatar_upper_body.llm",
                             "avatar_lower_body.llm"};
@@ -169,8 +194,12 @@ int main()
                                 error=28;
                                 break;
                             }
-                            if(!renderer->set_avatar_body_mesh(slot,{
-                                asset->vertices,asset->indices,{}}))
+                            const auto palette=
+                                nexverse::assets::firestorm_joint_render_palette(
+                                    *rig,asset->joint_names);
+                            if(!palette || !renderer->set_avatar_body_mesh(slot,{
+                                asset->vertices,asset->indices,{},
+                                asset->skin_weights,*palette}))
                             {
                                 error=29;
                                 break;
@@ -180,8 +209,22 @@ int main()
                         {
                             const auto original=render();
                             if(original.self_avatar_anatomical_mesh_draw_calls!=3U ||
+                               original.avatar_locally_animated_skin_draw_calls!=0U ||
+                               original.self_avatar_weighted_skin_draw_calls!=3U ||
                                original.self_avatar_baked_texture_draw_calls!=3U ||
                                glGetError()!=GL_NO_ERROR)error=30;
+                            RenderAvatarProxy walking_avatar;
+                            walking_avatar.position={3.0f,0.0f,0.0f};
+                            walking_avatar.is_self=true;
+                            walking_avatar.moving=true;
+                            walking_avatar.baked_texture_ids={
+                                "avatar-bake","avatar-bake","avatar-bake"};
+                            renderer->set_avatar_proxies({walking_avatar});
+                            const auto walking=render();
+                            if(walking.self_avatar_weighted_skin_draw_calls!=3U ||
+                               walking.avatar_locally_animated_skin_draw_calls!=3U ||
+                               walking.self_avatar_anatomical_mesh_draw_calls!=3U ||
+                               glGetError()!=GL_NO_ERROR)error=32;
                         }
                     }
                     renderer->remove_object_texture("avatar-bake");

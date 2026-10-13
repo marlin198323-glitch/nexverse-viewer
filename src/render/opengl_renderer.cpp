@@ -170,6 +170,57 @@ Mat4 quaternion_rotation(
     return result;
 }
 
+Mat4 rotation_z(float angle);
+
+Mat4 rotation_y(float angle)
+{
+    Mat4 result=identity();
+    const float c=std::cos(angle),si=std::sin(angle);
+    result.value[0]=c;result.value[2]=-si;
+    result.value[8]=si;result.value[10]=c;
+    return result;
+}
+
+// Render a modest, deterministic locomotion pose with real joint weights.
+// This is procedural visualization, not playback of server-supplied
+// LLAvatarAnimation assets. WorldModel and movement physics are untouched.
+std::vector<Mat4> avatar_joint_deformations(
+    const nexverse::render::RenderAvatarBindRig& rig,bool moving,double seconds)
+{
+    std::vector<Mat4> transforms;
+    if(rig.joints.empty()||rig.joints.size()>256U)return transforms;
+    transforms.reserve(rig.joints.size());
+    const float step=std::sin(static_cast<float>(seconds*7.5));
+    const float knee=std::max(0.0f,step);
+    for(const auto& joint:rig.joints)
+    {
+        float yaw=0.0f, pitch=0.0f;
+        if(moving)
+        {
+            if(joint.name=="mHipLeft")pitch=0.36f*step;
+            else if(joint.name=="mHipRight")pitch=-0.36f*step;
+            else if(joint.name=="mKneeLeft")pitch=0.48f*std::max(0.0f,-step);
+            else if(joint.name=="mKneeRight")pitch=0.48f*knee;
+            else if(joint.name=="mShoulderLeft")pitch=-0.30f*step;
+            else if(joint.name=="mShoulderRight")pitch=0.30f*step;
+            else if(joint.name=="mElbowLeft")pitch=-0.11f;
+            else if(joint.name=="mElbowRight")pitch=0.11f;
+            else if(joint.name=="mChest")yaw=0.025f*step;
+        }
+        const Mat4 local=multiply(
+            translation(joint.local),
+            multiply(rotation_y(pitch),rotation_z(yaw)));
+        const Mat4 world=joint.parent>=0 &&
+            static_cast<std::size_t>(joint.parent)<transforms.size()
+            ? multiply(transforms[static_cast<std::size_t>(joint.parent)],
+                       local):local;
+        transforms.push_back(world);
+    }
+    // The world transforms currently contain bind-translation.
+    // Conversion to skin transforms happens per palette entry below.
+    return transforms;
+}
+
 Mat4 rotation_z(float angle)
 {
     Mat4 result = identity();
@@ -277,6 +328,8 @@ struct GpuMesh
     GLuint vao = 0U;
     GLuint vbo = 0U;
     GLuint ebo = 0U;
+    GLuint skin_vbo=0U;
+    std::vector<std::uint16_t> skin_palette;
     GLsizei index_count = 0;
     std::vector<MeshFaceRange> face_ranges;
 };
@@ -1768,6 +1821,7 @@ bool upload_mesh(
 
 void destroy_mesh(GpuMesh& mesh)
 {
+    if(mesh.skin_vbo!=0U)glDeleteBuffers(1,&mesh.skin_vbo);
     if (mesh.ebo != 0U)
     {
         glDeleteBuffers(1, &mesh.ebo);
@@ -1789,6 +1843,9 @@ layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aColor;
 layout (location = 2) in float aMaterial;
 layout (location = 3) in vec2 aTexCoord;
+layout (location = 4) in float aAvatarJointWeight;
+uniform bool uAvatarSkinEnabled;
+uniform mat4 uAvatarJointPalette[32];
 
 uniform mat4 uMvp;
 uniform mat4 uModel;
@@ -1809,6 +1866,17 @@ out vec2 vTexCoord;
 void main()
 {
     vec3 localPosition = aPosition;
+    if(uAvatarSkinEnabled)
+    {
+        float weight=clamp(aAvatarJointWeight,0.0,30.999);
+        int base=int(floor(weight));
+        float factor=fract(weight);
+        vec3 p0=(uAvatarJointPalette[base]*
+                 vec4(aPosition,1.0)).xyz;
+        vec3 p1=(uAvatarJointPalette[base+1]*
+                 vec4(aPosition,1.0)).xyz;
+        localPosition=mix(p0,p1,factor);
+    }
 
     if (uUsePrimDeform)
     {
@@ -3089,12 +3157,48 @@ public:
            geometry.indices.size()<3U||
            geometry.indices.size()%3U!=0U)
             return false;
+        if(!geometry.skin_weights.empty())
+        {
+            if(geometry.skin_weights.size()!=geometry.vertices.size()/8U ||
+               geometry.skin_palette.size()<2U ||
+               geometry.skin_palette.size()>32U ||
+               std::any_of(geometry.skin_weights.begin(),
+                           geometry.skin_weights.end(),
+                  [&](float weight)
+                  {
+                      return !std::isfinite(weight)||weight<0.0f||
+                          weight>=static_cast<float>(
+                              geometry.skin_palette.size());
+                  }))
+                return false;
+        }
         MeshData source;
         source.vertices=geometry.vertices;
         source.indices=geometry.indices;
         GpuMesh candidate;
         if(!upload_mesh(candidate,source))
             return false;
+        if(!geometry.skin_weights.empty())
+        {
+            glBindVertexArray(candidate.vao);
+            glGenBuffers(1,&candidate.skin_vbo);
+            glBindBuffer(GL_ARRAY_BUFFER,candidate.skin_vbo);
+            glBufferData(GL_ARRAY_BUFFER,
+                static_cast<GLsizeiptr>(
+                    geometry.skin_weights.size()*sizeof(float)),
+                geometry.skin_weights.data(),GL_STATIC_DRAW);
+            glEnableVertexAttribArray(4U);
+            glVertexAttribPointer(4U,1,GL_FLOAT,GL_FALSE,
+                                  sizeof(float),nullptr);
+            glBindVertexArray(0U);
+            glBindBuffer(GL_ARRAY_BUFFER,0U);
+            if(glGetError()!=GL_NO_ERROR)
+            {
+                destroy_mesh(candidate);
+                return false;
+            }
+            candidate.skin_palette=geometry.skin_palette;
+        }
         destroy_mesh(avatar_body_meshes_[slot]);
         avatar_body_meshes_[slot]=std::move(candidate);
         return true;
@@ -3134,6 +3238,9 @@ public:
         diagnostics_.self_avatar_proxy_draw_calls = 0U;
         diagnostics_.avatar_baked_texture_draw_calls = 0U;
         diagnostics_.avatar_anatomical_mesh_draw_calls = 0U;
+        diagnostics_.avatar_weighted_skin_draw_calls = 0U;
+        diagnostics_.avatar_locally_animated_skin_draw_calls = 0U;
+        diagnostics_.self_avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
 
@@ -4031,6 +4138,12 @@ public:
                     quaternion_rotation(avatar.rotation));
                 if(anatomical_ready)
                 {
+                    const auto posed=avatar_joint_deformations(
+                        avatar_bind_rig_,avatar.moving,time_seconds);
+                    // Disable until a specific valid body mesh/palette is
+                    // bound, keeping unrelated scene objects unaffected.
+                    glUniform1i(glGetUniformLocation(
+                        program_,"uAvatarSkinEnabled"),GL_FALSE);
                     // Actual Firestorm avatar_head/upper/lower .llm
                     // meshes have bind-pose world-relative coordinates,
                     // preserved original UVs and normals. Future stages
@@ -4041,9 +4154,42 @@ public:
                     glUniformMatrix4fv(
                         glGetUniformLocation(program_,"uMvp"),
                         1,GL_FALSE,mvp.value.data());
+                    glUniformMatrix4fv(
+                        glGetUniformLocation(program_,"uModel"),
+                        1,GL_FALSE,parent.value.data());
                     for(std::size_t slot=0U;slot<3U;++slot)
                     {
                         const auto& gpu=avatar_body_meshes_[slot];
+                        bool skin_valid=!posed.empty() &&
+                            gpu.skin_vbo!=0U &&
+                            gpu.skin_palette.size()>=2U &&
+                            gpu.skin_palette.size()<=32U;
+                        if(skin_valid)
+                        {
+                            std::array<Mat4,32U> matrices;
+                            matrices.fill(identity());
+                            for(std::size_t j=0U;
+                                j<gpu.skin_palette.size();++j)
+                            {
+                                const auto bone=gpu.skin_palette[j];
+                                if(bone>=posed.size())
+                                {
+                                    skin_valid=false;
+                                    break;
+                                }
+                                const auto& rest=
+                                    avatar_bind_rig_.joints[bone].bind_world;
+                                matrices[j]=multiply(posed[bone],
+                                    translation({-rest.x,-rest.y,-rest.z}));
+                            }
+                            if(skin_valid)
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uAvatarJointPalette[0]"),
+                                    32,GL_FALSE,matrices[0].value.data());
+                        }
+                        glUniform1i(glGetUniformLocation(
+                            program_,"uAvatarSkinEnabled"),
+                            skin_valid?GL_TRUE:GL_FALSE);
                         const auto& id=avatar.baked_texture_ids[slot];
                         bool baked=false;
                         if(!id.empty())
@@ -4087,6 +4233,14 @@ public:
                         ++diagnostics_.avatar_anatomical_mesh_draw_calls;
                         if(avatar.is_self)
                             ++diagnostics_.self_avatar_anatomical_mesh_draw_calls;
+                        if(skin_valid)
+                        {
+                            ++diagnostics_.avatar_weighted_skin_draw_calls;
+                            if(avatar.moving)
+                                ++diagnostics_.avatar_locally_animated_skin_draw_calls;
+                            if(avatar.is_self)
+                                ++diagnostics_.self_avatar_weighted_skin_draw_calls;
+                        }
                         if(baked)
                         {
                             ++diagnostics_.avatar_baked_texture_draw_calls;
@@ -4096,6 +4250,8 @@ public:
                         diagnostics_.triangles+=static_cast<std::uint64_t>(
                             gpu.index_count/3);
                     }
+                    glUniform1i(glGetUniformLocation(
+                        program_,"uAvatarSkinEnabled"),GL_FALSE);
                     continue;
                 }
                 for (const auto& part : parts)
@@ -4177,6 +4333,8 @@ public:
                 }
             }
             glBindVertexArray(0U);
+            glUniform1i(glGetUniformLocation(
+                program_,"uAvatarSkinEnabled"),GL_FALSE);
             glUniform1i(glGetUniformLocation(
                 program_,"uUseObjectTexture"),GL_FALSE);
             glUniform1i(

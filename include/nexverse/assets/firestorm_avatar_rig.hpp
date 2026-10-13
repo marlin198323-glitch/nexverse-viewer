@@ -18,6 +18,7 @@ struct FirestormAvatarJoint
     std::array<float,3> local{};
     std::array<float,3> bind_world{};
     std::array<float,3> euler_degrees{};
+    bool support_base=false;
 };
 struct FirestormAvatarRig
 {
@@ -35,4 +36,10 @@ struct FirestormAvatarRig
 };
 [[nodiscard]] std::optional<FirestormAvatarRig> load_firestorm_avatar_rig(
     const std::filesystem::path& character_dir);
+// Reproduce Firestorm LLAvatarJointMesh::setupJoint's depth-first list of
+// ancestor/current render joints, whose indices are stored in .llm weights.
+// Returns skeleton indices including potentially repeated ancestor entries.
+[[nodiscard]] std::optional<std::vector<std::uint16_t>>
+firestorm_joint_render_palette(const FirestormAvatarRig& rig,
+    const std::vector<std::string>& mesh_joint_names);
 }

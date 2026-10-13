@@ -88,3 +88,13 @@ Avatar SELF Firestorm original .llm bind-pose MESH
 actually drawn in GPU protokolliert.
 Dies wurde NOCH NICHT im angemeldeten Grid gemessen.
 Keine behauptete Animation oder vollständige Firestorm-Paritaet.
+
+## Alpha.95 – explizite Grenze der Skinning-Telemetrie
+
+Eine Avatar SELF Logzeile fuer real drei Original-
+SkinWeight-GPU-Draws belegt ausschliesslich
+GPU-Shader-Rendering. Es gab in diesem
+Entwicklungsblock keinen neu autentifizierten
+NexVerse-Login und keinen bestaetigten E2E
+Server-AvatarAnimation-State. Kein Live-Verified
+fuer WASD oder Avatar-Outfit-Appearance behaupten.

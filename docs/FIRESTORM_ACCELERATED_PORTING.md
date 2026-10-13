@@ -40,3 +40,15 @@ FirestormViewer/phoenix-firestorm Firestorm_7.2.4
 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
 Original Character XML/LLM Assets aus installierter
 lokaler Firestorm-Laufzeit.
+
+## Alpha.95 – echte GPU-Vertexweight-Deformation
+
+Die aus Firestorm Original-Dateien extrahierten 1-basierten
+MeshWeight-Werte werden auf die mit BASE Ancestors
+erweiterte Firestorm-LLJointRenderData-Palette abgebildet.
+Der GLSL3.3 Shader erhaelt zusaetzliche SkinVBOs und
+pro Avatar berechnete Skeleton-Matrizen. Prozedurale
+Walk-Poses fuer eigene und serverseitig bewegt
+beobachtete fremde Avatare sind bereits in der
+GPU-Pipeline testbar. Live-Git-Server-Animationen,
+Appearance Morphs und COF bleiben Folgearbeit.

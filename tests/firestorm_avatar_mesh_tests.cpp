@@ -43,6 +43,24 @@ int main()
             std::cerr<<"Cannot parse original Firestorm "<<name<<"\n";
             return 4;
         }
+        const auto palette=firestorm_joint_render_palette(*rig,
+                                                           mesh->joint_names);
+        const std::size_t expected=std::string_view(name)=="avatar_head.llm"
+            ?3U:(std::string_view(name)=="avatar_upper_body.llm"?15U:9U);
+        if(!palette||palette->size()!=expected)return 14;
+        for(float weight:mesh->skin_weights)
+            if(weight<0.0f ||
+               weight>=static_cast<float>(palette->size()))
+                return 15;
+        // Firestorm inserts ancestor joints between mesh named joints:
+        // Head indices must be mChest, mNeck, mHead.
+        if(std::string_view(name)=="avatar_head.llm")
+        {
+            const auto& j=rig->joints;
+            if(j[(*palette)[0]].name!="mChest" ||
+               j[(*palette)[1]].name!="mNeck" ||
+               j[(*palette)[2]].name!="mHead")return 16;
+        }
         vertices+=mesh->vertices.size()/8U;
         faces+=mesh->indices.size()/3U;
         if(mesh->joint_names.size()>256U ||

@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/world/world_model.hpp"
+#include <cmath>
 
 #include <utility>
 
@@ -112,6 +113,16 @@ void WorldModel::update_avatar_transform(
        (!agent_.agent_id.empty() && id == agent_.agent_id))
         return;
     auto& avatar=avatars_[id];
+    if(avatar.position_known)
+    {
+        const float dx=position.x-avatar.position.x;
+        const float dy=position.y-avatar.position.y;
+        const float dz=position.z-avatar.position.z;
+        const float delta=dx*dx+dy*dy+dz*dz;
+        // Ignore network quantization and teleport-sized discontinuities.
+        if(std::isfinite(delta)&&delta>0.0025f&&delta<9.0f)
+            avatar.last_translation_at=std::chrono::steady_clock::now();
+    }
     avatar.id=id;
     avatar.position=position;
     avatar.rotation=rotation;

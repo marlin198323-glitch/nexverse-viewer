@@ -334,3 +334,15 @@ OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
 | HUD Attachments | mScreen slots 31-38 nicht als 3D-Weltobjekte | noch kein 2D-HUD |
 | InWorld Bewegung, Wear, COF, real rigging | weiter ausstehend | not_live_verified |
 | Full Firestorm Source Parity | NICHT full-fork; Originalressourcen integriert | weitere Quelle-/Lizenz-Pruefung |
+
+## Alpha.95 – echtes Firestorm VertexWeight-Skinning (synthetic acceptance)
+
+| Feature | Implementiert | Noch offen |
+|---|---|---|
+| LLJointRenderData Palette | Head 3, Upper 15, Lower 9 inkl. BASE Ancestors | Firestorm joint rest-rotation/full animations |
+| Original VertexSkin F32 | GPU VBO attribute 4, Float-Gewichtsmischung im GLSL | Normal-/Tangent-Skinning |
+| Skeleton Parent Pose | 133 Joins dynamisch zusammengesetzt | volles Bone-Transform-System |
+| Self Walk | Prozedural aus Controls, nie Serverposition vorgetaeuscht | echte AvatarAnimation E2E |
+| Remote Walk | Nur gemessene Server-Positionsdeltas | AvatarAnimation Playback |
+| GL Ressourcen | SkinVBO Cleanup, nicht-avatar State Isolation | grosse Last/Live GPU |
+| Outfit/COF/Shape Morph | Unveraendert offen | not_implemented |

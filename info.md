@@ -2892,3 +2892,122 @@ Branch Firestorm_7.2.4, Commit
 insbesondere LLPolyMesh, avatar_lad.xml,
 avatar_skeleton.xml. OpenGenesisLINK Server
 ist OpenSim- und Protokollreferenz.
+
+
+## Alpha.95 – BESCHLEUNIGTER ORIGINAL-FIRESTORM-GPU-SKINNING-BLOCK (13.10.2026)
+
+Der beschleunigte Arbeitsschritt umfasst mehrere zusammenhaengende
+Renderer-, Netzwerk-, WorldModel-, Assets-, Test- und
+Dokumentationsmodule. GitHub-Branch develop-current,
+projectplan.md ist massgeblich. Firestorm_7.2.4
+(LLAvatarJointMesh::setupJoint und
+getBaseSkeletonAncestor in llavatarjointmesh.cpp)
+sowie OpenGenesisLINK Server sind technische Referenzen.
+
+**1. Firestorm Joint-Palettenalgorithmus:** Der Mesh-.llm-
+F32-Weight indiziert nicht einfach die Original JointNames,
+sondern Firestorms Depth-First-LLJointRenderData-Palette,
+die BASE-Ancestors zusaetzlich enthaelt. Der original
+avatar_skeleton.xml Parser speichert jetzt support=base/
+extended; firestorm_joint_render_palette erzeugt die
+echte Folge Head=3 (mChest,mNeck,mHead), Upper=15,
+Lower=9. Echte Original-.llm-Weights wurden auf
+diese Palettengrenzen geprueft.
+
+**2. Original Vertex Skin Buffers:** RenderMeshGeometry
+kennt Original SkinWeights und Palette Indices. Der OpenGL
+Renderer laedt diese F32-Werte in separaten VertexBuffer,
+GLSL attribute location 4. Falsche/fehlende Counts,
+NaN/OutOfRange oder laengere Paletten werden verworfen,
+bevor sie alte GPU-Bodies ueberschreiben.
+
+**3. Neues OpenGL3.3 Shader-Weighting:** Der
+Originalvertex wird anhand palette[floor(weight)] und
+palette[floor(weight)+1] mit fract(weight) gemischt;
+GLSL uAvatarJointPalette[32], uAvatarSkinEnabled nur
+auf Avatar-Body-VAO, nicht auf Weltprim-/Terrain-VAO.
+Original UV/Bake GetTexture aus Alpha.93/94 bleiben.
+
+**4. 133 Bone Pose-Traversal:** Joint Parents und
+Local-Bind-Translations ergeben eine gemeinsame Pose,
+die zur Bindpose ruecktransformiert wird. Keine
+CPU-Vertex-Updates pro Frame; per-Avatar GPU-Joint-Matrix.
+Die erste Pose ignoriert komplexe LLAvatarJoint
+Rest-Euler-/Morph-Bind-Semantik, echte Firestorm-Vollparitaet
+weiter offen.
+
+**5. Deformierende Walk-Prototyp-Animation:** Bei Bewegung
+werden mHipLeft/Right, mKneeLeft/Right, mShoulderLeft/Right,
+mElbowLeft/Right und mChest zu einer deterministischen
+Schrittbewegung animiert. Es werden Original-Koerpermeshes
+und Original-Gewichte verwendet, keine Ersatzgeometrie.
+Dies ist prozedural und NOCH NICHT der vom Server
+uebertragene AvatarAnimation-/LLKeyframeMotion-Stream.
+
+**6. SelfAvatar-Eingabe und Sicherheit:** WASD-AgentUpdate
+liefert nur den vorlaeufigen Walk-Animation-Intent.
+Eine echte Simulator-Positionsreaktion bleibt strikt von
+der Animation getrennt (Alpha.91 MovementFeedbackMonitor).
+Login-/Regionswechsel resetten das ControlFlag.
+
+**7. Andere Avatare:** WorldModel speichert in AvatarState
+last_translation_at nach serverseitigen Deltas >0.05m
+und kleiner als 3m; innerhalb 650ms erscheint die
+Walk-Pose. Kleinste Quantisierungswerte sowie
+Teleport-Discontinuities triggern nicht; Regionenwechsel
+setzen RemoteAvatar-Stati zurueck.
+
+**8. GPU-State und Ressourcen:** SkinVBO wird bei
+Shutdown, Ersetzen und Fehler geloescht. UModel beim
+Body wird explizit auf AvatarWorld gesetzt;
+uAvatarSkinEnabled nach den Originalkoerper-Drawws
+zurueckgesetzt, sodass Prim-/Partikel-Shader nicht
+versehentlich deformiert werden.
+
+**9. Diagnosen und konkrete GPU-Tests:** Separate
+avatar_weighted_skin_draw_calls,
+self_avatar_weighted_skin_draw_calls sowie
+avatar_locally_animated_skin_draw_calls. GPU-Fixtures
+nutzen die Original Firestorm Head/Upper/Lower-.llm
+Dateien samt Skeleton/Pallette im NVIDIA-OpenGL3.3.
+Idle hat drei gewichtet gezeichnete Bodies und
+null animierte SkinDraws; Moving drei gewichtete
+und drei aktiv animierte. Negative SkinCount-
+und PaletteWeight-Tests duerfen keine
+gueltigen GPU-Objekte ueberschreiben.
+
+**10. Vollstaendige Systemintegritaet:** Die Original
+Firestorm 133-Joint/55-Attachment-Definition,
+NexVerse-Welcome, OpenSim LLUDP/CAPS,
+Head/Upper/Lower-Baked-Textures und Mesh-
+Regionevents bleiben in derselben App.
+Neue Dokumentationsfiles und testbare
+Quelle bleiben auf develop-current.
+
+**Nicht freigegeben:** Kein frisch authentifizierter
+Grid-Live-Test fuer Alpha.95 erfolgt. Die Animation
+ist vorlaeufig, keine echten Server-Animationsfiles
+werden gespielt. Die originale LLKeyframeMotion
+Priority/Blend/Fly/Jump/Sit, MorphTargets,
+Joint-Normals, vollstaendige Bone-Restrotation,
+Ankle/Attachment-Bone-Animation,
+Appearance/COF/Wear und die konkrete
+NexVerse-E2E-Avatarwelt bleiben offen.
+Die Firestorm-Funktionsparitaet ist keinesfalls
+vollstaendig; OGL ist weiterhin eine separate
+C++23-Entwicklung mit originalen Ressourcen/
+ausgewaehlter Firestorm-Formatsemantik.
+
+**Naechste beschleunigte Arbeitspakete:**
+Firestorm-kompatible AvatarAnimation LLUDP-ID/
+Animationsstates mit Agent-/Session-/Region-
+Validierung; original LLKeyframeMotion/Ani-
+Dateien fuer Idle/Walk/Run/Jump/Sit/Fly,
+Pose-Blending nach Priority und Loop,
+Vertex-Normal-Skinning, JointOffsets/
+MorphVisualParams, echte Attachments-
+SkeletalRotation, Wearable/COF-Transaktionen
+und authentifizierte NexVerse Live-Sichtprobe.
+Quelle: FirestormViewer/phoenix-firestorm
+Firestorm_7.2.4 commit
+10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.

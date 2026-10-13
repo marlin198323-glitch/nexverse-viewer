@@ -8,6 +8,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -72,6 +73,8 @@ struct AvatarState
     Quaternion rotation;
     std::uint32_t local_id = 0U;
     bool position_known = false;
+    // Motion is server-position-derived; used only for visual animation.
+    std::chrono::steady_clock::time_point last_translation_at{};
     bool trial_appearance = false;
     std::vector<std::uint8_t> texture_entry;
     std::vector<std::uint8_t> visual_params;

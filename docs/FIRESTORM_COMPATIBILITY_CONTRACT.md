@@ -294,3 +294,15 @@ AttachmentPoint nur bei verifizierter Avatar-LocalID und
 serverseitiger Objekt-UUID; mScreen-Objekte NICHT im
 3D-Weltraum zeichnen. Rig hat nur Bind-Pose, Skinning
 bleibt offen.
+
+## Alpha.95 – Real Joint Palette / GPU Weight Trust
+
+Der Linden-Binary-.llm-SkinWeight ist ein F32-Index mit
+1-basierter RenderJoint-Palette aus Firestorm LLAvatarJointMesh.
+Es duerfen nur Skeleton-Joints aus der validierten BASE-
+Ancestor-Palette verwendet werden. Der GPU-Shader mischt
+zwei benachbarte Matrizen nach fractional(weight).
+Die Palette ist auf 32 Matrizen begrenzt. Bei malformed
+Gewicht/Count wird weder GPU-Mesh noch anderer Render-
+State korrumpiert. Prozedurale Animation bedeutet KEINE
+Bewegungsbestaetigung des OpenSim Servers.
