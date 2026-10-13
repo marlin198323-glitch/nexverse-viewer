@@ -2,6 +2,9 @@
  * License, v. 2.0. */
 #include "nexverse/protocol/firestorm_inventory_events.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <span>
 
 namespace nexverse::protocol
 {
@@ -73,6 +76,63 @@ parse_bulk_inventory_dirty(const EventQueueEvent& event,
         }
     }
     return dirty;
+}
+// Linden message_template.msg: AgentData Single AgentID/SessionID (32 bytes),
+// followed by one Variable block count U8 and count * LLUUID (16 bytes).
+// RemoveInventoryObjects carries FolderData then ItemData (two counts).
+bool parse_inventory_remove_hint(
+    const DecodedPacket& packet,std::string_view authenticated_agent,
+    std::string_view authenticated_session)
+{
+    const auto type=packet.header.message;
+    if(type!=msg_remove_inventory_item &&
+       type!=msg_remove_inventory_folder &&
+       type!=msg_remove_inventory_objects)
+        return false;
+    const std::span<const std::uint8_t> bytes{
+        packet.payload.data(),packet.payload.size()};
+    if(bytes.size()<33U)return false;
+    const auto agent=uuid_to_bytes(authenticated_agent);
+    const auto session=uuid_to_bytes(authenticated_session);
+    if(!agent || !session ||
+       agent->size()!=16U || session->size()!=16U ||
+       !std::equal(agent->begin(),agent->end(),bytes.begin()) ||
+       !std::equal(session->begin(),session->end(),bytes.begin()+16U))
+        return false;
+    std::size_t cursor=32U;
+    std::size_t identifiers=0U;
+    const auto read_block=[&]() -> bool
+    {
+        if(cursor>=bytes.size())return false;
+        const std::size_t count=bytes[cursor++];
+        constexpr std::size_t max_ids=64U;
+        if(count>max_ids-identifiers ||
+           count>(bytes.size()-cursor)/16U)
+            return false;
+        for(std::size_t i=0U;i<count;++i)
+        {
+            const auto id=bytes.subspan(cursor+i*16U,16U);
+            if(std::all_of(id.begin(),id.end(),
+                           [](std::uint8_t byte){return byte==0U;}))
+                return false;
+        }
+        cursor+=count*16U;
+        identifiers+=count;
+        return true;
+    };
+    if(!read_block())return false;
+    if(type==msg_remove_inventory_objects&&!read_block())
+        return false;
+    return identifiers>0U && cursor==bytes.size();
+}
+bool InventoryEventInbox::enqueue_full_refresh(
+    std::uint64_t issued_epoch,const FirestormRegionLease& lease)
+{
+    if(!lease.matches(issued_epoch))return false;
+    std::scoped_lock lock{mutex_};
+    if(!lease.matches(issued_epoch))return false;
+    pending_={issued_epoch,true,{}};
+    return true;
 }
 bool InventoryEventInbox::enqueue(
     const EventQueueEvent& event,std::string_view owner,

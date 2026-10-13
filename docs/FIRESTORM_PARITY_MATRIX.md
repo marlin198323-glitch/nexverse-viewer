@@ -257,3 +257,16 @@ OpenGenesisLINK main f9ee61580a1b6aaf1d420b545ffce883b3dade0c.
 
 Referenz Firestorm Firestorm_7.2.4 @ 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d,
 OpenGenesisLINK main @ 16d219f142926c7e00327e4ca91ecb1f8fc213e6.
+
+
+## Alpha.90 – Legacy LLUDP Inventarentfernung (committed_unbuilt)
+
+| Funktion | OGL-Pfad | Abnahmestatus |
+|---|---|---|
+| RemoveInventoryItem Low 270 | Agent-/Session-gepruefte Nachricht -> full CAPS resync | committed_unbuilt |
+| RemoveInventoryFolder Low 276 | Agent-/Session-gepruefte Nachricht -> full CAPS resync | committed_unbuilt |
+| RemoveInventoryObjects Low 284 | zwei begrenzte Variable-Record-Arrays -> full CAPS resync | committed_unbuilt |
+| F9/F10 Readback statt voreiliger Loeschung | bestehende epoch-sichere Inbox/MainThread-Invalidierung | Code integriert; Live-Abnahme offen |
+| Wear, COF, Bakes und echtes Avatar-Outfit | nicht implementiert | not_implemented |
+
+Firestorm message_template.msg (Branch Firestorm_7.2.4) und OpenGenesisLINK main 953063775933b6d7fab4f746d055587b8d74f2ea herangezogen. Da Linux-Desktop offline, Build und CTests noch ausstehend.

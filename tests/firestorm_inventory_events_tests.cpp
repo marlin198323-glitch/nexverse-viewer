@@ -94,6 +94,74 @@ int main()
     if(!inbox.enqueue(many,OWNER,next,lease))return 19;
     const auto overflow=inbox.drain(next,lease);
     if(!overflow.full_refresh||!overflow.folders.empty())return 20;
+
+    // Firestorm Linden Unencoded, Low 270/276/284: exact AgentData
+    // (agent/session UUID) and bounded InventoryData/FolderData counts.
+    constexpr auto SESSION="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    const auto removal=[&](MessageId type,std::string_view agent=OWNER,
+                           std::string_view session=SESSION)
+    {
+        std::vector<std::uint8_t> payload;
+        for(const auto id:{agent,session})
+        {
+            const auto raw=uuid_to_bytes(id);
+            if(raw)payload.insert(payload.end(),raw->begin(),raw->end());
+        }
+        payload.push_back(1U);
+        const auto record=uuid_to_bytes(ITEM);
+        payload.insert(payload.end(),record->begin(),record->end());
+        if(type==msg_remove_inventory_objects)
+            payload.push_back(0U);
+        const auto packet=encode_packet(0U,44U,type,payload);
+        const auto decoded=decode_lludp_packet(packet);
+        return decoded.ok()?*decoded.packet:DecodedPacket{};
+    };
+    for(const auto id:{msg_remove_inventory_item,
+                       msg_remove_inventory_folder,
+                       msg_remove_inventory_objects})
+    {
+        const auto expected=known_message_template(id);
+        if(!expected || !parse_inventory_remove_hint(
+                removal(id),OWNER,SESSION))return 21;
+    }
+    if(parse_inventory_remove_hint(removal(msg_remove_inventory_item,OTHER),
+                                   OWNER,SESSION) ||
+       parse_inventory_remove_hint(removal(msg_remove_inventory_item,OWNER,OTHER),
+                                   OWNER,SESSION))
+        return 22;
+    auto truncated=removal(msg_remove_inventory_folder);
+    truncated.payload.pop_back();
+    if(parse_inventory_remove_hint(truncated,OWNER,SESSION))return 23;
+    auto trailing=removal(msg_remove_inventory_item);
+    trailing.payload.push_back(0x44U);
+    if(parse_inventory_remove_hint(trailing,OWNER,SESSION))return 24;
+    auto oversized=removal(msg_remove_inventory_item);
+    oversized.payload[32U]=65U;
+    if(parse_inventory_remove_hint(oversized,OWNER,SESSION))return 25;
+    auto empty=removal(msg_remove_inventory_item);
+    empty.payload[32U]=0U;
+    empty.payload.resize(33U);
+    if(parse_inventory_remove_hint(empty,OWNER,SESSION))return 26;
+    auto zero=removal(msg_remove_inventory_item);
+    std::fill(zero.payload.begin()+33,zero.payload.end(),0U);
+    if(parse_inventory_remove_hint(zero,OWNER,SESSION))return 27;
+    auto malformed_objects=removal(msg_remove_inventory_objects);
+    malformed_objects.payload.pop_back(); // mandatory second variable count
+    if(parse_inventory_remove_hint(malformed_objects,OWNER,SESSION))return 28;
+    // Full invalidation supersedes pending targeted folders, coalesces
+    // repeated delete hints and never survives an epoch transition.
+    const auto removal_epoch=lease.enter(7U,2U,"https://example.test/cap3");
+    if(!inbox.enqueue(ordinary,OWNER,removal_epoch,lease))
+        return 29;
+    if(!inbox.enqueue_full_refresh(removal_epoch,lease) ||
+       !inbox.enqueue_full_refresh(removal_epoch,lease))
+        return 30;
+    const auto full=inbox.drain(removal_epoch,lease);
+    if(full.epoch!=removal_epoch || !full.full_refresh ||
+       !full.folders.empty())return 31;
+    const auto newer=lease.enter(8U,2U,"https://example.test/cap4");
+    if(inbox.enqueue_full_refresh(removal_epoch,lease) ||
+       !inbox.drain(newer,lease).empty())return 32;
     std::cout<<"Firestorm OpenSim CAPS BulkUpdateInventory owner,"
                 " folder and epoch invalidation passed\\n";
     return 0;

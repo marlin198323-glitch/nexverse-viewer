@@ -159,7 +159,7 @@ bool PacketThrottle::consume(
 
 std::optional<MessageTemplateEntry> known_message_template(MessageId id)
 {
-    constexpr std::array<MessageTemplateEntry, 18> entries{
+    constexpr std::array<MessageTemplateEntry, 21> entries{
         MessageTemplateEntry{msg_start_ping_check, "StartPingCheck", false},
         MessageTemplateEntry{msg_complete_ping_check, "CompletePingCheck", false},
         MessageTemplateEntry{msg_layer_data, "LayerData", false},
@@ -177,6 +177,9 @@ std::optional<MessageTemplateEntry> known_message_template(MessageId id)
         MessageTemplateEntry{msg_complete_agent_movement, "CompleteAgentMovement", true},
         MessageTemplateEntry{msg_agent_movement_complete, "AgentMovementComplete", false},
         MessageTemplateEntry{msg_agent_data_update, "AgentDataUpdate", false},
+        MessageTemplateEntry{msg_remove_inventory_item, "RemoveInventoryItem", false},
+        MessageTemplateEntry{msg_remove_inventory_folder, "RemoveInventoryFolder", false},
+        MessageTemplateEntry{msg_remove_inventory_objects, "RemoveInventoryObjects", false},
         MessageTemplateEntry{msg_packet_ack, "PacketAck", false}
     };
 

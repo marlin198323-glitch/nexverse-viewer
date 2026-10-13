@@ -221,3 +221,8 @@ Der GL-Self-Avatar-Proxy ist nur eine Ersatzgeometrie; die
 Firestorm-Bake-/Appearance-/Rigging-Kette bleibt noch offen.
 Quellen: wiki.secondlife.com/wiki/AgentUpdate und
 wiki.secondlife.com/wiki/Message_Layout.
+
+
+## Alpha.90 – Server-origin LLUDP RemoveInventory semantics
+
+RemoveInventoryItem (Low 270) und RemoveInventoryFolder (Low 276) haben je AgentData Single (AgentID UUID16, SessionID UUID16) und eine Variable-Liste mit U8 count, count*LLUUID16. RemoveInventoryObjects (Low 284) hat AgentData Single, dann FolderData Variable und ItemData Variable; jeder Listenzaehler U8. Obergrenze OGL 64 IDs, keine Null-UUIDs, keine Daten hinter dem letzten Block. Jede Nachricht ist nur ein Readback-Invalidierungshinweis fuer die authentifizierte aktuelle WorldModel-Sitzung, keine lokal autorisierte Delete-Bestaetigung. Bei unbekanntem Parent immer vollstaendiger CAPS-Resync. Einspeisung erfolgt region-epoch-geprueft ueber InventoryEventInbox. Ohne Linux-Build bleibt Alpha.90 committed_unbuilt.

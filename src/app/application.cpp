@@ -4119,6 +4119,37 @@ int Application::run(bool enable_developer_modules)
     std::future<protocol::ExperiencePermissionResponse>
         experience_permission_future;
     input_context.region_lease=&firestorm_region_lease;
+    // OpenSim may notify item/folder deletion through legacy LLUDP rather
+    // than EventQueueGet. Its message carries no parent-folder mapping.
+    // Verify both session UUIDs against WorldModel and use the SAME inbox
+    // as BulkUpdateInventory: the main thread will invalidate F9/F10 and
+    // refetch content over owner-bound CAPS instead of deleting by hint.
+    const auto inventory_remove_handler=
+        [&world_model,&world_mutex,&inventory_events,
+         &firestorm_region_lease](const protocol::DecodedPacket& packet)
+        {
+            std::string agent_id;
+            std::string session_id;
+            {
+                std::scoped_lock lock{world_mutex};
+                if(!world_model.region().connected)return;
+                agent_id=world_model.agent().agent_id;
+                session_id=world_model.agent().session_id;
+            }
+            if(!protocol::parse_inventory_remove_hint(
+                   packet,agent_id,session_id))
+                return;
+            const auto epoch=firestorm_region_lease.epoch();
+            (void)inventory_events.enqueue_full_refresh(
+                epoch,firestorm_region_lease);
+        };
+    packet_dispatcher.register_handler(
+        protocol::msg_remove_inventory_item,inventory_remove_handler);
+    packet_dispatcher.register_handler(
+        protocol::msg_remove_inventory_folder,inventory_remove_handler);
+    packet_dispatcher.register_handler(
+        protocol::msg_remove_inventory_objects,inventory_remove_handler);
+
     input_context.caps=&caps_state;
     input_context.caps_mutex=&caps_mutex;
     input_context.permission_cap=&experience_permission_cap;

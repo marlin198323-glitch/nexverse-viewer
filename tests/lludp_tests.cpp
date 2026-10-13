@@ -101,6 +101,21 @@ int main()
         return 8;
     }
 
+    for(const auto id:{msg_remove_inventory_item,
+                       msg_remove_inventory_folder,
+                       msg_remove_inventory_objects})
+    {
+        const auto entry=known_message_template(id);
+        const auto id_bytes=encode_message_id(id);
+        if(!entry || id_bytes.size()!=4U || id_bytes[0]!=0xFFU ||
+           id_bytes[1]!=0xFFU || id_bytes[2]!=(id.value>>8U) ||
+           id_bytes[3]!=(id.value&0xFFU))
+        {
+            std::cerr<<"Legacy inventory removal LLUDP ID mismatch\n";
+            return 71;
+        }
+    }
+
     const auto movement = encode_complete_agent_movement(43U, session);
     const auto decoded_movement = decode_lludp_packet(movement);
     if (!decoded_movement.ok() ||

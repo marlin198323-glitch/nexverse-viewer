@@ -60,6 +60,10 @@ inline constexpr MessageId msg_region_handshake_reply{MessageFrequency::low, 149
 inline constexpr MessageId msg_avatar_appearance{MessageFrequency::low, 158U};
 inline constexpr MessageId msg_complete_agent_movement{MessageFrequency::low, 249U};
 inline constexpr MessageId msg_agent_data_update{MessageFrequency::low, 387U};
+// Legacy server-origin inventory deletion notifications (Firestorm message_template.msg).
+inline constexpr MessageId msg_remove_inventory_item{MessageFrequency::low, 270U};
+inline constexpr MessageId msg_remove_inventory_folder{MessageFrequency::low, 276U};
+inline constexpr MessageId msg_remove_inventory_objects{MessageFrequency::low, 284U};
 inline constexpr MessageId msg_agent_movement_complete{MessageFrequency::low, 250U};
 inline constexpr MessageId msg_packet_ack{MessageFrequency::fixed, 0xFFFFFFFBU};
 

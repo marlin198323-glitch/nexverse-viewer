@@ -3978,3 +3978,18 @@ Firestorm-Quellcodefork.
 GitHub Branch: develop-current; Repo:
 marlin198323-glitch/nexverse-viewer. Bei Folgeturn
 CHATUEBERGABE.md vor dem Projektplan lesen.
+
+
+## Alpha.90 – LLUDP-Inventarentfernung und sichere Cache-Aktualisierung (13.10.2026)
+
+Vier zusammenhaengende Aenderungsbloecke sind im GitHub-Quellstand vorbereitet:
+1. Linden-/Firestorm-MessageIds Low 270 RemoveInventoryItem, 276 RemoveInventoryFolder und 284 RemoveInventoryObjects wurden explizit in die LLUDP-Protokollregistrierung aufgenommen.
+2. Neue strikte Pruefung von AgentID + SessionID (UUID), je 1-Byte Variable-Blockzaehler und 16-Byte Inventory-IDs (hoechstens 64). Falsche Sitzung, ungültige Record-IDs, Restbytes, abgeschnittene und uebergrosse Pakete werden verworfen. Dies sind Hinweise vom verbundenen Simulator, keine direkten Inventar-Mutationen.
+3. Im Live-PacketDispatcher werden solche Nachrichten mit der aktuell verbundenen WorldModel-Sitzung verglichen, anschliessend ueber die regionsgebundene FirestormRegionLease als full_refresh in dieselbe InventoryEventInbox geleitet. F9/Galerie, F10-Ordner und F10-Einzelitem-Details werden ueber den bestehenden MainThread/CAPS-Readback-Pfad invalidiert. Ohne verifizierte Folder-Parent-Kante wird nicht geraten oder geloescht. Wiederholte Hinweise werden zusammengefasst; alte Epochen verworfen.
+4. Tests wurden erweitert: LLUDP-MessageIds, Single-/Dual-Variable-Block-Layout, gueltige/ungueltige Agent-/Session-IDs, Empty/Overlength/Truncated/Zero UUID, Inbox Full-Refresh, Regionepoch und Koaleszierung.
+
+**Wichtige Einschraenkung:** Der autorisierte Linux-Rechner jam-MS-7D28 war am 13.10.2026 offline (Desktop Commander seit ca. 46 Stunden nicht verbunden). Deshalb wurde dieser Alpha.90-Quellcodeblock per GitHub-Repository aktualisiert, aber es fand **kein** lokaler C++23-Debug-Build, kein CTest, kein GUI-Test und keine authentifizierte InWorld-Abnahme statt. Der Block ist STATUS **committed_unbuilt**, nicht tested_synthetic oder live_verified. Ungetestete Beta-/Produktiv-Freigaben bleiben verboten; Build/Test beim naechsten verfuegbaren Desktop-Kontakt zuerst nachholen.
+
+**Quellen:** FirestormViewer/phoenix-firestorm, branch Firestorm_7.2.4, scripts/messages/message_template.msg (RemoveInventoryItem 270, RemoveInventoryFolder 276, RemoveInventoryObjects 284). OpenGenesisLINK Server main 953063775933b6d7fab4f746d055587b8d74f2ea (IClientInventory.cs und Scene.Inventory.cs als Sendepfade). Der neue Server hat zudem ein optionales OGLViewerAdvisorModule; Viewerkennung `OpenGenesisLINK Viewer` bleibt kompatibel, sagt aber nichts ueber Funktionsparitaet aus.
+
+**Naechste Prioritaet:** Build/Test/Paketlayout live pruefen, Alpha.89 AgentUpdate-WASD-Positionsdelta aus neuer Live-Session pruefen, SelfAvatar/Appearance und Mesh-Skinning, danach vollstaendige Inventar-COF/Wear-Transaktionen und End-to-End Teleport. Firestorm bleibt Funktionsbaseline, nicht austauschbar.

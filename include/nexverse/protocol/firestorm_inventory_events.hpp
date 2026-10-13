@@ -2,6 +2,7 @@
  * License, v. 2.0. */
 #pragma once
 #include "nexverse/protocol/caps.hpp"
+#include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/firestorm_region_lease.hpp"
 #include <cstdint>
 #include <mutex>
@@ -27,11 +28,22 @@ struct InventoryDirtyBatch
 parse_bulk_inventory_dirty(const EventQueueEvent& event,
                            std::string_view authenticated_owner);
 
+// Strict server-origin LLUDP inventory-removal notifications. The message
+// contains IDs but no trustworthy parent-folder mapping; only a read-only
+// full resync hint is permitted, never deletion from cached inventory.
+// AgentID and SessionID must match the authenticated current grid session.
+[[nodiscard]] bool parse_inventory_remove_hint(
+    const DecodedPacket& packet,std::string_view authenticated_agent,
+    std::string_view authenticated_session);
+
 class InventoryEventInbox
 {
 public:
     [[nodiscard]] bool enqueue(const EventQueueEvent& event,
         std::string_view authenticated_owner,std::uint64_t issued_epoch,
+        const FirestormRegionLease& lease);
+    // For verified LLUDP removals with unknown parent folders.
+    [[nodiscard]] bool enqueue_full_refresh(std::uint64_t issued_epoch,
         const FirestormRegionLease& lease);
     [[nodiscard]] InventoryDirtyBatch drain(std::uint64_t current_epoch,
         const FirestormRegionLease& lease);
