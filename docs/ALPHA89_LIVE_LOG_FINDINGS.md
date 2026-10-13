@@ -133,3 +133,15 @@ Ein frischer NexVerse InWorld Login hat auch fuer Alpha.98
 nicht stattgefunden. Echt geladene Animation-Assets,
 automatische Playback/Priority sowie Outfits nicht
 als live-verifiziert ausweisen.
+
+## Alpha.99 – GitHub Source Review, Live-Viewer noch offen
+
+Die Main-HEAD-Änderung des Servers
+86148202 auf 011ed518 wurde live durch
+GitHub-Preflight entdeckt und Source/Doku
+inspiziert; verifiziert sind Robust-Inventory-
+Thumbnail-Update-Änderungen. Chat Flüstern/
+Sagen/Rufen ist mit UI und korrektem LLUDP
+gekoppelt, aber nicht mit einem neuen
+NexVerse-Login im Simulator erprobt.
+Keine aktuelle InWorld-E2E-Behauptung.

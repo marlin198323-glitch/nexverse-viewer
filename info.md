@@ -3243,3 +3243,112 @@ Wichtige Dokumente:
 docs/VIEWER_UI_PARITY_PLAN.md, docs/ALPHA98_KEYFRAME_AND_UI.md,
 docs/FIRESTORM_PARITY_MATRIX.md und projectplan.md
 werden bei jedem weiteren Block aktualisiert.
+
+## Alpha.99 – aktueller OpenGenesisLINK GitHub-Check und Core/Plugin-Entscheidungen (13.10.2026)
+
+Neue verbindliche Arbeitsregel vom Nutzer: Bei JEDEM
+Entwicklungs-/Funktionsblock und direkt vor jedem
+GitHub-Push Live-HEAD und Diff von
+https://github.com/opengenesislink/opengenesislinkserver.git
+über main prüfen, parallel das aktuelle OGL
+develop-current HEAD/Projektdateien anschauen.
+Automatischer Preflight:
+python3 scripts/check_opengenesislink_server.py --strict
+mit reviewed SHA
+docs/OPENGENESISLINK_SERVER_BASELINE.json.
+Neue SHA erst NACH manueller Dateiprüfung
+in docs/OPENGENESISLINK_INTEGRATION_MATRIX.md
+dokumentieren und das Ledger aktualisieren.
+Exit 2: Serverchanges – Review nötig;
+Exit 3: Serverstatus unbekannt. Nicht fälschlich
+als aktuell behaupten oder Server-C# blind portieren.
+
+Tatsächlich neu entdeckt: Beim ersten GitHubvergleich
+Server main 86148202, beim zweiten Durchlauf 4 neuere
+Commits bis 011ed5183889ebff72d10a49162b3223830d8ba5.
+Neue Server-/Client-Bewertung:
+* Nachbarregions-llListen Chat: ausschließlich SERVER-ONLY.
+  Kein neues LLUDP-Paket; normaler ChatFromViewer reicht.
+* Native LSL oglGetRegionDimensions: Server-Funktion;
+  geplantes Scripteditor-Autocomplete als VIEWER CORE.
+  Z ist NICHT über Viewer-RegionState bekannt;
+  nicht erfinden.
+* Wiederholtes Touch-Hold: Server generiert LSL touch;
+  Viewer Grab/DeGrab als Firestorm CORE später testen.
+* Neuester Robust-Inventory-Thumbnail-GETITEM
+  bestätigt vor Erfolg gespeicherte UUID. CORE Thumbnail/
+  Outfit-CAPS bleibt im Viewer; Cachetest unterscheidet
+  ausgelassenes vs explizit leeres thumbnail-Feld.
+* RTX, realistische Wettereffekte und weitere
+  experimentelle Ergänzungen optionales Plugin,
+  niemals Firestorm Standardfunktionen auslagern.
+
+Parallel Code + sichtbare GUI Alpha.99:
+Lokales Chatfenster besitzt Fluestern/Sagen/Rufen
+Schaltflächen, markiert aktiven Modus, zeigt
+ehrliches Feedback und sendet authentifizierte
+LLUDP ChatFromViewer Typen 0/1/2 auf Kanal 0.
+Server konfiguriert 10/20/100 m standardmäßig;
+Viewer setzt Reichweite nicht selbst.
+Maus-Hitbox und LLUDP-Byte-Regressionsprüfungen
+implementiert; neue Python-GitHub-Gate-Tests.
+
+Bewusst NOCH OFFEN: Die aus Alpha.98 bekannte
+echte Animation-Asset-Fetch/Clip-Playback-Kette
+liegt im naechsten Releaseblock (Alpha.100) mit
+gleichzeitigem Animationsfenster/Loading/Status.
+Kein Server-ChatCrossRegion-/Thumbnail-E2E-Test
+ohne authentifizierten NexVerse-Login vorgetäuscht.
+
+## Zweiter erneuter GitHub-Check direkt vor Alpha.99-Release
+
+Beim verpflichtenden Release-Check von Server SHA 011ed518
+meldete GitHub erneut **4 weitere Commits** bis SHA
+2c7f2953681eda3fe0a66700e38621f31077d822
+(13.10.2026 20:15:28 UTC). Betroffene Dateien
+ausschliesslich Dokumentation:
+doc/NexVerse/09312_RC1_STABLE_ACCEPTANCE.md,
+doc/NexVerse/LSL_PARITY_09311_09312.md,
+doc/NexVerse/ROADMAP.md.
+
+**Release-Sicherheitsentscheidung:** OpenGenesisLINK
+main ist im Stand 0.9.3.12 DEVELOPMENT,
+**NICHT RC1 oder Stable**. Die veröffentlichte
+Stable ist v0.9.3.10 (12.10.2026).
+22 geplante Operator-/InWorld-Gates beginnen
+NOT_RUN, kein CI-Gruen als Live-PASS ausgeben.
+Insbesondere Native-OGL Login, Voice, COF/
+Outfits, Firestorm Simulator-Login/Teleport,
+Chat über Regionsgrenzen, Touch-Hold und
+Inventory-Thumbnail-Reconnect sind nicht
+durch Alpha.99-InWorld-Tests bestätigt.
+OpenGenesisLINK Roadmap verschiebt OGL
+Experiences 2.0, Pathfinding 2.0 und
+My Outfits 2.0 bis NACH 0.9.4.0 Generation 1.
+Das betrifft diese erweiterten OGL-Features,
+nicht die Pflicht zu Firestorm Standard-
+Funktionsparität im Basiskern.
+Keine neue C++-Protokollcodeänderung nötig,
+da der Upstream-Diff nur .md-Dateien umfasst.
+Geprüften SHA nach manuellem Review aktualisiert.
+
+## GitHub Nachprüfung Alpha.99: IAR GZip Streams
+
+Nochmals 6 Server-Commits entdeckt: 2c7f295 auf
+2254d2b3733c5fb171e6e608bc909ff1ef8a7acd
+(13.10.2026 20:20:43 UTC). Änderungen in
+NexVerse/RegionModules/Archives/
+OglIarOperationManager.cs und
+doc/NexVerse/IAR_CONSOLE_PROGRESS_09312.md.
+Managed Stream-IAR exportiert nun komprimiertes
+GZip/TAR und importiert über GZipStream; der
+begrenzte Preflight/Archive-Inspector bleibt
+vor mutierenden Importen verpflichtend.
+**Einordnung SERVER-ONLY**, kein bestehendes
+Firestorm-OGL-Viewer-Paket, kein Client-Plugin
+für serverseitige Archivströme. Live-Archiv
+Export/Import und TOCTOU-/Quota-Gates sind offen.
+Die Revision nach Quellenreview in die
+Server-Baseline übernommen. Alpha.99 fokussiert
+weiter die Viewer-Core-Chatmodi und
+korrekte GUI, keinen IAR-Servercode-Port.

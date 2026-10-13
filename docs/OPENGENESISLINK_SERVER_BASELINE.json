@@ -1,0 +1,38 @@
+{
+  "repository": "opengenesislink/opengenesislinkserver",
+  "branch": "main",
+  "reviewed_sha": "2254d2b3733c5fb171e6e608bc909ff1ef8a7acd",
+  "reviewed_utc": "2026-10-13T20:20:43Z",
+  "viewer_version": "0.2.0-alpha.99",
+  "last_review": "2026-10-13",
+  "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
+  "decisions": [
+    {
+      "server_change": "CrossRegionChatMessaging llListen neighbor forwarding",
+      "placement": "SERVER_ONLY; ChatFromViewer whisper/say/shout stays VIEWER_CORE"
+    },
+    {
+      "server_change": "oglGetRegionDimensions native LSL",
+      "placement": "VIEWER_CORE script editor future; not an LLUDP or CAPS endpoint"
+    },
+    {
+      "server_change": "stationary touch held repeats",
+      "placement": "VIEWER_CORE Grab/DeGrab sender; server emits repeated touch"
+    },
+    {
+      "server_change": "Inventory thumbnail Upload/Robust XInventoryServicesConnector GETITEM authorization and refreshed metadata",
+      "placement": "VIEWER_CORE Firestorm inventory/outfit cache, not plugin",
+      "note": "Core parsing and invalidation already exist. Server fix is authorization/verification; do not purge inventory cache or duplicate upload; cross-login visual replacement remains known limitation on Firestorm 7.2.4."
+    },
+    {
+      "server_change": "0.9.3.12 RC1 Stable acceptance matrix and LSL parity roadmap",
+      "placement": "RELEASE_GATES documentation / VIEWER CORE compatibility",
+      "note": "Server main DEVELOPMENT despite VersionInfo 0.9.3.10 Release; published stable v0.9.3.10. Never claim RC1/Stable, OGLVoice/Experiences 2.0/Pathfinding 2.0/My Outfits 2.0 deferred, 22 live gates NOT_RUN."
+    },
+    {
+      "server_change": "OglIarOperationManager GZipStream wrapping managed IAR stream export/import",
+      "placement": "SERVER_ONLY archive operations; future operator admin viewer addon not baseline",
+      "note": "Console/API operation stream gzip format change, path inspector security retained. No viewer CAPS or chat wire change; live managed API export/import still unverified."
+    }
+  ]
+}

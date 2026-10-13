@@ -83,3 +83,19 @@ anklickbare Live-Animationsliste und GPU-Tests
 wurden gemeinsam integriert. Fehlender Server-Asset-
 Download und Priority-/Blend-Vollwiedergabe bleiben
 naechster Block zusammen mit UI-Status/Fehleraktionen.
+
+## Alpha.99 – parallele GitHub Server-Audits
+
+Neuer verpflichtender Entwicklungszyklus:
+OGL-GitHub-SHA prüfen, Server-GitHub-main live
+mit --strict gegen reviewed SHA vergleichen,
+neue Commits klassifizieren, Core/Modul/
+Server-only bewerten, im selben Block C++,
+sichtbare GUI/Handler, Tests, Projektplan und
+GitHub-Commit. Checker erkennt neue Commits,
+aber ändert Reviewed-SHA niemals ungeprüft.
+Server-Chat-Modi und InventoryThumbnail-Cache
+als VIEWER-CORE, LSL Neighborzustellung
+SERVER-ONLY. OpenGenesisLINK-Native LSL-
+Funktionen erst bei integriertem Scripteditor
+als Editorfunktionen ergänzen.

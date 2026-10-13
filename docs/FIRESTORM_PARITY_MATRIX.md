@@ -386,3 +386,19 @@ zusammen mit Projektplan bei jedem Backend-/UI-Block aktualisieren.
 | Original LLM GPU | echter Clip sampled in JointMatrices | Live-Asset-Fetch |
 | Avatar > Animationen / Dock | echte High20 UUID/Sequence-Daten | manueller Play/Stop |
 | Responsive ViewerShell | 16:9, 21:9, 32:9, echter GL-Test | Login-E2E |
+
+## Alpha.99 – GitHub-Upstream-Check, Chat-UI und Core-Abgrenzung
+
+| Firestorm/OpenSim Feature | OGL-Status | Einordnung |
+|---|---|---|
+| Viewer Chat whisper/normal/shout 0/1/2 | Drei klickbare Modi, LLUDP-Golden-Test | Core |
+| Cross-region llListen Eventzustellung | Keine neuen Clientpakete erforderlich | Server-only |
+| oglGetRegionDimensions LSL | Editor-/Autocomplete-Kandidat, kein Client-CAPS | Core später |
+| Touch-Hold GrabUpdate/DeGrab | Status offen, Server wiederholt touch | Core später |
+| InventoryThumbnailUpload und Cache | Bereits Kern/Version/UUID-Logic, neuer Clear-vs-Missing-Test | Core |
+| RTX und hochwertige optische Effekte | Separate Erweiterungen | Optionales Modul |
+
+Ein GitHub-Preflight aus scripts/check_opengenesislink_server.py
+ist vor und nach jedem Entwicklungsblock Pflicht.
+Pin-Revision + Entscheidungen stehen in
+docs/OPENGENESISLINK_INTEGRATION_MATRIX.md.

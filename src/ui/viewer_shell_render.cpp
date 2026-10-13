@@ -122,6 +122,26 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                    y+(111.0f+static_cast<float>(i)*29.0f)*sc,
                    9.8f*sc,compact(v.chat_lines[
                        v.chat_lines.size()-count+i],79U),theme::text);
+        const std::array<ChatDeliveryMode,3U> modes{
+            ChatDeliveryMode::whisper,
+            ChatDeliveryMode::say,
+            ChatDeliveryMode::shout};
+        const std::array<std::string_view,3U> labels{
+            "Fluestern","Sagen","Rufen"};
+        for(std::size_t i=0U;i<modes.size();++i)
+        {
+            const float bx=x+(26.0f+154.0f*static_cast<float>(i))*sc;
+            const float by=y+ph-151.0f*sc;
+            const bool active=state.chat_mode==modes[i];
+            r.rect(bx,by,144.0f*sc,38.0f*sc,
+                   active?Color{0.060f,0.172f,0.249f,0.98f}
+                         :Color{0.023f,0.055f,0.084f,0.94f},7.0f*sc);
+            r.text(bx+17.0f*sc,by+12.0f*sc,10.0f*sc,
+                   labels[i],active?theme::cyan:theme::text_muted);
+        }
+        r.text(x+28.0f*sc,y+ph-103.0f*sc,8.0f*sc,
+               "Standardreichweiten: 10 / 20 / 100 m; Serverkonfiguration gilt.",
+               theme::text_muted);
         r.rect(x+26.0f*sc,y+ph-92.0f*sc,pw-212.0f*sc,
                48.0f*sc,Color{0.032f,0.077f,0.117f,0.99f},8.0f*sc);
         const auto prompt=state.chat_draft.empty()
@@ -135,7 +155,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                "Senden",theme::text);
         r.text(x+28.0f*sc,y+ph-29.0f*sc,8.6f*sc,
                state.status_text.empty()
-                    ?"ChatFromViewer / lokaler Kanal 0"
+                    ?"ChatFromViewer: "+std::string(chat_mode_name(state.chat_mode))+
+                     " / Kanal 0 (lokal)"
                     :compact(state.status_text,84U),
                theme::cyan);
     }

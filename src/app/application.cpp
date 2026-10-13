@@ -892,6 +892,21 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         {
             shell.close();return;
         }
+        if(command==nexverse::ui::ViewerAction::chat_whisper ||
+           command==nexverse::ui::ViewerAction::chat_say ||
+           command==nexverse::ui::ViewerAction::chat_shout)
+        {
+            shell.chat_mode=
+                command==nexverse::ui::ViewerAction::chat_whisper
+                    ?nexverse::ui::ChatDeliveryMode::whisper:
+                command==nexverse::ui::ViewerAction::chat_shout
+                    ?nexverse::ui::ChatDeliveryMode::shout:
+                     nexverse::ui::ChatDeliveryMode::say;
+            shell.status_text="Chatmodus: "+
+                std::string(nexverse::ui::chat_mode_name(shell.chat_mode))+
+                " (Kanal 0; Reichweite serverseitig)";
+            return;
+        }
         if(command==nexverse::ui::ViewerAction::send_chat)
         {
             shell.chat_submit_requested=true;return;
@@ -4931,8 +4946,16 @@ int Application::run(bool enable_developer_modules)
                     msg.erase(last+1U);
                     const auto first=msg.find_first_not_of(" \r\n\t");
                     msg.erase(0U,first);
+                    const auto delivery=
+                        viewer_shell.chat_mode==
+                            ui::ChatDeliveryMode::whisper
+                        ?protocol::LocalChatType::whisper:
+                        viewer_shell.chat_mode==
+                            ui::ChatDeliveryMode::shout
+                        ?protocol::LocalChatType::shout:
+                         protocol::LocalChatType::normal;
                     if(outbound_queue.push(protocol::LocalChatMessage{
-                        std::move(msg),protocol::LocalChatType::normal,0}))
+                        std::move(msg),delivery,0}))
                     {
                         viewer_shell.chat_draft.clear();
                         viewer_shell.status_text="Chat-Nachricht in Sendewarteschlange.";

@@ -9,6 +9,7 @@
 #include <cmath>
 #include <optional>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -21,8 +22,26 @@ enum class ViewerAction {
     experiences, region, map, avatar, settings, help,
     send_chat, send_teleport, fullscreen, focus_chat,
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
-    refresh_inventory, animations, select_animation, disabled
+    refresh_inventory, animations, select_animation,
+    chat_whisper, chat_say, chat_shout, disabled
 };
+// Viewer-standard ChatFromViewer packet types: OpenSim and
+// OpenGenesisLINK use the same values; inter-region llListen
+// forwarding remains server-internal and is NOT a viewer feature.
+enum class ChatDeliveryMode : std::uint8_t {
+    whisper=0U, say=1U, shout=2U
+};
+[[nodiscard]] constexpr std::string_view chat_mode_name(
+    ChatDeliveryMode mode) noexcept
+{
+    switch(mode)
+    {
+    case ChatDeliveryMode::whisper:return "Fluestern";
+    case ChatDeliveryMode::say:return "Sagen";
+    case ChatDeliveryMode::shout:return "Rufen";
+    }
+    return "Sagen";
+}
 enum class ViewerWindow {
     none,chat,move,teleport,region,map,avatar,animations,settings,help
 };
@@ -31,6 +50,7 @@ struct ViewerShellState
     ViewerWindow window=ViewerWindow::none;
     int open_menu=-1;
     std::string chat_draft;
+    ChatDeliveryMode chat_mode=ChatDeliveryMode::say;
     std::string status_text;
     bool chat_submit_requested=false;
     bool teleport_submit_requested=false;
@@ -119,6 +139,16 @@ struct ViewerShellLayout
                 return ViewerAction::close;
             if(state.window==ViewerWindow::chat)
             {
+                // Chat mode buttons match the three actual LLUDP
+                // ChatFromViewer wire modes; no client-side re-broadcast.
+                for(std::size_t i=0U;i<3U;++i)
+                    if(inside(x,y,
+                              panel_x+(26.0f+154.0f*static_cast<float>(i))*scale,
+                              panel_y+panel_h-151.0f*scale,
+                              144.0f*scale,38.0f*scale))
+                        return i==0U?ViewerAction::chat_whisper:
+                               i==1U?ViewerAction::chat_say:
+                                     ViewerAction::chat_shout;
                 if(inside(x,y,panel_x+panel_w-170.0f*scale,
                           panel_y+panel_h-92.0f*scale,
                           145.0f*scale,48.0f*scale))

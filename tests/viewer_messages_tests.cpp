@@ -258,6 +258,30 @@ int main()
         return 2;
     }
 
+    // OpenGenesisLINK's latest cross-region llListen fix requires no
+    // special viewer packet. Standard ChatFromViewer type bytes remain
+    // whisper=0, say=1, shout=2 (channel 0); server decides distance.
+    for(const auto& [type,wire_byte]:std::array{
+        std::pair{LocalChatType::whisper,std::uint8_t{0}},
+        std::pair{LocalChatType::normal,std::uint8_t{1}},
+        std::pair{LocalChatType::shout,std::uint8_t{2}}})
+    {
+        outgoing.type=type;
+        const auto raw=encode_chat_from_viewer(15U,session,outgoing);
+        const auto decoded=decode_lludp_packet(raw);
+        if(!decoded.ok()||
+           decoded.packet->header.message!=msg_chat_from_viewer||
+           decoded.packet->payload.size()<5U)
+            return 122;
+        const auto& chat_wire=decoded.packet->payload;
+        if(chat_wire[chat_wire.size()-5U]!=wire_byte||
+           chat_wire[chat_wire.size()-4U]!=0U||
+           chat_wire[chat_wire.size()-3U]!=0U||
+           chat_wire[chat_wire.size()-2U]!=0U||
+           chat_wire[chat_wire.size()-1U]!=0U)
+            return 123;
+    }
+
     std::vector<std::uint8_t> layer_payload{
         layer_type_land,
         0x04U, 0x00U,

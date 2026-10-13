@@ -29,6 +29,16 @@ int main()
     auto replaced=original;
     replaced.thumbnails[F]={true,std::string{U}};
     if(!sync.merge(7,replaced)||sync.thumbnails().at(F)!=U)return 4;
+    // Explicit LLSD thumbnail.asset_id = null/empty removes the
+    // association; omission must not remove it. This guards the
+    // new OpenGenesisLINK Robust thumbnail persistence contract.
+    auto explicitly_cleared=original;
+    explicitly_cleared.thumbnails[F]={true,std::nullopt};
+    if(!sync.merge(7,explicitly_cleared)||
+       !sync.thumbnails().contains(F)||
+       !sync.thumbnails().at(F).empty())return 8;
+    if(!sync.merge(7,replaced)||sync.thumbnails().at(F)!=U)
+        return 9;
     auto newer=original;
     newer.versions[F]=9;
     newer.items[F]={{F,T,"New item",5,5}};

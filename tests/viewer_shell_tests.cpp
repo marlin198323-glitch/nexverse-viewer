@@ -42,6 +42,19 @@ int main()
                  l.height-(58.0f-12.0f)*sc,s)!=
            ViewerAction::map)return 8;
         s.window=ViewerWindow::chat;
+        if(l.hit(l.panel_x+39.0f*sc,
+                 l.panel_y+l.panel_h-135.0f*sc,s)!=
+           ViewerAction::chat_whisper)return 30;
+        if(l.hit(l.panel_x+193.0f*sc,
+                 l.panel_y+l.panel_h-135.0f*sc,s)!=
+           ViewerAction::chat_say)return 31;
+        if(l.hit(l.panel_x+347.0f*sc,
+                 l.panel_y+l.panel_h-135.0f*sc,s)!=
+           ViewerAction::chat_shout)return 32;
+        if(chat_mode_name(ChatDeliveryMode::whisper)!="Fluestern"||
+           chat_mode_name(ChatDeliveryMode::say)!="Sagen"||
+           chat_mode_name(ChatDeliveryMode::shout)!="Rufen")
+            return 33;
         if(l.hit(l.panel_x+l.panel_w-35.0f*sc,
                  l.panel_y+25.0f*sc,s)!=ViewerAction::close)return 9;
         if(l.hit(l.panel_x+l.panel_w-100.0f*sc,

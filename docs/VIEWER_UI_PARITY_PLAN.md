@@ -93,3 +93,20 @@ OpenGenesisLINK/OpenSim das Protokoll.
 - E2E Grid-Login/Animation Asset-Download noch offen.
 - Alpha.99: Download/Cache/Fade-Priority-Playback nur mit
   gleichzeitiger UI-Status-/Fehler-/Clip-Anzeige weiterentwickeln.
+
+## Alpha.99 – echte OpenSim-Chat-Modi als sichtbare Bedienelemente
+
+Der Chat-Floater besitzt nun die drei echten
+Schaltflächen Fluestern, Sagen, Rufen, mit
+aktivem Farbzustand und auswählbaren Hitboxen.
+App::outbound_queue sendet tatsächlich
+LocalChatType whisper 0, normal 1 oder shout 2.
+Der Server entscheidet ChatRange und
+Cross-Region-llListen-Weiterleitung. Keine
+unsichtbaren Standard-Buttons mehr.
+Menü, Chat-Eingabe, Modal-Fokus und
+OpenGL/LLUDP-Tests prüfen die Integration.
+Vor jedem weiteren UI-/Featureblock
+aktuellen OpenGenesisLINK main SHA
+und OGL Github develop-current SHA prüfen.
+Siehe docs/OPENGENESISLINK_INTEGRATION_MATRIX.md.

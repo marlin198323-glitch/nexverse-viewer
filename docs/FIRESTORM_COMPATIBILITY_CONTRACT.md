@@ -349,3 +349,75 @@ High20 AnimUUID ist kein heruntergeladener Clip.
 Die GUI zeigt UUID/Sequence nur als readback,
 manueller Start/Stop deaktiviert, bis Rechte
 und tatsächlicher Assetdownload implementiert sind.
+
+## Alpha.99 – geprüfter OpenGenesisLINK SHA pro Entwicklungsaktion
+
+Source-of-truth: opengenesislink/opengenesislinkserver
+main, reviewed SHA 011ed5183889ebff72d10a49162b3223830d8ba5.
+Vor Entwicklung und Release mit
+python3 scripts/check_opengenesislink_server.py --strict
+live prüfen. Neue Commits müssen anhand der echten
+C#-Quellen und LSL/CAPS-Protokolle bewertet werden.
+CrossRegion LSL Chat bleibt serverintern,
+die Standard-Wire-Typen Whisper=0, Say=1,
+Shout=2 bleiben clientseitig OpenSim-kompatibel;
+Server Chat distances sind konfigurierbar.
+Thumbnail-Item-GETITEM-Verifikation ist
+Serverautorisierung, vorhandener Client-Cache
+bleibt region-epoch-/UUID-gebunden; kein
+pauschales Cache-Leeren bei jedem Start.
+Nur Firestorm-Basis- und korrekte Clientfeatures
+in Kern integrieren, RTX/Wetter optional Module.
+
+## Zweiter erneuter GitHub-Check direkt vor Alpha.99-Release
+
+Beim verpflichtenden Release-Check von Server SHA 011ed518
+meldete GitHub erneut **4 weitere Commits** bis SHA
+2c7f2953681eda3fe0a66700e38621f31077d822
+(13.10.2026 20:15:28 UTC). Betroffene Dateien
+ausschliesslich Dokumentation:
+doc/NexVerse/09312_RC1_STABLE_ACCEPTANCE.md,
+doc/NexVerse/LSL_PARITY_09311_09312.md,
+doc/NexVerse/ROADMAP.md.
+
+**Release-Sicherheitsentscheidung:** OpenGenesisLINK
+main ist im Stand 0.9.3.12 DEVELOPMENT,
+**NICHT RC1 oder Stable**. Die veröffentlichte
+Stable ist v0.9.3.10 (12.10.2026).
+22 geplante Operator-/InWorld-Gates beginnen
+NOT_RUN, kein CI-Gruen als Live-PASS ausgeben.
+Insbesondere Native-OGL Login, Voice, COF/
+Outfits, Firestorm Simulator-Login/Teleport,
+Chat über Regionsgrenzen, Touch-Hold und
+Inventory-Thumbnail-Reconnect sind nicht
+durch Alpha.99-InWorld-Tests bestätigt.
+OpenGenesisLINK Roadmap verschiebt OGL
+Experiences 2.0, Pathfinding 2.0 und
+My Outfits 2.0 bis NACH 0.9.4.0 Generation 1.
+Das betrifft diese erweiterten OGL-Features,
+nicht die Pflicht zu Firestorm Standard-
+Funktionsparität im Basiskern.
+Keine neue C++-Protokollcodeänderung nötig,
+da der Upstream-Diff nur .md-Dateien umfasst.
+Geprüften SHA nach manuellem Review aktualisiert.
+
+## GitHub Nachprüfung Alpha.99: IAR GZip Streams
+
+Nochmals 6 Server-Commits entdeckt: 2c7f295 auf
+2254d2b3733c5fb171e6e608bc909ff1ef8a7acd
+(13.10.2026 20:20:43 UTC). Änderungen in
+NexVerse/RegionModules/Archives/
+OglIarOperationManager.cs und
+doc/NexVerse/IAR_CONSOLE_PROGRESS_09312.md.
+Managed Stream-IAR exportiert nun komprimiertes
+GZip/TAR und importiert über GZipStream; der
+begrenzte Preflight/Archive-Inspector bleibt
+vor mutierenden Importen verpflichtend.
+**Einordnung SERVER-ONLY**, kein bestehendes
+Firestorm-OGL-Viewer-Paket, kein Client-Plugin
+für serverseitige Archivströme. Live-Archiv
+Export/Import und TOCTOU-/Quota-Gates sind offen.
+Die Revision nach Quellenreview in die
+Server-Baseline übernommen. Alpha.99 fokussiert
+weiter die Viewer-Core-Chatmodi und
+korrekte GUI, keinen IAR-Servercode-Port.
