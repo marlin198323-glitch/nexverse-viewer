@@ -478,6 +478,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-caps-event-dispatcher-tests)
     add_test(NAME nexverse-caps-event-dispatcher-tests COMMAND nexverse-caps-event-dispatcher-tests)
 
+    add_executable(nexverse-avatar-animation-tests
+        tests/avatar_animation_tests.cpp)
+    target_link_libraries(nexverse-avatar-animation-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-avatar-animation-tests)
+    add_test(NAME nexverse-avatar-animation-tests
+        COMMAND nexverse-avatar-animation-tests)
+
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
     nexverse_enable_warnings(nexverse-world-model-tests)

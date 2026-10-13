@@ -16,6 +16,8 @@ void WorldModel::reset()
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
+    self_animations_.reset();
+    pending_avatar_animations_.clear();
     avatars_.clear();
     objects_.clear();
     object_revision_ = 0U;
@@ -60,6 +62,8 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     parcel_ = {};
     environment_ = {};
     self_appearance_.reset();
+    self_animations_.reset();
+    pending_avatar_animations_.clear();
 
     apply_region(update);
     region_.generation = generation;
@@ -95,12 +99,53 @@ bool WorldModel::apply_self_appearance(
     return true;
 }
 
+bool WorldModel::apply_avatar_animation(
+    protocol::AvatarAnimationMessage animation)
+{
+    if(!region_.connected||animation.sender.empty()||
+       agent_.agent_id.empty())return false;
+    if(animation.sender==agent_.agent_id)
+    {
+        self_animations_=std::move(animation);
+        return true;
+    }
+    const auto existing=avatars_.find(animation.sender);
+    if(existing!=avatars_.end())
+    {
+        existing->second.animations=std::move(animation);
+        return true;
+    }
+    // Firestorm servers can send High20 before an ObjectUpdate. Keep a
+    // small bounded pending snapshot without inventing world geometry.
+    if(!pending_avatar_animations_.contains(animation.sender)&&
+       pending_avatar_animations_.size()>=64U)
+        return false;
+    pending_avatar_animations_.insert_or_assign(
+        animation.sender,std::move(animation));
+    return true;
+}
+
+const std::optional<protocol::AvatarAnimationMessage>&
+WorldModel::self_animations() const noexcept
+{
+    return self_animations_;
+}
+
 void WorldModel::upsert_avatar(AvatarState avatar)
 {
     if (avatar.id.empty() ||
         (!agent_.agent_id.empty() && avatar.id == agent_.agent_id))
     {
         return;
+    }
+    if(!avatar.animations)
+    {
+        const auto pending=pending_avatar_animations_.find(avatar.id);
+        if(pending!=pending_avatar_animations_.end())
+        {
+            avatar.animations=std::move(pending->second);
+            pending_avatar_animations_.erase(pending);
+        }
     }
     avatars_[avatar.id] = std::move(avatar);
 }
@@ -113,6 +158,15 @@ void WorldModel::update_avatar_transform(
        (!agent_.agent_id.empty() && id == agent_.agent_id))
         return;
     auto& avatar=avatars_[id];
+    if(!avatar.animations)
+    {
+        const auto pending=pending_avatar_animations_.find(id);
+        if(pending!=pending_avatar_animations_.end())
+        {
+            avatar.animations=std::move(pending->second);
+            pending_avatar_animations_.erase(pending);
+        }
+    }
     if(avatar.position_known)
     {
         const float dx=position.x-avatar.position.x;
@@ -133,6 +187,7 @@ void WorldModel::update_avatar_transform(
 void WorldModel::remove_avatar(const std::string& id)
 {
     avatars_.erase(id);
+    pending_avatar_animations_.erase(id);
 }
 
 void WorldModel::upsert_object(ObjectState object)
@@ -258,6 +313,7 @@ WorldSnapshot WorldModel::snapshot() const
     value.agent = agent_;
     value.agent_profile = agent_profile_;
     value.self_appearance = self_appearance_;
+    value.self_animations = self_animations_;
     value.avatars = avatars_;
     value.objects = objects_;
     value.terrain = terrain_;

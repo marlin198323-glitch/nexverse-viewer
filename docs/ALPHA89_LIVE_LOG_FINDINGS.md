@@ -98,3 +98,15 @@ Entwicklungsblock keinen neu autentifizierten
 NexVerse-Login und keinen bestaetigten E2E
 Server-AvatarAnimation-State. Kein Live-Verified
 fuer WASD oder Avatar-Outfit-Appearance behaupten.
+
+## Alpha.96 – new AvatarAnimation High20 acceptance evidence
+
+The client logs one anonymous SELF AvatarAnimation
+readback per region with counts of active animations,
+sources and physical event blocks. It does not log
+animation asset UUIDs, credentials, COF or tokens.
+Real authenticated NexVerse logins have NOT taken place
+after the development block; synthetic High20 fixtures
+and original GL GPU pose tests alone do not prove
+OpenSim animation clips, correct inworld locomotion,
+avatar outfits or COF.

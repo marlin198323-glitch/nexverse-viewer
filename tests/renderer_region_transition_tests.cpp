@@ -225,6 +225,30 @@ int main()
                                walking.avatar_locally_animated_skin_draw_calls!=3U ||
                                walking.self_avatar_anatomical_mesh_draw_calls!=3U ||
                                glGetError()!=GL_NO_ERROR)error=32;
+                            // Server-selected run/sit/fly/jump/hover poses
+                            // must remain weighted (no new proxy boxes),
+                            // even with no local WASD/position movement.
+                            walking_avatar.moving=false;
+                            walking_avatar.animation_from_server=true;
+                            for(const auto mode:{
+                                nexverse::protocol::AvatarMotion::run,
+                                nexverse::protocol::AvatarMotion::sit,
+                                nexverse::protocol::AvatarMotion::jump,
+                                nexverse::protocol::AvatarMotion::fly,
+                                nexverse::protocol::AvatarMotion::hover})
+                            {
+                                walking_avatar.motion=mode;
+                                renderer->set_avatar_proxies({walking_avatar});
+                                const auto active=render();
+                                if(active.avatar_server_selected_skin_draw_calls!=3U||
+                                   active.avatar_locally_animated_skin_draw_calls!=3U||
+                                   active.self_avatar_weighted_skin_draw_calls!=3U||
+                                   active.avatar_proxy_draw_calls!=0U||
+                                   glGetError()!=GL_NO_ERROR)
+                                {
+                                    error=35;break;
+                                }
+                            }
                         }
                     }
                     renderer->remove_object_texture("avatar-bake");

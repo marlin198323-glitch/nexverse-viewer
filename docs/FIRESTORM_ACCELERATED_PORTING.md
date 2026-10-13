@@ -52,3 +52,14 @@ Walk-Poses fuer eigene und serverseitig bewegt
 beobachtete fremde Avatare sind bereits in der
 GPU-Pipeline testbar. Live-Git-Server-Animationen,
 Appearance Morphs und COF bleiben Folgearbeit.
+
+## Alpha.96 – server AvatarAnimation into original-weight GPU
+
+A single integrated block adds a bounded High20 wire
+decoder, world animation snapshots/early-remote buffering,
+known Firestorm animation UUID matching and several
+procedural GPU poses while preserving original LLM
+meshes, GLSL weights and baked UVs. Actual LLKeyframeMotion
+assets, loop/priority/blend and custom animations remain
+the next critical milestone. Source references and wire
+tests: docs/ALPHA96_SERVER_ANIMATION.md.

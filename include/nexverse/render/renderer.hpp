@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "nexverse/protocol/avatar_animation.hpp"
 
 namespace nexverse::render
 {
@@ -218,6 +219,8 @@ struct RenderAvatarProxy
     // Strictly server-provided AttachmentBlock ID -> point mapping.
     std::unordered_map<std::string,std::uint8_t> attachments{};
     bool moving=false; // drive provisional local locomotion, not server truth
+    protocol::AvatarMotion motion=protocol::AvatarMotion::idle;
+    bool animation_from_server=false;
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
@@ -333,6 +336,7 @@ struct RenderDiagnostics
     std::uint64_t avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t avatar_locally_animated_skin_draw_calls = 0U;
+    std::uint64_t avatar_server_selected_skin_draw_calls = 0U;
     std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;

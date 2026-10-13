@@ -185,27 +185,59 @@ Mat4 rotation_y(float angle)
 // This is procedural visualization, not playback of server-supplied
 // LLAvatarAnimation assets. WorldModel and movement physics are untouched.
 std::vector<Mat4> avatar_joint_deformations(
-    const nexverse::render::RenderAvatarBindRig& rig,bool moving,double seconds)
+    const nexverse::render::RenderAvatarBindRig& rig,
+    nexverse::protocol::AvatarMotion motion,double seconds)
 {
+    using nexverse::protocol::AvatarMotion;
     std::vector<Mat4> transforms;
     if(rig.joints.empty()||rig.joints.size()>256U)return transforms;
     transforms.reserve(rig.joints.size());
-    const float step=std::sin(static_cast<float>(seconds*7.5));
-    const float knee=std::max(0.0f,step);
+    const bool running=motion==AvatarMotion::run;
+    const bool walking=motion==AvatarMotion::walk||running;
+    const float rate=running?11.0f:7.5f;
+    const float step=std::sin(static_cast<float>(
+        std::isfinite(seconds)?std::fmod(seconds*rate,100000.0):0.0));
+    const float stride=running?0.65f:0.36f;
     for(const auto& joint:rig.joints)
     {
-        float yaw=0.0f, pitch=0.0f;
-        if(moving)
+        float yaw=0.0f,pitch=0.0f;
+        if(walking)
         {
-            if(joint.name=="mHipLeft")pitch=0.36f*step;
-            else if(joint.name=="mHipRight")pitch=-0.36f*step;
-            else if(joint.name=="mKneeLeft")pitch=0.48f*std::max(0.0f,-step);
-            else if(joint.name=="mKneeRight")pitch=0.48f*knee;
-            else if(joint.name=="mShoulderLeft")pitch=-0.30f*step;
-            else if(joint.name=="mShoulderRight")pitch=0.30f*step;
+            if(joint.name=="mHipLeft")pitch=stride*step;
+            else if(joint.name=="mHipRight")pitch=-stride*step;
+            else if(joint.name=="mKneeLeft")
+                pitch=0.48f*std::max(0.0f,-step);
+            else if(joint.name=="mKneeRight")
+                pitch=0.48f*std::max(0.0f,step);
+            else if(joint.name=="mShoulderLeft")pitch=-stride*0.84f*step;
+            else if(joint.name=="mShoulderRight")pitch=stride*0.84f*step;
             else if(joint.name=="mElbowLeft")pitch=-0.11f;
             else if(joint.name=="mElbowRight")pitch=0.11f;
             else if(joint.name=="mChest")yaw=0.025f*step;
+        }
+        else if(motion==AvatarMotion::sit)
+        {
+            if(joint.name=="mHipLeft"||joint.name=="mHipRight")pitch=1.15f;
+            else if(joint.name=="mKneeLeft"||
+                    joint.name=="mKneeRight")pitch=-1.15f;
+            else if(joint.name=="mChest")pitch=-0.08f;
+        }
+        else if(motion==AvatarMotion::jump)
+        {
+            if(joint.name=="mHipLeft"||joint.name=="mHipRight")pitch=0.32f;
+            else if(joint.name=="mKneeLeft"||
+                    joint.name=="mKneeRight")pitch=-0.48f;
+            else if(joint.name=="mShoulderLeft"||
+                    joint.name=="mShoulderRight")pitch=-0.38f;
+        }
+        else if(motion==AvatarMotion::fly||motion==AvatarMotion::hover)
+        {
+            if(joint.name=="mPelvis"&&motion==AvatarMotion::fly)
+                pitch=-0.25f;
+            else if(joint.name=="mShoulderLeft"||
+                    joint.name=="mShoulderRight")pitch=-0.20f;
+            else if(joint.name=="mHipLeft"||joint.name=="mHipRight")
+                pitch=-0.10f;
         }
         const Mat4 local=multiply(
             translation(joint.local),
@@ -216,8 +248,8 @@ std::vector<Mat4> avatar_joint_deformations(
                        local):local;
         transforms.push_back(world);
     }
-    // The world transforms currently contain bind-translation.
-    // Conversion to skin transforms happens per palette entry below.
+    // Bind-pose translation is removed in the GPU palette upload.
+    // This is a recognizable pose until real LLKeyframeMotion assets load.
     return transforms;
 }
 
@@ -3240,6 +3272,7 @@ public:
         diagnostics_.avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.avatar_locally_animated_skin_draw_calls = 0U;
+        diagnostics_.avatar_server_selected_skin_draw_calls = 0U;
         diagnostics_.self_avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
@@ -4138,8 +4171,14 @@ public:
                     quaternion_rotation(avatar.rotation));
                 if(anatomical_ready)
                 {
+                    const auto motion=avatar.motion!=
+                        nexverse::protocol::AvatarMotion::idle
+                            ? avatar.motion
+                            : (avatar.moving
+                                ? nexverse::protocol::AvatarMotion::walk
+                                : nexverse::protocol::AvatarMotion::idle);
                     const auto posed=avatar_joint_deformations(
-                        avatar_bind_rig_,avatar.moving,time_seconds);
+                        avatar_bind_rig_,motion,time_seconds);
                     // Disable until a specific valid body mesh/palette is
                     // bound, keeping unrelated scene objects unaffected.
                     glUniform1i(glGetUniformLocation(
@@ -4236,8 +4275,10 @@ public:
                         if(skin_valid)
                         {
                             ++diagnostics_.avatar_weighted_skin_draw_calls;
-                            if(avatar.moving)
+                            if(motion!=nexverse::protocol::AvatarMotion::idle)
                                 ++diagnostics_.avatar_locally_animated_skin_draw_calls;
+                            if(avatar.animation_from_server)
+                                ++diagnostics_.avatar_server_selected_skin_draw_calls;
                             if(avatar.is_self)
                                 ++diagnostics_.self_avatar_weighted_skin_draw_calls;
                         }

@@ -306,3 +306,17 @@ Die Palette ist auf 32 Matrizen begrenzt. Bei malformed
 Gewicht/Count wird weder GPU-Mesh noch anderer Render-
 State korrumpiert. Prozedurale Animation bedeutet KEINE
 Bewegungsbestaetigung des OpenSim Servers.
+
+## Alpha.96 – AvatarAnimation High20 authoritative readback
+
+Simulator->Viewer High20 has UUID Sender, AnimationList
+(UUID+signed S32), AnimationSourceList (UUID), and
+PhysicalAvatarEventList (U8 byte length followed by data).
+It has no separate agent/session or region-handle fields.
+Current authenticated circuit and connected WorldModel
+provide the trust boundary. Each message REPLACES active
+animations for exactly that sender, including empty stop.
+Late remote animations pending up to 64 entries do NOT
+create visible world actors. Firestorm animation-standard
+UUIDs select only temporary local poses, NOT the real
+animation asset track, priority and blend.

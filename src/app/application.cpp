@@ -3406,6 +3406,7 @@ int Application::run(bool enable_developer_modules)
     bool self_avatar_weighted_skin_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
+    std::atomic_uint32_t avatar_animation_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
     std::atomic_bool compressed_object_live_logged{false};
@@ -4012,6 +4013,35 @@ int Application::run(bool enable_developer_modules)
             }
         });
 
+    // Simulator AvatarAnimation High20 is a complete animation set.
+    // It carries sender UUID, but NO session ID or region handle. Thus
+    // bind it to the active authenticated simulator circuit and current
+    // connected region. Unknown remote senders remain bounded, invisible
+    // pending state until their ObjectUpdate arrives.
+    packet_dispatcher.register_handler(
+        protocol::msg_avatar_animation,
+        [&avatar_animation_packets,&world_model,&world_mutex](
+            const protocol::DecodedPacket& packet)
+        {
+            const auto animation=protocol::decode_avatar_animation(
+                packet.payload);
+            if(!animation)return;
+            std::scoped_lock lock{world_mutex};
+            const bool first_self=animation->sender==
+                world_model.agent().agent_id &&
+                !world_model.self_animations().has_value();
+            if(!world_model.apply_avatar_animation(*animation))return;
+            avatar_animation_packets.fetch_add(1U,std::memory_order_relaxed);
+            if(first_self)
+                core::info(
+                    "Firestorm AvatarAnimation SELF High20 readback: "
+                    "active="+std::to_string(animation->animations.size())+
+                    "; sources="+std::to_string(animation->sources.size())+
+                    "; event_blocks="+
+                    std::to_string(animation->physical_events.size())+
+                    "; animation ASSET playback still pending");
+        });
+
     packet_dispatcher.register_handler(
         protocol::msg_avatar_appearance,
         [&avatar_packets, &world_model, &world_mutex](
@@ -4041,7 +4071,8 @@ int Application::run(bool enable_developer_modules)
                                std::to_string(appearance->visual_params.size())+
                                "; attachment_blocks="+
                                std::to_string(appearance->attachments.size())+
-                               "; provisional proxy remains (skinning unavailable)");
+                               "; original weighted body rig used when installed; "
+                               "morphs/COF not verified");
                 return;
             }
 
@@ -6950,6 +6981,20 @@ int Application::run(bool enable_developer_modules)
                          (protocol::control_at_pos | protocol::control_at_neg |
                           protocol::control_left_pos |
                           protocol::control_left_neg))!=0U;
+                    const auto local_fallback=
+                        avatar_proxy_update.back().moving
+                            ? protocol::AvatarMotion::walk
+                            : protocol::AvatarMotion::idle;
+                    if(const auto& active=world_model.self_animations();active)
+                    {
+                        const auto known=protocol::detect_avatar_motion(
+                            active->animations);
+                        avatar_proxy_update.back().animation_from_server=
+                            known.has_value();
+                        avatar_proxy_update.back().motion=
+                            known.value_or(local_fallback);
+                    }
+                    else avatar_proxy_update.back().motion=local_fallback;
                     if(const auto& appearance=world_model.self_appearance();
                        appearance)
                         for(const auto& attachment:appearance->attachments)
@@ -6981,6 +7026,20 @@ int Application::run(bool enable_developer_modules)
                         std::chrono::steady_clock::now()-
                             avatar.last_translation_at<
                             std::chrono::milliseconds{650};
+                    const auto remote_fallback=
+                        avatar_proxy_update.back().moving
+                            ? protocol::AvatarMotion::walk
+                            : protocol::AvatarMotion::idle;
+                    if(avatar.animations)
+                    {
+                        const auto known=protocol::detect_avatar_motion(
+                            avatar.animations->animations);
+                        avatar_proxy_update.back().animation_from_server=
+                            known.has_value();
+                        avatar_proxy_update.back().motion=
+                            known.value_or(remote_fallback);
+                    }
+                    else avatar_proxy_update.back().motion=remote_fallback;
                     for(const auto& attachment:avatar.attachments)
                         avatar_proxy_update.back().attachments.emplace(
                             attachment.object_id,attachment.attachment_point);

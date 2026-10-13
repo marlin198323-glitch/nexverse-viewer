@@ -346,3 +346,15 @@ OpenGenesisLINK Server main c29f3e5a70ccc0971b22371f1d13fd1de23be240.
 | Remote Walk | Nur gemessene Server-Positionsdeltas | AvatarAnimation Playback |
 | GL Ressourcen | SkinVBO Cleanup, nicht-avatar State Isolation | grosse Last/Live GPU |
 | Outfit/COF/Shape Morph | Unveraendert offen | not_implemented |
+
+## Alpha.96 – authoritative animation wire and built-in motion selection
+
+| Firestorm baseline | Implementiert | Evidence and missing |
+|---|---|---|
+| AvatarAnimation High20 | Authenticated circuit, complete bounded decoder | Golden LLUDP fixture |
+| AnimationList/SequenceID | Full replace, signed S32, duplicate-max | Unit tests |
+| AnimationSourceList/PhysicalEvent | Raw readback only | Block count/length tests, not executed |
+| Self vs remote | Strict local avatar, invisible pending 64, epoch reset | WorldModel synthetic |
+| Standard ANIM_AGENT UUIDs | Walk/Run/Jump/Fly/Sit/Hover recognized | Source-based UUID assertions |
+| Real GL skeleton | Original 3 LLM weight meshes draw six provisional poses | NVIDIA GL regression |
+| Keyframe priority/morph/asset playback | Not implemented | Cannot claim full Firestorm animation |

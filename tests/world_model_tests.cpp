@@ -123,7 +123,66 @@ int main()
     world.update_avatar_transform(
         world.agent().agent_id,{0.0f,0.0f,0.0f},{},999U);
     if(world.avatars().contains(world.agent().agent_id))return 22;
+    // AvatarAnimation High20 is a full snapshot per known sender.
+    // It must not create ghost avatars or cross region epochs.
+    nexverse::protocol::AvatarAnimationMessage self_anim;
+    self_anim.sender=world.agent().agent_id;
+    self_anim.animations={{"6ed24bd8-91aa-4b12-ccc7-c97c857ab4e0",4}};
+    if(!world.apply_avatar_animation(self_anim)||
+       !world.self_animations()||
+       world.self_animations()->animations.size()!=1U||
+       !world.snapshot().self_animations)
+        return 24;
+    nexverse::protocol::AvatarAnimationMessage wrong_anim=self_anim;
+    wrong_anim.sender="33333333-3333-3333-3333-333333333333";
+    if(!world.apply_avatar_animation(wrong_anim)||
+       world.avatars().contains(wrong_anim.sender))
+        return 25;
+    // AvatarAnimation can precede ObjectUpdate. Pending animation must
+    // not create a visible ghost or be lost on subsequent avatar spawn.
+    AvatarState late_avatar;
+    late_avatar.id=wrong_anim.sender;
+    world.upsert_avatar(std::move(late_avatar));
+    if(!world.avatars().at(wrong_anim.sender).animations ||
+       world.avatars().at(wrong_anim.sender).animations->animations.size()!=1U)
+        return 30;
+    world.remove_avatar(wrong_anim.sender);
+    nexverse::protocol::AvatarAnimationMessage remote_anim=self_anim;
+    remote_anim.sender="remote-avatar";
+    if(!world.apply_avatar_animation(remote_anim)||
+       !world.avatars().at("remote-avatar").animations ||
+       world.avatars().at("remote-avatar").animations->animations.size()!=1U)
+        return 26;
+    const auto snapshot=world.snapshot();
+    if(!snapshot.avatars.at("remote-avatar").animations ||
+       snapshot.avatars.at("remote-avatar").animations->animations.size()!=1U)
+        return 27;
+    remote_anim.animations.clear(); // simulator stop: empty full snapshot
+    if(!world.apply_avatar_animation(remote_anim)||
+       !world.avatars().at("remote-avatar").animations ||
+       !world.avatars().at("remote-avatar").animations->animations.empty())
+        return 28;
+    // Pose-only updates must retain animation metadata.
+    world.update_avatar_transform(
+        "remote-avatar",{131.1f,130.0f,28.0f},{},901U);
+    if(!world.avatars().at("remote-avatar").animations)
+        return 29;
     world.remove_avatar("remote-avatar");
+    // The pending map is finite even if an active simulator sends UUIDs
+    // for unknown avatars. Such messages must not allocate ghost avatars.
+    for(unsigned i=0U;i<64U;++i)
+    {
+        auto queued=self_anim;
+        queued.sender="90000000-0000-0000-0000-000000000000";
+        constexpr char hexdigits[]="0123456789abcdef";
+        queued.sender[34U]=hexdigits[i/16U];
+        queued.sender[35U]=hexdigits[i%16U];
+        if(!world.apply_avatar_animation(std::move(queued)))return 31;
+    }
+    auto overflow=self_anim;
+    overflow.sender="90000000-0000-0000-0000-0000000000ff";
+    if(world.apply_avatar_animation(std::move(overflow))||
+       world.avatars().size()!=1U)return 32;
     nexverse::world::ObjectState object;
     object.local_id = 42U;
     object.id = "object-uuid";
@@ -203,6 +262,7 @@ int main()
         !world.avatars().empty() ||
         !world.objects().empty() ||
         world.self_appearance().has_value() ||
+        world.self_animations().has_value() ||
         world.agent().present)
     {
         std::cerr << "WorldModel region transition invalidation failed\n";
@@ -211,7 +271,8 @@ int main()
 
     world.reset();
     if (world.ready() || world.region().connected || world.agent().present ||
-        world.self_appearance().has_value())
+        world.self_appearance().has_value() ||
+        world.self_animations().has_value())
     {
         std::cerr << "WorldModel reset failed\n";
         return 7;

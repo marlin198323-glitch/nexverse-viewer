@@ -6,6 +6,7 @@
 
 #include "nexverse/protocol/terrain_codec.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/avatar_animation.hpp"
 
 #include <array>
 #include <chrono>
@@ -81,6 +82,7 @@ struct AvatarState
     std::vector<protocol::AvatarAppearanceData> appearance_data;
     std::vector<Vec3> hover_heights;
     std::vector<protocol::AvatarAttachmentData> attachments;
+    std::optional<protocol::AvatarAnimationMessage> animations;
 };
 
 struct ObjectState
@@ -200,6 +202,7 @@ struct WorldSnapshot
     AgentState agent;
     AgentProfileState agent_profile;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance;
+    std::optional<protocol::AvatarAnimationMessage> self_animations;
     std::map<std::string, AvatarState, std::less<>> avatars;
     std::map<std::uint32_t, ObjectState> objects;
     TerrainState terrain;
@@ -221,6 +224,12 @@ public:
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(
         protocol::AvatarAppearanceMessage appearance);
+    // High20 AvatarAnimation is an authoritative complete per-avatar
+    // animation snapshot, not a requested viewer-side Wear/Play command.
+    [[nodiscard]] bool apply_avatar_animation(
+        protocol::AvatarAnimationMessage animation);
+    [[nodiscard]] const std::optional<protocol::AvatarAnimationMessage>&
+        self_animations() const noexcept;
     void upsert_avatar(AvatarState avatar);
     // Pose-only packets must not erase AppearanceData, COF versions,
     // baked texture entries or attachment blocks already received.
@@ -257,6 +266,11 @@ private:
     AgentState agent_;
     AgentProfileState agent_profile_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
+    std::optional<protocol::AvatarAnimationMessage> self_animations_;
+    // Animation may precede ObjectUpdate. Bounded pending messages do not
+    // create renderable ghost avatars and expire at region transitions.
+    std::map<std::string, protocol::AvatarAnimationMessage, std::less<>>
+        pending_avatar_animations_;
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
     std::uint32_t object_revision_ = 0U;

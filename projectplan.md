@@ -4508,3 +4508,86 @@ und authentifizierte NexVerse Live-Sichtprobe.
 Quelle: FirestormViewer/phoenix-firestorm
 Firestorm_7.2.4 commit
 10bd3c9f930c76e1427ddd4ecece6cdf36b4406d.
+
+## Alpha.96 – Servergesteuerte Firestorm-/OpenSim-AvatarAnimation (13.10.2026)
+
+Alpha.96 ist ein beschleunigter, zusammenhaengender Funktionsblock:
+Protokoll, WorldModel, Avatar-GPU, Live-Readback, Negativtests,
+GUI-Build und Dokumentation in EINEM GitHub-Commit.
+
+1. Referenz: Firestorm 7.2.4 message_template.msg,
+   AvatarAnimation High 20 Trusted Unencoded, Simulator -> Viewer.
+   Die Feldreihenfolge lautet Sender.ID UUID, AnimationList Variable
+   AnimID UUID + AnimSequenceID S32, AnimationSourceList Variable
+   ObjectID UUID und PhysicalAvatarEventList Variable TypeData Variable1.
+   High20 traegt KEINE Session-ID und KEIN Region-Handle.
+2. Ein neuer strikt begrenzter Decoder in
+   include/nexverse/protocol/avatar_animation.hpp parst alle vier
+   Bloecke samt Variablen-Anzahlen; max. 96 Animationen/Quellen,
+   32 Physik-Ereignisse und 12 KiB Nutzdaten.
+3. UUID-Normalisierung, volle Byteoffset-Pruefung, kein unerwarteter
+   Rest, verwaiste/geloeschte Source- und Event-Counts invalid,
+   zero-Sender und Null-AnimIDs gesperrt. Physikbloecke nur roh
+   eingelesen, keine ungepruefte Ausfuehrung oder Aktorbewegung.
+4. Bei doppelter Animation-UUID entscheidet die hoechste
+   AnimSequenceID; ein leerer vollstaendiger Snapshot bedeutet
+   Stop aller vorherigen Animationen des konkreten Absenders.
+5. WorldModel enthaelt per SelfAgentID getrennte Animation-Readbacks,
+   remote AvatarState.animation und WorldSnapshot.self_animations.
+   Region/Epochenwechsel und Reset invalidieren alles, Pose-
+   /Appearance-Updates loeschen keine laufenden Animationen.
+6. Wenn die Animation eines fremden Avatars vor ObjectUpdate kommt,
+   wird sie fuer hoechstens 64 fremde IDs vorgehalten, ohne ein
+   sichtbares Phantomobjekt bei 0,0,0 zu erzeugen. Der erste
+   ObjectUpdate oder Coarse-Poseschritt uebernimmt sie.
+   Beim Entfernen des Avatars wird der Pending-Eintrag invalidiert.
+7. LLUDP-Handler laeuft nur auf aktuell verbundenem Simulator-
+   Circuit und verbundenem Weltmodell; die Nachricht selbst
+   enthaelt KEIN eigenes session_id oder region_handle Feld.
+   Kein falscher Identity-Check gegen ein nicht vorhandenes Feld.
+   Self-Logging verwendet nur anonyme Bloeckchen-Zaehler.
+8. Original-Firestorm Standardanimation-UUIDs aus
+   indra/llcharacter/llanimationstates.cpp (Walk/New, Run/New,
+   Jump/PreJump/Land, Fly/FlySlow, Sit/SitFemale/SitGround, Hover)
+   werden erkannt. Eigene fremde Custom UUIDs bleiben als
+   beobachtete Assets im Modell, aber werden NICHT als
+   bestaetigte Standard-Bewegung gemeldet.
+9. Eine per-Avatar Motion-Wahl verhindert, dass ein Sit/Fly/
+   Jump-Readback zu einer standarisieren Gehpose degradiert
+   wird. Ein einfacher konservativer Auswahlvorrang fuer die
+   vorlaeufige lokale Pose ist Sit > Jump > Fly > Hover > Run
+   > Walk; dies ist KEIN Asset-Priority-/Blend-Playback.
+10. Der bestehende Original-Firestorm Weight/Joint-GLSL-Pfad
+    verwendet nun sechs sichtbare Modi Idle, Walk, Run, Jump,
+    Fly, Sit plus Hover; Run hat hoehere Schrittrate, Sit
+    beugt Huefte und Knie, Jump und Fly haben eigene
+    Hueft-/Arme-Posen. Keine Ersetzung der echten Koerpermeshes
+    durch Eigenbau-Boxen, keine Aenderung von Simulator-Koordinaten.
+11. Separater GPU-Zaehlpfad
+    avatar_server_selected_skin_draw_calls wird NUR fuer
+    tatsaechlich erkannte Simulator-Standardanimations-UUIDs
+    aktiv. Bei leerem Snapshot oder unbekannter Custom-UUID
+    wird kein Server-Standardbewegungs-Beleg gefaelscht.
+12. Neue eigene CTest-Suite mit golden High20-LLUDP-Header,
+    Sender-ID, signed Sequence IDs, doppelten UUIDs, Quellen,
+    PhysicalEvent Variable1, Empty-Stop, Truncation, Trailing
+    Bytes, Count-Limits, Null-IDs; WorldModel-Epoch/
+    Pending-/Bounded-/Readback-Tests; echte Original
+    Firestorm Mesh GPU Posen fuer Run/Jump/Sit/Fly/Hover.
+
+AUSDRUECKLICH WEITERHIN OFFEN: Der Simulator bestaetigt hier
+AnimUUIDs und Aktivierungssequenz, NICHT die Animations-Kurven.
+OGL nutzt weiterhin einfache prozedurale Posen statt echte
+Firestorm LLKeyframeMotion-/Animation-Asset-Dateien.
+Somit fehlen Asset-Fetch/Decoding, vollstaendige Prioritaet,
+Loop/Blend-In/Out, Gesichtsanimationen, Breathing,
+Sit-on-Object Attachment-Bone-Fortschritt und
+NexVerse-Live-Validierung nach Login. Die Datei
+docs/ALPHA96_SERVER_ANIMATION.md ist Quellvertragsreferenz.
+
+FOLGEBLOCK: Original LLKeyframeMotion v1/v2 binaeres Decoding
+und priorisierte Asset-Clip-Wiedergabe mit realen
+Joint-Rotation-Quaternions; serverseitige AnimationList mit
+AnimationSource und Sit/Stand/COF koppeln; danach GPU-
+SkinNormal-Transformation, Animation blending und
+NexVerse-E2E mit authentifiziertem Benutzerlogin.
