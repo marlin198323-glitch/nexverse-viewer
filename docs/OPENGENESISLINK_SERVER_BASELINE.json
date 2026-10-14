@@ -1,9 +1,9 @@
 {
   "repository": "opengenesislink/opengenesislinkserver",
   "branch": "main",
-  "reviewed_sha": "2b7c19c9396eb2f75fd60a41a33a05655909da6b",
-  "reviewed_utc": "2026-10-14T17:50:43Z",
-  "viewer_version": "0.2.0-alpha.109",
+  "reviewed_sha": "5d9c616470ac5b30de2afdadd6d5f82b33b0ae94",
+  "reviewed_utc": "2026-10-14",
+  "viewer_version": "0.2.0-alpha.110",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -93,6 +93,16 @@
       "server_change": "Original Firestorm Wearable subtype inventory flags; AgentIsNowWearing Low383, AgentSetAppearance Low84 message formats",
       "placement": "VIEWER_CORE_FLAGS_AND_WIRE_ENCODERS_NO_DISPATCH",
       "note": "Firestorm_7.2.4 llwearabletype.h/.cpp, llinventorydefines.h and message_template.msg. Wearable subtype = flags & 0xff, 17 slots 0..16. Owner CAP preserves flags; missing subtype is not Shape 0. Packets encoded for golden tests, not dispatched before full wearable, TextureEntry, Bakes and Appearance verification. No server operator API/keys in Viewer."
+    },
+    {
+      "server_change": "Wearable original assets are Firestorm LLWearable v1 text; user-authorized LLUDP TransferRequest Low153 for Clothing5/Bodypart13, TransferInfo Low154, TransferPacket High17. 45 texture indices including 11 baked outputs and correct local-texture to baked-layer mapping.",
+      "placement": "VIEWER_CORE_BOUNDED_WEARABLE_DOWNLOAD_AND_READ_ONLY_BAKE_AUDIT",
+      "note": "Firestorm_7.2.4 llwearable.cpp importStream, llavatarappearancedefines.h/cpp and message_template.msg independently verified. No new OpenGenesisLINK Server commit before Alpha110. Explicit F9 user click downloads up to 16 authenticated COF-owned original assets, validates exact COF version/region/owner flags/type, 12-second bounded transfer, no resend, parses version1 visual params and local texture IDs, reports layer REFERENCES. Does NOT implement texture pixel decoding, layer compositing, baker uploads, new appearance mutation or visual wearable acceptance."
+    },
+    {
+      "server_change": "OpenGenesisLINK #208 Control Center admin docs login switched from protected /api/v1/auth/admin/session and AdminAll-scope/TLS-proxy checks to standard GridUser /api/v1/auth/session with server-verified UserLevel >=200; API Connector removes AdminDocsTrustedProxyAddresses and updated CI checks",
+      "placement": "SERVER_ONLY_OPERATOR_ADMIN_AUTH_REVIEW",
+      "note": "Reviewed GitHub commit 5d9c616470ac5b30de2afdadd6d5f82b33b0ae94 one commit/five files. OGL viewer must NOT reuse/admin-login endpoint nor authenticate as UserLevel200. No changes to simulator TransferRequest Low153, TransferInfo154, TransferPacket17 or user Inventory/CAPS. Security attention: dashboard no longer enforces the previous special admin session/TLS-proxy gate; deployer should validate HTTPS enforcement and control-center authorization in WorldAPI before exposing publicly. This is server-only; not a feature to port into ordinary viewer."
     }
   ]
 }

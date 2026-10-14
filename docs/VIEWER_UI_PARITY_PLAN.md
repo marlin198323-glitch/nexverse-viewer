@@ -197,3 +197,7 @@ AvatarAppearance pruefen Button neu im F9 Outfit Floater: eigener echter Read-On
 ## Alpha.109
 
 Alpha.109: F9 Outfit-Galerie zeigt jetzt echten klickbaren Button Wearables pruefen, lädt Originalitems des aktuellen COF ueber authentifizierte FetchInventory2 CAPS, zeigt rechtes Panel Shape/Skin/Hair/Eyes...Universal (17 Slotzeilen) und Anzahl. Stale COF/Region invalidiert Ansicht. Status nennt reale Validierungsfehler und keine visuelle Avatar-Wear-Zusage. Kleine und Widescreen Monitorhitboxen getestet.
+
+## Alpha.110
+
+Alpha.110: F9 Outfit-Viewer mit funktionalem links platziertem "Original-Wearable-Assets laden". Download nur nach authentifiziertem F9 Wearables pruefen auf gültigem unverändertem COF, max 16, seriell, 12s Timeout. Anzeige Original LLWearable Param-/TextureID und Head/Upper/Lower usw. Referenzstatus plus Fehler ohne falsches Tragen. Hitbox mit COF Batch getrennt, Fenster von 800x480 bis 5120x1440.

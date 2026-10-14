@@ -175,3 +175,7 @@ Alpha108 portiert Original-AvatarAppearance-CofVersion-Semantik in Viewer-Core, 
 ## Alpha.109
 
 Alpha.109: Firestorm Wearable-Slotparity und echte InventoryFlags auf beiden CAPS-Lesepfaden. F9 per Owner-Scoped FetchInventory2 COF-Originalitems und 17-zelliges optisches Slotpanel parallel implementiert. LLUDP Low383/84 Packet-Encoder mit strikten Guards, kein falsches AgentSetAppearance senden.
+
+## Alpha.110
+
+Alpha.110: Download echter LLWearable Assets über Original Firestorm TransferRequest/Info/Packet; independent v1 VisualParam und TexIndex/UUID Parsing bis 2 MiB, inbox fragment-safe; Original TexLayer Input-Bake Group Map aus llavatarappearancedefines.cpp, keine voreilige GPU-Bake. Parallele sichtbare GUI Aktion Original-Wearable-Assets laden und korrekter Status.

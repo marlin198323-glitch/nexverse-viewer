@@ -316,3 +316,13 @@ Server main 2b7c19c9396eb2f75fd60a41a33a05655909da6b zu Alpha108 Beginn geprüft
 ## Alpha.109
 
 Alpha.109 Server main SHA 2b7c19c9396eb2f75fd60a41a33a05655909da6b Precheck gruen. Firestorm Wearable Subtype Flags und Original LLUDP Low383/84 als User-Viewer-Core Paketformate, aber keine mutierenden Appearance-Befehle bevor Original Wearable/Bake-Daten korrekt sind. Keine Betreiber-API und keine AdminKeys im User Viewer.
+
+## Alpha.110
+
+Alpha.110 OpenGenesisLINK main 2b7c19c9396eb2f75fd60a41a33a05655909da6b zu Beginn geprüft, keine neuen Commits. OpenSim Legacy Asset Transfer Request Low153 Type5 Clothing/13 Bodypart, Info154/Packet High17, owner-scoped COF Inventory CAPS. Original-Userdaten nur vom Simulator und aktuellem Grid. Keine Operator-Einrichtung/Robust Admin Keys oder nicht vorhandener AssetHTTP-Endpunkt erfunden.
+
+## Alpha.110 aktualisierte Live-Server-Prüfung (14.10.2026)
+
+Nach Entwicklung, vor Release-Gate, neues OpenGenesisLINK main SHA 5d9c616470ac5b30de2afdadd6d5f82b33b0ae94, Commit #208 ('simple GridUser Level 200 Control Center login'); Altstand 2b7c19c9396eb2f75fd60a41a33a05655909da6b. GitHub Commit-Patches und Quellcode MANUELL geprüft: NexApiDocsPage.cs, NexVerseWorldApiConnector.cs, OglApiDocsAccess.cs sowie die beiden CI-Checks. Nur 1 Commit/5 Dateien. Operator Control Center wechselt von eigener '/api/v1/auth/admin/session' plus vorheriger AdminAll/TLS-Proxy-Absicherung zum normalen GridUser '/api/v1/auth/session' mit serverseitigem UserLevel >=200. TrustedProxyAllowlist/TLS-Sondercheck wurden aus dem Admin-Dashboard-Flow entfernt.
+
+Klassifizierung: SERVER_ONLY_OPERATOR_ADMIN_AUTH_REVIEW, **NICHT** im normalen OGL Viewer implementieren, keine Admin-Tokens oder WorldAPI Operator-Einstellungen im Viewer. Kein Änderung am OpenSim Firestorm LLUDP TransferRequest153/Info154/Packet17 oder User-Inventory-CAPS. Sicherheitshinweis: Server-Betreiber muss bei diesem vereinfachten Dashboard-Login echte HTTPS-Terminierung und Rollen-/UserLevel-Grenze vor Exposition prüfen; das wird durch eine Viewer-Regression nicht automatisch abgedeckt. Server-Baseline nach Review auf 5d9c616... gesetzt; strikter Check anschließend erneut.

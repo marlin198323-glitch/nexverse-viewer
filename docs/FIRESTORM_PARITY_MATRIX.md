@@ -476,3 +476,7 @@ Firestorm AvatarAppearance Low158 AppearanceData CofVersion wird jetzt als read-
 ## Alpha.109
 
 Alpha.109: 17 originale LLWearableType 0..16 mit subtype = real InventoryFlags & 0xff aus authentifiziertem FetchInventory2/InventoryDescendents2, missing != SHAPE0. Original Low383 AgentIsNowWearing und Low84 AgentSetAppearance Byte-Encoder implementiert und registriert, aber bis echte Assets/Bakes vorhanden NICHT versendet. F9 Wearables pruefen und 17 Slotzeilen mit echten COF Originalitemdaten, kein nachweislich getragener Avatar.
+
+## Alpha.110
+
+Alpha.110: Original LLWearable v1 Text-Asset-Parser (permissions/sale/type/VisualParams/local Textures), strenge Bounds. Authentifizierter Firestorm Low153 Clothing5/Bodypart13 Transfer via Circuit mit TransferInfo154 und TransferPacket High17, RegionEpoch/TransferID. F9 Benutzeraktion 16 Wearables seriell, Original COF Version/Subtype geprüft, 12s Timeout und Status. 45 Original TE Indices, elf baked outputs, lokale Input->Bake Referenzgruppen. Nicht GPU-Bake, nicht Outfit-Wear.

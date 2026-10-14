@@ -78,6 +78,7 @@
 #include "nexverse/protocol/firestorm_appearance_verification.hpp"
 #include "nexverse/protocol/firestorm_wearable_slots.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
+#include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -413,6 +414,7 @@ struct InputContext
     bool* outfit_batch_requested = nullptr;
     bool* outfit_appearance_check_requested = nullptr;
     bool* outfit_wearable_check_requested = nullptr;
+    bool* outfit_wearable_asset_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1148,6 +1150,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::wearable_check:
             if(context->outfit_wearable_check_requested)
                 *context->outfit_wearable_check_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::wearable_asset_fetch:
+            if(context->outfit_wearable_asset_requested)
+                *context->outfit_wearable_asset_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
@@ -2205,7 +2211,10 @@ void render_outfit_gallery(
     nexverse::protocol::CofAppearancePhase appearance_phase,
     std::string_view wearable_status,
     const nexverse::protocol::FirestormWearableSlots& wearable_slots,
-    bool wearable_slots_visible)
+    bool wearable_slots_visible,
+    std::string_view wearable_asset_status,
+    std::size_t wearable_asset_decoded,
+    std::size_t wearable_asset_total)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2362,9 +2371,17 @@ void render_outfit_gallery(
                 "   "+(count?std::to_string(count):"-"),
                 count?theme::cyan:theme::text_muted);
         }
-        renderer.text(bx+12.0f*scale,y+439.0f*scale,7.1f*scale,
+        renderer.text(bx+12.0f*scale,y+425.0f*scale,7.1f*scale,
                       "Nur Inventar, kein sichtbarer Avatar-Wear",
                       theme::warning);
+    }
+    if(!plan_visible)
+    {
+        renderer.rect(x+22.0f*scale,y+447.0f*scale,
+                      425.0f*scale,27.0f*scale,
+                      Color{0.034f,0.110f,0.157f,0.98f},6.0f*scale);
+        renderer.text(x+35.0f*scale,y+455.0f*scale,8.4f*scale,
+                      "Original-Wearable-Assets laden",theme::cyan);
     }
     if(plan_visible)
     {
@@ -2474,6 +2491,12 @@ void render_outfit_gallery(
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
     }
+    renderer.text(x+22.0f*scale,y+ph-195.0f*scale,
+                  8.0f*scale,
+                  "Wearable-Assets "+std::to_string(wearable_asset_decoded)+
+                  "/"+std::to_string(wearable_asset_total)+": "+
+                  std::string(wearable_asset_status).substr(0U,70U),
+                  theme::text_muted);
     renderer.text(x+22.0f*scale,y+ph-171.0f*scale,
                   8.0f*scale,
                   "Firestorm 17 Slots: "+
@@ -3869,6 +3892,7 @@ int Application::run(bool enable_developer_modules)
 
     protocol::OutboundCommandQueue outbound_queue{512U};
     protocol::AnimationTransferInbox animation_transfers;
+    protocol::WearableTransferInbox wearable_transfers;
     std::map<std::string,std::shared_ptr<const assets::FirestormKeyframeMotion>,
              std::less<>> loaded_animation_clips;
     std::map<std::string,std::string,std::less<>> failed_animation_clips;
@@ -3911,19 +3935,27 @@ int Application::run(bool enable_developer_modules)
     protocol::PacketDispatcher packet_dispatcher;
     packet_dispatcher.register_handler(
         protocol::msg_transfer_info,
-        [&animation_transfers](const protocol::DecodedPacket& packet)
+        [&animation_transfers,&wearable_transfers](
+            const protocol::DecodedPacket& packet)
         {
             if(const auto info=protocol::decode_animation_transfer_info(
                 packet.payload))
                 animation_transfers.on_info(*info);
+            if(const auto info=protocol::decode_wearable_transfer_info(
+                packet.payload))
+                wearable_transfers.on_info(*info);
         });
     packet_dispatcher.register_handler(
         protocol::msg_transfer_packet,
-        [&animation_transfers](const protocol::DecodedPacket& packet)
+        [&animation_transfers,&wearable_transfers](
+            const protocol::DecodedPacket& packet)
         {
             if(const auto part=protocol::decode_animation_transfer_packet(
                 packet.payload))
+            {
                 animation_transfers.on_packet(*part);
+                wearable_transfers.on_packet(*part);
+            }
         });
     protocol::CapsEventDispatcher caps_event_dispatcher;
     protocol::InventoryEventInbox inventory_events;
@@ -4862,6 +4894,18 @@ int Application::run(bool enable_developer_modules)
         "Originalinventar noch nicht abgeglichen";
     protocol::FirestormWearableSlots gallery_wearables_snapshot;
     bool gallery_wearables_visible=false;
+    std::vector<protocol::OutfitInventoryItem> gallery_wearable_originals;
+    bool gallery_wearable_asset_requested=false;
+    input_context.outfit_wearable_asset_requested=&gallery_wearable_asset_requested;
+    std::vector<protocol::OutfitInventoryItem> gallery_asset_pending;
+    std::map<std::string,assets::FirestormWearableAsset,std::less<>>
+        gallery_decoded_wearable_assets;
+    std::string gallery_asset_active_id;
+    std::chrono::steady_clock::time_point gallery_asset_started{};
+    std::string gallery_asset_status="Assets noch nicht geladen";
+    std::size_t gallery_asset_total=0U,gallery_asset_errors=0U;
+    std::uint64_t gallery_asset_epoch=0U,gallery_asset_cof_version=0U;
+    std::string gallery_asset_cof;
     std::uint64_t gallery_item_fetch_epoch=0U;
     std::string gallery_item_fetch_folder;
     std::string gallery_item_fetch_completed_folder;
@@ -6792,6 +6836,14 @@ int Application::run(bool enable_developer_modules)
                     "Regionswechsel: Wearable-Status unbestimmt";
                 gallery_wearables_snapshot={};
                 gallery_wearables_visible=false;
+                gallery_wearable_originals.clear();
+                gallery_wearable_asset_requested=false;
+                gallery_asset_pending.clear();
+                gallery_decoded_wearable_assets.clear();
+                gallery_asset_active_id.clear();
+                gallery_asset_status="Region gewechselt: keine Asset-Aussage";
+                gallery_asset_total=gallery_asset_errors=0U;
+                gallery_asset_cof.clear();
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -6799,6 +6851,7 @@ int Application::run(bool enable_developer_modules)
                 // Reject all old-region TransferInfo/Packets, with no
                 // stale clip adoption across distinct simulator sessions.
                 animation_transfers.reset(current_firestorm_epoch);
+                wearable_transfers.reset(current_firestorm_epoch);
                 loaded_animation_clips.clear();
                 failed_animation_clips.clear();
                 animation_attempted.clear();
@@ -7112,6 +7165,12 @@ int Application::run(bool enable_developer_modules)
                                 "COF-Inventar aktualisiert: Wearables neu pruefen";
                             gallery_wearables_snapshot={};
                             gallery_wearables_visible=false;
+                            gallery_wearable_originals.clear();
+                            gallery_asset_pending.clear();
+                            gallery_decoded_wearable_assets.clear();
+                            gallery_asset_active_id.clear();
+                            gallery_asset_status="COF veraendert: Asset-Lesung verfallen";
+                            gallery_asset_total=gallery_asset_errors=0U;
                             caps_state.inventory_dynamic_folders=
                                 reply.outfit_inventory.categories;
                             if(inventory_tree.count()==0 &&active_session)
@@ -7550,6 +7609,7 @@ int Application::run(bool enable_developer_modules)
                             &all->second,fetched.items);
                         gallery_wearables_snapshot=slots;
                         gallery_wearables_visible=true;
+                        gallery_wearable_originals=fetched.items;
                         gallery_wearables_status=std::string{
                             protocol::wearable_readiness_label(
                                 slots.readiness)}+
@@ -7607,6 +7667,12 @@ int Application::run(bool enable_developer_modules)
                     {
                         gallery_wearables_snapshot={};
                         gallery_wearables_visible=false;
+                        gallery_wearable_originals.clear();
+                        gallery_asset_pending.clear();
+                        gallery_decoded_wearable_assets.clear();
+                        gallery_asset_active_id.clear();
+                        gallery_asset_total=gallery_asset_errors=0U;
+                        gallery_asset_status="Originalitems: Assetdaten noch offen";
                         gallery_wearables_fetch_cof=id;
                         gallery_wearables_fetch_epoch=current_firestorm_epoch;
                         gallery_wearables_fetch_version=v->second;
@@ -7625,6 +7691,159 @@ int Application::run(bool enable_developer_modules)
                                     epoch,firestorm_region_lease);
                             });
                     }
+                }
+            }
+            if(gallery_wearable_asset_requested)
+            {
+                gallery_wearable_asset_requested=false;
+                const auto& id=caps_state.current_outfit_folder;
+                const auto& versions=gallery_inventory_sync.versions();
+                const auto v=versions.find(id);
+                if(!outfit_gallery_open||!active_session||!simulation_ready||
+                   !login_ui.authenticated||gallery_plan_visible||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   !gallery_wearables_visible||
+                   gallery_wearables_snapshot.readiness!=protocol::
+                       WearableReadiness::ready_for_appearance_pipeline||
+                   !gallery_asset_pending.empty()||
+                   !gallery_asset_active_id.empty()||
+                   v==versions.end()||v->second==0U||
+                   gallery_wearables_fetch_cof!=id||
+                   gallery_wearables_fetch_version!=v->second)
+                    gallery_asset_status=
+                        "Aktuelle COF- und Wearable-Lesung erforderlich";
+                else
+                {
+                    gallery_asset_pending.clear();
+                    gallery_decoded_wearable_assets.clear();
+                    gallery_asset_errors=0U;
+                    std::set<std::string> unique;
+                    for(const auto& item:gallery_wearable_originals)
+                        if((item.asset_type==5||item.asset_type==13)&&
+                           item.flags&&item.inventory_type==18&&
+                           protocol::uuid_to_bytes(item.asset_id)&&
+                           unique.insert(item.asset_id).second)
+                            gallery_asset_pending.push_back(item);
+                    if(gallery_asset_pending.empty()||
+                       gallery_asset_pending.size()>16U)
+                    {
+                        gallery_asset_pending.clear();
+                        gallery_asset_status="Assetlimit 1-16 Wearables";
+                    }
+                    else
+                    {
+                        gallery_asset_total=gallery_asset_pending.size();
+                        gallery_asset_epoch=current_firestorm_epoch;
+                        gallery_asset_cof_version=v->second;
+                        gallery_asset_cof=id;
+                        gallery_asset_status=
+                            "Original-Wearables: LLUDP Download gestartet";
+                    }
+                }
+            }
+            // A completed transfer is not a successful bake. The raw
+            // immutable wearable is only accepted if it belongs to the
+            // same authoritative owner-scoped COF and inventory subtype.
+            while(auto completed=wearable_transfers.pop())
+            {
+                if(completed->asset_id!=gallery_asset_active_id)continue;
+                const auto& versions=gallery_inventory_sync.versions();
+                const auto v=versions.find(gallery_asset_cof);
+                const bool scope=gallery_asset_epoch==current_firestorm_epoch&&
+                    firestorm_region_lease.matches(gallery_asset_epoch)&&
+                    caps_state.current_outfit_folder==gallery_asset_cof&&
+                    v!=versions.end()&&v->second==gallery_asset_cof_version;
+                const auto original=std::find_if(
+                    gallery_wearable_originals.begin(),
+                    gallery_wearable_originals.end(),
+                    [&](const auto& item){
+                        return item.asset_id==completed->asset_id;});
+                if(scope&&completed->asset&&
+                   original!=gallery_wearable_originals.end()&&
+                   original->flags&&
+                   completed->asset->type==static_cast<int>(
+                       *original->flags&0xffU)&&
+                   (completed->asset->type<4)==
+                       (original->asset_type==13))
+                {
+                    gallery_decoded_wearable_assets.insert_or_assign(
+                        completed->asset_id,*completed->asset);
+                    gallery_asset_status=
+                        "LLWearable dekodiert: "+
+                        std::to_string(completed->asset->visual_params.size())+
+                        " Parameter, "+
+                        std::to_string(completed->asset->textures.size())+
+                        " Textur-UUIDs, Bake nicht gerendert";
+                }
+                else
+                {
+                    ++gallery_asset_errors;
+                    gallery_asset_status=
+                        completed->error.empty()
+                            ?"Asset-Typ/COF/Region ungueltig":
+                             "Asset abgelehnt: "+completed->error;
+                }
+                gallery_asset_active_id.clear();
+                if(gallery_asset_pending.empty()&&
+                   gallery_asset_total>0U)
+                {
+                    std::array<unsigned,11> references{};
+                    std::size_t param_count=0U,texture_count=0U;
+                    for(const auto& [id,asset]:gallery_decoded_wearable_assets)
+                    {
+                        (void)id;
+                        const auto audit=assets::audit_firestorm_bake(&asset);
+                        param_count+=audit.params;
+                        texture_count+=audit.texture_refs;
+                        for(std::size_t i=0U;i<references.size();++i)
+                            if(audit.baked_layers[i])++references[i];
+                    }
+                    gallery_asset_status=
+                        "Lokal "+std::to_string(param_count)+
+                        " Params, "+std::to_string(texture_count)+
+                        " Texturen | Bake Head/Upper/Lower "+
+                        std::to_string(references[0])+"/"+
+                        std::to_string(references[1])+"/"+
+                        std::to_string(references[2])+
+                        " Referenzen; echte Bakes fehlen";
+                }
+            }
+            if(!gallery_asset_active_id.empty()&&
+               std::chrono::steady_clock::now()-gallery_asset_started>
+                   std::chrono::seconds{12})
+            {
+                ++gallery_asset_errors;
+                gallery_asset_status=
+                    "Asset Transfer Timeout - kein automatischer Retry";
+                gallery_asset_active_id.clear();
+                wearable_transfers.reset(current_firestorm_epoch);
+            }
+            if(!gallery_asset_pending.empty()&&gallery_asset_active_id.empty()&&
+               simulation_ready&&login_ui.authenticated&&
+               active_session&&outbound_queue.size()<480U&&
+               gallery_asset_epoch==current_firestorm_epoch&&
+               firestorm_region_lease.matches(gallery_asset_epoch))
+            {
+                const auto next=gallery_asset_pending.front();
+                gallery_asset_pending.erase(gallery_asset_pending.begin());
+                protocol::WearableAssetRequest request{
+                    next.asset_id,protocol::random_animation_transfer_id(),
+                    next.asset_type};
+                if(wearable_transfers.begin(gallery_asset_epoch,request)&&
+                   outbound_queue.push(request))
+                {
+                    gallery_asset_active_id=next.asset_id;
+                    gallery_asset_started=std::chrono::steady_clock::now();
+                    gallery_asset_status="Asset "+std::to_string(
+                        gallery_decoded_wearable_assets.size()+
+                        gallery_asset_errors+1U)+"/"+
+                        std::to_string(gallery_asset_total)+" angefordert";
+                }
+                else
+                {
+                    ++gallery_asset_errors;
+                    gallery_asset_status="Asset Queue blockiert, kein Retry";
+                    wearable_transfers.reset(current_firestorm_epoch);
                 }
             }
             if(gallery_appearance_check_requested)
@@ -10913,7 +11132,10 @@ int Application::run(bool enable_developer_modules)
                                 :gallery_appearance_snapshot_status,
                         gallery_appearance_verifier.phase(),
                         gallery_wearables_status,
-                        gallery_wearables_snapshot,gallery_wearables_visible);
+                        gallery_wearables_snapshot,gallery_wearables_visible,
+                        gallery_asset_status,
+                        gallery_decoded_wearable_assets.size(),
+                        gallery_asset_total);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,

@@ -542,3 +542,7 @@ Server Trusted AvatarAppearance Low158 aus Firestorm message_template.msg: Sende
 ## Alpha.109
 
 Firestorm_7.2.4 WearableType: Shape0 Skin1 Hair2 Eyes3 Shirt4 Pants5 Shoes6 Socks7 Jacket8 Gloves9 Undershirt10 Underpants11 Skirt12 Alpha13 Tattoo14 Physics15 Universal16. Inventory.flags low 8 bits = subtype, fehlende Flags NICHT Shape0. AgentIsNowWearing Low383 AgentID/SessionID plus 17 UUID/U8 WearableData, AgentSetAppearance Low84 Serial/Size/CacheIDs/TextureEntry/VisualParams. Encoder sicher getestet, kein Circuit-Dispatch ohne Original-Assets/Bake.
+
+## Alpha.110
+
+Firestorm LLWearable importStream: v1 text Header/Name/Description, Legacy permissions/sale, type0-16, parameters 0..1000 und textures 0..100. LLUDP Low153 Channel2/Source2 AssetType5/13, Low154 TransferInfo und High17 TransferPacket; keine erfundenen CAPS. Parser/Inbox scope an aktuellen User Originalinventar und CurrentOutfitFolder Version gebunden. TEX_NUM_INDICES=45 und Baked TE 8,9,10,11,19,20,40..44 sind OUTPUTS, nicht lokale Bake-Layer. AgentSetAppearance bleibt gesperrt.

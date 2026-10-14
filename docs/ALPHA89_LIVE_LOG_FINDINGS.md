@@ -214,3 +214,7 @@ Alpha108: Lokale synthetische Tests pruefen COF-versionsbezogene SELF AvatarAppe
 ## Alpha.109
 
 Alpha.109: Original Wearable-Slots, Low383/84 Bytegoldens und F9 CAP Originalitem-Leseweg lokal getestet. KEIN authentifizierter NexVerse Inworld-Wear/Unwear Test, kein original GPU Avatar Bake nachgewiesen.
+
+## Alpha.110
+
+Alpha.110: Firestorm LLWearable v1 Parser, LLUDP 5/13 Typed Transfer und F9 GUI lokal mit synthetischen mehrteiligen Assetpaketen getestet. Kein Nachweis eines Live-NexVerse Asset-Downloads in authentifizierter Sitzung, keine fertige JPEG2000/TextureBake/GPU Layer-Compositing/Outfit-Wear E2E. Diese Punkte offen.

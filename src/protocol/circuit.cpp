@@ -356,6 +356,14 @@ CircuitStatus CircuitConnection::run(
                                 socket,tracker,std::move(packet),
                                 sequence,status);
                         }
+                        else if constexpr (std::is_same_v<T, WearableAssetRequest>)
+                        {
+                            auto packet=encode_wearable_asset_transfer(
+                                sequence,value);
+                            sent=!packet.empty()&&send_reliable(
+                                socket,tracker,std::move(packet),
+                                sequence,status);
+                        }
                         else if constexpr (std::is_same_v<T, TeleportLocation>)
                         {
                             auto packet = encode_teleport_location_request(
