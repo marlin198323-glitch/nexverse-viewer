@@ -3155,3 +3155,25 @@ UPSTREAM: Vor jeder Entwicklungsaktion OGL develop-current SHA c6b19b7e7dc866436
 8. Architekturoffen: Firestorm AgentIsNowWearing Low383 und AgentSetAppearance Low84 erfordern erst korrektes Mapping der Wearable-Types, COF-Link-/Inventory-Wearable-Flags, VisualParam-/CachedTexture/Bake-Pipeline. Ohne diese Prüfung keine mutierende Appearance-Fake-Pakete versenden. Vollständiges Outfit tragen/ablegen mit kombinierten Add+Remove, sicheren Rollbacks, Bakes, Avatar GPU-Ankleiden und echtem NexVerse-InWorld-E2E weiterhin offen; den Umfang nicht als erledigt deklarieren.
 
 NÄCHSTER BLOCK Alpha.109: Firestorm Wearable-Type Zuordnung aus echten Inventory Flags/AssetData und WearableSlots, AgentIsNowWearing/AgentSetAppearance Protokolle sauber modellieren und absichern, echtes Outfits-Wear/Unwear mit sichtbaren Buttons nur nach vollständiger serverseitiger COF+Appearance+GPU-Abnahme. Parallel Renderer/GUI und Core wie bisher, nach jedem Block GitHub/Markdown aktualisieren.
+
+## Alpha.109 – Original Firestorm Wearables, Appearance-Pakete und sichtbare F9-Bedienung (14.10.2026)
+
+GitHub Precheck: OGL Viewer develop-current 984fbabfaf03135b4c399caacedc81317ca9a95d und OpenGenesisLINK Server main 2b7c19c9396eb2f75fd60a41a33a05655909da6b mit striktem Server-Check geprüft. Original Firestorm_7.2.4 llwearabletype.h/.cpp, llinventorydefines.h sowie message_template.msg als Wire-/Datenreferenz. Betreiber-Admin-APIs bleiben SERVER_ONLY.
+
+Block 1: Besitzer- und RegionEpoch-gebundene InventoryDescendents2 und FetchInventory2 speichern jetzt optionales U32 Flags-Feld, fehlende Flags niemals als WT_SHAPE=0 behandeln. COF Linkflags niemals als Original-Item-Flags interpretieren.
+
+Block 2: Firestorm Wearable-Typen WT_SHAPE0 SKIN1 HAIR2 EYES3 SHIRT4 PANTS5 SHOES6 SOCKS7 JACKET8 GLOVES9 UNDERSHIRT10 UNDERPANTS11 SKIRT12 ALPHA13 TATTOO14 PHYSICS15 UNIVERSAL16 exakt aus InventoryFlags SubtypeMask 0x0000ff. Original Bodypart AssetType13, Clothing AssetType5, wearable InvType18, vier obligatorische Shape/Skin/Hair/Eyes. Multiwear-Layer ohne echtes Bake und kaputte/doppelte Links werden explizit blockiert, Attachments getrennt gezählt.
+
+Block 3: Im Viewer-Core stehen zwei Original-LLUDP-Paketencoder bereit: AgentIsNowWearing Low383 mit AgentID, SessionID, 17 WearableData UUID/U8 und AgentSetAppearance Low84 mit Serial, AvatarSize Vector3, CacheUUID und TextureIndex, TextureEntry Variable2, VisualParam Variable1. Registrierte MessageIDs in LLUDP, begrenzte Laengen, falsche IDs/Cache/Size abgelehnt, synthetische Bytegolden-Tests. Kein mutierender Versand: echte tragbare Assets, passende Layer, Bakes, CachedTexture und AvatarSize müssen zuerst verifiziert werden.
+
+Block 4: F9 Outfit Galerie hat echten Button Wearables pruefen, der originale COF-Zielitem-IDs serverseitig per authentifiziertem FetchInventory2 abruft, auf 32 COF Links begrenzt, Duplikate verwirft und Antworten nur bei gültigem Agent/RegionEpoch und unveränderter COF-Version akzeptiert.
+
+Block 5: Sichtbare rechte F9 Wearable-Ansicht listet die 17 originalen Firestorm Slots Shape bis Universal samt Anzahl, sobald der echte Server Readback vorliegt. Darunter echte Fehlermeldungen zu fehlenden Subtypeflags, inkompatiblen Assettypen, doppelten Links, fehlenden Bodyparts und unaufgelösten Originalitems. Bildschirmlayout nutzt gemeinsame Hitbox/Draw Geometrie in 800x480, 1024x600, 1280x720, 1920x1080, 3440x1440, 5120x1440. Keine irreführende Wear-Erfolgsanzeige.
+
+Block 6: Neue tests/firestorm_wearable_slots_tests.cpp pruefen 17 Slot-Daten, Null-/Missing Flags, Shape0, Bodypartvollständigkeit, Subtypefehler, Multiwear, COF-Konflikte, Low383/Low84 Golden-Packet, CacheIDs und MTU-Validierung. Alte Owner-CAPS-Tests mit Flagserhalt ergänzt und F9 Klickbereich getestet.
+
+Block 7: Vollständiger C++23 Debug Build, CTest/Python, Linux NVIDIA GPU/OpenGL GUI-Smoke, Server-GitHub Check vor Push, Git commit/push develop-current mit dreifacher SHA-Prüfung und sauberem Worktree bleiben Release-Gates.
+
+Block 8: VERSION, projectplan.md, info.md, CHATUEBERGABE.md, Firestorm/UI/Server-Kompatibilitätsmatrix und docs/ALPHA109_WEARABLE_PROTOCOL_UI.md gemeinsam fortführen.
+
+Offen Alpha.110: Wearable Assetformate decodieren, Firestorm CachedTextures/Bake/Layers, Avatar Morph/Attachment GPU-Outfit synchronisieren; echte vollständige Tragen/Ablegen Aktion erst nach vollständig bestätigtem Server COF, Wearable und AvatarAppearance und visuell geprüftem NexVerse Inworld Avatar. Keine ungeprüften Appearance-Pakete versenden und keinen fertigen Outfitwechsel behaupten.

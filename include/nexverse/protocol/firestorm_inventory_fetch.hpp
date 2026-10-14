@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace nexverse::protocol
@@ -23,6 +24,15 @@ struct OutfitInventoryItem
     std::string name;
     std::int32_t asset_type=0;
     std::int32_t inventory_type=0;
+    // Optional: absent is NOT equivalent to subtype zero (WT_SHAPE).
+    std::optional<std::uint32_t> flags;
+    OutfitInventoryItem()=default;
+    OutfitInventoryItem(std::string item,std::string asset,
+        std::string title,std::int32_t kind,std::int32_t invkind,
+        std::optional<std::uint32_t> subtype_flags=std::nullopt)
+        :item_id(std::move(item)),asset_id(std::move(asset)),
+         name(std::move(title)),asset_type(kind),inventory_type(invkind),
+         flags(subtype_flags){}
 };
 struct OutfitInventoryRead
 {

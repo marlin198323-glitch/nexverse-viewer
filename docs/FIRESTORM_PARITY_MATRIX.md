@@ -472,3 +472,7 @@ Firestorm Low426: zwei bis vier reine ADD-LINK Operationen seriell nur nach Auth
 ## Alpha.108
 
 Firestorm AvatarAppearance Low158 AppearanceData CofVersion wird jetzt als read-only zweite Bestätigungsebene nach Low426/270 COF-Readback herangezogen: exakte Version, Agent, RegionEpoch, nicht-trial, neue Paketseriennummer, nichtleere TextureEntry/VisualParam. F9 Status und echter Appearance prüfen Button. Vollständiges AgentIsNowWearing Low383 / AgentSetAppearance Low84 mit Wearable Flags, Baking und Avatar GPU-Übernahme weiterhin OFFEN.
+
+## Alpha.109
+
+Alpha.109: 17 originale LLWearableType 0..16 mit subtype = real InventoryFlags & 0xff aus authentifiziertem FetchInventory2/InventoryDescendents2, missing != SHAPE0. Original Low383 AgentIsNowWearing und Low84 AgentSetAppearance Byte-Encoder implementiert und registriert, aber bis echte Assets/Bakes vorhanden NICHT versendet. F9 Wearables pruefen und 17 Slotzeilen mit echten COF Originalitemdaten, kein nachweislich getragener Avatar.

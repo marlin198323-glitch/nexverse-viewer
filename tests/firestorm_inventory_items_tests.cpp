@@ -29,6 +29,7 @@ struct Http : nexverse::net::IHttpTransport
                 {"asset_id",LlsdValue::uuid(ASSET)},
                 {"type",LlsdValue::integer(5)},
                 {"inv_type",LlsdValue::integer(18)},
+                {"flags",LlsdValue::integer(4)},
                 {"permissions",LlsdValue::map({
                     {"owner_id",LlsdValue::uuid(AGENT)}
                 })}
@@ -51,6 +52,7 @@ int main()
     if(!fetched.valid||fetched.items.size()!=1U ||
        fetched.items[0].name!="Shirt"||
        fetched.items[0].asset_id!=ASSET||
+       fetched.items[0].flags!=std::optional<std::uint32_t>{4U}||
        http->requests!=1)
         return 2;
     const auto scoped=fetch_inventory2(http,

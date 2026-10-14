@@ -171,3 +171,7 @@ Alpha.107: parallel Core/GUI Firestorm COF Multi-Add und Single-Unlink, strikt s
 ## Alpha.108
 
 Alpha108 portiert Original-AvatarAppearance-CofVersion-Semantik in Viewer-Core, benutzt vorhandenes Low158 self Decode und den gespeicherten WorldModel Appearance Snapshot. Eingeschleuster AvatarAppearance-Paketzaehler schützt gegen alte vor Mutation empfangene Daten. Parallele sichtbare F9 Appearance prüfen Aktion sowie 675px responsives Outfit GUI statt reiner Backend-Diagnose. Wearable-/Baking-Modell im Folgeblock.
+
+## Alpha.109
+
+Alpha.109: Firestorm Wearable-Slotparity und echte InventoryFlags auf beiden CAPS-Lesepfaden. F9 per Owner-Scoped FetchInventory2 COF-Originalitems und 17-zelliges optisches Slotpanel parallel implementiert. LLUDP Low383/84 Packet-Encoder mit strikten Guards, kein falsches AgentSetAppearance senden.

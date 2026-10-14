@@ -193,3 +193,7 @@ F9 Outfit-Galerie hat echte BatchAdd (2-4 Eintraege) und Single-Unlink Buttons i
 ## Alpha.108
 
 AvatarAppearance pruefen Button neu im F9 Outfit Floater: eigener echter Read-Only Check aus servergesendetem self AvatarAppearance CofVersion und aktueller COF InventoryDescendents2-Version. Begleitender automatischer Post-Mutation Evidence-Status (Pending/Stale/Newer/Matched/Timeout), keine Behauptung von sichtbarer Avatar-Bake. Outfit-Fenster 675 skalierte px und gesonderter unterer Status-Footer ohne Ueberlappung der zehn Ordner-Zeilen; gemeinsamer Layout-Code fuer Maus+Zeichnung, getestet 800x480 bis 5120x1440.
+
+## Alpha.109
+
+Alpha.109: F9 Outfit-Galerie zeigt jetzt echten klickbaren Button Wearables pruefen, lädt Originalitems des aktuellen COF ueber authentifizierte FetchInventory2 CAPS, zeigt rechtes Panel Shape/Skin/Hair/Eyes...Universal (17 Slotzeilen) und Anzahl. Stale COF/Region invalidiert Ansicht. Status nennt reale Validierungsfehler und keine visuelle Avatar-Wear-Zusage. Kleine und Widescreen Monitorhitboxen getestet.

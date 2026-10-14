@@ -53,7 +53,8 @@ public:
                             {"asset_id",LlsdValue::uuid(T)},
                             {"name",LlsdValue::string("Outfit Shirt")},
                             {"type",LlsdValue::integer(5)},
-                            {"inv_type",LlsdValue::integer(18)}
+                            {"inv_type",LlsdValue::integer(18)},
+                            {"flags",LlsdValue::integer(4)}
                         })
                     })},
                     {"categories",LlsdValue::array({})}
@@ -105,7 +106,8 @@ int main()
        fetched.versions.at(F)!=8U ||
        fetched.thumbnails.at(F).asset_id!=T||transport->posts!=1||
        fetched.items.at(F).size()!=1U ||
-       fetched.items.at(F)[0].name!="Outfit Shirt")
+       fetched.items.at(F)[0].name!="Outfit Shirt"||
+       fetched.items.at(F)[0].flags!=std::optional<std::uint32_t>{4U})
         return 6;
     if(!build_outfit_descendents_request(O,{},F))return 18;
     // COF-Pruefen MUST fetch the actual Current Outfit Folder (type 46),
@@ -120,6 +122,7 @@ int main()
        with_cof.items.at(COF)[0].item_id!=LINK||
        with_cof.items.at(COF)[0].asset_id!=T||
        with_cof.items.at(COF)[0].asset_type!=24||
+       with_cof.items.at(COF)[0].flags.has_value()||
        transport->posts!=2)return 21;
     const auto parsed_query=parse_llsd_xml(transport->request);
     if(!parsed_query.ok())return 22;

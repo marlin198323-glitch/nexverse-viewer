@@ -121,12 +121,21 @@ OutfitInventoryRead parse_outfit_descendents(
                     [](unsigned char c){return c<32U||c==127U;}),
                     title.end());
                 if(title.empty())title="Unbenannter Gegenstand";
+                const auto* flags=item.find("flags");
+                const std::optional<std::uint32_t> item_flags=
+                    flags&&flags->type==LlsdType::integer&&
+                    flags->integer_value>=0&&
+                    static_cast<std::uint64_t>(flags->integer_value)<=UINT32_MAX
+                    ?std::optional<std::uint32_t>{
+                        static_cast<std::uint32_t>(flags->integer_value)}
+                    :std::nullopt;
                 dest.push_back({std::string{id->as_string()},
                     asset&&uuid_to_bytes(asset->as_string())
                         ?std::string{asset->as_string()}:std::string{},
                     std::move(title),
                     static_cast<std::int32_t>(type->integer_value),
-                    static_cast<std::int32_t>(inv_type->integer_value)});
+                    static_cast<std::int32_t>(inv_type->integer_value),
+                    item_flags});
             }
         }
         for(const auto& child:categories->array_value)

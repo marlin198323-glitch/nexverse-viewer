@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "2b7c19c9396eb2f75fd60a41a33a05655909da6b",
   "reviewed_utc": "2026-10-14T17:50:43Z",
-  "viewer_version": "0.2.0-alpha.108",
+  "viewer_version": "0.2.0-alpha.109",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -88,6 +88,11 @@
       "server_change": "AvatarAppearance Trusted LLUDP Low158 containing AppearanceData CofVersion and original TextureEntry/VisualParams supports a second read-only evidence layer after owner COF mutation.",
       "placement": "VIEWER_CORE_READ_ONLY_APPEARANCE_VERIFICATION",
       "note": "Firestorm_7.2.4 message_template.msg verified fields; OGL existing self AvatarAppearance decoding/WorldModel integrated with a monotonic per-self packet serial, region/agent guard and exact matching COF version. Does not transmit AgentSetAppearance or AgentIsNowWearing and does not claim baked textures visually rendered. No new server main commit found at precheck."
+    },
+    {
+      "server_change": "Original Firestorm Wearable subtype inventory flags; AgentIsNowWearing Low383, AgentSetAppearance Low84 message formats",
+      "placement": "VIEWER_CORE_FLAGS_AND_WIRE_ENCODERS_NO_DISPATCH",
+      "note": "Firestorm_7.2.4 llwearabletype.h/.cpp, llinventorydefines.h and message_template.msg. Wearable subtype = flags & 0xff, 17 slots 0..16. Owner CAP preserves flags; missing subtype is not Shape 0. Packets encoded for golden tests, not dispatched before full wearable, TextureEntry, Bakes and Appearance verification. No server operator API/keys in Viewer."
     }
   ]
 }

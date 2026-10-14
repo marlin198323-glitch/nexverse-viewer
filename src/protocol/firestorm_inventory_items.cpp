@@ -84,12 +84,21 @@ InventoryItemFetch parse_fetch_inventory2(
         if(clean.empty())continue;
         seen.insert(std::string{id->as_string()});
         const auto* asset=item.find("asset_id");
+        const auto* flags=item.find("flags");
+        const std::optional<std::uint32_t> item_flags=
+            flags&&flags->type==LlsdType::integer&&
+            flags->integer_value>=0&&
+            static_cast<std::uint64_t>(flags->integer_value)<=UINT32_MAX
+            ?std::optional<std::uint32_t>{
+                static_cast<std::uint32_t>(flags->integer_value)}
+            :std::nullopt;
         output.items.push_back({std::string{id->as_string()},
             asset&&uuid_to_bytes(asset->as_string())
                 ?std::string{asset->as_string()}:std::string{},
             std::move(clean),
             static_cast<std::int32_t>(type->integer_value),
-            static_cast<std::int32_t>(inv->integer_value)});
+            static_cast<std::int32_t>(inv->integer_value),
+            item_flags});
     }
     output.valid=true;
     return output;

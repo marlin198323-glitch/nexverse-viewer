@@ -210,3 +210,7 @@ Alpha.107: COF Batch ADD und Single UNLINK sind per synthetischem Server-Readbac
 ## Alpha.108
 
 Alpha108: Lokale synthetische Tests pruefen COF-versionsbezogene SELF AvatarAppearance Serverpakete und UI. Keine frische authentifizierte NexVerse-InWorld-Sitzung, kein visueller Bake-/GPU-Outfit-Beweis, keine Kombination aus mehreren COF Add+Remove mit Rollback. Alle drei Punkte offen.
+
+## Alpha.109
+
+Alpha.109: Original Wearable-Slots, Low383/84 Bytegoldens und F9 CAP Originalitem-Leseweg lokal getestet. KEIN authentifizierter NexVerse Inworld-Wear/Unwear Test, kein original GPU Avatar Bake nachgewiesen.

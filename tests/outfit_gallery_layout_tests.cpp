@@ -24,6 +24,8 @@ int main()
            OutfitGalleryHit::plan)return 7;
         if(g.hit(g.x+g.pw-120.0f*sc,g.y+80.0f*sc)!=
            OutfitGalleryHit::appearance_check)return 11;
+        if(g.hit(g.x+g.pw-315.0f*sc,g.y+80.0f*sc)!=
+           OutfitGalleryHit::wearable_check)return 14;
         // The last outfit row ends at y+412*scale.
         // The first footer status starts y+(675-151)*scale.
         if(!(412.0f*sc<(675.0f-151.0f)*sc))return 12;

@@ -76,6 +76,8 @@
 #include "nexverse/protocol/firestorm_cof_batch_add.hpp"
 #include "nexverse/protocol/firestorm_cof_unlink_consent.hpp"
 #include "nexverse/protocol/firestorm_appearance_verification.hpp"
+#include "nexverse/protocol/firestorm_wearable_slots.hpp"
+#include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -410,6 +412,7 @@ struct InputContext
     bool* outfit_link_requested = nullptr;
     bool* outfit_batch_requested = nullptr;
     bool* outfit_appearance_check_requested = nullptr;
+    bool* outfit_wearable_check_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1141,6 +1144,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::appearance_check:
             if(context->outfit_appearance_check_requested)
                 *context->outfit_appearance_check_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::wearable_check:
+            if(context->outfit_wearable_check_requested)
+                *context->outfit_wearable_check_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
@@ -2195,7 +2202,10 @@ void render_outfit_gallery(
     std::string_view unlink_status,
     nexverse::protocol::CofUnlinkPhase unlink_phase,
     std::string_view appearance_status,
-    nexverse::protocol::CofAppearancePhase appearance_phase)
+    nexverse::protocol::CofAppearancePhase appearance_phase,
+    std::string_view wearable_status,
+    const nexverse::protocol::FirestormWearableSlots& wearable_slots,
+    bool wearable_slots_visible)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2231,6 +2241,11 @@ void render_outfit_gallery(
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventar und geschuetzte COF-Aktionen",
                   theme::cyan);
+    renderer.rect(x+pw-409.0f*scale,y+64.0f*scale,
+                  186.0f*scale,33.0f*scale,
+                  Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
+    renderer.text(x+pw-396.0f*scale,y+73.0f*scale,
+                  9.0f*scale,"Wearables pruefen",theme::cyan);
     renderer.rect(x+pw-211.0f*scale,y+64.0f*scale,
                   185.0f*scale,33.0f*scale,
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
@@ -2326,6 +2341,30 @@ void render_outfit_gallery(
               " aktuell verknuepfte Eintraege";
         renderer.text(x+477.0f*scale,y+419.0f*scale,
                       8.0f*scale,cof_status,theme::text_muted);
+    }
+    if(!plan_visible&&wearable_slots_visible)
+    {
+        const float bx=x+465.0f*scale;
+        renderer.rect(bx,y+107.0f*scale,pw-477.0f*scale,
+                      338.0f*scale,
+                      Color{0.012f,0.037f,0.063f,0.99f},8.0f*scale);
+        renderer.text(bx+12.0f*scale,y+125.0f*scale,10.0f*scale,
+                      "Firestorm Wearable-Slots",theme::cyan);
+        for(std::size_t i=0U;
+            i<nexverse::protocol::firestorm_wearable_names.size();++i)
+        {
+            const float yy=y+(146.0f+16.5f*
+                    static_cast<float>(i))*scale;
+            const auto count=wearable_slots.count[i];
+            renderer.text(bx+12.0f*scale,yy,8.2f*scale,
+                std::string(
+                    nexverse::protocol::firestorm_wearable_names[i])+
+                "   "+(count?std::to_string(count):"-"),
+                count?theme::cyan:theme::text_muted);
+        }
+        renderer.text(bx+12.0f*scale,y+439.0f*scale,7.1f*scale,
+                      "Nur Inventar, kein sichtbarer Avatar-Wear",
+                      theme::warning);
     }
     if(plan_visible)
     {
@@ -2435,6 +2474,11 @@ void render_outfit_gallery(
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
     }
+    renderer.text(x+22.0f*scale,y+ph-171.0f*scale,
+                  8.0f*scale,
+                  "Firestorm 17 Slots: "+
+                  std::string(wearable_status).substr(0U,100U),
+                  theme::text_muted);
     renderer.text(x+22.0f*scale,y+ph-151.0f*scale,
                   8.0f*scale,
                   "AvatarAppearance: "+
@@ -4808,6 +4852,16 @@ int Application::run(bool enable_developer_modules)
     std::string gallery_inventory_cap;
     std::string gallery_inventory_items_cap;
     std::future<protocol::InventoryItemFetch> gallery_item_fetch_future;
+    std::future<protocol::InventoryItemFetch> gallery_wearables_fetch_future;
+    std::uint64_t gallery_wearables_fetch_epoch=0U;
+    std::uint64_t gallery_wearables_fetch_version=0U;
+    std::string gallery_wearables_fetch_cof;
+    bool gallery_wearables_requested=false;
+    input_context.outfit_wearable_check_requested=&gallery_wearables_requested;
+    std::string gallery_wearables_status=
+        "Originalinventar noch nicht abgeglichen";
+    protocol::FirestormWearableSlots gallery_wearables_snapshot;
+    bool gallery_wearables_visible=false;
     std::uint64_t gallery_item_fetch_epoch=0U;
     std::string gallery_item_fetch_folder;
     std::string gallery_item_fetch_completed_folder;
@@ -6732,6 +6786,12 @@ int Application::run(bool enable_developer_modules)
                 gallery_appearance_snapshot_status=
                     "Appearance: Region gewechselt";
                 gallery_appearance_check_requested=false;
+                gallery_wearables_requested=false;
+                gallery_wearables_fetch_cof.clear();
+                gallery_wearables_status=
+                    "Regionswechsel: Wearable-Status unbestimmt";
+                gallery_wearables_snapshot={};
+                gallery_wearables_visible=false;
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -7048,6 +7108,10 @@ int Application::run(bool enable_developer_modules)
                                 reply.outfit_inventory.returned_folders;
                             caps_state.outfit_folder_items=
                                 gallery_inventory_sync.items();
+                            gallery_wearables_status=
+                                "COF-Inventar aktualisiert: Wearables neu pruefen";
+                            gallery_wearables_snapshot={};
+                            gallery_wearables_visible=false;
                             caps_state.inventory_dynamic_folders=
                                 reply.outfit_inventory.categories;
                             if(inventory_tree.count()==0 &&active_session)
@@ -7459,6 +7523,108 @@ int Application::run(bool enable_developer_modules)
                 catch(const std::exception&)
                 {
                     core::warning("Firestorm FetchInventory2 on-demand failed");
+                }
+            }
+            if(gallery_wearables_fetch_future.valid()&&
+               gallery_wearables_fetch_future.wait_for(
+                   std::chrono::milliseconds{0})==
+                       std::future_status::ready)
+            {
+                try
+                {
+                    const auto fetched=gallery_wearables_fetch_future.get();
+                    const auto& versions=gallery_inventory_sync.versions();
+                    const auto v=versions.find(gallery_wearables_fetch_cof);
+                    const auto all=caps_state.outfit_folder_items.find(
+                        gallery_wearables_fetch_cof);
+                    if(fetched.valid&&
+                       firestorm_region_lease.matches(
+                           gallery_wearables_fetch_epoch)&&
+                       v!=versions.end()&&
+                       v->second==gallery_wearables_fetch_version&&
+                       all!=caps_state.outfit_folder_items.end()&&
+                       caps_state.current_outfit_folder==
+                           gallery_wearables_fetch_cof)
+                    {
+                        const auto slots=protocol::resolve_firestorm_wearables(
+                            &all->second,fetched.items);
+                        gallery_wearables_snapshot=slots;
+                        gallery_wearables_visible=true;
+                        gallery_wearables_status=std::string{
+                            protocol::wearable_readiness_label(
+                                slots.readiness)}+
+                            " | "+std::to_string(slots.wearable_count)+
+                            " Wearables, "+std::to_string(
+                                slots.attachment_count)+
+                            " Attachments, "+std::to_string(
+                                slots.unresolved_count)+" unaufgeloest";
+                    }
+                    else
+                        gallery_wearables_status=
+                            "Wearable-Abfrage veraltet/ungueltig; COF erneut lesen";
+                }
+                catch(const std::exception&)
+                {
+                    gallery_wearables_status=
+                        "FetchInventory2 der Originalitems fehlgeschlagen";
+                }
+            }
+            if(gallery_wearables_requested)
+            {
+                gallery_wearables_requested=false;
+                const auto& id=caps_state.current_outfit_folder;
+                const auto v=gallery_inventory_sync.versions().find(id);
+                const auto contents=caps_state.outfit_folder_items.find(id);
+                if(!outfit_gallery_open||!active_session||
+                   !simulation_ready||!login_ui.authenticated||
+                   gallery_inventory_items_cap.empty()||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   gallery_wearables_fetch_future.valid()||
+                   v==gallery_inventory_sync.versions().end()||
+                   v->second==0U||
+                   contents==caps_state.outfit_folder_items.end()||
+                   contents->second.empty()||
+                   contents->second.size()>32U)
+                    gallery_wearables_status=
+                        "Wearable-Abfrage gesperrt: Login/CAPS/COF/Limit";
+                else
+                {
+                    std::vector<std::string> ids;
+                    std::set<std::string> unique;
+                    bool valid=true;
+                    for(const auto& link:contents->second)
+                    {
+                        const auto uuid=protocol::uuid_to_bytes(link.asset_id);
+                        if(link.asset_type!=24||!uuid||
+                           !unique.insert(link.asset_id).second)
+                        {valid=false;break;}
+                        ids.push_back(link.asset_id);
+                    }
+                    if(!valid)
+                        gallery_wearables_status=
+                            "COF-Linkziele fehlen/dupliziert";
+                    else
+                    {
+                        gallery_wearables_snapshot={};
+                        gallery_wearables_visible=false;
+                        gallery_wearables_fetch_cof=id;
+                        gallery_wearables_fetch_epoch=current_firestorm_epoch;
+                        gallery_wearables_fetch_version=v->second;
+                        gallery_wearables_status=
+                            "Original-Items: FetchInventory2 vom Simulator";
+                        gallery_wearables_fetch_future=std::async(
+                            std::launch::async,
+                            [transport,cap=gallery_inventory_items_cap,
+                             owner=active_session->agent_id,
+                             ids=std::move(ids),
+                             epoch=current_firestorm_epoch,
+                             &firestorm_region_lease]()
+                            {
+                                return protocol::fetch_inventory2(
+                                    transport,cap,owner,ids,
+                                    epoch,firestorm_region_lease);
+                            });
+                    }
                 }
             }
             if(gallery_appearance_check_requested)
@@ -10745,7 +10911,9 @@ int Application::run(bool enable_developer_modules)
                                 protocol::CofAppearancePhase::appearance_matched
                                 ?gallery_appearance_verifier.status()
                                 :gallery_appearance_snapshot_status,
-                        gallery_appearance_verifier.phase());
+                        gallery_appearance_verifier.phase(),
+                        gallery_wearables_status,
+                        gallery_wearables_snapshot,gallery_wearables_visible);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,

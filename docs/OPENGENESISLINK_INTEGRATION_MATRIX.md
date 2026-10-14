@@ -312,3 +312,7 @@ Source Review abgeschlossen; geprüften SHA-Pin auf 2b7c19c... aktualisiert. Rel
 ## Alpha.108
 
 Server main 2b7c19c9396eb2f75fd60a41a33a05655909da6b zu Alpha108 Beginn geprüft. OpenGenesisLINK/OpenSim Firestorm AvatarAppearance Low158 als serverseitig gesendete Viewer Core Nachricht, original AppearanceData CofVersion/TextureEntry/VisualParam. Weder neue Server-CAPS noch Admin-API benötigt. User Avatar Appearance End-to-End wird nicht vorgetäuscht; server-only AdminProxy-/ES256 Schlüssel bleiben ausserhalb Viewer.
+
+## Alpha.109
+
+Alpha.109 Server main SHA 2b7c19c9396eb2f75fd60a41a33a05655909da6b Precheck gruen. Firestorm Wearable Subtype Flags und Original LLUDP Low383/84 als User-Viewer-Core Paketformate, aber keine mutierenden Appearance-Befehle bevor Original Wearable/Bake-Daten korrekt sind. Keine Betreiber-API und keine AdminKeys im User Viewer.

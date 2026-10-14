@@ -538,3 +538,7 @@ Original Firestorm LLUDP LinkInventoryItem Low426 und RemoveInventoryItem Low270
 ## Alpha.108
 
 Server Trusted AvatarAppearance Low158 aus Firestorm message_template.msg: Sender ID, IsTrial, TextureEntry, VisualParam, AppearanceData CofVersion. Alpha108 trackt nur auth self Appearance mit Seriennummer nach COF-Mutation und versioniertem owner CAPS CurrentOutfitFolder. Keine eigene AgentSetAppearance/AgentIsNowWearing Write-Mutation ohne vollständige Wearable/Bake Daten. Appearance-Paket != sichtbarer Bake oder komplett getragene Kleidung.
+
+## Alpha.109
+
+Firestorm_7.2.4 WearableType: Shape0 Skin1 Hair2 Eyes3 Shirt4 Pants5 Shoes6 Socks7 Jacket8 Gloves9 Undershirt10 Underpants11 Skirt12 Alpha13 Tattoo14 Physics15 Universal16. Inventory.flags low 8 bits = subtype, fehlende Flags NICHT Shape0. AgentIsNowWearing Low383 AgentID/SessionID plus 17 UUID/U8 WearableData, AgentSetAppearance Low84 Serial/Size/CacheIDs/TextureEntry/VisualParams. Encoder sicher getestet, kein Circuit-Dispatch ohne Original-Assets/Bake.
