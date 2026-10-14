@@ -72,12 +72,21 @@ int main()
     if(!bad("id=\"200\"","id=\"bad\"")||
        !bad("value_min=\"0\"","value_min=\"5\"")||
        !bad("domain=\"0.1\"","domain=\"Infinity\""))return 9;
+    // Nonzero Firestorm domain is not accurately represented by the
+    // diagnostic CPU preview; keep the original XML parsing assertion
+    // above, then use a zero-domain fixture for pixel-alpha checks.
+    auto preview_xml=std::string{xml};
+    const auto domain_at=preview_xml.find("domain=\"0.1\"");
+    if(domain_at==std::string::npos)return 15;
+    preview_xml.replace(domain_at,12U,"domain=\"0\"");
+    const auto preview_manifest=parse_firestorm_texlayers(preview_xml);
+    if(!preview_manifest.manifest)return 16;
     std::map<unsigned,ImageRgba8> source;
     source.emplace(1U,ImageRgba8{1U,1U,{240U,80U,0U,255U}});
     std::map<std::string,ImageRgba8> masks;
     masks.emplace("test_alpha.tga",ImageRgba8{1U,1U,{128U,128U,128U,255U}});
     std::map<int,float> params{{200,0.5f}};
-    auto blend=compose_firestorm_mask_preview(*parsed.manifest,1U,
+    auto blend=compose_firestorm_mask_preview(*preview_manifest.manifest,1U,
                                                source,masks,params);
     if(!blend.composite.preview_ready()||blend.real_bake()||
        blend.mask_layers_applied!=1U||
@@ -87,12 +96,12 @@ int main()
        blend.composite.image.pixels[3U]>65U)
         return 10;
     params.clear();
-    blend=compose_firestorm_mask_preview(*parsed.manifest,1U,
+    blend=compose_firestorm_mask_preview(*preview_manifest.manifest,1U,
                                           source,masks,params);
     if(blend.composite.preview_ready()||blend.mask_layers_applied!=0U)
         return 11;
     params.emplace(200,1.0f);masks.clear();
-    blend=compose_firestorm_mask_preview(*parsed.manifest,1U,
+    blend=compose_firestorm_mask_preview(*preview_manifest.manifest,1U,
                                           source,masks,params);
     if(blend.composite.preview_ready()||blend.missing_masks!=1U)
         return 12;

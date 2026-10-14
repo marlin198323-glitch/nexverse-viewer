@@ -3274,3 +3274,16 @@ Alpha.123 – echte F9-Simulator-Schnittstelle: TexLayer lesen zeigt tatsächlic
 Release Gates: Vollständiger C++23 Debug Build, alle CTest und Python Tests inklusive realer Firestorm 25-Farbpalette, Linux NVIDIA RTX4070SUPER OpenGL3.3 GPU GUI Smoke, server strict GitHub SHA Check vor Commit/Push, lokale SHA=Tracking=GitHub SHA und sauberes Worktree. VERSION, projectplan.md, info.md, CHATUEBERGABE.md, sechs Parity-Docs und docs/ALPHA120_123_COLOR_AND_BAKE_AUDIT.md aktualisieren.
 
 Nächster Viererblock Alpha.124–127: tatsächliche Firestorm global skin/hair/eye Farbwert-Daten aus Avatar/COF und multiple param alpha, Domain/Mask Multiply/Morph mit Pixelvergleich; dann 11 korrekt compositierte Bake-Regionen, Server-getreues Baked Asset Upload/Cache und kontrolliertes echtes Outfit Wear/Unwear mit Rollback nur nach nachweislich erfolgreichem NexVerse Inworld Test. Diese Teile sind bis dahin nicht erledigt.
+
+
+## 14.10.2026 – Viererblock Alpha.124–127 – Firestorm global color + multiple masks + 11 bake regions
+
+- Starting HEAD 1020c5b (develop-current), Firestorm_7.2.4 original avatar_lad.xml/LLTexLayer referenced. Actual code version 0.2.0-alpha.127.
+- 124: Parse actual skin_color, hair_color, eye_color global palettes from bounded original XML with strict names, owner, IDs and RGBA checks.
+- 125: Resolve true global shades from previously authenticated region-/COF-/owner-verified LLWearable visual parameters partitioned by original type (Skin1, Hair2, Eyes3); never invent missing defaults. Linked into F9 source preview.
+- 126: ADD/MULTIPLY order for multiple local param_alpha TGA masks in bounded diagnostic preview. Incomplete nonzero domain/morph/bump/visibility, first multiply and missing weights stay blocked; no Firestorm GPU pixel-parity claim.
+- 127: Read-only input coverage for all eleven bake source regions. F9 reports global tint and multiple mask counts plus original-region image availability. Immutable NO-BAKE/NO-UPLOAD guard and no AgentSetAppearance mutation.
+- New CTests for original palette three colors, owner type, two masks and 11-region coverage. Existing TGA test updated to fail closed for unsupported domain. 106/106 local CTests passed before final release gate.
+- OpenGenesisLINK main 4e99976630f1008db9014ea2b86c3723b09e9fe6 (#210), six-file patch manually reviewed. All local Hypergrid friends now receive recovered online/offline status after relog; SERVER_ONLY_HYPERGRID_FRIENDS_DELIVERY_NO_NEW_VIEWER_WIRE, no LLUDP message changes. No operator API or keys inside Viewer.
+- Still open: true complete 11-region Firestorm baked pixels/CacheID/asset upload; actual 3D avatar skin, Wear/Unwear and reversible server confirmation, live NexVerse in-world visual test.
+- Full description: docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.

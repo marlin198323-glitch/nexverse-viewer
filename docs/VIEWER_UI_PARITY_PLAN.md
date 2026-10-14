@@ -217,3 +217,9 @@ Alpha116-119 F9 Button Masken/Teillagen verwendet geprüfte lokale TGA-Masken un
 ## Alpha.120-123
 
 Alpha120–123 visible F9 TexLayer lesen reports count of color layers and params; Farben/Masken action creates authentic local-weight tinted/masked partial head/upper/lower previews and shows missing/color/mask blockers. Existing Appearance pruefen now displays server-origin nonplaceholder AvatarAppearance Baked TE UUID count out of 11 plus CAPS/Simulator COF version comparison; no fake wear-success.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.

@@ -562,3 +562,9 @@ Alpha116-119 Original Firestorm TGA RLE/Raw decoder inkl. grauer 8bit Masken und
 ## Alpha.120-123
 
 Original Firestorm_7.2.4 LLTexLayer::findNetColor and calculateTexLayerColor, LLTexLayerParamColorInfo XML value/color palettes max32, original add/multiply/blend. Missing user color weights or unresolved skin/hair/eyes GlobalColor prevents partial color application. Existing LLUDP server AvatarAppearance 11 baked TE IDs and COF version readback only, no client bake transfer, true 3D avatar texture upload still pending.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.

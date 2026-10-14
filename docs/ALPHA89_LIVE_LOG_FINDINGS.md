@@ -234,3 +234,9 @@ Alpha116-119 Real original Firestorm glove_length_alpha.tga RLE 512x512 decoded,
 ## Alpha.120-123
 
 Alpha120–123 verified Firestorm_7.2.4 original installed 99 color params/71 layers and 25 palette values. Synthetic CTest covers Add Multiply Blend and masked tint. Existing Simulator AvatarAppearance baked UUID readback shown in F9. No authenticated NexVerse end-to-end full outfit bake/real rendered clothing proven.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.

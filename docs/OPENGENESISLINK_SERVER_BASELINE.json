@@ -1,9 +1,9 @@
 {
   "repository": "opengenesislink/opengenesislinkserver",
   "branch": "main",
-  "reviewed_sha": "20a7fd765527807fd9d7887965b5f5f28d42d68f",
+  "reviewed_sha": "4e99976630f1008db9014ea2b86c3723b09e9fe6",
   "reviewed_utc": "2026-10-14",
-  "viewer_version": "0.2.0-alpha.123",
+  "viewer_version": "0.2.0-alpha.127",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -128,6 +128,11 @@
       "server_change": "Firestorm alpha120-123 local TexLayer param_color fixed/global RGBA and ADD/MULTIPLY/BLEND; AvatarAppearance authentic server-baked texture IDs already decoded from original 11 TextureEntry faces.",
       "placement": "VIEWER_CORE_COLOR_PALETTE_AND_READ_ONLY_SERVER_BAKE_AUDIT",
       "note": "Reviewed upstream Firestorm_7.2.4 LLTexLayer::findNetColor, calculateTexLayerColor, LLTexLayerParamColor::getNetColor/parseXml. Parsed original local avatar_lad.xml 99 param_color entries, 71 color-related layers including 25-step palettes. Actual authenticated LLWearable visual-param weights needed; unknown global skin/hair/eye colors fail closed. Viewer F9 readback counts only non-placeholder baked UUIDs from actual simulator AvatarAppearance TextureEntry; does NOT assert texture uploaded, baked pixel parity, COF equality, GPU skin or permission to mutate appearance. Server admin changes #208-209 remain SERVER_ONLY."
+    },
+    {
+      "server_change": "OpenGenesisLINK #210 HG friends relog: all authorized online recipients, dedupe presence and recover FriendsServerURI negative cache; tests and docs",
+      "placement": "SERVER_ONLY_HYPERGRID_FRIENDS_DELIVERY_NO_NEW_VIEWER_WIRE",
+      "note": "Manual review commit 4e999766 of UserManagementModule.cs, HGFriendsService.cs, UserAgentService.cs, server CI and documentation. Existing SendAgentOnline/SendAgentOffline viewer message family unchanged. No new CAPS, LLUDP or admin secrets. Two-grid live acceptance not demonstrated."
     }
   ]
 }

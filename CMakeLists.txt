@@ -371,6 +371,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-firestorm-bake-coverage-tests
+        tests/firestorm_bake_coverage_tests.cpp)
+    target_link_libraries(nexverse-firestorm-bake-coverage-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-bake-coverage-tests)
+    add_test(NAME nexverse-firestorm-bake-coverage-tests
+        COMMAND nexverse-firestorm-bake-coverage-tests)
+
+    add_executable(nexverse-firestorm-global-mask-tests
+        tests/firestorm_global_mask_tests.cpp)
+    target_link_libraries(nexverse-firestorm-global-mask-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-global-mask-tests)
+    add_test(NAME nexverse-firestorm-global-mask-tests
+        COMMAND nexverse-firestorm-global-mask-tests)
+
     add_executable(nexverse-firestorm-texlayer-color-tests
         tests/firestorm_texlayer_color_tests.cpp)
     target_link_libraries(nexverse-firestorm-texlayer-color-tests

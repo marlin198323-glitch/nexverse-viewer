@@ -82,6 +82,7 @@
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
 #include "nexverse/assets/firestorm_texlayer_composite.hpp"
 #include "nexverse/assets/firestorm_texlayer_mask_preview.hpp"
+#include "nexverse/assets/firestorm_bake_coverage.hpp"
 #include "nexverse/assets/firestorm_tga.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
@@ -8248,7 +8249,9 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(result.manifest->color_param_count)+
                             " Farbparams, "+
                             std::to_string(result.manifest->color_layer_count)+
-                            " Farb-Layer; "+
+                            " Farb-Layer, "+
+                            std::to_string(result.manifest->global_colors.size())+
+                            " Globalfarben; "+
                             std::to_string(result.manifest->safe_layer_count)+
                             " einfach - KEIN Bake";
                     }
@@ -8312,6 +8315,29 @@ int Application::run(bool enable_developer_modules)
                             else weights.insert_or_assign(id,value);
                         }
                     }
+                    // Global skin/hair/eyes are provided only by an
+                    // original authenticated wearable of that exact type.
+                    std::map<int,std::map<int,float>> typed_weights;
+                    std::map<int,std::set<int>> typed_conflicts;
+                    for(const auto& [asset_id,wearable]:gallery_decoded_wearable_assets)
+                    {
+                        (void)asset_id;
+                        auto& current=typed_weights[wearable.type];
+                        auto& conflicts=typed_conflicts[wearable.type];
+                        for(const auto& [pid,value]:wearable.visual_params)
+                        {
+                            if(conflicts.contains(pid))continue;
+                            const auto prior=current.find(pid);
+                            if(prior!=current.end()&&prior->second!=value)
+                            {
+                                current.erase(prior);conflicts.insert(pid);
+                            }
+                            else current.insert_or_assign(pid,value);
+                        }
+                    }
+                    const auto resolved_globals=
+                        assets::evaluate_firestorm_global_colors(
+                            *gallery_texlayer_manifest,typed_weights);
                     std::map<std::string,assets::ImageRgba8> masks;
                     std::size_t failed_masks=0U;
                     if(const auto root=
@@ -8321,41 +8347,49 @@ int Application::run(bool enable_developer_modules)
                             for(const auto& layer:
                                 gallery_texlayer_manifest->sets[region].layers)
                             {
-                                if(masks.size()>=12U)break;
                                 if(!layer.texture_entry||
                                    !gallery_local_te_rgba.contains(*layer.texture_entry)||
                                    !(layer.alpha_params_only||
                                      layer.known_color_and_alpha_only)||
-                                   layer.alpha_params.size()!=1U||
+                                   layer.alpha_params.empty()||
                                    layer.is_bump||
-                                   layer.has_global_color||layer.has_external_tga||
+                                   layer.has_external_tga||
                                    layer.has_visibility_mask||layer.is_mask||
                                    layer.multi_texture||layer.local_alpha_only)
                                     continue;
-                                const auto& param=layer.alpha_params[0U];
-                                if(param.mask_file.empty()||
-                                   !weights.contains(param.id)||
-                                   masks.contains(param.mask_file))
-                                    continue;
-                                auto loaded=assets::load_firestorm_character_tga(
-                                    *root,param.mask_file);
-                                if(loaded.ok())
-                                    masks.emplace(param.mask_file,std::move(loaded.image));
-                                else ++failed_masks;
+                                for(const auto& param:layer.alpha_params)
+                                {
+                                    if(param.mask_file.empty()||
+                                       !weights.contains(param.id)||
+                                       masks.contains(param.mask_file))
+                                        continue;
+                                    if(masks.size()>=12U)
+                                    {
+                                        ++failed_masks;continue;
+                                    }
+                                    auto loaded=assets::load_firestorm_character_tga(
+                                        *root,param.mask_file);
+                                    if(loaded.ok())
+                                        masks.emplace(param.mask_file,std::move(loaded.image));
+                                    else ++failed_masks;
+                                }
                             }
                     }
                     std::size_t masked_layers=0U,colored_layers=0U,
-                        unresolved_colors=0U;
+                        unresolved_colors=0U,globals_applied=0U,
+                        multiple_masks_applied=0U;
                     std::size_t applied=0U,unsupported=0U,missing=0U;
                     for(unsigned group=0U;group<3U;++group)
                     {
                         const auto result=assets::compose_firestorm_mask_preview(
                             *gallery_texlayer_manifest,group,
-                            gallery_local_te_rgba,masks,weights);
+                            gallery_local_te_rgba,masks,weights,resolved_globals);
                         const auto& composed=result.composite;
                         masked_layers+=result.mask_layers_applied;
                         colored_layers+=result.color_layers_applied;
                         unresolved_colors+=result.unresolved_color_layers;
+                        globals_applied+=result.global_color_layers_applied;
+                        multiple_masks_applied+=result.multiple_mask_layers_applied;
                         applied+=composed.applied;
                         unsupported+=composed.unsupported;
                         missing+=composed.missing;
@@ -8368,11 +8402,18 @@ int Application::run(bool enable_developer_modules)
                                     static_cast<int>(composed.image.height),
                                     composed.image.pixels.data());
                     }
+                    const auto coverage=
+                        assets::audit_firestorm_bake_sources(
+                            *gallery_texlayer_manifest,gallery_local_te_rgba);
                     gallery_texlayer_status=
                         "Farbe "+std::to_string(colored_layers)+
                         " Masken "+std::to_string(masked_layers)+
+                        " Global "+std::to_string(globals_applied)+
+                        " Multi "+std::to_string(multiple_masks_applied)+
                         " von "+std::to_string(applied)+
-                        ", Offen "+std::to_string(unsupported+missing+
+                        " Quellen "+std::to_string(coverage.decoded)+
+                        " Regionen "+std::to_string(coverage.covered_regions)+
+                        "/11, Offen "+std::to_string(unsupported+missing+
                             failed_masks+unresolved_colors)+
                         " - Bake NICHT freigegeben";
                 }

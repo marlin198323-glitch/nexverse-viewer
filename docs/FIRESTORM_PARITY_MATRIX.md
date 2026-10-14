@@ -496,3 +496,9 @@ Alpha116-119: Original Firestorm Character RLE11 TGA Alpha und RLE10 RGB inklusi
 ## Alpha.120-123
 
 Alpha120–123 original Firestorm TexLayer Color XML 99 param_color/71 colored layers, including 25-step palettes. Fixed RGBA, GlobalColor name (not guessed), Add/Multiply/Blend with original LLWearable visual param weights and alpha TGA mask in conservative RGBA preview, GUI F9 Farben/Masken. Server AvatarAppearance TextureEntry has 11 nonplaceholder baked IDs counted separately. No complete Bake, no Outfit-Wear.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.

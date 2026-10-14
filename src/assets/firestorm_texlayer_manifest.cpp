@@ -255,6 +255,80 @@ FirestormTexLayerResult parse_firestorm_texlayers(std::string_view input)
             out.layers.push_back(std::move(item));
         }
     }
+    // Original Firestorm avatar_lad.xml defines skin/hair/eye global
+    // colors separately from region layers. Never infer palette or defaults.
+    for(auto* node=root->FirstChildElement("global_color");node;
+        node=node->NextSiblingElement("global_color"))
+    {
+        const auto* name=node->Attribute("name");
+        if(!name)return failure("Missing Firestorm global color name");
+        const std::string key{name};
+        int expected_type=-1;
+        if(key=="skin_color")expected_type=1;
+        else if(key=="hair_color")expected_type=2;
+        else if(key=="eye_color")expected_type=3;
+        else return failure("Unknown Firestorm global color name");
+        if(manifest.global_colors.contains(key))
+            return failure("Duplicate Firestorm global color name");
+        FirestormTexGlobalColor global;
+        global.name=key;global.wearable_type=expected_type;
+        for(auto* param=node->FirstChildElement("param");param;
+            param=param->NextSiblingElement("param"))
+        {
+            if(global.color_params.size()>=16U)
+                return failure("Too many global color params");
+            const auto* wearable=param->Attribute("wearable");
+            const auto* color=param->FirstChildElement("param_color");
+            if(!wearable||!color||
+               std::string_view{wearable}!=
+                   (expected_type==1?"skin":expected_type==2?"hair":"eyes"))
+                return failure("Firestorm global param owner/color invalid");
+            FirestormTexLayerColorParam item;
+            if(param->QueryIntAttribute("id",&item.id)!=tinyxml2::XML_SUCCESS||
+               item.id<0||item.id>200000)
+                return failure("Invalid global color parameter id");
+            if(std::any_of(global.color_params.begin(),global.color_params.end(),
+                 [&](const auto& x){return x.id==item.id;}))
+                return failure("Duplicate global color parameter");
+            if(param->Attribute("value_min")&&
+               param->QueryFloatAttribute("value_min",&item.minimum)!=
+                   tinyxml2::XML_SUCCESS)
+                return failure("Invalid global color minimum");
+            if(param->Attribute("value_max")&&
+               param->QueryFloatAttribute("value_max",&item.maximum)!=
+                   tinyxml2::XML_SUCCESS)
+                return failure("Invalid global color maximum");
+            if(!std::isfinite(item.minimum)||!std::isfinite(item.maximum)||
+               item.minimum<0.0f||item.maximum>100.0f||
+               item.minimum>=item.maximum)
+                return failure("Global color range invalid");
+            const auto* op=color->Attribute("operation");
+            const auto operation=op?std::string_view{op}:std::string_view{"add"};
+            if(operation=="add")item.operation=FirestormColorOperation::add;
+            else if(operation=="multiply")
+                item.operation=FirestormColorOperation::multiply;
+            else if(operation=="blend")item.operation=FirestormColorOperation::blend;
+            else return failure("Global color operation invalid");
+            for(auto* value=color->FirstChildElement("value");value;
+                value=value->NextSiblingElement("value"))
+            {
+                if(item.palette.size()>=32U)
+                    return failure("Global palette oversized");
+                const auto* rgba=value->Attribute("color");
+                const auto parsed=rgba?xml_rgba(rgba):std::nullopt;
+                if(!parsed)return failure("Global palette color invalid");
+                item.palette.push_back(*parsed);
+            }
+            if(item.palette.empty()||
+               (item.operation==FirestormColorOperation::blend&&
+                item.palette.size()!=1U))
+                return failure("Global palette missing or invalid");
+            global.color_params.push_back(std::move(item));
+        }
+        if(global.color_params.empty())
+            return failure("Global color without parameters");
+        manifest.global_colors.emplace(key,std::move(global));
+    }
     if(!manifest.valid())return failure("No valid Firestorm TexLayers");
     return {std::move(manifest),{}};
 }

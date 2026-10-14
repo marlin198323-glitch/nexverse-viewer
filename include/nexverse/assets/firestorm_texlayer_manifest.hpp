@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -52,6 +53,12 @@ struct FirestormTexLayerColorParam
     FirestormColorOperation operation=FirestormColorOperation::add;
     std::vector<std::array<std::uint8_t,4>> palette;
 };
+struct FirestormTexGlobalColor
+{
+    std::string name;
+    int wearable_type=-1; // Firestorm WT_SKIN=1, WT_HAIR=2, WT_EYES=3
+    std::vector<FirestormTexLayerColorParam> color_params;
+};
 struct FirestormTexLayer
 {
     std::string name;
@@ -85,6 +92,7 @@ struct FirestormTexLayerManifest
 {
     int definition_version=-1;
     std::array<FirestormTexLayerSet,11U> sets{};
+    std::map<std::string,FirestormTexGlobalColor> global_colors;
     std::size_t layer_count=0U,local_layer_count=0U,
         safe_layer_count=0U,unsupported_layer_count=0U,
         color_layer_count=0U,color_param_count=0U;

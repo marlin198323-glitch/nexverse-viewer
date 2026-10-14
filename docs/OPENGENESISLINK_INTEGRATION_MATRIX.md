@@ -348,3 +348,9 @@ Alpha116-119 OpenGenesisLINK main 20a7fd765527807fd9d7887965b5f5f28d42d68f in Ba
 ## Alpha.120-123
 
 Alpha120–123 server reference main 20a7fd765527807fd9d7887965b5f5f28d42d68f prechecked, #208-209 server-only. No changes to authenticated user LLUDP or GetTexture CAPS contract. New Viewer-only local color math stays separate from server-supplied AvatarAppearance baked TextureEntry IDs; never send unsupported AgentSetAppearance/BakeIDs or operator tokens.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.

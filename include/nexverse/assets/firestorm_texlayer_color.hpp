@@ -15,12 +15,20 @@ namespace nexverse::assets
 [[nodiscard]] inline std::optional<std::array<float,4>>
 evaluate_firestorm_local_layer_tint(
     const FirestormTexLayer& layer,
-    const std::map<int,float>& worn_weights)
+    const std::map<int,float>& worn_weights,
+    const std::map<std::string,std::array<float,4>>& global_colors={})
 {
-    if(layer.has_global_color||!layer.global_color_name.empty())
-        return std::nullopt;
     std::array<float,4> color{};
-    if(layer.fixed_rgba)
+    if(layer.has_global_color||!layer.global_color_name.empty())
+    {
+        const auto found=global_colors.find(layer.global_color_name);
+        if(found==global_colors.end())return std::nullopt;
+        color=found->second;
+        for(const auto component:color)
+            if(!std::isfinite(component)||component<0.0f||component>1.0f)
+                return std::nullopt;
+    }
+    else if(layer.fixed_rgba)
         for(std::size_t i=0U;i<4U;++i)
             color[i]=static_cast<float>((*layer.fixed_rgba)[i])/255.0f;
     else if(layer.color_params.empty())
@@ -71,5 +79,27 @@ evaluate_firestorm_local_layer_tint(
         component=std::clamp(component,0.0f,1.0f);
     }
     return color;
+}
+// Only authenticated original LLWearables of the matching Firestorm
+// wearable type may supply skin/hair/eye visual parameters. Missing or
+// conflicting owner-specific values keep the global color unresolved.
+[[nodiscard]] inline std::map<std::string,std::array<float,4>>
+evaluate_firestorm_global_colors(
+    const FirestormTexLayerManifest& manifest,
+    const std::map<int,std::map<int,float>>& by_wearable_type)
+{
+    std::map<std::string,std::array<float,4>> colors;
+    if(!manifest.valid())return colors;
+    for(const auto& [name,global]:manifest.global_colors)
+    {
+        const auto weights=by_wearable_type.find(global.wearable_type);
+        if(weights==by_wearable_type.end())continue;
+        FirestormTexLayer definition;
+        definition.color_params=global.color_params;
+        const auto color=evaluate_firestorm_local_layer_tint(
+            definition,weights->second);
+        if(color)colors.emplace(name,*color);
+    }
+    return colors;
 }
 }

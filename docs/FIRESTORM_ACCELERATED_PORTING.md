@@ -195,3 +195,9 @@ Alpha116-119 vier integrierte Entwicklungsblöcke: sichere Firestorm original RL
 ## Alpha.120-123
 
 Alpha120–123 four cross-functional blocks: XML exact FixedColor/param_color/global references; bounded original palette math and mixed alpha/color; 128px CPU/GPU RGBA preview; visible F9 Farben/Masken action and actual Simulator AvatarAppearance baked IDs from TE. Original Firestorm 25-entry palettes verified in CTest.
+
+
+### Alpha.124–127: original Firestorm global color & multi-mask diagnostics (2026-10-14)
+Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
+
+Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.
