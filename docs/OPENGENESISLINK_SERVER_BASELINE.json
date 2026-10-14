@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "5831913f3dc840aa9661b83fc844546f9f637070",
   "reviewed_utc": "2026-10-14T17:11:14Z",
-  "viewer_version": "0.2.0-alpha.104",
+  "viewer_version": "0.2.0-alpha.105",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -63,6 +63,11 @@
       "server_change": "Protected OGL World API Control Center: /api/v1/docs login shell, /api/v1/docs/panel server-verified GridUser UserLevel>=200 plus admin:* bearer, MFA/native token path, UI/CI",
       "placement": "SERVER_ONLY_OPERATOR_ADMIN_UI, not viewer-user core or viewer plugin",
       "note": "Compared 6 changed server files in one commit 1841c4ee to 5831913f. Reviewed OglApiDocsAccess.cs, NexVerseWorldApiConnector.cs, NexApiDocsPage.cs and docs/WORLD_API_CONTROL_CENTER.md. No new LLUDP/CAPS protocol; no admin bearer, private keys or high-privilege controls in end-user Viewer. Server admin login deployment unverified."
+    },
+    {
+      "server_change": "Firestorm/OpenSim LLUDP LinkInventoryItem Low426 and RemoveInventoryItem Low270 used for COF Wear link mutations",
+      "placement": "VIEWER_CORE_PROTOCOL, execution gated by server readback and future explicit consent",
+      "note": "Reviewed Firestorm_7.2.4 message_template.msg and llviewerinventory.cpp; OpenGenesisLINK LLClientView.cs HandleLinkInventoryItem/HandleRemoveInventoryItem. Packet encoders/circuit implement wire; actual multi-link Wear/Unwear dispatch withheld until atomic-equivalent reconciliation/rollback and appearance propagation. No admin keys."
     }
   ]
 }

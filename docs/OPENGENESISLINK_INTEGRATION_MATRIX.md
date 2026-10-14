@@ -277,3 +277,7 @@ Legacy Namespaces und Header bleiben nur fuer
 Abwaertskompatibilitaet. Live Admin
 Login/Deployment ist nicht automatisch getestet.
 Reviewed SHA in Baseline aktualisiert.
+
+## Alpha.105
+
+Alpha.105 Live-Review Server main 5831913f3dc840aa9661b83fc844546f9f637070. OpenSim OnLinkInventoryItem und OnRemoveInventoryItem sind Viewer-Core-Protokolle. Server-only OAR/IAR FeatureControl, geschuetztes ControlCenter mit UserLevel>=200 und dessen Keys bleiben ausserhalb des Endnutzer-Viewers. Neuer COF-Diff/Preview fail-closed, kein produktiver Avatarwechsel bestaetigt.

@@ -145,3 +145,7 @@ Pfad; keine Dummy-COF-Wear-Aktionen.
 ## Alpha.104
 
 Alpha.104: Original Firestorm ObjectGrab/ObjectDeGrab SurfaceInfo komplett fuer echte Mesh-Hits; Weltfenster mit sichtbarem Sendestatus. Outfit F9 GUI parallel mit COF pruefen und echten Caps FetchInventory2 read-only, Wear-Transaktion noch offen.
+
+## Alpha.105
+
+Alpha.105: Original LLUDP Low426/270 plus Circuit-Wire umgesetzt, read-only COF-Änderungsplan aus echter Inbox/COF-Version. F9 GUI mit Vorschaufenster statt isoliertem Backend. Server-Reconciliation-Schutz vorhanden, Wear-Aktion absichtlich nicht verbunden vor Checkpoint-/Rollback-Abnahme.

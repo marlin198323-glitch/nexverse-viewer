@@ -7,6 +7,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/animation_asset_transfer.hpp"
 #include "nexverse/protocol/object_touch.hpp"
+#include "nexverse/protocol/firestorm_outfit_mutation.hpp"
 
 #include <cstddef>
 #include <deque>
@@ -21,7 +22,9 @@ using OutboundCommand = std::variant<
     LocalChatMessage,
     TeleportLocation,
     AnimationAssetRequest,
-    ObjectTouchCommand>;
+    ObjectTouchCommand,
+    CofLinkCommand,
+    CofUnlinkCommand>;
 
 class OutboundCommandQueue
 {

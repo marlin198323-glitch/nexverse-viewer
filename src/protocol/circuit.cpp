@@ -336,6 +336,18 @@ CircuitStatus CircuitConnection::run(
                                 socket,tracker,std::move(packet),
                                 sequence,status);
                         }
+                        else if constexpr (std::is_same_v<T, CofLinkCommand>)
+                        {
+                            auto packet=encode_cof_link(sequence,session_,value);
+                            sent=!packet.empty()&&send_reliable(
+                                socket,tracker,std::move(packet),sequence,status);
+                        }
+                        else if constexpr (std::is_same_v<T, CofUnlinkCommand>)
+                        {
+                            auto packet=encode_cof_unlink(sequence,session_,value);
+                            sent=!packet.empty()&&send_reliable(
+                                socket,tracker,std::move(packet),sequence,status);
+                        }
                         else if constexpr (std::is_same_v<T, AnimationAssetRequest>)
                         {
                             auto packet=encode_animation_asset_transfer(

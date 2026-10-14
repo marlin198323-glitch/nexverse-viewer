@@ -19,6 +19,8 @@ int main()
            OutfitGalleryHit::refresh)return 2;
         if(g.hit(g.x+g.pw-313.0f*sc,g.y+24.0f*sc)!=
            OutfitGalleryHit::verify)return 3;
+        if(g.hit(g.x+g.pw-477.0f*sc,g.y+24.0f*sc)!=
+           OutfitGalleryHit::plan)return 7;
         if(g.hit(g.x+115.0f*sc,g.y+115.0f*sc)!=
            OutfitGalleryHit::select)return 4;
         if(g.selected_row(g.y+115.0f*sc)!=0U||

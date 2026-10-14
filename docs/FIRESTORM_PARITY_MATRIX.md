@@ -449,3 +449,7 @@ E2E gegen einen authentifizierten Server ist weiterhin offen.
 ## Alpha.104
 
 Alpha.104: Original ObjectGrab/DeGrab SurfaceInfo VariableCount1 mit 64 Bytes (UV/ST/Face/Position/Normal/Binormal) aus Mesh/GetMesh/TextureEntry, sonst Count0. Anzeige im Objektfenster. Outfit F9 COF pruefen authentifiziert FetchInventory2, kein Wear/Unwear.
+
+## Alpha.105
+
+LLUDP LinkInventoryItem Low426/RemoveInventoryItem Low270 sind technisch im Viewer-Circuit. GUI: COF-Aenderungsplan aus Readback mit fail-closed Konflikterkennung, keine stummen Mutationen. Wear/Unwear/Apearance weiterhin unvollstaendig. Reconciliation verlangt neue Serverversion+RegionEpoch+exakte Link-Zielmenge.

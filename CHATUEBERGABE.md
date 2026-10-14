@@ -2972,3 +2972,19 @@ Legacy Namespaces und Header bleiben nur fuer
 Abwaertskompatibilitaet. Live Admin
 Login/Deployment ist nicht automatisch getestet.
 Reviewed SHA in Baseline aktualisiert.
+
+## Alpha.105 – COF-Protokoll, sicherer Aenderungsplan und Outfit-UI
+
+Ausgangsstand OGL develop-current f788dd626d1cf6351db073a87f1b93cc0369cbd6, OpenGenesisLINK main 5831913f3dc840aa9661b83fc844546f9f637070; Skript scripts/check_opengenesislink_server.py --strict vor Arbeit und Release. Originale Firestorm_7.2.4 sources scripts/messages/message_template.msg / indra/newview/llviewerinventory.cpp und Server LLClientView.cs untersucht.
+
+Block 1: Echte Firestorm LLUDP LinkInventoryItem Low426 und RemoveInventoryItem Low270 im Viewer-Kern implementiert: Agent/Session UUID, CallbackID, FolderID, null TransactionID, OldItemID, Type=AT_LINK(24), InvType, variable NUL-terminierte Name/Description; Removal InventoryData count=1 ItemID. RELIABLE Warteschlange und Circuit transportieren beide Packetvarianten. Hard reject invalid/zero UUIDs, Strings, CallbackID; Encoder ist **keine** vollstaendige Wear-Methode.
+
+Block 2: Versioniertes COF Diff/Preflight (firestorm_cof_change_plan.hpp). Aus serverseitig gelesenem Outfit und COF werden echte Link-Ziele, Hinzufuegungen, Entfernungen und identische Eintraege berechnet. Fehlender COF-Readback/-Version, defekte IDs, Ordnerlinks, unaufgeloeste Links, doppelte Ziele, unbekannte Assettypen sowie >32 Aktionen werden explizit abgelehnt. Die Ergebnisse sind NUR VORSCHAU (plan.executable() immer false). Keine ungeprueften COF-Operationen aus UI in Sendewarteschlange.
+
+Block 3: Echtes sichtbares F9 Outfitfenster um Aenderungsplan-Button und rechtsseitige Vorschau mit Anzahl +/−/=, Version, zu erstellenden und zu entfernenden Links ergaenzt. Bei Auswahlwechsel, neuen CAPS-Inventardaten, manuellem COF-Verify oder Regionenwechsel verfaellt die alte Vorschau. UI zeigt ausdruecklich 'keine Serveraenderung'.
+
+Block 4: Strikter Readback-Reconciler fuer die spaetere freigegebene Transaktion: Ein lokales UDP ACK gilt NICHT als Wear. Nur neuer serverlesener COF mit passender RegionEpoch, mindestens erforderlichem Versionsfortschritt, ausschließlich gueltigen AT_LINK-Eintraegen und exakt passender Zielmenge kann confirmed liefern. Falscher RegionEpoch, Version, Itemtyp oder Zielmenge => fail-closed.
+
+Block 5: Tests tests/firestorm_cof_planning_tests.cpp: Wire-Goldens Low426/270, Feldreihenfolge, Callback, NullTransactionID, var1 Stringlaengen, UUID/Input-Validation, Queue-Typen, Plan +/−/=, veraltete Version, unsupported folder links/duplicate/unresolved targets, Reconciliation positives/negatives. tests/outfit_gallery_layout_tests.cpp testet neue Button-Hitbox auf 1280/1920/3440/5120 Bildschirmbreiten. Vollstaendiger C++23 Debug Build, CTest, Python sowie NVIDIA OpenGL GUI Smoke vor GitHub-Push.
+
+NICHT FERTIG: Multipacket COF-Wear/Unwear-Transaktionsdurchfuehrung mit ItemCallbackId-Mapping, serverseitigen Itemdaten/Appearance und Recovery bei Teilfehlern, echten Tragen/Ablegen-Buttons oder authentifizierter NexVerse-Inworld-Abnahme. OGL Viewer wird nicht als vollstaendig Firestorm kompatibel ausgegeben. Als Alpha.106 folgen expliziter Consent, servergepruefter Mutationsablauf/Rollback und Sichtbarkeit von Wear, nach belastbarem Protokollbeleg. Kern plus UI weiterhin gemeinsam.

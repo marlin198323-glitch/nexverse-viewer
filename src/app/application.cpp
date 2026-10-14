@@ -71,6 +71,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
+#include "nexverse/protocol/firestorm_cof_change_plan.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -401,6 +402,7 @@ struct InputContext
     std::size_t* outfit_selection = nullptr;
     bool* outfit_refresh_requested = nullptr;
     bool* outfit_verify_requested = nullptr;
+    bool* outfit_plan_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1117,9 +1119,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
             if(context->outfit_verify_requested)
                 *context->outfit_verify_requested=true;
             break;
+        case nexverse::ui::OutfitGalleryHit::plan:
+            if(context->outfit_plan_requested)
+                *context->outfit_plan_requested=true;
+            break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
                 gallery_layout.selected_row(static_cast<float>(py));
+            if(context->outfit_plan_requested)
+                *context->outfit_plan_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::none:break;
         }
@@ -2156,7 +2164,10 @@ void render_outfit_gallery(
     const CapsRuntimeState& caps,
     const std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>&
         image_textures,
-    std::size_t selected_outfit,std::string_view validation_status)
+    std::size_t selected_outfit,std::string_view validation_status,
+    std::string_view plan_status,
+    const nexverse::protocol::CofChangePlan& change_plan,
+    bool plan_visible)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2183,6 +2194,11 @@ void render_outfit_gallery(
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
     renderer.text(x+pw-380.0f*scale,y+19.0f*scale,
                   9.0f*scale,"COF pruefen",theme::cyan);
+    renderer.rect(x+pw-550.0f*scale,y+11.0f*scale,
+                  147.0f*scale,34.0f*scale,
+                  Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
+    renderer.text(x+pw-538.0f*scale,y+19.0f*scale,
+                  9.0f*scale,"Aenderungsplan",theme::cyan);
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
                   theme::cyan);
@@ -2277,6 +2293,56 @@ void render_outfit_gallery(
         renderer.text(x+477.0f*scale,y+419.0f*scale,
                       8.0f*scale,cof_status,theme::text_muted);
     }
+    if(plan_visible)
+    {
+        const float bx=x+465.0f*scale;
+        renderer.rect(bx,y+107.0f*scale,(pw-477.0f*scale),
+                      340.0f*scale,
+                      Color{0.012f,0.037f,0.063f,0.99f},8.0f*scale);
+        renderer.text(bx+13.0f*scale,y+128.0f*scale,11.0f*scale,
+                      "COF-Aenderungsplan",theme::cyan);
+        renderer.text(bx+13.0f*scale,y+155.0f*scale,8.7f*scale,
+                      "NUR VORSCHAU | keine Serveraenderung",
+                      theme::warning);
+        if(change_plan.preview_ready())
+        {
+            renderer.text(bx+13.0f*scale,y+182.0f*scale,8.7f*scale,
+                "+"+std::to_string(change_plan.add.size())+
+                " Links, -"+std::to_string(change_plan.remove.size())+
+                " Links, ="+std::to_string(change_plan.unchanged)+
+                " unveraendert",theme::text);
+            renderer.text(bx+13.0f*scale,y+204.0f*scale,8.3f*scale,
+                "COF Version "+std::to_string(change_plan.cof_version),
+                theme::text_muted);
+            std::size_t row=0U;
+            for(const auto& add:change_plan.add)
+            {
+                if(row>=4U)break;
+                renderer.text(bx+13.0f*scale,
+                    y+(235.0f+25.0f*static_cast<float>(row))*scale,
+                    8.0f*scale,"+ "+add.name.substr(0U,33U),
+                    theme::cyan);
+                ++row;
+            }
+            for(const auto& remove:change_plan.remove)
+            {
+                if(row>=7U)break;
+                renderer.text(bx+13.0f*scale,
+                    y+(235.0f+25.0f*static_cast<float>(row))*scale,
+                    8.0f*scale,"- Link "+remove.link_id.substr(0U,19U),
+                    theme::text_muted);
+                ++row;
+            }
+        }
+        else
+            renderer.text(bx+13.0f*scale,y+188.0f*scale,8.2f*scale,
+                std::string(nexverse::protocol::cof_plan_label(
+                    change_plan.readiness)).substr(0U,39U),
+                theme::warning);
+    }
+    renderer.text(x+22.0f*scale,y+ph-67.0f*scale,
+                  8.2f*scale,std::string(plan_status).substr(0U,101U),
+                  theme::cyan);
     renderer.text(x+22.0f*scale,y+ph-44.0f*scale,
                   8.4f*scale,
                   caps.outfit_inventory_read
@@ -4630,6 +4696,11 @@ int Application::run(bool enable_developer_modules)
     input_context.outfit_refresh_requested=&gallery_force_refresh;
     bool gallery_verify_requested=false;
     input_context.outfit_verify_requested=&gallery_verify_requested;
+    bool gallery_plan_requested=false;
+    input_context.outfit_plan_requested=&gallery_plan_requested;
+    std::string gallery_plan_status="Plan nicht geprueft (keine Aenderung)";
+    protocol::CofChangePlan gallery_change_plan;
+    bool gallery_plan_visible=false;
     std::string gallery_verify_status="COF noch nicht erneut geprueft";
     bool gallery_verify_awaiting=false;
     std::chrono::steady_clock::time_point last_gallery_verify{};
@@ -6503,6 +6574,10 @@ int Application::run(bool enable_developer_modules)
                 gallery_verify_awaiting=false;
                 gallery_verify_requested=false;
                 gallery_verify_status="COF nach Regionswechsel neu pruefen";
+                gallery_plan_requested=false;
+                gallery_plan_status="Plan nach Regionswechsel verfallen";
+                gallery_change_plan={};
+                gallery_plan_visible=false;
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -6976,6 +7051,10 @@ int Application::run(bool enable_developer_modules)
                         if(gallery_inventory_sync.merge(
                             gallery_sync_issued_epoch,update))
                         {
+                            gallery_plan_visible=false;
+                            gallery_change_plan={};
+                            gallery_plan_status=
+                                "Inventar geaendert – Plan neu berechnen";
                             caps_state.outfit_folder_items=
                                 gallery_inventory_sync.items();
                             for(const auto& [id,folder]:update.categories)
@@ -7094,6 +7173,46 @@ int Application::run(bool enable_developer_modules)
                     core::warning("Firestorm FetchInventory2 on-demand failed");
                 }
             }
+            if(gallery_plan_requested)
+            {
+                gallery_plan_requested=false;
+                gallery_plan_status="Plan: kein gueltiges Inventar";
+                gallery_change_plan={};
+                gallery_plan_visible=true;
+                if(outfit_gallery_open&&active_session&&
+                   firestorm_region_lease.matches(current_firestorm_epoch))
+                {
+                    const auto folders=protocol::outfits_from_login_skeleton(
+                        active_session->inventory_skeleton);
+                    if(outfit_selection<folders.size())
+                    {
+                        const auto& selected_id=folders[outfit_selection].id;
+                        const auto& cof_id=
+                            caps_state.current_outfit_folder;
+                        const auto& all=caps_state.outfit_folder_items;
+                        const auto selected=all.find(selected_id);
+                        const auto cof=all.find(cof_id);
+                        const auto ver=gallery_inventory_sync.versions().find(cof_id);
+                        const auto empty=std::vector<protocol::OutfitInventoryItem>{};
+                        const auto plan=protocol::plan_firestorm_cof_change(
+                            selected_id,cof_id,
+                            selected==all.end()?nullptr:&selected->second,
+                            cof==all.end()?nullptr:&cof->second,
+                            caps_state.resolved_outfit_folder==selected_id
+                                ?caps_state.resolved_outfit_items:empty,
+                            ver==gallery_inventory_sync.versions().end()
+                                ?0U:ver->second);
+                        gallery_change_plan=plan;
+                        gallery_plan_status=std::string("Plan: ")+
+                            protocol::cof_plan_label(plan.readiness);
+                        if(plan.preview_ready())
+                            gallery_plan_status+=" | +"+std::to_string(plan.add.size())+
+                                " / -"+std::to_string(plan.remove.size())+
+                                " / ="+std::to_string(plan.unchanged)+
+                                " | NUR VORSCHAU, kein Wear";
+                    }
+                }
+            }
             if(gallery_verify_requested)
             {
                 gallery_verify_requested=false;
@@ -7120,6 +7239,10 @@ int Application::run(bool enable_developer_modules)
                         caps_state.resolved_outfit_items.clear();
                         caps_state.resolved_outfit_folder.clear();
                     }
+                    gallery_force_refresh=true;
+                    gallery_plan_visible=false;
+                    gallery_change_plan={};
+                    gallery_plan_status="COF neu geprueft werden – Plan veraltet";
                     gallery_verify_status="COF/Outfit: FetchInventory2 angefordert";
                 }
             }
@@ -10102,7 +10225,9 @@ int Application::run(bool enable_developer_modules)
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
                         caps_snapshot,gallery_gpu_textures,
-                        outfit_selection,gallery_verify_status);
+                        outfit_selection,gallery_verify_status,
+                        gallery_plan_status,gallery_change_plan,
+                        gallery_plan_visible);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,

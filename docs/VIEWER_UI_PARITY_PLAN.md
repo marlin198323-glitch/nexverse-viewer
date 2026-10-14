@@ -164,3 +164,7 @@ Tragen/Abnehmen, bis echte COF-Mutation steht.
 ## Alpha.104
 
 Alpha.104: Welt-Objektfenster zeigt, ob gueltige SurfaceInfo an Simulator gesendet wurde. F9 Outfit-Galerie hat funktionierende Klicks auf Aktualisieren und COF pruefen inkl begrenztem FetchInventory2 und echtem Antwortstatus. Kein unechter Wear-Button.
+
+## Alpha.105
+
+F9 Outfit Galerie: neuer echter Aenderungsplan-Button und rechtseitige serverbasierte COF Diff-Vorschau mit +/−/=, Version und Listeneintraegen. Automatisch invalidiert bei neuen Inventory-CAPS/Region und manuellem COF-Verify. Keine aktiven Tragen/Ablegen Buttons ohne server-validierte Wear-Mutation.

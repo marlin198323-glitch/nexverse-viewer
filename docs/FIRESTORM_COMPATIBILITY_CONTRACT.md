@@ -507,3 +507,7 @@ COF-Mutationen weiter gesperrt.
 ## Alpha.104
 
 Alpha.104: Wire-Layout aus Firestorm lltoolgrab.cpp und message_template.msg Low117/119. SurfaceInfo als ein 64-Byte Eintrag: UV Vector3, ST Vector3, Face S32, Position/Normal/Binormal Vector3. Server LLClientView HandleObjectGrab/DeGrab liest diese Daten. Nur validierter TriangleHit plus Texturface liefert Daten; Count0 bleibt Fallback. Outfit COF weiter read-only.
+
+## Alpha.105
+
+Firestorm 7.2.4 llviewerinventory.cpp/message_template.msg LinkInventoryItem Low426 (Agent, CallbackID, FolderID, null TransactionID, OldItemID, Type24, InvType, Name/Desc Variable1) und RemoveInventoryItem Low270 (Agent und 1 ItemID). OpenGenesisLINK LLClientView Handler bestaetigt Wire-Struktur. Implementierte Wire-Nachrichten sind nicht automatisch komplette COF-Wear-Mutation; keine UI-Sendeberechtigung bis serverbestätigter Transaktionsfreigabe.
