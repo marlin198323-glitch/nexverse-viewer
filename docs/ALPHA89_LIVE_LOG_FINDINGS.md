@@ -176,3 +176,12 @@ Synthetic Ray-/GL-/Wiretests ersetzen keine
 InWorld-NexVerse-Sitzung: weder LSL touch()
 noch exakte Mesh-Face/UV-Erkennung bestätigt.
 Server 0.9.3.12 bleibt Dev.
+
+## Alpha.103 – Tests statt angenommener Grid-Abnahme
+
+Echter GetMesh Triangleray, Face/UV und
+Objekt-Floater sind lokal verifiziert,
+nicht durch einen neu angemeldeten
+NexVerse Avatar. F9 Outfit Galerie kann
+ihren autorisierten CAPS Readback neu
+anfordern; Wear/Unwear immer noch offen.

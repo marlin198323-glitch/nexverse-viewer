@@ -435,3 +435,13 @@ E2E gegen einen authentifizierten Server ist weiterhin offen.
   keine Freigabe als RC oder Stable.
 - Neue Robust OAR/IAR ES256 Feature-Control ist
   SERVER-ONLY Admin/API, NICHT User-Viewer-Plugin.
+
+## Alpha.103 – Face-/UV-Picking und Outfit-Ladeaktion
+
+| Feature | Alpha.103 | Noch offen |
+|---|---|---|
+| CameraRay und GetMesh Triangles | echte indizierte Triangle/UV/Face Treffer | große Mesh BVH |
+| Fehlende Mesh-Dreiecke | keine Box-Phantomtreffer, wenn Mesh resident | Sculpt/Prim Geometrie exakt |
+| LLUDP ObjectGrab | weiterhin zuverlässig Low117 | geprüfte SurfaceInfo Normal/ST/Binormal |
+| Sichtbares Weltfenster | Face/UV oder BoundingBox-Näherung | Child-Prim |
+| Outfit Galerie | aktueller authentifizierter Read-Only Refresh-Button | COF Wear/Unwear |

@@ -148,3 +148,15 @@ echtem ObjectDeGrab abgedeckt. HUD-/Overlay-
 Flächen lösen keine Weltaktionen aus.
 Vollständige Mesh-Face-ID/UV-Interaktion
 bleibt offen, kein Fake-Play/Touch-Resultat.
+
+## Alpha.103 – Mesh-Face im Objektfenster und echter Outfit-Refresh
+
+Welt > Objekte beruehren zeigt bei wirklich residentem
+GetMesh FaceID/UV aus Triangle-Raycast, ansonsten
+ausdrücklich BoundingBox-Näherung. Kein Phantomtreffer
+in Lücken eines vorhandenen Meshes.
+F9 Outfit Galerie besitzt einen neuen nutzbaren
+Aktualisieren-Button mit Auth-CAPS
+InventoryDescendents2 read-only, Besitzer-/
+RegionEpoch-Check und >=2s Throttle. Kein
+Tragen/Abnehmen, bis echte COF-Mutation steht.

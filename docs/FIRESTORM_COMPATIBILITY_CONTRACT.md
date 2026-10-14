@@ -486,3 +486,20 @@ keine Server-Livefreigabe aus dem Code-Label
 ableiten. Keine neue Client-LLUDP/CAPS-Funktion
 aus diesen Release-Dokumenten abzuleiten.
 Server-Baseline-SHA nach Review aktualisiert.
+
+## Alpha.103 – Serverreferenz und GetMesh Faceinfo
+
+Der bereits implementierte GetMesh CAP liefert
+Vertices xyz/nxyz/uv, Triangles und FaceRanges.
+CPU Picking hält eine streng begrenzte,
+GPU-resident-kohärente Kopie. Ein Ray-OBB
+Broadphase-Test wird bei residentem Mesh durch
+Möller-Trumbore Dreiecksschnitt ersetzt, mit
+baryzentrischer UV-Interpolation und FaceIndex.
+Das sichtbare UI ist keine Freigabe,
+Face/ST/Position/Normal/Binormal als LLUDP
+SurfaceInfo zu senden. Bis alle Felder
+komplett validiert sind bleibt SurfaceInfo
+im echten ObjectGrab/DeGrab leer.
+Outfit-Refresh ist CAP read-only, echte
+COF-Mutationen weiter gesperrt.

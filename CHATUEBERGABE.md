@@ -2859,3 +2859,74 @@ keine Server-Livefreigabe aus dem Code-Label
 ableiten. Keine neue Client-LLUDP/CAPS-Funktion
 aus diesen Release-Dokumenten abzuleiten.
 Server-Baseline-SHA nach Review aktualisiert.
+
+## Alpha.103 – Mesh Face/UV Picking plus sichtbarer Outfit-Refresh (14.10.2026)
+
+Vor Entwicklungsbeginn waren OGL develop-current
+2dc9cf7e7f9d72de292eaa89c251019812eda4e2 und
+OpenGenesisLINK main 1841c4ee8ef580730be7d306023e594380f8b19f
+per GitHub verifiziert. GitHub server main vor Release
+erneut prüfen (scripts/check_opengenesislink_server.py --strict).
+Firestorm Original-LLUDP ObjectGrab Low117/DeGrab Low119
+sowie vorhandene GetMesh/InventoryDescendents2-CAPS sind
+viewer-core, kein optionales Pflicht-Plugin. Robust
+Feature Control (ES256 signierte OAR/IAR Operator-Policy)
+bleibt ausschließlich im Server, nicht im User Viewer.
+OpenGenesisLINK Server-Code 0.9.3.12 trägt Release Label;
+separater GitHub Stable Tag, Deployment und
+vollständige Abnahme sind davon zu unterscheiden.
+
+(1) GetMesh-Dreiecke im Renderer statt nur Prim-BoundingBox:
+include/nexverse/render/world_object_picker.hpp erweitert
+den quaternion-korrekten CameraRay/OBB Broadphase um
+Möller-Trumbore Triangle-Raycast in der echten GetMesh
+Geometry (interleaved xyz, normals, uv, indices, FaceRanges).
+Nearest positive intersection liefert LocalID, dreidimensionalen
+Punkt, Face-Index und baryzentrisch interpoliertes UV.
+Liegt das Klickziel innerhalb der Box aber zwischen zwei
+echten Mesh-Dreiecken, wird KEIN falscher Treffer angenommen.
+
+(2) GPU/CPU Cache kohärent: Nur nach erfolgreichem GPU-
+Mesh-Upload erhält die CPU-Pick-Seite dieselbe
+RenderMeshGeometry als immutable Assetkopie.
+Separater Budgetdeckel 24MiB, einzelnes Mesh max 12MiB,
+höchstens 65.536 Vertices bzw 65.536 Triangles pro
+Asset. GPU Eviction und Regionwechsel räumen
+auch CPU Pick-Geometrie auf. Bei nichtgeladenem Mesh
+oder Sculpt-/parametrischen Prims weiter klar bezeichnete
+OBB Näherung, keine vorgespiegelte volle Firestorm Parität.
+
+(3) Sichtbare Viewer UI: Welt > Objekte beruehren zeigt
+beim 3D-Klick auf residenten Mesh das exakte
+Mesh Face und UV, bei Näherung den ehrlichen
+BoundingBox-Hinweis. Selektionswechsel/RegionReset
+verwerfen frühere Werte. LLUDP ObjectGrab/DeGrab
+bleibt verlässlich, aber SurfaceInfo Count=0 bis
+eine komplett korrekte Normale/Binormale/ST/Position
+nach Firestorm/OpenSim Vorbild implementiert ist.
+UI Face-Anzeige ist kein Beleg fuer llDetectedTouchFace.
+
+(4) Outfit Galerie F9: echter neuer Aktualisieren-Button,
+der an den bereits bestehenden authentifizierten
+Firestorm InventoryDescendents2 read-only Sync
+anknüpft (Owner/RegionEpoch, asynchron,
+Rate Limit >=2s). Tatsächliche Outfitordner,
+Thumbnailcache und COF-Readback werden aktualisiert.
+Outfit wear/unwear und COF-Mutationsprotokoll
+bleiben ausdrücklich gesperrt (can_wear=false);
+niemals einen wirkungslosen Tragen-Button anzeigen.
+
+(5) Tests: synthetic resident Triangle trifft
+Face 7 und UV=(0.5,0.5), mesh hole ergibt
+keinen Phantom-Treffer, ungültige Indizes,
+NaN, 90° Quaternion, 16:9/Ultrawide,
+LLUDP Wire-Golden, GUI und GPU-Smoketest.
+Volle CTest/Python-Regressionssuite vor Release.
+
+OFFEN: Verifizierter realer NexVerse in-world Touch,
+vollständige LSL SurfaceInfo, BVH Mesh/ChildPrim,
+COF CreateInventoryLink/Wear/Unwear und echte
+Avatar-Appearance-Pipeline. Keine produktive
+Server-E2E-Abnahme behaupten. Alpha.104
+soll BVH/SurfaceInfo und vollständigen COF Core
+in gemeinsamem Funktions+UI Release priorisieren.

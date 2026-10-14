@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <memory>
 #include <span>
 
 namespace nexverse::render
@@ -22,12 +23,18 @@ struct WorldPickObject
     RenderVec3 center{};
     RenderQuaternion rotation{};
     RenderVec3 size{1.0f,1.0f,1.0f};
+    // Immutable, GPU-matching LOD triangles; when absent only the
+    // conservative OBB can be used, and UI must say "approximate".
+    std::shared_ptr<const RenderMeshGeometry> mesh;
 };
 struct WorldPickHit
 {
     std::uint32_t local_id=0U;
     float distance=0.0f;
     RenderVec3 point{};
+    bool exact_mesh=false;
+    std::uint32_t face=0U;
+    float u=0.0f,v=0.0f;
 };
 namespace detail_pick
 {
@@ -57,6 +64,72 @@ inline RenderVec3 unrotate(RenderQuaternion q,RenderVec3 v) noexcept
 }
 inline float component(RenderVec3 v,int i) noexcept
 {return i==0?v.x:i==1?v.y:v.z;}
+inline bool finite(RenderVec3 v) noexcept
+{return std::isfinite(v.x)&&std::isfinite(v.y)&&std::isfinite(v.z);}
+inline RenderVec3 div(RenderVec3 a,RenderVec3 b) noexcept
+{return {a.x/b.x,a.y/b.y,a.z/b.z};}
+[[nodiscard]] inline std::optional<WorldPickHit> mesh_hit(
+    const WorldPickObject& obj,RenderVec3 world_origin,RenderVec3 world_ray,
+    float max_distance) noexcept
+{
+    const auto& mesh=*obj.mesh;
+    // Interleaved xyz/nxyz/uv, standard GetMesh geometry, indexed faces.
+    // Bounded to 65K triangles per single object-click; never iterate
+    // untrusted million-triangle assets on the UI thread.
+    if(mesh.vertices.size()%8U!=0U||
+       mesh.indices.size()%3U!=0U||
+       mesh.indices.size()>196608U||
+       mesh.vertices.size()/8U>65536U)
+        return std::nullopt;
+    const auto origin=div(unrotate(obj.rotation,
+                                  sub(world_origin,obj.center)),obj.size);
+    const auto direction=div(unrotate(obj.rotation,world_ray),obj.size);
+    float best=max_distance;
+    std::optional<WorldPickHit> result;
+    const auto n=mesh.vertices.size()/8U;
+    for(std::size_t i=0U;i+2U<mesh.indices.size();i+=3U)
+    {
+        const auto ia=mesh.indices[i],ib=mesh.indices[i+1U],
+                   ic=mesh.indices[i+2U];
+        if(ia>=n||ib>=n||ic>=n)continue;
+        const auto point=[&](std::uint32_t idx)
+        {
+            const auto at=8U*static_cast<std::size_t>(idx);
+            return RenderVec3{mesh.vertices[at],mesh.vertices[at+1U],
+                              mesh.vertices[at+2U]};
+        };
+        const auto a=point(ia),b=point(ib),c=point(ic);
+        if(!finite(a)||!finite(b)||!finite(c))continue;
+        const auto edge1=sub(b,a),edge2=sub(c,a);
+        const auto p=cross(direction,edge2);
+        const float det=dot(edge1,p);
+        if(!std::isfinite(det)||std::abs(det)<1e-8f)continue;
+        const float inv=1.0f/det;
+        const auto tvec=sub(origin,a);
+        const float bu=dot(tvec,p)*inv;
+        if(!(bu>=0.0f&&bu<=1.0f))continue;
+        const auto q=cross(tvec,edge1);
+        const float bv=dot(direction,q)*inv;
+        if(!(bv>=0.0f&&bu+bv<=1.0f))continue;
+        const float dist=dot(edge2,q)*inv;
+        if(!std::isfinite(dist)||dist<=1e-5f||dist>best)continue;
+        const auto uv=[&](std::uint32_t index,int coord)
+        {return mesh.vertices[8U*static_cast<std::size_t>(index)+
+                              6U+static_cast<std::size_t>(coord)];};
+        const float u=uv(ia,0)*(1.0f-bu-bv)+uv(ib,0)*bu+uv(ic,0)*bv;
+        const float v=uv(ia,1)*(1.0f-bu-bv)+uv(ib,1)*bu+uv(ic,1)*bv;
+        if(!std::isfinite(u)||!std::isfinite(v))continue;
+        std::uint32_t face=0U;
+        for(const auto& range:mesh.faces)
+            if(i>=range.first_index &&
+               i-range.first_index<range.index_count)
+            {face=range.face;break;}
+        best=dist;
+        result=WorldPickHit{obj.local_id,dist,
+            add(world_origin,mul(world_ray,dist)),true,face,u,v};
+    }
+    return result;
+}
 }
 [[nodiscard]] inline std::optional<WorldPickHit> pick_world_object(
     const RenderCamera& camera,int viewport_width,int viewport_height,
@@ -133,10 +206,19 @@ inline float component(RenderVec3 v,int i) noexcept
             if(exit<entry){valid=false;break;}
         }
         if(!valid||entry<0.0f||entry>max_distance)continue;
-        if(!nearest||entry<nearest->distance||
-           (entry==nearest->distance&&object.local_id<nearest->local_id))
-            nearest=WorldPickHit{object.local_id,entry,
+        // If the exact resident mesh was provided, its triangles are
+        // authoritative; do not fall back to OBB in empty mesh holes.
+        const auto precise=object.mesh
+            ?mesh_hit(object,camera.position,ray,max_distance)
+            :std::optional<WorldPickHit>{};
+        if(object.mesh&&!precise)continue;
+        const WorldPickHit candidate=precise
+            ?*precise:WorldPickHit{object.local_id,entry,
                 add(camera.position,mul(ray,entry))};
+        if(!nearest||candidate.distance<nearest->distance||
+           (candidate.distance==nearest->distance&&
+            object.local_id<nearest->local_id))
+            nearest=candidate;
     }
     return nearest;
 }

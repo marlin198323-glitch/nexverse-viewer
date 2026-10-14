@@ -398,6 +398,7 @@ struct InputContext
     nexverse::protocol::ExperienceUiState* experience = nullptr;
     bool* outfits = nullptr;
     std::size_t* outfit_selection = nullptr;
+    bool* outfit_refresh_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -914,6 +915,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                row<shell.nearby_object_ids.size() && row<5U)
             {
                 shell.selected_object_id=shell.nearby_object_ids[row];
+                shell.world_pick_object_id=0U;
+                shell.world_pick_exact=false;
                 shell.status_text="Prim #"+
                     std::to_string(shell.selected_object_id)+" ausgewaehlt.";
             }
@@ -1108,6 +1111,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                         y+10.0f*scale,45.0f*scale,35.0f*scale))
         {
             *context->outfits=false;
+            return;
+        }
+        if(point_inside(px,py,x+panel_w-226.0f*scale,
+                        y+11.0f*scale,153.0f*scale,34.0f*scale))
+        {
+            if(context->outfit_refresh_requested)
+                *context->outfit_refresh_requested=true;
             return;
         }
         if(point_inside(px,py,x+22.0f*scale,y+115.0f*scale,
@@ -2167,6 +2177,11 @@ void render_outfit_gallery(
                   Color{0.16f,0.050f,0.087f,1.0f},8.0f*scale);
     renderer.text(x+pw-40.0f*scale,y+17.0f*scale,
                   12.0f*scale,"X",theme::text);
+    renderer.rect(x+pw-226.0f*scale,y+11.0f*scale,
+                  153.0f*scale,34.0f*scale,
+                  Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
+    renderer.text(x+pw-212.0f*scale,y+19.0f*scale,
+                  9.0f*scale,"Aktualisieren",theme::cyan);
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
                   theme::cyan);
@@ -4606,6 +4621,7 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t gallery_sync_issued_epoch=0U;
     std::uint64_t gallery_sync_dirty_revision=0U;
     bool gallery_force_refresh=false;
+    input_context.outfit_refresh_requested=&gallery_force_refresh;
     auto last_gallery_sync=std::chrono::steady_clock::now();
     std::vector<std::future<GalleryTextureReply>> gallery_image_futures;
     std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>
@@ -4625,6 +4641,12 @@ int Application::run(bool enable_developer_modules)
     assets::MeshLod mesh_asset_loading_lod = assets::MeshLod::high;
     std::unordered_map<std::string, assets::MeshLod> mesh_desired_lods;
     std::unordered_map<std::string, assets::MeshLod> mesh_gpu_lods;
+    // Pick geometry only for recently uploaded GPU meshes. Bounded
+    // independently from the larger renderer GPU cache.
+    std::map<std::string,std::shared_ptr<const render::RenderMeshGeometry>,
+             std::less<>> mesh_pick_geometry;
+    std::size_t mesh_pick_cpu_bytes=0U;
+    constexpr std::size_t max_mesh_pick_cpu_bytes=24U*1024U*1024U;
     assets::AssetLodDwell<assets::MeshLod> mesh_lod_dwell;
     assets::AssetGpuUploadGate asset_gpu_upload_gate;
     assets::AssetUploadTelemetry asset_gpu_upload_telemetry;
@@ -5057,11 +5079,19 @@ int Application::run(bool enable_developer_modules)
                             if(!std::isfinite(dx)||!std::isfinite(dy)||
                                !std::isfinite(dz)||
                                dx*dx+dy*dy+dz*dz>225.0f)continue;
+                            std::shared_ptr<const render::RenderMeshGeometry>
+                                precise_mesh;
+                            if(obj.is_mesh())
+                                if(const auto mesh=mesh_pick_geometry.find(
+                                    obj.sculpt_asset_id);
+                                   mesh!=mesh_pick_geometry.end())
+                                    precise_mesh=mesh->second;
                             candidates.push_back({id,
                                 {obj.position.x,obj.position.y,obj.position.z},
                                 {obj.rotation.x,obj.rotation.y,
                                  obj.rotation.z,obj.rotation.w},
-                                {obj.scale.x,obj.scale.y,obj.scale.z}});
+                                {obj.scale.x,obj.scale.y,obj.scale.z},
+                                std::move(precise_mesh)});
                         }
                     }
                 }
@@ -5074,10 +5104,20 @@ int Application::run(bool enable_developer_modules)
                     if(picked && viewer_shell.held_object_id==0U)
                     {
                         viewer_shell.selected_object_id=picked->local_id;
+                        viewer_shell.world_pick_object_id=picked->local_id;
+                        viewer_shell.world_pick_exact=picked->exact_mesh;
+                        viewer_shell.world_pick_face=picked->face;
+                        viewer_shell.world_pick_u=picked->u;
+                        viewer_shell.world_pick_v=picked->v;
                         viewer_shell.object_touch_press_requested=true;
                         viewer_shell.status_text=
                             "3D-Objekt #"+std::to_string(picked->local_id)+
-                            " gewaehlt (Bounding-Box-Treffer).";
+                            (picked->exact_mesh
+                                ?" Mesh-Face "+std::to_string(picked->face)+
+                                 " UV "+std::to_string(picked->u)+
+                                 "/"+std::to_string(picked->v)
+                                :" (Bounding-Box-Naeherung)");
+
                         viewer_shell.window=ui::ViewerWindow::objects;
                         viewer_shell.open_menu=-1;
                     }
@@ -6381,6 +6421,8 @@ int Application::run(bool enable_developer_modules)
                 // a new simulator using its stale LocalID.
                 viewer_shell.held_object_id=0U;
                 viewer_shell.selected_object_id=0U;
+                viewer_shell.world_pick_object_id=0U;
+                viewer_shell.world_pick_exact=false;
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -7220,6 +7262,8 @@ int Application::run(bool enable_developer_modules)
                 mesh_asset_retries.enter(material_scope.epoch());
                 mesh_desired_lods.clear();
                 mesh_gpu_lods.clear();
+                mesh_pick_geometry.clear();
+                mesh_pick_cpu_bytes=0U;
                 mesh_lod_dwell.reset();
                 asset_gpu_upload_gate.reset();
                 asset_gpu_upload_telemetry.reset();
@@ -9102,6 +9146,15 @@ int Application::run(bool enable_developer_modules)
                     world_renderer->remove_mesh_asset(id);
                     mesh_asset_loaded_ids.erase(id);
                     mesh_gpu_lods.erase(id);
+                    if(const auto it=mesh_pick_geometry.find(id);
+                       it!=mesh_pick_geometry.end())
+                    {
+                        mesh_pick_cpu_bytes-=
+                            it->second->vertices.size()*sizeof(float)+
+                            it->second->indices.size()*sizeof(std::uint32_t)+
+                            it->second->faces.size()*sizeof(render::RenderMeshFace);
+                        mesh_pick_geometry.erase(it);
+                    }
                     if (const auto it = mesh_gpu_asset_bytes.find(id);
                         it != mesh_gpu_asset_bytes.end())
                     {
@@ -9202,6 +9255,46 @@ int Application::run(bool enable_developer_modules)
                     const auto mesh_upload=world_renderer->upload_mesh_asset(
                         mesh_asset_loading_id,geometry);
                     const bool mesh_uploaded=mesh_upload.success;
+                    if(mesh_uploaded)
+                    {
+                        const auto pick_bytes=
+                            geometry.vertices.size()*sizeof(float)+
+                            geometry.indices.size()*sizeof(std::uint32_t)+
+                            geometry.faces.size()*sizeof(render::RenderMeshFace);
+                        if(const auto pick_old=mesh_pick_geometry.find(
+                                mesh_asset_loading_id);
+                           pick_old!=mesh_pick_geometry.end())
+                        {
+                            mesh_pick_cpu_bytes-=
+                                pick_old->second->vertices.size()*sizeof(float)+
+                                pick_old->second->indices.size()*sizeof(std::uint32_t)+
+                                pick_old->second->faces.size()*sizeof(render::RenderMeshFace);
+                            mesh_pick_geometry.erase(pick_old);
+                        }
+                        if(pick_bytes<=max_mesh_pick_cpu_bytes/2U &&
+                           geometry.indices.size()<=196608U &&
+                           geometry.vertices.size()/8U<=65536U)
+                        {
+                            // Replace oldest by sorted UUID: eviction only
+                            // affects pick precision, never asset residency.
+                            while(!mesh_pick_geometry.empty() &&
+                                  mesh_pick_cpu_bytes+pick_bytes>
+                                      max_mesh_pick_cpu_bytes)
+                            {
+                                const auto pick_old=mesh_pick_geometry.begin();
+                                mesh_pick_cpu_bytes-=
+                                    pick_old->second->vertices.size()*sizeof(float)+
+                                    pick_old->second->indices.size()*sizeof(std::uint32_t)+
+                                    pick_old->second->faces.size()*sizeof(render::RenderMeshFace);
+                                mesh_pick_geometry.erase(pick_old);
+                            }
+                            mesh_pick_geometry.insert_or_assign(
+                                mesh_asset_loading_id,
+                                std::make_shared<const render::RenderMeshGeometry>(
+                                    geometry));
+                            mesh_pick_cpu_bytes+=pick_bytes;
+                        }
+                    }
                     const auto gpu_submission_end =
                         std::chrono::steady_clock::now();
                     const auto submission_cpu_time =

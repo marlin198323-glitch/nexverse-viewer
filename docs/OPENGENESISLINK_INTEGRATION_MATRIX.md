@@ -234,3 +234,16 @@ keine Server-Livefreigabe aus dem Code-Label
 ableiten. Keine neue Client-LLUDP/CAPS-Funktion
 aus diesen Release-Dokumenten abzuleiten.
 Server-Baseline-SHA nach Review aktualisiert.
+
+## Alpha.103 – Core/Modes Integration
+
+Reviewed OpenGenesisLINK main SHA
+1841c4ee8ef580730be7d306023e594380f8b19f
+vor Entwicklung; erneut vor Veröffentlichung
+aktuell prüfen. Core: bereits vorhandene
+GetMesh, InventoryDescendents2 und
+ObjectGrab/DeGrab Firestorm-Kompatibilität.
+Keine neue Server-CAPS für Face Picking.
+Server-only: OAR/IAR Betreiberfeatureflags,
+ES256 private Keys, NexBus. Optional:
+Hardware-RTX oder hochwertige Wettermodule.

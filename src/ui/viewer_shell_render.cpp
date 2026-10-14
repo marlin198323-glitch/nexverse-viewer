@@ -284,6 +284,18 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         if(v.nearby_objects.empty())
             line(3,"Keine beruehrbaren Root-Prims im Umkreis.",
                  theme::warning);
+        if(state.world_pick_object_id!=0U &&
+           state.world_pick_object_id==state.selected_object_id)
+        {
+            const auto info=state.world_pick_exact
+                ?"3D Mesh Face "+std::to_string(state.world_pick_face)+
+                  " | UV "+std::to_string(state.world_pick_u)+
+                  ", "+std::to_string(state.world_pick_v)
+                :"3D-Klick: BoundingBox-Naeherung / kein exaktes Face";
+            r.text(x+29.0f*sc,y+ph-125.0f*sc,8.0f*sc,
+                   compact(info,72U),
+                   state.world_pick_exact?theme::cyan:theme::text_muted);
+        }
         r.rect(x+pw-216.0f*sc,y+ph-90.0f*sc,
                188.0f*sc,43.0f*sc,
                state.selected_object_id!=0U?

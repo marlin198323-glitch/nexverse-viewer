@@ -64,6 +64,41 @@ int main()
     objects[0].center={-5,0,0};
     if(pick_world_object(camera,800,600,399.5f,299.5f,
                          std::span{objects}.first(1)))return 11;
-    std::cout<<"OpenGL camera-projection ray OBB original viewer 3D picking OK\n";
+    // Real resident GetMesh interleaved XYZ/nXYZ/UV triangle on
+    // the world-front face (x=-0.5), with barycentric UV/face readback.
+    auto mesh=std::make_shared<RenderMeshGeometry>();
+    mesh->vertices={
+        -0.5f,-0.5f,-0.5f, 1,0,0, 0,0,
+        -0.5f, 0.5f,-0.5f, 1,0,0, 1,0,
+        -0.5f, 0.0f, 0.5f, 1,0,0, 0.5f,1
+    };
+    mesh->indices={0,1,2};
+    mesh->faces={{7U,0U,3U}};
+    objects[0]={90U,{8,0,0},{0,0,0,1},{2,2,2},mesh};
+    const auto exact=pick_world_object(camera,800,600,
+             399.5f,299.5f,std::span{objects}.first(1));
+    if(!exact||!exact->exact_mesh||exact->face!=7U||
+       exact->local_id!=90U||
+       std::abs(exact->distance-7.0f)>1e-4f||
+       std::abs(exact->u-0.5f)>1e-4f||
+       std::abs(exact->v-0.5f)>1e-4f)return 12;
+    // Behind the triangle inside the cube bounding box is NOT
+    // acceptable: exact mesh wins and no phantom OBB pick.
+    mesh->vertices[2]=1.0f;
+    mesh->vertices[10]=1.0f;
+    mesh->vertices[18]=1.0f;
+    if(pick_world_object(camera,800,600,399.5f,299.5f,
+                         std::span{objects}.first(1)))return 13;
+    mesh->vertices[2]=-0.5f;
+    mesh->vertices[10]=-0.5f;
+    mesh->vertices[18]=0.5f;
+    mesh->indices[2]=888888U; // corrupt decoder/index
+    if(pick_world_object(camera,800,600,399.5f,299.5f,
+                         std::span{objects}.first(1)))return 14;
+    mesh->indices[2]=2U;
+    mesh->vertices[0]=std::numeric_limits<float>::quiet_NaN();
+    if(pick_world_object(camera,800,600,399.5f,299.5f,
+                         std::span{objects}.first(1)))return 15;
+    std::cout<<"World OBB + exact loaded-mesh face/UV picker OK\n";
     return 0;
 }

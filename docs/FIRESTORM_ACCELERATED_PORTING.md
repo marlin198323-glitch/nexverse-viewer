@@ -130,3 +130,14 @@ ObjectDeGrab-LLUDP-Funktionen auslösen.
 NexVerse-Dock/Floater verknüpft die Auswahl
 sichtbar. Geometry ist noch OBB, kein
 dreiecksgenaues Firestorm Mesh-Picking.
+
+## Alpha.103 – Mesh-Geometrie und GUI zeitgleich
+
+Realer GetMesh Uploadpfad speist zugleich GPU
+und bounded CPU-Ray-Geometrie. Worldklick
+meldet exakte Mesh-Face und UV bei vorhandenen
+Assets, sonst klar gekennzeichnete Näherung.
+Parallel ergänzt echter F9-Outfit-Galerie-
+Aktualisieren-Button einen bestehenden
+authenticated InventoryDescendents2-Backend-
+Pfad; keine Dummy-COF-Wear-Aktionen.

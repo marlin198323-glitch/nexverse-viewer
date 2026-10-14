@@ -63,6 +63,10 @@ struct ViewerShellState
     std::vector<std::uint32_t> nearby_object_ids;
     std::uint32_t selected_object_id=0U;
     std::uint32_t held_object_id=0U;
+    std::uint32_t world_pick_face=0U;
+    float world_pick_u=0.0f,world_pick_v=0.0f;
+    bool world_pick_exact=false;
+    std::uint32_t world_pick_object_id=0U;
     bool object_touch_press_requested=false;
     bool object_touch_release_requested=false;
     bool world_pick_requested=false;
