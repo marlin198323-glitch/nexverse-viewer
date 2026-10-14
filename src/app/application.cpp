@@ -81,6 +81,8 @@
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
 #include "nexverse/assets/firestorm_texlayer_composite.hpp"
+#include "nexverse/assets/firestorm_texlayer_mask_preview.hpp"
+#include "nexverse/assets/firestorm_tga.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -2282,7 +2284,7 @@ void render_outfit_gallery(
                   160.0f*scale,33.0f*scale,
                   Color{0.038f,0.135f,0.146f,0.98f},7.0f*scale);
     renderer.text(x+201.0f*scale,y+73.0f*scale,8.2f*scale,
-                  "Teillagen mischen",theme::cyan);
+                  "Masken/Teillagen",theme::cyan);
     renderer.rect(x+pw-409.0f*scale,y+64.0f*scale,
                   186.0f*scale,33.0f*scale,
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
@@ -8292,12 +8294,63 @@ int Application::run(bool enable_developer_modules)
                     }
                     gallery_composite_cof=id;
                     gallery_composite_version=v->second;
+                    std::map<int,float> weights;
+                    std::set<int> conflicting;
+                    for(const auto& [asset_id,wearable]:gallery_decoded_wearable_assets)
+                    {
+                        (void)asset_id;
+                        for(const auto& [id,value]:wearable.visual_params)
+                        {
+                            if(conflicting.contains(id))continue;
+                            const auto existing=weights.find(id);
+                            if(existing!=weights.end()&&existing->second!=value)
+                            {
+                                weights.erase(existing);
+                                conflicting.insert(id);
+                            }
+                            else weights.insert_or_assign(id,value);
+                        }
+                    }
+                    std::map<std::string,assets::ImageRgba8> masks;
+                    std::size_t failed_masks=0U;
+                    if(const auto root=
+                          assets::find_firestorm_avatar_character_directory())
+                    {
+                        for(unsigned region=0U;region<3U;++region)
+                            for(const auto& layer:
+                                gallery_texlayer_manifest->sets[region].layers)
+                            {
+                                if(masks.size()>=12U)break;
+                                if(!layer.texture_entry||
+                                   !gallery_local_te_rgba.contains(*layer.texture_entry)||
+                                   !layer.alpha_params_only||
+                                   layer.alpha_params.size()!=1U||
+                                   layer.is_bump||layer.has_fixed_color||
+                                   layer.has_global_color||layer.has_external_tga||
+                                   layer.has_visibility_mask||layer.is_mask||
+                                   layer.multi_texture||layer.local_alpha_only)
+                                    continue;
+                                const auto& param=layer.alpha_params[0U];
+                                if(param.mask_file.empty()||
+                                   !weights.contains(param.id)||
+                                   masks.contains(param.mask_file))
+                                    continue;
+                                auto loaded=assets::load_firestorm_character_tga(
+                                    *root,param.mask_file);
+                                if(loaded.ok())
+                                    masks.emplace(param.mask_file,std::move(loaded.image));
+                                else ++failed_masks;
+                            }
+                    }
+                    std::size_t masked_layers=0U;
                     std::size_t applied=0U,unsupported=0U,missing=0U;
                     for(unsigned group=0U;group<3U;++group)
                     {
-                        const auto composed=assets::compose_firestorm_partial_texlayers(
+                        const auto result=assets::compose_firestorm_mask_preview(
                             *gallery_texlayer_manifest,group,
-                            gallery_local_te_rgba);
+                            gallery_local_te_rgba,masks,weights);
+                        const auto& composed=result.composite;
+                        masked_layers+=result.mask_layers_applied;
                         applied+=composed.applied;
                         unsupported+=composed.unsupported;
                         missing+=composed.missing;
@@ -8311,10 +8364,12 @@ int Application::run(bool enable_developer_modules)
                                     composed.image.pixels.data());
                     }
                     gallery_texlayer_status=
-                        "RGB-Teillagen "+std::to_string(applied)+
-                        " gemischt, "+std::to_string(unsupported)+
-                        " maskiert/komplex, "+
-                        std::to_string(missing)+" ohne Bild; KEIN Bake";
+                        "RGBlagen "+std::to_string(applied)+
+                        " (TGA-Masken "+std::to_string(masked_layers)+
+                        "), "+std::to_string(unsupported)+
+                        " komplex, "+std::to_string(missing)+
+                        " fehlen, "+std::to_string(failed_masks)+
+                        " Maskenfehler; NUR VORSCHAU";
                 }
             }
             if(gallery_appearance_check_requested)

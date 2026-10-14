@@ -2,6 +2,8 @@
 #include "nexverse/assets/firestorm_texlayer_manifest.hpp"
 #include <tinyxml2.h>
 #include <algorithm>
+#include <cmath>
+#include <string_view>
 #include <fstream>
 #include <iterator>
 #include <system_error>
@@ -60,6 +62,49 @@ FirestormTexLayerResult parse_firestorm_texlayers(std::string_view input)
             const auto* pass=layer->Attribute("render_pass");
             item.is_bump=pass&&std::string_view(pass)=="bump";
             item.has_parameters=layer->FirstChildElement("param")!=nullptr;
+            bool all_alpha=item.has_parameters;
+            for(auto* param=layer->FirstChildElement("param");param;
+                param=param->NextSiblingElement("param"))
+            {
+                if(item.alpha_params.size()>=16U)
+                    return failure("Too many alpha params per TexLayer");
+                const auto* alpha=param->FirstChildElement("param_alpha");
+                if(!alpha||param->FirstChildElement("param_color"))
+                {
+                    all_alpha=false;
+                    continue;
+                }
+                FirestormTexLayerAlphaParam parsed;
+                if(param->QueryIntAttribute("id",&parsed.id)!=
+                    tinyxml2::XML_SUCCESS||parsed.id<0||
+                    parsed.id>200000)
+                    return failure("Invalid Firestorm param_alpha ID");
+                const auto* wearable=param->Attribute("wearable");
+                parsed.wearable=wearable?wearable:"";
+                const auto* filename=alpha->Attribute("tga_file");
+                parsed.mask_file=filename?filename:"";
+                const auto decimal=[](const tinyxml2::XMLElement* node,
+                    const char* key,float& output)->bool
+                {
+                    if(!node->Attribute(key))return true;
+                    return node->QueryFloatAttribute(key,&output)==
+                        tinyxml2::XML_SUCCESS&&std::isfinite(output);
+                };
+                if(!decimal(param,"value_min",parsed.minimum)||
+                   !decimal(param,"value_max",parsed.maximum)||
+                   !decimal(param,"value_default",parsed.default_value)||
+                   !decimal(alpha,"domain",parsed.domain)||
+                   parsed.minimum>parsed.maximum||
+                   parsed.minimum<0.0f||parsed.maximum>100.0f||
+                   parsed.domain<0.0f||parsed.domain>1.0f)
+                    return failure("Invalid Firestorm alpha-param ranges");
+                parsed.explicit_default=param->Attribute("value_default")!=nullptr;
+                parsed.multiply_blend=alpha->BoolAttribute("multiply_blend",false);
+                parsed.skip_if_zero=alpha->BoolAttribute("skip_if_zero",false);
+                item.alpha_params.push_back(std::move(parsed));
+            }
+            item.alpha_params_only=all_alpha&&
+                !item.alpha_params.empty();
             item.has_global_color=layer->Attribute("global_color")!=nullptr;
             item.has_fixed_color=layer->Attribute("fixed_color")!=nullptr;
             item.has_visibility_mask=layer->Attribute("visibility_mask")!=nullptr;

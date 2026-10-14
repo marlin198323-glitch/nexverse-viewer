@@ -554,3 +554,7 @@ Firestorm_7.2.4 LLAvatarAppearanceDictionary::Textures::Textures 45 TE, 17 Weara
 ## Alpha.112-115
 
 Alpha112-115: Original Firestorm TexLayer XML LocalSource TE-Name 45, 11 region sets, ordenliche Reihenfolge und Mask/alpha/colors/bump Parameter Semantik als Fakten; nur masken-/parameterfreie lokale RGBA Quelle zum einfachen Teil-Preview verwendet. No genuine AvatarBake, AgentSetAppearance, Wear/Unwear.
+
+## Alpha.116-119
+
+Alpha116-119 Original Firestorm TGA RLE/Raw decoder inkl. grauer 8bit Masken und 24/32bit BGR, sichere lokale Character-Pfade. param_alpha Id/Name/Domain/Range/Skip/Multiply werden gelesen; nur exakt ein AlphaParam und authentifizierte WearableGewichte werden in diagnostischer einzelmaskiger RGBA Komposition benutzt. Domain/multiply nicht 1:1 LLTexLayer implementiert, als Preview, nie als echtes Bake/Server-Upload.

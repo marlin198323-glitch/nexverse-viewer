@@ -226,3 +226,7 @@ Alpha111: lokale User-Wearable Texturen sind nun tatsächlich über GetTexture J
 ## Alpha.112-115
 
 Alpha112-115 echter lokaler Firestorm avatar_lad.xml Reader mit 89 geordneten TexLayers und drei einfach maskenfreien, realen GL Partial Previews; E2E authentifizierte Avatar-Bake/Outfit-Wear in NexVerse weiterhin nicht getestet.
+
+## Alpha.116-119
+
+Alpha116-119 Real original Firestorm glove_length_alpha.tga RLE 512x512 decoded, synthetic weighted alpha masks/composite CTests; F9 preview workflow code attached. Ohne echte authorisierte NexVerse Simulator-Sitzung und pixelgleiche XML-Multilayer/3D Skin/Server Bake-Abnahme ist dies kein nachgewiesener Live Outfit Wear.

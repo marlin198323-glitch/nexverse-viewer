@@ -30,11 +30,23 @@ inline constexpr std::array<std::string_view,11U> firestorm_layer_regions{
     "head","upper_body","lower_body","eyes","skirt","hair",
     "leftarm","leftleg","aux1","aux2","aux3"
 };
+struct FirestormTexLayerAlphaParam
+{
+    int id=-1;
+    std::string wearable;
+    std::string mask_file;
+    float minimum=0.0f,maximum=1.0f,default_value=0.0f;
+    float domain=0.0f;
+    bool multiply_blend=false,skip_if_zero=false;
+    bool explicit_default=false;
+};
 struct FirestormTexLayer
 {
     std::string name;
     std::optional<unsigned> texture_entry;
     std::string local_name;
+    std::vector<FirestormTexLayerAlphaParam> alpha_params;
+    bool alpha_params_only=false;
     std::size_t ordinal=0U;
     bool is_bump=false;
     bool is_mask=false;

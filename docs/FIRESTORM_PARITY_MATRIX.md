@@ -488,3 +488,7 @@ Alpha111: F9 authentifizierte originale lokale Wearable Texture Input UUIDs via 
 ## Alpha.112-115
 
 Alpha112-115: original lokal installiertes Firestorm avatar_lad.xml 11 original LayerSets, 89 geordnete Layer und 3 simple Inputs gelesen; Shader/TexLayer Compiler mit Grenzen und Masken/TGA/Bump/Color-Erkennung. Source-over nur safe local RGBA8 und 3 F9 Head/Upper/Lower Teilgrafiken. VOLLSTÄNDIGER GPU Bake und Wear/Unwear weiterhin offen.
+
+## Alpha.116-119
+
+Alpha116-119: Original Firestorm Character RLE11 TGA Alpha und RLE10 RGB inklusive Bounds gelesen, param_alpha id/wearable/domain/multiply/skip XML Metadaten erfasst. Nur owner-verifizierte LLWearable visual parameter TGA mask source-over als lokale, unvollständige Head/Upper/Lower F9 GL Vorschau. Keine Firestorm vollständige TexLayer/Avatar Bake oder COF Tragen/Ablegen.

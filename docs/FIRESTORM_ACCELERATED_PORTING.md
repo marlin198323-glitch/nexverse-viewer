@@ -187,3 +187,7 @@ Alpha111 vorhandenen OGL TextureAssetLoader/OpenJPEG/JPEG2000 und GL Textur-Uplo
 ## Alpha.112-115
 
 Alpha112-115 vier kombinierte Blöcke: TinyXML2 Firestorm avatar_lad.xml Parser, sichere simple RGBA alpha-over Komposition, echter Original Wearable Source-Pixelcache nach TE, sichtbare F9 Buttons und GPU Preview; Browser/UI sowie Protokoll in gemeinsamen Release statt Einzelfunktionen.
+
+## Alpha.116-119
+
+Alpha116-119 vier integrierte Entwicklungsblöcke: sichere Firestorm original RLE TGA Daten, param_alpha XML, alpha Source-Over mit echten Wearable Params, F9 interaktiver Masken/Teillagen und GPU Head/Upper/Lower Vorschau; keine fehlende PNG oder J2C Code-Duplikation.

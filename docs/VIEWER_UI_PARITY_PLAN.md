@@ -209,3 +209,7 @@ Alpha111 F9 zwei echte Buttons (Wearable-Assets laden, Texturen laden) und 17 We
 ## Alpha.112-115
 
 Alpha112-115 F9 neue Buttons TexLayer lesen und Teillagen mischen, neben bestehenden Wearable-Assets laden/Texturen laden, plus 3 Head/Upper/Lower partielle GL Farblagenbilder und neue TexLayer Footer Statuszeile. 800x480 bis Ultrawide Klickflächen geprüft. Vollständige Masken bleiben als nicht unterstützt sichtbar.
+
+## Alpha.116-119
+
+Alpha116-119 F9 Button Masken/Teillagen verwendet geprüfte lokale TGA-Masken und original Wearable Visual Param IDs. In 3 sichtbaren Head/Upper/Lower Preview-Feldern erhält man alpha-gesteuerte Teilbilder statt bloßer Textur-Overlays; Status weist mask counts und skipped/fehlende auf. Preview keine vollständig getragene Kleidung, kein wahrer Bake.

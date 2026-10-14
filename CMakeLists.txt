@@ -91,6 +91,7 @@ add_library(nexverse-assets
     src/assets/firestorm_avatar_mesh.cpp
     src/assets/firestorm_avatar_rig.cpp
     src/assets/firestorm_texlayer_manifest.cpp
+    src/assets/firestorm_tga.cpp
     src/assets/mesh_cache.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
@@ -369,6 +370,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
+
+    add_executable(nexverse-firestorm-tga-mask-tests
+        tests/firestorm_tga_mask_tests.cpp)
+    target_link_libraries(nexverse-firestorm-tga-mask-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-tga-mask-tests)
+    add_test(NAME nexverse-firestorm-tga-mask-tests
+        COMMAND nexverse-firestorm-tga-mask-tests)
 
     add_executable(nexverse-firestorm-texlayer-manifest-tests
         tests/firestorm_texlayer_manifest_tests.cpp)
