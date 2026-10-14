@@ -368,6 +368,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-firestorm-cof-link-consent-tests
+        tests/firestorm_cof_link_consent_tests.cpp)
+    target_link_libraries(nexverse-firestorm-cof-link-consent-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-cof-link-consent-tests)
+    add_test(NAME nexverse-firestorm-cof-link-consent-tests
+        COMMAND nexverse-firestorm-cof-link-consent-tests)
+
     add_executable(nexverse-firestorm-cof-planning-tests
         tests/firestorm_cof_planning_tests.cpp)
     target_link_libraries(nexverse-firestorm-cof-planning-tests

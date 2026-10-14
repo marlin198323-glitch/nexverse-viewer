@@ -281,3 +281,18 @@ Reviewed SHA in Baseline aktualisiert.
 ## Alpha.105
 
 Alpha.105 Live-Review Server main 5831913f3dc840aa9661b83fc844546f9f637070. OpenSim OnLinkInventoryItem und OnRemoveInventoryItem sind Viewer-Core-Protokolle. Server-only OAR/IAR FeatureControl, geschuetztes ControlCenter mit UserLevel>=200 und dessen Keys bleiben ausserhalb des Endnutzer-Viewers. Neuer COF-Diff/Preview fail-closed, kein produktiver Avatarwechsel bestaetigt.
+
+## Alpha.106
+
+Alpha.106 server main SHA
+5831913f3dc840aa9661b83fc844546f9f637070
+bei Beginn verifiziert. Original LLClientView
+OnLinkInventoryItem Low426 und owner-scoped
+InventoryDescendents2 aus aktuellem Simulator
+sind Core-Protokollfunktionen, keine
+Robust-Admin-Sonder-CAPS. Viewer-Linkwrite
+nur mit explizitem 2-Click Consent, exakt
+einem add, keinem remove und anschliessendem
+COF Folder Version+Target Readback.
+Kein AvatarAppearance-Erfolg ohne Livebeleg.
+Operator Docs/OAR Gates bleiben Server-only.

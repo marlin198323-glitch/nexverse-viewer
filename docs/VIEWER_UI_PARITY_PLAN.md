@@ -168,3 +168,20 @@ Alpha.104: Welt-Objektfenster zeigt, ob gueltige SurfaceInfo an Simulator gesend
 ## Alpha.105
 
 F9 Outfit Galerie: neuer echter Aenderungsplan-Button und rechtseitige serverbasierte COF Diff-Vorschau mit +/−/=, Version und Listeneintraegen. Automatisch invalidiert bei neuen Inventory-CAPS/Region und manuellem COF-Verify. Keine aktiven Tragen/Ablegen Buttons ohne server-validierte Wear-Mutation.
+
+## Alpha.106
+
+Im F9 Outfit-Floater ist nun unter Aenderungsplan eine echte,
+aber bewusst auf ein einzelnes ADD-LINK begrenzte Aktion verfuegbar.
+Erster Klick: vorbereiten. Zweiter Klick innerhalb 20s:
+authentifiziertes RELIABLE LinkInventoryItem an COF.
+Der sichtbare Zustand unterscheidet Queued,
+COF-serverseitig per echter InventoryDescendents2-
+Versions+Linkpruefung bestaetigt und 'nicht
+bestaetigt'. Alle Varianten mit
+Delete/Mehrfachaenderung bleiben UI-gesperrt,
+keine falschen 'Tragen' und 'Ablegen'-Buttons.
+'COF pruefen' fragt jetzt den CURRENT OUTFIT
+FOLDER statt nur das ausgewaehlte Outfit ab.
+Alte in-flight CAPS sind nicht als neue
+Benutzerabfrage erlaubt.

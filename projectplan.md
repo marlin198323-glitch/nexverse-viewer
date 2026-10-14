@@ -5358,3 +5358,132 @@ Block 4: Strikter Readback-Reconciler fuer die spaetere freigegebene Transaktion
 Block 5: Tests tests/firestorm_cof_planning_tests.cpp: Wire-Goldens Low426/270, Feldreihenfolge, Callback, NullTransactionID, var1 Stringlaengen, UUID/Input-Validation, Queue-Typen, Plan +/−/=, veraltete Version, unsupported folder links/duplicate/unresolved targets, Reconciliation positives/negatives. tests/outfit_gallery_layout_tests.cpp testet neue Button-Hitbox auf 1280/1920/3440/5120 Bildschirmbreiten. Vollstaendiger C++23 Debug Build, CTest, Python sowie NVIDIA OpenGL GUI Smoke vor GitHub-Push.
 
 NICHT FERTIG: Multipacket COF-Wear/Unwear-Transaktionsdurchfuehrung mit ItemCallbackId-Mapping, serverseitigen Itemdaten/Appearance und Recovery bei Teilfehlern, echten Tragen/Ablegen-Buttons oder authentifizierter NexVerse-Inworld-Abnahme. OGL Viewer wird nicht als vollstaendig Firestorm kompatibel ausgegeben. Als Alpha.106 folgen expliziter Consent, servergepruefter Mutationsablauf/Rollback und Sichtbarkeit von Wear, nach belastbarem Protokollbeleg. Kern plus UI weiterhin gemeinsam.
+
+## Alpha.106 – bestaetigte einzelne COF-Verknuepfung und reale Outfit-UI (14.10.2026)
+
+Vor Entwicklungsbeginn live geprueft: OGL Viewer develop-current
+ba138e0c04ca2593cf88b88b9bc97108eef98c63,
+OpenGenesisLINK Server main
+5831913f3dc840aa9661b83fc844546f9f637070
+mit scripts/check_opengenesislink_server.py --strict.
+Firestorm_7.2.4 llviewerinventory.cpp/message_template.msg
+und OpenGenesisLINK LLClientView HandleLinkInventoryItem/HandleRemoveInventoryItem
+geben das Originalprotokoll vor. Architektur: Firestorm
+Inventory/COF im Viewer-Core, keine Plugins,
+Robust-Admin API/PrivateKeys weiter server-only.
+
+**Block 1 – Ein-Link-Mutationsschutz:**
+include/nexverse/protocol/firestorm_cof_link_consent.hpp ist
+ein echter gepruefter In-Memory-Zustandsautomat
+idle/stage/confirm/waiting_server/verified/not_confirmed/
+stale. Freigabe nur fuer COF ChangePlan mit genau
+EINER neuen Link-ID und KEINER Entfernung.
+Verlaessliche Quelle: owner- und RegionEpoch-
+geprueftes InventoryDescendents2 mit positiver
+COF-Versionsnummer, komplett validierten IDs
+und vorhandener aktueller User-Sitzung.
+Alle groesseren Outfitwechsel bleiben fail closed.
+
+**Block 2 – ausdruckliche Zustimmung:** Im sichtbaren
+F9 Outfit-Fenster kann der Nutzer im COF-
+Aenderungsplan auf 'Einen COF-Link anlegen'
+klicken. Der erste Klick bereitet nur vor,
+der zweite Klick innerhalb 20 Sekunden bestaetigt
+nach frischer Pruefung von RegionEpoch,
+COF-Version, Zielitem, Auswahldaten und
+Login/Simulationsbereitschaft. Nach Timeout,
+Schliessen des Fensters oder Regionwechsel
+wird unbestaetigte Freigabe verworfen.
+Kein automatischer COF-Schreibzugriff.
+
+**Block 3 – echter Versand mit Fallback:** Zweiter
+freigegebener Klick stellt GENAU EINE
+LinkInventoryItem Low426 in die bestehende
+RELIABLE LLUDP CommandQueue/Circuit, mit
+kontinuierlicher Callback-ID (nie Null).
+Queue full -> kein falsches Erfolgsergebnis.
+RemoveInventoryItem Low270 wird NICHT als
+Outfitwechsel ausgelöst und keine bestehenden
+COF-Links werden dabei gelöscht.
+Link-Queue erfolgreich bedeutet ausdrücklich
+NICHT erfolgreicher Wear oder Appearance.
+
+**Block 4 – echte Serverbestaetigung:** Bereits vorhandener
+CAP InventoryDescendents2 Readback wird fuer 18s
+alle mindestens 2s erneut angestoßen, auch bei
+geschlossenem F9-Fenster, aber NIE erneut
+eine Link-Mutation gesendet. Erfolg erst,
+wenn aktueller Server-COF eine hoehere Version
+als vor Ausfuehrung meldet UND ein echtes
+AT_LINK Item auf das genaue gewuenschte
+Ziel verweist. Keine positive Aussage nur
+auf Grund von LLUDP ACK oder lokaler Cachemeldung.
+Fehlende Antwort -> 'nicht bestaetigt'.
+Session/Regionswechsel -> unbekannter
+Serverzustand, nie mutig erneut ausfuehren.
+
+**Block 5 – COF pruefen repariert:** Bisherige
+COF pruefen Schaltflaeche hatte die
+On-Demand-FetchInventory2 (ausgewaehltes Outfit)
+gestartet; das war keine tatsaechliche
+COF-Pruefung. Jetzt wird vom Server ueber
+InventoryDescendents2 *wirklich* der
+Current Outfit Folder (FT_CURRENT_OUTFIT=46)
+inklusive Version, Link-Item-Liste
+und korrekter Owner/Region gelesen. Der Button
+zeigt Server-Version und Anzahl Links oder
+Fehlermeldung. FetchInventory2 bleibt fuer
+aufzulösende einzelne Outfit-Item-Targets
+separat weiterhin vorhanden.
+
+**Block 6 – Stale-Response-Sicherheit:** Jedes
+COF-Pruefen merkt eine erwartete neue Request-
+Seriennummer und akzeptiert kein noch laufendes
+altes CAPS-Ergebnis als Beleg fuer den
+gerade gedrueckten COF-Pruefen-Button.
+Regionwechsel setzt Seriennummer und offene
+Verifikation zurueck.
+
+**Block 7 – echte grafische Bedienoberflaeche:**
+F9/Outfit-Galerie hat Aenderungsplan, genau
+eine einzelne erlaubte Linkanlage, getrennte
+Bestaetigungsbeschriftung und Statusmeldungen
+fuer Request, ausstehende Serverantwort,
+vom COF bestaetigte Verknuepfung oder Timeout.
+Status bleibt auch bei geschlossenem Vorschau-
+Overlay auf der F9-Oberflaeche sichtbar.
+Bestätigung und Readback sind nicht
+als visuell bestaetigtes Avatar-Outfit
+gekennzeichnet.
+
+**Block 8 – Regression/Tests:** Neue
+tests/firestorm_cof_link_consent_tests.cpp
+testet 20s Consent-Frist, 18s Readback,
+Stale Epoch/Version/Target, mindestens
+einseitiges No-Deletions Gate, 2-Klick-
+Sperre und Ausbleiben automatischer
+Resends. Erweiterte
+tests/outfit_gallery_layout_tests.cpp
+testen Linkbutton-Hitbox in allen
+vier Bildschirmformaten. Bestehende
+tests/firestorm_inventory_fetch_tests.cpp
+verifizieren COF-Folder-ID, ServerVersion
+42 und echten COF-Link per authentifiziertem
+InventoryDescendents2 neben ausgewähltem
+Outfit. Kompletter Build/CTest/Python und
+Linux NVIDIA OpenGL Smoke bleiben
+verbindliche Release-Gates.
+
+**Offen – nicht als implementiert ausgeben:**
+vollstaendiges Firestorm Wear/Unwear mit
+mehreren Links, sicheren Loeschungen,
+Callback-/Appearance-Bestätigung,
+Serverseitigem Inventar-Rollback bei
+Teilfehlern, erfolgreicher GPU-Avatar-
+Appearance, authentifizierter NexVerse
+Grid-Inworld Test mit Live-Outfit.
+Alpha.107 priorisiert echte fehlertolerante
+mehrstufige COF/Appearance-Verarbeitung,
+nachvollziehbare Undo/Pending-Operationen,
+Outfit Tragen/Ablegen nur nach serverseitiger
+Ende-zu-Ende-Abnahme sowie GUI im selben Release.

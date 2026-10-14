@@ -149,3 +149,17 @@ Alpha.104: Original Firestorm ObjectGrab/ObjectDeGrab SurfaceInfo komplett fuer 
 ## Alpha.105
 
 Alpha.105: Original LLUDP Low426/270 plus Circuit-Wire umgesetzt, read-only COF-Änderungsplan aus echter Inbox/COF-Version. F9 GUI mit Vorschaufenster statt isoliertem Backend. Server-Reconciliation-Schutz vorhanden, Wear-Aktion absichtlich nicht verbunden vor Checkpoint-/Rollback-Abnahme.
+
+## Alpha.106
+
+Alpha.106: Original Firestorm Viewer Link426
+wird kontrolliert als einzelne additive
+Mutation nutzbar, nie blindes Mehrfach-
+Update. F9 Floater bietet Consent/Status
+und Readback-Verifikation via
+OpenGenesisLINK InventoryDescendents2
+FT_CURRENT_OUTFIT. Alte CAPS Antwort
+vor UI-Klick wird per Seriennummer
+abgewiesen. User-Viewer Core, keine Plugins;
+Wearing/Unwear Outfit und AvatarAppearance
+bleiben an E2E gekoppelt.

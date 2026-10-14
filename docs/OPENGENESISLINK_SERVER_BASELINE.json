@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "5831913f3dc840aa9661b83fc844546f9f637070",
   "reviewed_utc": "2026-10-14T17:11:14Z",
-  "viewer_version": "0.2.0-alpha.105",
+  "viewer_version": "0.2.0-alpha.106",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -68,6 +68,11 @@
       "server_change": "Firestorm/OpenSim LLUDP LinkInventoryItem Low426 and RemoveInventoryItem Low270 used for COF Wear link mutations",
       "placement": "VIEWER_CORE_PROTOCOL, execution gated by server readback and future explicit consent",
       "note": "Reviewed Firestorm_7.2.4 message_template.msg and llviewerinventory.cpp; OpenGenesisLINK LLClientView.cs HandleLinkInventoryItem/HandleRemoveInventoryItem. Packet encoders/circuit implement wire; actual multi-link Wear/Unwear dispatch withheld until atomic-equivalent reconciliation/rollback and appearance propagation. No admin keys."
+    },
+    {
+      "server_change": "Firestorm LLUDP Low426 LinkInventoryItem and OpenSim owner-scoped COF InventoryDescendents2 readback; original single-link mutation intentionally limited",
+      "placement": "VIEWER_CORE_WITH_EXPLICIT_USER_CONSENT",
+      "note": "Wire formats from Firestorm_7.2.4 and server HandleLinkInventoryItem. Alpha.106 supports at most one additive link, zero removals, two-click 20s consent, new server COF version + target readback, 18s timeout, no automatic retries. Not a complete outfit Wear/Unwear or verified avatar appearance."
     }
   ]
 }

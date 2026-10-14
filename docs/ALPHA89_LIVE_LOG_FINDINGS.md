@@ -189,3 +189,16 @@ anfordern; Wear/Unwear immer noch offen.
 ## Alpha.104
 
 Alpha.104: LLUDP Original TouchSurface Byte-Golden, TriangleNormal/Binormal, GUI/Outfit-Fetch Tests lokal. Ohne authentifizierte NexVerse-InWorld-Testumgebung kein LSL-Face-/UV-Ereignis und kein erfolgreicher COF-Wear nachgewiesen.
+
+## Alpha.106
+
+Alpha.106: Ein-Link-COF Zustand
+statisch und per Fakeowner CAP
+testbar, Firestorm Low426 Bytegolden,
+WorldRenderer Linux GL3.3 GUI Smoke.
+Es wurde NICHT im echten NexVerse Grid
+ein Kleidungsstueck angezogen,
+keine AvatarAppearance aus neuem COF
+von Server und GPU bestaetigt.
+Missing/Epoch/Timeout werden nicht
+als erfolgreicher Wear markiert.

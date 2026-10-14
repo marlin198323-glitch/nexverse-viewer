@@ -511,3 +511,22 @@ Alpha.104: Wire-Layout aus Firestorm lltoolgrab.cpp und message_template.msg Low
 ## Alpha.105
 
 Firestorm 7.2.4 llviewerinventory.cpp/message_template.msg LinkInventoryItem Low426 (Agent, CallbackID, FolderID, null TransactionID, OldItemID, Type24, InvType, Name/Desc Variable1) und RemoveInventoryItem Low270 (Agent und 1 ItemID). OpenGenesisLINK LLClientView Handler bestaetigt Wire-Struktur. Implementierte Wire-Nachrichten sind nicht automatisch komplette COF-Wear-Mutation; keine UI-Sendeberechtigung bis serverbestätigter Transaktionsfreigabe.
+
+## Alpha.106
+
+Original LinkInventoryItem Low426 aus Firestorm 7.2.4
+wird nur fuer EINEN ADD-LINK ohne bestehende
+Loeschungen mit zweitem Click innerhalb 20s
+in die Circuit-Queue gestellt. COF muss zum
+Owner und RegionEpoch passen. Nach
+Queue wartet der Viewer maximal 18s auf
+owner-scoped InventoryDescendents2 Current
+Outfit Folder mit neuerer Serverversion und
+passendem Link-Target (asset_id). LLUDP ACK
+ist KEINE erfolgreiche Appearance-Bestätigung.
+Unerkannter Erfolg wird nicht auto-retry'd.
+COF-Pruefen verwendet nun wirklich
+InventoryDescendents2 und neue Request-
+Seriennummer statt selected-outfit
+FetchInventory2. Kein voller Wear- oder
+Unwear-API Support. Admin Keys bleiben server-only.

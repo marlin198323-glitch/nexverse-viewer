@@ -453,3 +453,14 @@ Alpha.104: Original ObjectGrab/DeGrab SurfaceInfo VariableCount1 mit 64 Bytes (U
 ## Alpha.105
 
 LLUDP LinkInventoryItem Low426/RemoveInventoryItem Low270 sind technisch im Viewer-Circuit. GUI: COF-Aenderungsplan aus Readback mit fail-closed Konflikterkennung, keine stummen Mutationen. Wear/Unwear/Apearance weiterhin unvollstaendig. Reconciliation verlangt neue Serverversion+RegionEpoch+exakte Link-Zielmenge.
+
+## Alpha.106
+
+| Firestorm Feature | Alpha.106 OGL | Rest |
+|---|---|---|
+| Ein einzelner COF-Link | Zwei-Klick-Consent, RELIABLE LLUDP 426, Server COF Readback | volle Outfit-Transaktion |
+| COF-Version kontrollieren | Current Outfit Folder direkt mit InventoryDescendents2 | atomare Versioncompare am Server |
+| Ergebnis bestaetigen | Hoehere Serverversion und exaktes AT_LINK Ziel | AvatarAppearance/GPU |
+| F9 Viewer-Button | Link anlegen mit Confirm und Status | Tragen/Ablegen Mehrfachoperationen |
+| Fehlschlag | 18s Timeout, kein Auto-Resend/Delete | rollback bei Teilfehlerserie |
+| Alte CAPS Antworten | Request-Seriennummer fuer COF-Pruefen | Live Netztest |
