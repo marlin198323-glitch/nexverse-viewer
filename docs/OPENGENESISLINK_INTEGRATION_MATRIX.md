@@ -308,3 +308,7 @@ Während der Alpha.107 Release-Pflichtprüfung erschien ein neuer OpenGenesisLIN
 Inhalt: abgesicherte AdminDocsTrustedProxyAddresses für TLS-Termination, verifizierte Peer-IP (Loopback oder explizite Allowlist), exakter X-Forwarded-Proto https, keine Annahme untrusted X-Forwarded-For. Anonyme Dashboard-Zugriffe bleiben 401; bei Admin-Bearer kann Proxy-HTTPS-Konfigurationsfehler 426 statt irreführendem 401 gemeldet werden. Owner/GridUser UserLevel >=200 und AdminAll Scope bleiben zwingend. Klassifikation SERVER_ONLY_OPERATOR_ADMIN_SECURITY: weder neue LLUDP/CAPS-Benutzer-Viewer Funktion noch OGL Plugin, kein Token oder Admin-Schlüssel im Desktop Viewer.
 
 Source Review abgeschlossen; geprüften SHA-Pin auf 2b7c19c... aktualisiert. Release-Gate danach erneut ausführen.
+
+## Alpha.108
+
+Server main 2b7c19c9396eb2f75fd60a41a33a05655909da6b zu Alpha108 Beginn geprüft. OpenGenesisLINK/OpenSim Firestorm AvatarAppearance Low158 als serverseitig gesendete Viewer Core Nachricht, original AppearanceData CofVersion/TextureEntry/VisualParam. Weder neue Server-CAPS noch Admin-API benötigt. User Avatar Appearance End-to-End wird nicht vorgetäuscht; server-only AdminProxy-/ES256 Schlüssel bleiben ausserhalb Viewer.

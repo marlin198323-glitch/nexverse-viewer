@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "2b7c19c9396eb2f75fd60a41a33a05655909da6b",
   "reviewed_utc": "2026-10-14T17:50:43Z",
-  "viewer_version": "0.2.0-alpha.107",
+  "viewer_version": "0.2.0-alpha.108",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -83,6 +83,11 @@
       "server_change": "Admin World API protected docs panel now supports trusted HTTPS proxy allowlist and distinguishes anonymous 401 from token-owner proxy TLS misconfiguration 426; Robust.ini and Robust.HG.ini docs, CI",
       "placement": "SERVER_ONLY_OPERATOR_ADMIN_SECURITY",
       "note": "Manual review of 1 commit, five files: OglApiDocsAccess.cs, NexVerseWorldApiConnector.cs, Robust.ini examples, CI verify_ogl_docs_admin_ui.py. Valid peer IP from trust list/loopback plus exact X-Forwarded-Proto https, never untrusted forwarded address, bearer with AdminAll and GridUser UserLevel>=200. No new OpenSim viewer LLUDP or user CAPS. Do not embed operator bearer/private secrets in OGL."
+    },
+    {
+      "server_change": "AvatarAppearance Trusted LLUDP Low158 containing AppearanceData CofVersion and original TextureEntry/VisualParams supports a second read-only evidence layer after owner COF mutation.",
+      "placement": "VIEWER_CORE_READ_ONLY_APPEARANCE_VERIFICATION",
+      "note": "Firestorm_7.2.4 message_template.msg verified fields; OGL existing self AvatarAppearance decoding/WorldModel integrated with a monotonic per-self packet serial, region/agent guard and exact matching COF version. Does not transmit AgentSetAppearance or AgentIsNowWearing and does not claim baked textures visually rendered. No new server main commit found at precheck."
     }
   ]
 }

@@ -468,3 +468,7 @@ LLUDP LinkInventoryItem Low426/RemoveInventoryItem Low270 sind technisch im View
 ## Alpha.107
 
 Firestorm Low426: zwei bis vier reine ADD-LINK Operationen seriell nur nach Auth-CAPS Readback je Schritt. Low270: genau ein COF-LINK-REMOVE mit double consent und exact leftover verification. Kein kombinierter COF Wear/Unwear, kein automatisch reversibler Multi-Link Rollback, keine bestätigte AvatarAppearance.
+
+## Alpha.108
+
+Firestorm AvatarAppearance Low158 AppearanceData CofVersion wird jetzt als read-only zweite Bestätigungsebene nach Low426/270 COF-Readback herangezogen: exakte Version, Agent, RegionEpoch, nicht-trial, neue Paketseriennummer, nichtleere TextureEntry/VisualParam. F9 Status und echter Appearance prüfen Button. Vollständiges AgentIsNowWearing Low383 / AgentSetAppearance Low84 mit Wearable Flags, Baking und Avatar GPU-Übernahme weiterhin OFFEN.

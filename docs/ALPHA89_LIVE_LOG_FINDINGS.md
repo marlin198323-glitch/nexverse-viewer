@@ -206,3 +206,7 @@ als erfolgreicher Wear markiert.
 ## Alpha.107
 
 Alpha.107: COF Batch ADD und Single UNLINK sind per synthetischem Server-Readback im C++-Test abgesichert. Ohne NexVerse Login keine beobachtete AvatarAppearance oder tatsächliches Tragen/Ablegen der Bekleidung; serverseitiger Linkerfolg ist nicht sichtbarer Avatar-Look.
+
+## Alpha.108
+
+Alpha108: Lokale synthetische Tests pruefen COF-versionsbezogene SELF AvatarAppearance Serverpakete und UI. Keine frische authentifizierte NexVerse-InWorld-Sitzung, kein visueller Bake-/GPU-Outfit-Beweis, keine Kombination aus mehreren COF Add+Remove mit Rollback. Alle drei Punkte offen.

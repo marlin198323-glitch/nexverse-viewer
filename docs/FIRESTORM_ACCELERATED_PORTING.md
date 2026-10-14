@@ -167,3 +167,7 @@ bleiben an E2E gekoppelt.
 ## Alpha.107
 
 Alpha.107: parallel Core/GUI Firestorm COF Multi-Add und Single-Unlink, strikt serialisiert mit Serverversion und realem Linkset, no auto resend. GUI-Progress, Batch/Remove-Buttons und Konfliktstatus. Voll-Outfit Appearance-Wear weiter nicht belegt.
+
+## Alpha.108
+
+Alpha108 portiert Original-AvatarAppearance-CofVersion-Semantik in Viewer-Core, benutzt vorhandenes Low158 self Decode und den gespeicherten WorldModel Appearance Snapshot. Eingeschleuster AvatarAppearance-Paketzaehler schützt gegen alte vor Mutation empfangene Daten. Parallele sichtbare F9 Appearance prüfen Aktion sowie 675px responsives Outfit GUI statt reiner Backend-Diagnose. Wearable-/Baking-Modell im Folgeblock.

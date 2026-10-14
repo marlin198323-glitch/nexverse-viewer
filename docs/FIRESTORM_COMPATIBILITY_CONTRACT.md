@@ -534,3 +534,7 @@ Unwear-API Support. Admin Keys bleiben server-only.
 ## Alpha.107
 
 Original Firestorm LLUDP LinkInventoryItem Low426 und RemoveInventoryItem Low270: im Core verwendbar nur mit owner-gebundenem COF-Readback, Version/RegionEpoch, explizitem zwei-Klick-Consent und Timeout. Mutationsserien ohne Loeschung 2-4, Link-Remove strikt einer und bei nichtleerem COF. Unbestimmtes Ergebnis erfordert manuellen Server-Refresh vor neuem Write.
+
+## Alpha.108
+
+Server Trusted AvatarAppearance Low158 aus Firestorm message_template.msg: Sender ID, IsTrial, TextureEntry, VisualParam, AppearanceData CofVersion. Alpha108 trackt nur auth self Appearance mit Seriennummer nach COF-Mutation und versioniertem owner CAPS CurrentOutfitFolder. Keine eigene AgentSetAppearance/AgentIsNowWearing Write-Mutation ohne vollständige Wearable/Bake Daten. Appearance-Paket != sichtbarer Bake oder komplett getragene Kleidung.

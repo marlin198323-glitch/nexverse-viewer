@@ -189,3 +189,7 @@ Benutzerabfrage erlaubt.
 ## Alpha.107
 
 F9 Outfit-Galerie hat echte BatchAdd (2-4 Eintraege) und Single-Unlink Buttons im COF-Aenderungsplan, jeweils mit zweitem Bestätigen-Klick. Anzeige von COF-Versions-/AT_LINK-Readback, Fortschritt N/M, Abbruch und Unsicherheit. Komplett Tragen/Ablegen mangels AvatarAppearance-End-to-End noch NICHT freigeschaltet.
+
+## Alpha.108
+
+AvatarAppearance pruefen Button neu im F9 Outfit Floater: eigener echter Read-Only Check aus servergesendetem self AvatarAppearance CofVersion und aktueller COF InventoryDescendents2-Version. Begleitender automatischer Post-Mutation Evidence-Status (Pending/Stale/Newer/Matched/Timeout), keine Behauptung von sichtbarer Avatar-Bake. Outfit-Fenster 675 skalierte px und gesonderter unterer Status-Footer ohne Ueberlappung der zehn Ordner-Zeilen; gemeinsamer Layout-Code fuer Maus+Zeichnung, getestet 800x480 bis 5120x1440.

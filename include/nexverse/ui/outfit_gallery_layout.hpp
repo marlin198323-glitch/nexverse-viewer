@@ -8,7 +8,7 @@
 #include <cmath>
 namespace nexverse::ui
 {
-enum class OutfitGalleryHit { none, close, refresh, verify, plan, link_add, batch_add, select };
+enum class OutfitGalleryHit { none, close, refresh, verify, plan, link_add, batch_add, appearance_check, select };
 struct OutfitGalleryLayout
 {
     float sc=1.0f,x=0.0f,y=0.0f,pw=790.0f;
@@ -16,10 +16,13 @@ struct OutfitGalleryLayout
     {
         const float fw=static_cast<float>(std::max(1,w));
         const float fh=static_cast<float>(std::max(1,h));
-        sc=std::clamp(fh/1080.0f,0.75f,1.5f);
-        pw=std::min(790.0f*sc,fw-32.0f);
+        sc=std::min(std::clamp(fh/1080.0f,0.75f,1.5f),
+                    std::max(0.4f,(fh-48.0f)/675.0f));
+        pw=std::min(790.0f*sc,std::max(100.0f,fw-32.0f));
         x=(fw-pw)*0.5f;
-        y=std::max(30.0f,(fh-500.0f*sc)*0.5f);
+        // The ten rows end at y+412*sc. Status begins y+524*sc.
+        // Compact height uses the identical renderer and input scale.
+        y=std::max(24.0f,(fh-675.0f*sc)*0.5f);
     }
     static bool inside(float px,float py,float x,float y,float w,float h)
     {return px>=x&&py>=y&&px<x+w&&py<y+h;}
@@ -37,6 +40,8 @@ struct OutfitGalleryLayout
                   274.0f*sc,37.0f*sc))return OutfitGalleryHit::link_add;
         if(inside(px,py,x+pw-297.0f*sc,y+439.0f*sc,
                   274.0f*sc,37.0f*sc))return OutfitGalleryHit::batch_add;
+        if(inside(px,py,x+pw-211.0f*sc,y+64.0f*sc,
+                  185.0f*sc,33.0f*sc))return OutfitGalleryHit::appearance_check;
         if(inside(px,py,x+22.0f*sc,y+115.0f*sc,
                   425.0f*sc,300.0f*sc))return OutfitGalleryHit::select;
         return OutfitGalleryHit::none;

@@ -75,6 +75,7 @@
 #include "nexverse/protocol/firestorm_cof_link_consent.hpp"
 #include "nexverse/protocol/firestorm_cof_batch_add.hpp"
 #include "nexverse/protocol/firestorm_cof_unlink_consent.hpp"
+#include "nexverse/protocol/firestorm_appearance_verification.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -408,6 +409,7 @@ struct InputContext
     bool* outfit_plan_requested = nullptr;
     bool* outfit_link_requested = nullptr;
     bool* outfit_batch_requested = nullptr;
+    bool* outfit_appearance_check_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1135,6 +1137,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::batch_add:
             if(context->outfit_batch_requested)
                 *context->outfit_batch_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::appearance_check:
+            if(context->outfit_appearance_check_requested)
+                *context->outfit_appearance_check_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
@@ -2187,14 +2193,17 @@ void render_outfit_gallery(
     std::size_t batch_confirmed,
     std::size_t batch_total,
     std::string_view unlink_status,
-    nexverse::protocol::CofUnlinkPhase unlink_phase)
+    nexverse::protocol::CofUnlinkPhase unlink_phase,
+    std::string_view appearance_status,
+    nexverse::protocol::CofAppearancePhase appearance_phase)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
-    const float scale=std::clamp(h/1080.0f,0.75f,1.5f);
-    const float pw=std::min(790.0f*scale,w-32.0f);
-    const float ph=500.0f*scale;
-    const float x=(w-pw)*0.5f, y=std::max(30.0f,(h-ph)*0.5f);
+    const nexverse::ui::OutfitGalleryLayout gallery_layout{width,height};
+    const float scale=gallery_layout.sc;
+    const float pw=gallery_layout.pw;
+    const float ph=675.0f*scale;
+    const float x=gallery_layout.x,y=gallery_layout.y;
     renderer.rect(0,0,w,h,Color{0,0.009f,0.025f,0.57f},0.0f);
     renderer.rect(x,y,pw,ph,Color{0.014f,0.032f,0.057f,0.98f},11.0f*scale);
     renderer.text(x+22.0f*scale,y+24.0f*scale,
@@ -2220,8 +2229,13 @@ void render_outfit_gallery(
     renderer.text(x+pw-538.0f*scale,y+19.0f*scale,
                   9.0f*scale,"Aenderungsplan",theme::cyan);
     renderer.text(x+22.0f*scale,y+59.0f*scale,
-                  9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
+                  9.3f*scale,"Firestorm-Inventar und geschuetzte COF-Aktionen",
                   theme::cyan);
+    renderer.rect(x+pw-211.0f*scale,y+64.0f*scale,
+                  185.0f*scale,33.0f*scale,
+                  Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
+    renderer.text(x+pw-199.0f*scale,y+73.0f*scale,
+                  9.0f*scale,"Appearance pruefen",theme::cyan);
     renderer.text(x+22.0f*scale,y+86.0f*scale,
                   9.5f*scale,folders.empty()?
                   "Keine Outfit-Ordner im Login-Inventar":
@@ -2421,6 +2435,13 @@ void render_outfit_gallery(
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
     }
+    renderer.text(x+22.0f*scale,y+ph-151.0f*scale,
+                  8.0f*scale,
+                  "AvatarAppearance: "+
+                  std::string(appearance_status).substr(0U,95U),
+                  appearance_phase==nexverse::protocol::
+                      CofAppearancePhase::appearance_matched
+                    ?theme::cyan:theme::text_muted);
     renderer.text(x+22.0f*scale,y+ph-130.0f*scale,
                   7.8f*scale,std::string(unlink_status).substr(0U,94U),
                   unlink_phase==nexverse::protocol::CofUnlinkPhase::verified
@@ -2442,7 +2463,7 @@ void render_outfit_gallery(
     renderer.text(x+22.0f*scale,y+ph-44.0f*scale,
                   8.4f*scale,
                   caps.outfit_inventory_read
-                    ? "Inventar gelesen; Tragen/Bearbeiten noch gesperrt"
+                    ? "COF-Einzelaktionen mit Consent; voller Wear weiter gesperrt"
                     : "Inventar-CAP-Antwort nicht verfuegbar",
                   theme::warning);
     renderer.text(x+22.0f*scale,y+ph-24.0f*scale,
@@ -3983,6 +4004,7 @@ int Application::run(bool enable_developer_modules)
     bool self_avatar_weighted_skin_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
+    std::atomic<std::uint64_t> self_appearance_serial{0U};
     std::atomic_uint32_t avatar_animation_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
@@ -4633,7 +4655,8 @@ int Application::run(bool enable_developer_modules)
 
     packet_dispatcher.register_handler(
         protocol::msg_avatar_appearance,
-        [&avatar_packets, &world_model, &world_mutex](
+        [&avatar_packets, &self_appearance_serial,
+         &world_model, &world_mutex](
             const protocol::DecodedPacket& packet)
         {
             const auto appearance =
@@ -4652,7 +4675,11 @@ int Application::run(bool enable_developer_modules)
             if (appearance->avatar_id == world_model.agent().agent_id)
             {
                 const bool first=!world_model.self_appearance().has_value();
-                if (world_model.apply_self_appearance(*appearance) && first)
+                const bool accepted=world_model.apply_self_appearance(*appearance);
+                if(accepted)
+                    self_appearance_serial.fetch_add(1U,
+                        std::memory_order_relaxed);
+                if (accepted && first)
                     core::info("AvatarAppearance SELF server readback accepted; "
                                "texture_entry_bytes="+
                                std::to_string(appearance->texture_entry.size())+
@@ -4808,6 +4835,12 @@ int Application::run(bool enable_developer_modules)
     input_context.outfit_batch_requested=&gallery_batch_requested;
     protocol::CofBatchAdd gallery_cof_batch;
     protocol::CofSingleUnlinkConsent gallery_cof_unlink;
+    protocol::CofAppearanceVerifier gallery_appearance_verifier;
+    bool gallery_appearance_check_requested=false;
+    input_context.outfit_appearance_check_requested=
+        &gallery_appearance_check_requested;
+    std::string gallery_appearance_snapshot_status=
+        "Noch keine AvatarAppearance Pruefung";
     std::uint32_t next_cof_link_callback=1U;
     auto last_cof_link_refresh=std::chrono::steady_clock::time_point{};
     std::string gallery_verify_status="COF noch nicht erneut geprueft";
@@ -6694,6 +6727,11 @@ int Application::run(bool enable_developer_modules)
                 gallery_batch_requested=false;
                 gallery_cof_batch.reset("Region gewechselt: Batch-Zustand unbekannt");
                 gallery_cof_unlink.reset("Region gewechselt: COF-Entfernung unbestimmt");
+                gallery_appearance_verifier.reset(
+                    "Appearance: Region gewechselt, keine Uebernahme");
+                gallery_appearance_snapshot_status=
+                    "Appearance: Region gewechselt";
+                gallery_appearance_check_requested=false;
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -7283,7 +7321,7 @@ int Application::run(bool enable_developer_modules)
             // LLUDP ACK merely says received, never that appearance
             // changed. Force bounded CAPS polls; never resend a mutation.
             {
-                const auto now=std::chrono::steady_clock::now();
+                const auto cof_poll_now=std::chrono::steady_clock::now();
                 const auto& id=caps_state.current_outfit_folder;
                 const auto v=gallery_inventory_sync.versions().find(id);
                 const auto data=caps_state.outfit_folder_items.find(id);
@@ -7291,12 +7329,12 @@ int Application::run(bool enable_developer_modules)
                     current_firestorm_epoch,
                     v==gallery_inventory_sync.versions().end()?0U:v->second,
                     data==caps_state.outfit_folder_items.end()
-                        ?nullptr:&data->second,now);
+                        ?nullptr:&data->second,cof_poll_now);
                 gallery_cof_unlink.observe(
                     current_firestorm_epoch,
                     v==gallery_inventory_sync.versions().end()?0U:v->second,
                     data==caps_state.outfit_folder_items.end()
-                        ?nullptr:&data->second,now);
+                        ?nullptr:&data->second,cof_poll_now);
                 const auto cof_version=
                     v==gallery_inventory_sync.versions().end()?0U:v->second;
                 const auto* cof_items=
@@ -7304,7 +7342,26 @@ int Application::run(bool enable_developer_modules)
                         ?nullptr:&data->second;
                 const auto next_batch=gallery_cof_batch.observe(
                     current_firestorm_epoch,cof_version,cof_items,
-                    now,next_cof_link_callback);
+                    cof_poll_now,next_cof_link_callback);
+                if(gallery_appearance_verifier.phase()==
+                   protocol::CofAppearancePhase::cof_pending&&
+                   (gallery_link_consent.phase()==
+                        protocol::CofLinkPhase::verified||
+                    gallery_cof_batch.phase()==
+                        protocol::CofBatchPhase::confirmed_links||
+                    gallery_cof_unlink.phase()==
+                        protocol::CofUnlinkPhase::verified))
+                    (void)gallery_appearance_verifier.confirm_cof(
+                        current_firestorm_epoch,cof_version,cof_poll_now);
+                {
+                    std::scoped_lock world_lock{world_mutex};
+                    gallery_appearance_verifier.observe(
+                        current_firestorm_epoch,
+                        self_appearance_serial.load(
+                            std::memory_order_relaxed),
+                        world_model.agent().agent_id,
+                        world_model.self_appearance(),cof_poll_now);
+                }
                 if(next_batch)
                 {
                     const bool safe=active_session&&simulation_ready&&
@@ -7312,16 +7369,19 @@ int Application::run(bool enable_developer_modules)
                         firestorm_region_lease.matches(current_firestorm_epoch);
                     const bool queued=safe&&
                         outbound_queue.push(std::move(*next_batch));
-                    gallery_cof_batch.queue_result(queued,now);
+                    gallery_cof_batch.queue_result(queued,cof_poll_now);
                     if(queued)
                     {
                         ++next_cof_link_callback;
                         if(next_cof_link_callback==0U)
                             next_cof_link_callback=1U;
                         gallery_force_refresh=true;
-                        last_cof_link_refresh=now;
+                        last_cof_link_refresh=cof_poll_now;
                     }
                 }
+                if(!active_session&&gallery_appearance_verifier.active())
+                    gallery_appearance_verifier.reset(
+                        "Sitzung beendet: AvatarAppearance unbekannt");
                 if(!active_session&&gallery_cof_batch.active())
                     gallery_cof_batch.reset(
                         "Sitzung beendet: Batch-Fortschritt unbestimmt");
@@ -7335,10 +7395,10 @@ int Application::run(bool enable_developer_modules)
                 if((gallery_link_consent.awaiting_server()||
                     gallery_cof_batch.awaiting_readback()||
                     gallery_cof_unlink.awaiting_server())&&
-                   now-last_cof_link_refresh>=std::chrono::seconds{2})
+                   cof_poll_now-last_cof_link_refresh>=std::chrono::seconds{2})
                 {
                     gallery_force_refresh=true;
-                    last_cof_link_refresh=now;
+                    last_cof_link_refresh=cof_poll_now;
                 }
             }
             if((outfit_gallery_open||gallery_link_consent.awaiting_server()||
@@ -7401,10 +7461,47 @@ int Application::run(bool enable_developer_modules)
                     core::warning("Firestorm FetchInventory2 on-demand failed");
                 }
             }
+            if(gallery_appearance_check_requested)
+            {
+                gallery_appearance_check_requested=false;
+                std::scoped_lock world_lock{world_mutex};
+                if(!active_session||!simulation_ready||
+                   !world_model.region().connected||
+                   !world_model.self_appearance())
+                    gallery_appearance_snapshot_status=
+                        "Kein aktuelles selbst empfangenes AvatarAppearance-Paket";
+                else
+                {
+                    const auto& packet=*world_model.self_appearance();
+                    if(packet.avatar_id!=active_session->agent_id)
+                        gallery_appearance_snapshot_status=
+                            "Avatar-ID stimmt nicht mit Anmeldung ueberein";
+                    else if(packet.appearance_data.empty())
+                        gallery_appearance_snapshot_status=
+                            "Server-Paket ohne AppearanceData/CofVersion";
+                    else
+                    {
+                        const auto server_ver=
+                            packet.appearance_data.back().cof_version;
+                        const auto& cof_id=caps_state.current_outfit_folder;
+                        const auto current_version=
+                            gallery_inventory_sync.versions().find(cof_id);
+                        const auto cof_ver=
+                            current_version==gallery_inventory_sync.versions().end()
+                                ?0U:current_version->second;
+                        gallery_appearance_snapshot_status=
+                            "Simulator COF v"+std::to_string(server_ver)+
+                            "; Inventory CAPS v"+std::to_string(cof_ver)+
+                            (server_ver==cof_ver&&cof_ver!=0U
+                                ?"; Versionsgleichheit (Bake noch unbewiesen)"
+                                :"; keine nachgewiesene Versionsgleichheit");
+                    }
+                }
+            }
             if(gallery_batch_requested)
             {
                 gallery_batch_requested=false;
-                const auto now=std::chrono::steady_clock::now();
+                const auto batch_action_now=std::chrono::steady_clock::now();
                 if(!outfit_gallery_open||!simulation_ready||
                    !login_ui.authenticated||!active_session||
                    !firestorm_region_lease.matches(current_firestorm_epoch)||
@@ -7446,42 +7543,46 @@ int Application::run(bool enable_developer_modules)
                            protocol::CofBatchPhase::awaiting_consent)
                         {
                             auto command=gallery_cof_batch.confirm(
-                                plan,cof_id,current_firestorm_epoch,now,
+                                plan,cof_id,current_firestorm_epoch,batch_action_now,
                                 next_cof_link_callback);
                             if(command)
                             {
                                 const bool queued=
                                     outbound_queue.push(std::move(*command));
-                                gallery_cof_batch.queue_result(queued,now);
+                                gallery_cof_batch.queue_result(queued,batch_action_now);
                                 if(queued)
                                 {
+                                    gallery_appearance_verifier.begin(
+                                        current_firestorm_epoch,
+                                        self_appearance_serial.load(
+                                            std::memory_order_relaxed),batch_action_now);
                                     ++next_cof_link_callback;
                                     if(next_cof_link_callback==0U)
                                         next_cof_link_callback=1U;
                                     gallery_force_refresh=true;
-                                    last_cof_link_refresh=now;
+                                    last_cof_link_refresh=batch_action_now;
                                 }
                             }
                         }
                         else if(!gallery_cof_batch.active())
                             (void)gallery_cof_batch.stage(
-                                plan,cof_id,current_firestorm_epoch,now);
+                                plan,cof_id,current_firestorm_epoch,batch_action_now);
                     }
                 }
             }
             if(gallery_link_requested)
             {
                 gallery_link_requested=false;
-                const auto now=std::chrono::steady_clock::now();
+                const auto link_action_now=std::chrono::steady_clock::now();
                 if(!outfit_gallery_open||!simulation_ready||
                    !login_ui.authenticated||!active_session||
                    !firestorm_region_lease.matches(current_firestorm_epoch)||
                    !gallery_plan_visible||
                    !gallery_change_plan.preview_ready()||
-                   !(gallery_change_plan.add.size()==1U&&
-                     gallery_change_plan.remove.empty())&&
-                   !(gallery_change_plan.remove.size()==1U&&
-                     gallery_change_plan.add.empty())||
+                   (!(gallery_change_plan.add.size()==1U&&
+                      gallery_change_plan.remove.empty())&&
+                    !(gallery_change_plan.remove.size()==1U&&
+                      gallery_change_plan.add.empty()))||
                    gallery_cof_batch.active()||
                    gallery_cof_batch.phase()==
                        protocol::CofBatchPhase::partial_or_unknown||
@@ -7525,7 +7626,7 @@ int Application::run(bool enable_developer_modules)
                                protocol::CofUnlinkPhase::confirmation_required)
                             {
                                 auto cmd=gallery_cof_unlink.confirm(
-                                    plan,cof_id,current_firestorm_epoch,now);
+                                    plan,cof_id,current_firestorm_epoch,link_action_now);
                                 if(cmd)
                                 {
                                     const bool queued=
@@ -7533,21 +7634,25 @@ int Application::run(bool enable_developer_modules)
                                     if(!queued)gallery_cof_unlink.queue_failed();
                                     else
                                     {
+                                        gallery_appearance_verifier.begin(
+                                            current_firestorm_epoch,
+                                            self_appearance_serial.load(
+                                                std::memory_order_relaxed),link_action_now);
                                         gallery_force_refresh=true;
-                                        last_cof_link_refresh=now;
+                                        last_cof_link_refresh=link_action_now;
                                     }
                                 }
                             }
                             else if(!gallery_cof_unlink.active())
                                 (void)gallery_cof_unlink.stage(
-                                    plan,cof_id,current_firestorm_epoch,now);
+                                    plan,cof_id,current_firestorm_epoch,link_action_now);
                         }
                         else if(!gallery_cof_unlink.active()&&
                                 gallery_link_consent.phase()==
                                     protocol::CofLinkPhase::confirmation_required)
                         {
                             auto command=gallery_link_consent.confirm(
-                                plan,current_firestorm_epoch,cof_id,now,
+                                plan,current_firestorm_epoch,cof_id,link_action_now,
                                 next_cof_link_callback);
                             if(command)
                             {
@@ -7556,8 +7661,12 @@ int Application::run(bool enable_developer_modules)
                                     ++next_cof_link_callback;
                                     if(next_cof_link_callback==0U)
                                         next_cof_link_callback=1U;
+                                    gallery_appearance_verifier.begin(
+                                        current_firestorm_epoch,
+                                        self_appearance_serial.load(
+                                            std::memory_order_relaxed),link_action_now);
                                     gallery_force_refresh=true;
-                                    last_cof_link_refresh=now;
+                                    last_cof_link_refresh=link_action_now;
                                     gallery_plan_status=
                                         "Link einzeln gesendet, COF-Readback folgt";
                                 }
@@ -7569,7 +7678,7 @@ int Application::run(bool enable_developer_modules)
                                 protocol::CofLinkPhase::waiting_server)
                         {
                             (void)gallery_link_consent.stage(
-                                plan,cof_id,current_firestorm_epoch,now);
+                                plan,cof_id,current_firestorm_epoch,link_action_now);
                         }
                     }
                 }
@@ -10628,7 +10737,15 @@ int Application::run(bool enable_developer_modules)
                         gallery_cof_batch.status(),
                         gallery_cof_batch.phase(),
                         gallery_cof_batch.done(),gallery_cof_batch.total(),
-                        gallery_cof_unlink.status(),gallery_cof_unlink.phase());
+                        gallery_cof_unlink.status(),gallery_cof_unlink.phase(),
+                        gallery_appearance_check_requested
+                            ?gallery_appearance_verifier.status()
+                            :gallery_appearance_verifier.active()||
+                             gallery_appearance_verifier.phase()==
+                                protocol::CofAppearancePhase::appearance_matched
+                                ?gallery_appearance_verifier.status()
+                                :gallery_appearance_snapshot_status,
+                        gallery_appearance_verifier.phase());
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,
