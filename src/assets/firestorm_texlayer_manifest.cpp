@@ -2,6 +2,8 @@
 #include "nexverse/assets/firestorm_texlayer_manifest.hpp"
 #include <tinyxml2.h>
 #include <algorithm>
+#include <charconv>
+#include <optional>
 #include <cmath>
 #include <string_view>
 #include <fstream>
@@ -9,6 +11,38 @@
 #include <system_error>
 namespace nexverse::assets
 {
+namespace
+{
+std::optional<std::array<std::uint8_t,4>> xml_rgba(
+    std::string_view input)
+{
+    std::array<std::uint8_t,4> result{};
+    for(auto& channel:result)
+    {
+        while(!input.empty()&&input.front()==' ')input.remove_prefix(1U);
+        const auto end=input.find(',');
+        const auto current=input.substr(0U,end);
+        int value=-1;
+        const auto [stop,err]=std::from_chars(
+            current.data(),current.data()+current.size(),value);
+        if(err!=std::errc{}||value<0||value>255||
+           stop!=current.data()+current.size())
+            return std::nullopt;
+        channel=static_cast<std::uint8_t>(value);
+        if(end==std::string_view::npos)
+        {
+            if(&channel!=&result.back())return std::nullopt;
+            input={};
+        }
+        else
+        {
+            if(&channel==&result.back())return std::nullopt;
+            input.remove_prefix(end+1U);
+        }
+    }
+    return input.empty()?std::optional{result}:std::nullopt;
+}
+}
 FirestormTexLayerResult parse_firestorm_texlayers(std::string_view input)
 {
     auto failure=[](std::string message)->FirestormTexLayerResult{
@@ -62,16 +96,81 @@ FirestormTexLayerResult parse_firestorm_texlayers(std::string_view input)
             const auto* pass=layer->Attribute("render_pass");
             item.is_bump=pass&&std::string_view(pass)=="bump";
             item.has_parameters=layer->FirstChildElement("param")!=nullptr;
+            if(const auto* fixed=layer->Attribute("fixed_color"))
+            {
+                item.fixed_rgba=xml_rgba(fixed);
+                if(!item.fixed_rgba)return failure("Malformed Firestorm fixed_color");
+            }
+            if(const auto* global=layer->Attribute("global_color"))
+            {
+                item.global_color_name=global;
+                if(item.global_color_name.size()>80U)
+                    return failure("Global color name oversized");
+            }
             bool all_alpha=item.has_parameters;
+            bool all_color=item.has_parameters;
+            bool only_known=item.has_parameters;
             for(auto* param=layer->FirstChildElement("param");param;
                 param=param->NextSiblingElement("param"))
             {
                 if(item.alpha_params.size()>=16U)
                     return failure("Too many alpha params per TexLayer");
-                const auto* alpha=param->FirstChildElement("param_alpha");
-                if(!alpha||param->FirstChildElement("param_color"))
+                const auto* color=param->FirstChildElement("param_color");
+                if(color)
                 {
                     all_alpha=false;
+                    if(param->FirstChildElement("param_alpha")||
+                       item.color_params.size()>=16U)
+                        return failure("Conflicting/too many Firestorm color params");
+                    FirestormTexLayerColorParam entry;
+                    if(param->QueryIntAttribute("id",&entry.id)!=
+                        tinyxml2::XML_SUCCESS||entry.id<0||entry.id>200000)
+                        return failure("Invalid Firestorm color param id");
+                    const auto op=color->Attribute("operation");
+                    const auto value=op?std::string_view{op}:std::string_view{"add"};
+                    if(value=="add")entry.operation=FirestormColorOperation::add;
+                    else if(value=="multiply")
+                        entry.operation=FirestormColorOperation::multiply;
+                    else if(value=="blend")
+                        entry.operation=FirestormColorOperation::blend;
+                    else return failure("Unknown Firestorm color operation");
+                    if(param->Attribute("value_min")&&
+                       param->QueryFloatAttribute("value_min",&entry.minimum)!=
+                           tinyxml2::XML_SUCCESS)
+                        return failure("Color minimum invalid");
+                    if(param->Attribute("value_max")&&
+                       param->QueryFloatAttribute("value_max",&entry.maximum)!=
+                           tinyxml2::XML_SUCCESS)
+                        return failure("Color maximum invalid");
+                    if(!std::isfinite(entry.minimum)||
+                       !std::isfinite(entry.maximum)||
+                       entry.maximum<=entry.minimum||
+                       entry.minimum<0.0f||entry.maximum>100.0f)
+                        return failure("Color param range invalid");
+                    for(auto* value_node=color->FirstChildElement("value");
+                        value_node;value_node=value_node->NextSiblingElement("value"))
+                    {
+                        const auto* rgba=value_node->Attribute("color");
+                        if(entry.palette.size()>=32U||!rgba)
+                            return failure("Color palette too large/invalid");
+                        const auto parsed=xml_rgba(rgba);
+                        if(!parsed)return failure("Bad Firestorm palette RGBA");
+                        entry.palette.push_back(*parsed);
+                    }
+                    if(entry.palette.empty()||
+                       (entry.operation==FirestormColorOperation::blend&&
+                        entry.palette.size()!=1U))
+                        return failure("Invalid Firestorm color palette");
+                    item.color_params.push_back(std::move(entry));
+                    ++manifest.color_param_count;
+                    continue;
+                }
+                all_color=false;
+                const auto* alpha=param->FirstChildElement("param_alpha");
+                if(!alpha)
+                {
+                    all_alpha=false;
+                    only_known=false;
                     continue;
                 }
                 FirestormTexLayerAlphaParam parsed;
@@ -105,6 +204,12 @@ FirestormTexLayerResult parse_firestorm_texlayers(std::string_view input)
             }
             item.alpha_params_only=all_alpha&&
                 !item.alpha_params.empty();
+            item.color_params_only=all_color&&
+                !item.color_params.empty();
+            item.known_color_and_alpha_only=only_known&&
+                !item.color_params.empty()&&!item.alpha_params.empty();
+            if(!item.color_params.empty()||item.fixed_rgba||
+               !item.global_color_name.empty())++manifest.color_layer_count;
             item.has_global_color=layer->Attribute("global_color")!=nullptr;
             item.has_fixed_color=layer->Attribute("fixed_color")!=nullptr;
             item.has_visibility_mask=layer->Attribute("visibility_mask")!=nullptr;

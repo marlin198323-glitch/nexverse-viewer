@@ -344,3 +344,7 @@ Entscheidung SERVER_ONLY_WORLDAPI_OPERATOR_DIAGNOSTICS_AND_HG_XMLRPC: Keine User
 ## Alpha.116-119
 
 Alpha116-119 OpenGenesisLINK main 20a7fd765527807fd9d7887965b5f5f28d42d68f in Baseline. Original Firestorm TGA lokal, User COF/auth Firestorm LLWearable/visual params in Viewer, kein API-Bedarf oder Operator-/WorldAPI-Secret; noch keine zulässige Server-Bake-Mutation.
+
+## Alpha.120-123
+
+Alpha120–123 server reference main 20a7fd765527807fd9d7887965b5f5f28d42d68f prechecked, #208-209 server-only. No changes to authenticated user LLUDP or GetTexture CAPS contract. New Viewer-only local color math stays separate from server-supplied AvatarAppearance baked TextureEntry IDs; never send unsupported AgentSetAppearance/BakeIDs or operator tokens.

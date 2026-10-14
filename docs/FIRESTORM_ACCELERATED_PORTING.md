@@ -191,3 +191,7 @@ Alpha112-115 vier kombinierte Blöcke: TinyXML2 Firestorm avatar_lad.xml Parser,
 ## Alpha.116-119
 
 Alpha116-119 vier integrierte Entwicklungsblöcke: sichere Firestorm original RLE TGA Daten, param_alpha XML, alpha Source-Over mit echten Wearable Params, F9 interaktiver Masken/Teillagen und GPU Head/Upper/Lower Vorschau; keine fehlende PNG oder J2C Code-Duplikation.
+
+## Alpha.120-123
+
+Alpha120–123 four cross-functional blocks: XML exact FixedColor/param_color/global references; bounded original palette math and mixed alpha/color; 128px CPU/GPU RGBA preview; visible F9 Farben/Masken action and actual Simulator AvatarAppearance baked IDs from TE. Original Firestorm 25-entry palettes verified in CTest.

@@ -3,7 +3,7 @@
   "branch": "main",
   "reviewed_sha": "20a7fd765527807fd9d7887965b5f5f28d42d68f",
   "reviewed_utc": "2026-10-14",
-  "viewer_version": "0.2.0-alpha.119",
+  "viewer_version": "0.2.0-alpha.123",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -123,6 +123,11 @@
       "server_change": "Read-only original Firestorm character TGA RLE masks and visual-param-based partial local compositing; no new Simulator protocol request or operator capability.",
       "placement": "VIEWER_CORE_MASK_RESOURCE_AND_PARTIAL_LOCAL_RENDERER_PREVIEW",
       "note": "Alpha116-119 reviewed local Firestorm_7.2.4 avatar_lad.xml: local RLE grayscale mask TGA format 11 and BGRA RLE format 10; image type bounds, local filename controls, XML param_alpha ID/mask/domain/multiply_blend/skip_if_zero, actual decoded owner wearable visual-param weights. Inexact local mask blend labelled partial preview, never sim-side baked texture or AgentSetAppearance. OpenGenesisLINK main stays at reviewed 20a7fd... until final release preflight."
+    },
+    {
+      "server_change": "Firestorm alpha120-123 local TexLayer param_color fixed/global RGBA and ADD/MULTIPLY/BLEND; AvatarAppearance authentic server-baked texture IDs already decoded from original 11 TextureEntry faces.",
+      "placement": "VIEWER_CORE_COLOR_PALETTE_AND_READ_ONLY_SERVER_BAKE_AUDIT",
+      "note": "Reviewed upstream Firestorm_7.2.4 LLTexLayer::findNetColor, calculateTexLayerColor, LLTexLayerParamColor::getNetColor/parseXml. Parsed original local avatar_lad.xml 99 param_color entries, 71 color-related layers including 25-step palettes. Actual authenticated LLWearable visual-param weights needed; unknown global skin/hair/eye colors fail closed. Viewer F9 readback counts only non-placeholder baked UUIDs from actual simulator AvatarAppearance TextureEntry; does NOT assert texture uploaded, baked pixel parity, COF equality, GPU skin or permission to mutate appearance. Server admin changes #208-209 remain SERVER_ONLY."
     }
   ]
 }

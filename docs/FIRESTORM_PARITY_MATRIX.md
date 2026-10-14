@@ -492,3 +492,7 @@ Alpha112-115: original lokal installiertes Firestorm avatar_lad.xml 11 original 
 ## Alpha.116-119
 
 Alpha116-119: Original Firestorm Character RLE11 TGA Alpha und RLE10 RGB inklusive Bounds gelesen, param_alpha id/wearable/domain/multiply/skip XML Metadaten erfasst. Nur owner-verifizierte LLWearable visual parameter TGA mask source-over als lokale, unvollständige Head/Upper/Lower F9 GL Vorschau. Keine Firestorm vollständige TexLayer/Avatar Bake oder COF Tragen/Ablegen.
+
+## Alpha.120-123
+
+Alpha120–123 original Firestorm TexLayer Color XML 99 param_color/71 colored layers, including 25-step palettes. Fixed RGBA, GlobalColor name (not guessed), Add/Multiply/Blend with original LLWearable visual param weights and alpha TGA mask in conservative RGBA preview, GUI F9 Farben/Masken. Server AvatarAppearance TextureEntry has 11 nonplaceholder baked IDs counted separately. No complete Bake, no Outfit-Wear.

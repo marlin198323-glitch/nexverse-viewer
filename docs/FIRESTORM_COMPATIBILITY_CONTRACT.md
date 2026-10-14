@@ -558,3 +558,7 @@ Alpha112-115: Original Firestorm TexLayer XML LocalSource TE-Name 45, 11 region 
 ## Alpha.116-119
 
 Alpha116-119 Original Firestorm TGA RLE/Raw decoder inkl. grauer 8bit Masken und 24/32bit BGR, sichere lokale Character-Pfade. param_alpha Id/Name/Domain/Range/Skip/Multiply werden gelesen; nur exakt ein AlphaParam und authentifizierte WearableGewichte werden in diagnostischer einzelmaskiger RGBA Komposition benutzt. Domain/multiply nicht 1:1 LLTexLayer implementiert, als Preview, nie als echtes Bake/Server-Upload.
+
+## Alpha.120-123
+
+Original Firestorm_7.2.4 LLTexLayer::findNetColor and calculateTexLayerColor, LLTexLayerParamColorInfo XML value/color palettes max32, original add/multiply/blend. Missing user color weights or unresolved skin/hair/eyes GlobalColor prevents partial color application. Existing LLUDP server AvatarAppearance 11 baked TE IDs and COF version readback only, no client bake transfer, true 3D avatar texture upload still pending.

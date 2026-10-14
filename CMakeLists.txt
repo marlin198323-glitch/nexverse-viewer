@@ -371,6 +371,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-firestorm-texlayer-color-tests
+        tests/firestorm_texlayer_color_tests.cpp)
+    target_link_libraries(nexverse-firestorm-texlayer-color-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-texlayer-color-tests)
+    add_test(NAME nexverse-firestorm-texlayer-color-tests
+        COMMAND nexverse-firestorm-texlayer-color-tests)
+
     add_executable(nexverse-firestorm-tga-mask-tests
         tests/firestorm_tga_mask_tests.cpp)
     target_link_libraries(nexverse-firestorm-tga-mask-tests

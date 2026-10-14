@@ -213,3 +213,7 @@ Alpha112-115 F9 neue Buttons TexLayer lesen und Teillagen mischen, neben bestehe
 ## Alpha.116-119
 
 Alpha116-119 F9 Button Masken/Teillagen verwendet geprüfte lokale TGA-Masken und original Wearable Visual Param IDs. In 3 sichtbaren Head/Upper/Lower Preview-Feldern erhält man alpha-gesteuerte Teilbilder statt bloßer Textur-Overlays; Status weist mask counts und skipped/fehlende auf. Preview keine vollständig getragene Kleidung, kein wahrer Bake.
+
+## Alpha.120-123
+
+Alpha120–123 visible F9 TexLayer lesen reports count of color layers and params; Farben/Masken action creates authentic local-weight tinted/masked partial head/upper/lower previews and shows missing/color/mask blockers. Existing Appearance pruefen now displays server-origin nonplaceholder AvatarAppearance Baked TE UUID count out of 11 plus CAPS/Simulator COF version comparison; no fake wear-success.

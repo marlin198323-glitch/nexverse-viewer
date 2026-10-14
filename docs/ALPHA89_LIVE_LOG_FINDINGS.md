@@ -230,3 +230,7 @@ Alpha112-115 echter lokaler Firestorm avatar_lad.xml Reader mit 89 geordneten Te
 ## Alpha.116-119
 
 Alpha116-119 Real original Firestorm glove_length_alpha.tga RLE 512x512 decoded, synthetic weighted alpha masks/composite CTests; F9 preview workflow code attached. Ohne echte authorisierte NexVerse Simulator-Sitzung und pixelgleiche XML-Multilayer/3D Skin/Server Bake-Abnahme ist dies kein nachgewiesener Live Outfit Wear.
+
+## Alpha.120-123
+
+Alpha120–123 verified Firestorm_7.2.4 original installed 99 color params/71 layers and 25 palette values. Synthetic CTest covers Add Multiply Blend and masked tint. Existing Simulator AvatarAppearance baked UUID readback shown in F9. No authenticated NexVerse end-to-end full outfit bake/real rendered clothing proven.

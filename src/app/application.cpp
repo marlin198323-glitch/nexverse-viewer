@@ -2284,7 +2284,7 @@ void render_outfit_gallery(
                   160.0f*scale,33.0f*scale,
                   Color{0.038f,0.135f,0.146f,0.98f},7.0f*scale);
     renderer.text(x+201.0f*scale,y+73.0f*scale,8.2f*scale,
-                  "Masken/Teillagen",theme::cyan);
+                  "Farben/Masken",theme::cyan);
     renderer.rect(x+pw-409.0f*scale,y+64.0f*scale,
                   186.0f*scale,33.0f*scale,
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
@@ -8245,11 +8245,12 @@ int Application::run(bool enable_developer_modules)
                             " Original-Layer, "+
                             std::to_string(result.manifest->local_layer_count)+
                             " lokale, "+
+                            std::to_string(result.manifest->color_param_count)+
+                            " Farbparams, "+
+                            std::to_string(result.manifest->color_layer_count)+
+                            " Farb-Layer; "+
                             std::to_string(result.manifest->safe_layer_count)+
-                            " einfach, "+
-                            std::to_string(
-                                result.manifest->unsupported_layer_count)+
-                            " komplex - KEIN Avatar-Bake";
+                            " einfach - KEIN Bake";
                     }
                     else
                     {
@@ -8323,9 +8324,10 @@ int Application::run(bool enable_developer_modules)
                                 if(masks.size()>=12U)break;
                                 if(!layer.texture_entry||
                                    !gallery_local_te_rgba.contains(*layer.texture_entry)||
-                                   !layer.alpha_params_only||
+                                   !(layer.alpha_params_only||
+                                     layer.known_color_and_alpha_only)||
                                    layer.alpha_params.size()!=1U||
-                                   layer.is_bump||layer.has_fixed_color||
+                                   layer.is_bump||
                                    layer.has_global_color||layer.has_external_tga||
                                    layer.has_visibility_mask||layer.is_mask||
                                    layer.multi_texture||layer.local_alpha_only)
@@ -8342,7 +8344,8 @@ int Application::run(bool enable_developer_modules)
                                 else ++failed_masks;
                             }
                     }
-                    std::size_t masked_layers=0U;
+                    std::size_t masked_layers=0U,colored_layers=0U,
+                        unresolved_colors=0U;
                     std::size_t applied=0U,unsupported=0U,missing=0U;
                     for(unsigned group=0U;group<3U;++group)
                     {
@@ -8351,6 +8354,8 @@ int Application::run(bool enable_developer_modules)
                             gallery_local_te_rgba,masks,weights);
                         const auto& composed=result.composite;
                         masked_layers+=result.mask_layers_applied;
+                        colored_layers+=result.color_layers_applied;
+                        unresolved_colors+=result.unresolved_color_layers;
                         applied+=composed.applied;
                         unsupported+=composed.unsupported;
                         missing+=composed.missing;
@@ -8364,12 +8369,12 @@ int Application::run(bool enable_developer_modules)
                                     composed.image.pixels.data());
                     }
                     gallery_texlayer_status=
-                        "RGBlagen "+std::to_string(applied)+
-                        " (TGA-Masken "+std::to_string(masked_layers)+
-                        "), "+std::to_string(unsupported)+
-                        " komplex, "+std::to_string(missing)+
-                        " fehlen, "+std::to_string(failed_masks)+
-                        " Maskenfehler; NUR VORSCHAU";
+                        "Farbe "+std::to_string(colored_layers)+
+                        " Masken "+std::to_string(masked_layers)+
+                        " von "+std::to_string(applied)+
+                        ", Offen "+std::to_string(unsupported+missing+
+                            failed_masks+unresolved_colors)+
+                        " - Bake NICHT freigegeben";
                 }
             }
             if(gallery_appearance_check_requested)
@@ -8400,9 +8405,14 @@ int Application::run(bool enable_developer_modules)
                         const auto cof_ver=
                             current_version==gallery_inventory_sync.versions().end()
                                 ?0U:current_version->second;
+                        const auto bakes=protocol::extract_avatar_bakes(
+                            packet.texture_entry);
                         gallery_appearance_snapshot_status=
                             "Simulator COF v"+std::to_string(server_ver)+
                             "; Inventory CAPS v"+std::to_string(cof_ver)+
+                            "; Server-TE Bakes "+std::to_string(
+                                bakes.valid_count())+"/11"+
+
                             (server_ver==cof_ver&&cof_ver!=0U
                                 ?"; Versionsgleichheit (Bake noch unbewiesen)"
                                 :"; keine nachgewiesene Versionsgleichheit");

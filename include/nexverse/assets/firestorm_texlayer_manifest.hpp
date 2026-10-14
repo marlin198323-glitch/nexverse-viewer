@@ -2,6 +2,7 @@
 #pragma once
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -40,13 +41,29 @@ struct FirestormTexLayerAlphaParam
     bool multiply_blend=false,skip_if_zero=false;
     bool explicit_default=false;
 };
+enum class FirestormColorOperation : std::uint8_t
+{
+    add,multiply,blend
+};
+struct FirestormTexLayerColorParam
+{
+    int id=-1;
+    float minimum=0.0f,maximum=1.0f;
+    FirestormColorOperation operation=FirestormColorOperation::add;
+    std::vector<std::array<std::uint8_t,4>> palette;
+};
 struct FirestormTexLayer
 {
     std::string name;
     std::optional<unsigned> texture_entry;
     std::string local_name;
     std::vector<FirestormTexLayerAlphaParam> alpha_params;
+    std::vector<FirestormTexLayerColorParam> color_params;
+    std::optional<std::array<std::uint8_t,4>> fixed_rgba;
+    std::string global_color_name;
     bool alpha_params_only=false;
+    bool color_params_only=false;
+    bool known_color_and_alpha_only=false;
     std::size_t ordinal=0U;
     bool is_bump=false;
     bool is_mask=false;
@@ -69,7 +86,8 @@ struct FirestormTexLayerManifest
     int definition_version=-1;
     std::array<FirestormTexLayerSet,11U> sets{};
     std::size_t layer_count=0U,local_layer_count=0U,
-        safe_layer_count=0U,unsupported_layer_count=0U;
+        safe_layer_count=0U,unsupported_layer_count=0U,
+        color_layer_count=0U,color_param_count=0U;
     [[nodiscard]] bool valid() const noexcept
     {return definition_version>0&&layer_count>0U;}
 };

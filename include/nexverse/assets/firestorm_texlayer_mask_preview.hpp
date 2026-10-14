@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #pragma once
 #include "nexverse/assets/firestorm_texlayer_composite.hpp"
+#include "nexverse/assets/firestorm_texlayer_color.hpp"
 #include <map>
 #include <string>
 namespace nexverse::assets
@@ -8,7 +9,8 @@ namespace nexverse::assets
 struct FirestormMaskPreview
 {
     FirestormCompositePreview composite;
-    std::size_t mask_layers_applied=0U,missing_masks=0U;
+    std::size_t mask_layers_applied=0U,missing_masks=0U,
+        color_layers_applied=0U,unresolved_color_layers=0U;
     [[nodiscard]] bool real_bake() const noexcept{return false;}
 };
 // DIAGNOSTIC approximate mask preview, not official LLTexLayerSet baking.
@@ -31,15 +33,28 @@ compose_firestorm_mask_preview(
     const auto& layers=manifest.sets[group].layers;
     for(const auto& layer:layers)
     {
-        const bool simple=layer.safe_preview&&layer.texture_entry.has_value();
-        const bool masked=layer.texture_entry&&layer.alpha_params_only&&
-            layer.alpha_params.size()==1U&&
-            !layer.has_global_color&&!layer.has_fixed_color&&
+        const bool safe_base=layer.texture_entry&&
+            !layer.has_global_color&&
             !layer.has_visibility_mask&&!layer.is_bump&&!layer.is_mask&&
             !layer.has_external_tga&&!layer.local_alpha_only&&
             !layer.multi_texture;
-        if(!simple&&!masked)
+        const bool known_params=!layer.has_parameters||
+            layer.alpha_params_only||layer.color_params_only||
+            layer.known_color_and_alpha_only;
+        const bool masked=!layer.alpha_params.empty()&&
+            layer.alpha_params.size()==1U;
+        if(!safe_base||!known_params||
+           (!layer.alpha_params.empty()&&!masked))
         {
+            if(layer.has_global_color)++out.unresolved_color_layers;
+            ++out.composite.unsupported;
+            continue;
+        }
+        const auto tint=evaluate_firestorm_local_layer_tint(
+            layer,visual_params);
+        if(!tint)
+        {
+            ++out.unresolved_color_layers;
             ++out.composite.unsupported;
             continue;
         }
@@ -130,13 +145,13 @@ compose_firestorm_mask_preview(
                 mask_alpha=static_cast<float>(mask->pixels[mid])/255.0f;
             }
             const float sa=static_cast<float>(src.pixels[i+3U])/255.0f*
-                mask_alpha*strength;
+                (*tint)[3]*mask_alpha*strength;
             const float da=static_cast<float>(dst.pixels[i+3U])/255.0f;
             const float oa=sa+da*(1.0f-sa);
             for(std::size_t c=0U;c<3U;++c)
             {
                 const float rgb=oa>0.0f
-                    ?(static_cast<float>(src.pixels[i+c])*sa+
+                    ?(static_cast<float>(src.pixels[i+c])*(*tint)[c]*sa+
                       static_cast<float>(dst.pixels[i+c])*da*(1.0f-sa))/oa
                     :0.0f;
                 dst.pixels[i+c]=static_cast<std::uint8_t>(
@@ -147,6 +162,8 @@ compose_firestorm_mask_preview(
         }
         ++out.composite.applied;
         if(masked)++out.mask_layers_applied;
+        if(layer.fixed_rgba||!layer.color_params.empty())
+            ++out.color_layers_applied;
     }
     if(!out.composite.preview_ready())
         out.composite.error="No supported RGB partial layers decoded";
