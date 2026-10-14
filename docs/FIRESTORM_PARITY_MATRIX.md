@@ -480,3 +480,7 @@ Alpha.109: 17 originale LLWearableType 0..16 mit subtype = real InventoryFlags &
 ## Alpha.110
 
 Alpha.110: Original LLWearable v1 Text-Asset-Parser (permissions/sale/type/VisualParams/local Textures), strenge Bounds. Authentifizierter Firestorm Low153 Clothing5/Bodypart13 Transfer via Circuit mit TransferInfo154 und TransferPacket High17, RegionEpoch/TransferID. F9 Benutzeraktion 16 Wearables seriell, Original COF Version/Subtype geprüft, 12s Timeout und Status. 45 Original TE Indices, elf baked outputs, lokale Input->Bake Referenzgruppen. Nicht GPU-Bake, nicht Outfit-Wear.
+
+## Alpha.111
+
+Alpha111: F9 authentifizierte originale lokale Wearable Texture Input UUIDs via vorhandenes GetTexture PNG + OpenJPEG native J2C laden. Je 17 Original Wearable-Slots echte OpenGL RGBA8 Thumbnail Preview, max 12 deduplizierte Quellen 128px. Korrektes Original 45 TextureEntry Owner-/Bake-Source-Mapping, elf Baked Outputs ausgeschlossen. Kein Avatar-Wear/Bake.

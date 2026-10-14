@@ -28,6 +28,10 @@ int main()
            OutfitGalleryHit::wearable_check)return 14;
         if(g.hit(g.x+150.0f*sc,g.y+460.0f*sc)!=
            OutfitGalleryHit::wearable_asset_fetch)return 15;
+        if(g.hit(g.x+330.0f*sc,g.y+460.0f*sc)!=
+           OutfitGalleryHit::wearable_texture_fetch)return 17;
+        if(g.hit(g.x+235.0f*sc,g.y+460.0f*sc)!=
+           OutfitGalleryHit::none)return 18;
         if(!(447.0f+27.0f<675.0f-195.0f))return 16;
         // The last outfit row ends at y+412*scale.
         // The first footer status starts y+(675-151)*scale.

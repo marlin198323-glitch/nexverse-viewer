@@ -179,3 +179,7 @@ Alpha.109: Firestorm Wearable-Slotparity und echte InventoryFlags auf beiden CAP
 ## Alpha.110
 
 Alpha.110: Download echter LLWearable Assets über Original Firestorm TransferRequest/Info/Packet; independent v1 VisualParam und TexIndex/UUID Parsing bis 2 MiB, inbox fragment-safe; Original TexLayer Input-Bake Group Map aus llavatarappearancedefines.cpp, keine voreilige GPU-Bake. Parallele sichtbare GUI Aktion Original-Wearable-Assets laden und korrekter Status.
+
+## Alpha.111
+
+Alpha111 vorhandenen OGL TextureAssetLoader/OpenJPEG/JPEG2000 und GL Textur-Upload wiederverwenden, nicht duplizieren. Readonly lokale Wearable Preview mit 12 asynchronen seriellen 128px GPU Images, sichtbare F9 Swatches samt Status. Original TexLayer-Reihenfolge und Masken sind expliziter Folgeblock.

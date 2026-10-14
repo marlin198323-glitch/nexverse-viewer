@@ -201,3 +201,7 @@ Alpha.109: F9 Outfit-Galerie zeigt jetzt echten klickbaren Button Wearables prue
 ## Alpha.110
 
 Alpha.110: F9 Outfit-Viewer mit funktionalem links platziertem "Original-Wearable-Assets laden". Download nur nach authentifiziertem F9 Wearables pruefen auf gültigem unverändertem COF, max 16, seriell, 12s Timeout. Anzeige Original LLWearable Param-/TextureID und Head/Upper/Lower usw. Referenzstatus plus Fehler ohne falsches Tragen. Hitbox mit COF Batch getrennt, Fenster von 800x480 bis 5120x1440.
+
+## Alpha.111
+
+Alpha111 F9 zwei echte Buttons (Wearable-Assets laden, Texturen laden) und 17 Wearable Slot Mini-Bilder aus realen decodierten lokalen PNG/J2C Quellen, eigener Status-Footer ohne Overlap. Hitbox bei 800x480 bis 5120x1440. Wird bei COF/Regionsänderung korrekt freigegeben; volles Outfit Wear und Body Bake bleiben offen.

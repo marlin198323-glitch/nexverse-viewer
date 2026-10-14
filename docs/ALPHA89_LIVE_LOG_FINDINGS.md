@@ -218,3 +218,7 @@ Alpha.109: Original Wearable-Slots, Low383/84 Bytegoldens und F9 CAP Originalite
 ## Alpha.110
 
 Alpha.110: Firestorm LLWearable v1 Parser, LLUDP 5/13 Typed Transfer und F9 GUI lokal mit synthetischen mehrteiligen Assetpaketen getestet. Kein Nachweis eines Live-NexVerse Asset-Downloads in authentifizierter Sitzung, keine fertige JPEG2000/TextureBake/GPU Layer-Compositing/Outfit-Wear E2E. Diese Punkte offen.
+
+## Alpha.111
+
+Alpha111: lokale User-Wearable Texturen sind nun tatsächlich über GetTexture JPEG2000/PNG decodierbar und im sichtbaren F9 Slot-Mini-GPU Preview angezeigt. CTest mit echten tiny JPEG2000 codestream bytes, KEIN authentifizierter NexVerse Wear/Bake/Avatar visual E2E.

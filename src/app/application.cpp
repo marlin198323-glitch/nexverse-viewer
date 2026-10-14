@@ -79,6 +79,7 @@
 #include "nexverse/protocol/firestorm_wearable_slots.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
+#include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -415,6 +416,7 @@ struct InputContext
     bool* outfit_appearance_check_requested = nullptr;
     bool* outfit_wearable_check_requested = nullptr;
     bool* outfit_wearable_asset_requested = nullptr;
+    bool* outfit_wearable_texture_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1154,6 +1156,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::wearable_asset_fetch:
             if(context->outfit_wearable_asset_requested)
                 *context->outfit_wearable_asset_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::wearable_texture_fetch:
+            if(context->outfit_wearable_texture_requested)
+                *context->outfit_wearable_texture_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
@@ -2214,7 +2220,11 @@ void render_outfit_gallery(
     bool wearable_slots_visible,
     std::string_view wearable_asset_status,
     std::size_t wearable_asset_decoded,
-    std::size_t wearable_asset_total)
+    std::size_t wearable_asset_total,
+    std::string_view local_texture_status,
+    std::size_t local_texture_decoded,
+    std::size_t local_texture_total,
+    const std::array<unsigned int,17>& local_texture_previews)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2370,6 +2380,10 @@ void render_outfit_gallery(
                     nexverse::protocol::firestorm_wearable_names[i])+
                 "   "+(count?std::to_string(count):"-"),
                 count?theme::cyan:theme::text_muted);
+            if(local_texture_previews[i]!=0U)
+                renderer.image(local_texture_previews[i],
+                    x+pw-67.0f*scale,yy-2.0f*scale,
+                    38.0f*scale,15.0f*scale,1.0f);
         }
         renderer.text(bx+12.0f*scale,y+425.0f*scale,7.1f*scale,
                       "Nur Inventar, kein sichtbarer Avatar-Wear",
@@ -2378,10 +2392,15 @@ void render_outfit_gallery(
     if(!plan_visible)
     {
         renderer.rect(x+22.0f*scale,y+447.0f*scale,
-                      425.0f*scale,27.0f*scale,
+                      210.0f*scale,27.0f*scale,
                       Color{0.034f,0.110f,0.157f,0.98f},6.0f*scale);
         renderer.text(x+35.0f*scale,y+455.0f*scale,8.4f*scale,
-                      "Original-Wearable-Assets laden",theme::cyan);
+                      "Wearable-Assets laden",theme::cyan);
+        renderer.rect(x+242.0f*scale,y+447.0f*scale,
+                      205.0f*scale,27.0f*scale,
+                      Color{0.031f,0.159f,0.152f,0.98f},6.0f*scale);
+        renderer.text(x+252.0f*scale,y+455.0f*scale,8.4f*scale,
+                      "Texturen laden",theme::cyan);
     }
     if(plan_visible)
     {
@@ -2491,43 +2510,49 @@ void render_outfit_gallery(
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
     }
-    renderer.text(x+22.0f*scale,y+ph-195.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-194.0f*scale,
+                  8.0f*scale,
+                  "GetTexture RGBA "+std::to_string(local_texture_decoded)+
+                  "/"+std::to_string(local_texture_total)+": "+
+                  std::string(local_texture_status).substr(0U,65U),
+                  theme::text_muted);
+    renderer.text(x+22.0f*scale,y+ph-175.0f*scale,
                   8.0f*scale,
                   "Wearable-Assets "+std::to_string(wearable_asset_decoded)+
                   "/"+std::to_string(wearable_asset_total)+": "+
                   std::string(wearable_asset_status).substr(0U,70U),
                   theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-171.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-157.0f*scale,
                   8.0f*scale,
                   "Firestorm 17 Slots: "+
                   std::string(wearable_status).substr(0U,100U),
                   theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-151.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-139.0f*scale,
                   8.0f*scale,
                   "AvatarAppearance: "+
                   std::string(appearance_status).substr(0U,95U),
                   appearance_phase==nexverse::protocol::
                       CofAppearancePhase::appearance_matched
                     ?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-130.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-121.0f*scale,
                   7.8f*scale,std::string(unlink_status).substr(0U,94U),
                   unlink_phase==nexverse::protocol::CofUnlinkPhase::verified
                       ?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-109.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-103.0f*scale,
                   7.8f*scale,
                   "COF Batch "+std::to_string(batch_confirmed)+"/"+
                   std::to_string(batch_total)+": "+
                   std::string(batch_status).substr(0U,66U),
                   batch_phase==nexverse::protocol::CofBatchPhase::
                     confirmed_links?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-89.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-85.0f*scale,
                   8.0f*scale,std::string(link_status).substr(0U,93U),
                   link_phase==nexverse::protocol::CofLinkPhase::verified
                       ?theme::cyan:theme::warning);
     renderer.text(x+22.0f*scale,y+ph-67.0f*scale,
                   8.2f*scale,std::string(plan_status).substr(0U,101U),
                   theme::cyan);
-    renderer.text(x+22.0f*scale,y+ph-44.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-45.0f*scale,
                   8.4f*scale,
                   caps.outfit_inventory_read
                     ? "COF-Einzelaktionen mit Consent; voller Wear weiter gesperrt"
@@ -4906,6 +4931,19 @@ int Application::run(bool enable_developer_modules)
     std::size_t gallery_asset_total=0U,gallery_asset_errors=0U;
     std::uint64_t gallery_asset_epoch=0U,gallery_asset_cof_version=0U;
     std::string gallery_asset_cof;
+    bool gallery_texture_requested=false;
+    input_context.outfit_wearable_texture_requested=&gallery_texture_requested;
+    std::future<assets::WearableTexturePreviewResult>
+        gallery_local_texture_future;
+    std::vector<assets::WearableTextureReference>
+        gallery_local_texture_pending;
+    std::set<std::string,std::less<>> gallery_local_texture_expected;
+    std::map<std::string,unsigned int,std::less<>> gallery_local_gpu_textures;
+    std::array<unsigned int,17> gallery_local_slot_previews{};
+    std::string gallery_local_texture_status="Lokale Texturen noch nicht geladen";
+    std::size_t gallery_local_total=0U,gallery_local_failed=0U;
+    std::uint64_t gallery_local_epoch=0U,gallery_local_cof_version=0U;
+    std::string gallery_local_cof;
     std::uint64_t gallery_item_fetch_epoch=0U;
     std::string gallery_item_fetch_folder;
     std::string gallery_item_fetch_completed_folder;
@@ -5295,6 +5333,26 @@ int Application::run(bool enable_developer_modules)
             glfwTerminate();
             return 14;
         }
+
+    // GL resources are owned exclusively by the render thread.
+    // Inflight std::async workers remain alive and their stale reply is
+    // discarded on the render thread before another batch may start.
+    auto clear_gallery_local_texture_previews=[&]()
+    {
+        gallery_local_texture_pending.clear();
+        gallery_local_texture_expected.clear();
+        for(const auto& [id,handle]:gallery_local_gpu_textures)
+        {
+            (void)id;
+            renderer.destroy_texture(handle);
+        }
+        gallery_local_gpu_textures.clear();
+        gallery_local_slot_previews.fill(0U);
+        gallery_local_total=gallery_local_failed=0U;
+        gallery_local_cof.clear();
+        gallery_local_epoch=gallery_local_cof_version=0U;
+        gallery_local_texture_status="Texturvorschau nicht geladen";
+    };
 
         ui::WelcomePage welcome_page;
         unsigned int welcome_texture = 0U;
@@ -6844,6 +6902,8 @@ int Application::run(bool enable_developer_modules)
                 gallery_asset_status="Region gewechselt: keine Asset-Aussage";
                 gallery_asset_total=gallery_asset_errors=0U;
                 gallery_asset_cof.clear();
+                gallery_texture_requested=false;
+                clear_gallery_local_texture_previews();
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -7153,24 +7213,47 @@ int Application::run(bool enable_developer_modules)
                             }
                             caps_state.experience_names=std::move(reply.display_names);
                             caps_state.experience_profiles=std::move(reply.profiles);
+                            const auto current_cof_id=active_session
+                                ?protocol::current_outfit_folder_id(
+                                     active_session->inventory_skeleton
+                                 ).value_or("")
+                                :std::string{};
+                            const auto before=gallery_inventory_sync.versions()
+                                .find(current_cof_id);
+                            const auto previous_cof_version=
+                                before==gallery_inventory_sync.versions().end()
+                                    ?0U:before->second;
                             (void)gallery_inventory_sync.merge(
                                 reply.issued_epoch,reply.outfit_inventory);
+                            const auto after=gallery_inventory_sync.versions()
+                                .find(current_cof_id);
+                            const auto updated_cof_version=
+                                after==gallery_inventory_sync.versions().end()
+                                    ?0U:after->second;
+                            const bool cof_changed=
+                                previous_cof_version!=updated_cof_version||
+                                current_cof_id!=caps_state.current_outfit_folder;
                             caps_state.outfit_inventory_read=
                                 gallery_inventory_sync.read();
                             caps_state.outfit_folders_read=
                                 reply.outfit_inventory.returned_folders;
                             caps_state.outfit_folder_items=
                                 gallery_inventory_sync.items();
-                            gallery_wearables_status=
-                                "COF-Inventar aktualisiert: Wearables neu pruefen";
-                            gallery_wearables_snapshot={};
-                            gallery_wearables_visible=false;
-                            gallery_wearable_originals.clear();
-                            gallery_asset_pending.clear();
-                            gallery_decoded_wearable_assets.clear();
-                            gallery_asset_active_id.clear();
-                            gallery_asset_status="COF veraendert: Asset-Lesung verfallen";
-                            gallery_asset_total=gallery_asset_errors=0U;
+                            if(cof_changed)
+                            {
+                                gallery_wearables_status=
+                                    "COF-Version geaendert: Wearables neu pruefen";
+                                gallery_wearables_snapshot={};
+                                gallery_wearables_visible=false;
+                                gallery_wearable_originals.clear();
+                                gallery_asset_pending.clear();
+                                gallery_decoded_wearable_assets.clear();
+                                gallery_asset_active_id.clear();
+                                gallery_asset_status=
+                                    "COF veraendert: Asset-Lesung verfallen";
+                                gallery_asset_total=gallery_asset_errors=0U;
+                                clear_gallery_local_texture_previews();
+                            }
                             caps_state.inventory_dynamic_folders=
                                 reply.outfit_inventory.categories;
                             if(inventory_tree.count()==0 &&active_session)
@@ -7673,6 +7756,7 @@ int Application::run(bool enable_developer_modules)
                         gallery_asset_active_id.clear();
                         gallery_asset_total=gallery_asset_errors=0U;
                         gallery_asset_status="Originalitems: Assetdaten noch offen";
+                        clear_gallery_local_texture_previews();
                         gallery_wearables_fetch_cof=id;
                         gallery_wearables_fetch_epoch=current_firestorm_epoch;
                         gallery_wearables_fetch_version=v->second;
@@ -7716,6 +7800,7 @@ int Application::run(bool enable_developer_modules)
                 {
                     gallery_asset_pending.clear();
                     gallery_decoded_wearable_assets.clear();
+                    clear_gallery_local_texture_previews();
                     gallery_asset_errors=0U;
                     std::set<std::string> unique;
                     for(const auto& item:gallery_wearable_originals)
@@ -7845,6 +7930,221 @@ int Application::run(bool enable_developer_modules)
                     gallery_asset_status="Asset Queue blockiert, kein Retry";
                     wearable_transfers.reset(current_firestorm_epoch);
                 }
+            }
+            // Explicit F9 click. This is a read-only preview of original
+            // local layers, never a baked output or AgentSetAppearance.
+            // Both LLWearable originals and their GPU thumbnails belong
+            // to one exact version of CurrentOutfitFolder. Periodic F9
+            // readbacks can update this without a full region rediscovery.
+            if(!gallery_asset_cof.empty()&&
+               gallery_asset_cof_version!=0U)
+            {
+                const auto v=gallery_inventory_sync.versions().find(
+                    gallery_asset_cof);
+                if(gallery_asset_epoch!=current_firestorm_epoch||
+                   !firestorm_region_lease.matches(gallery_asset_epoch)||
+                   caps_state.current_outfit_folder!=gallery_asset_cof||
+                   v==gallery_inventory_sync.versions().end()||
+                   v->second!=gallery_asset_cof_version)
+                {
+                    gallery_wearables_snapshot={};
+                    gallery_wearables_visible=false;
+                    gallery_wearable_originals.clear();
+                    gallery_asset_pending.clear();
+                    gallery_decoded_wearable_assets.clear();
+                    gallery_asset_active_id.clear();
+                    gallery_asset_total=gallery_asset_errors=0U;
+                    gallery_asset_cof.clear();
+                    gallery_asset_cof_version=0U;
+                    gallery_asset_status=
+                        "COF-Version geaendert: LLWearable nicht mehr aktuell";
+                    clear_gallery_local_texture_previews();
+                }
+            }
+            // InventoryDescendents2 refresh may update current COF after
+            // the initial region read; invalidate previews BEFORE drawing.
+            if(!gallery_local_cof.empty())
+            {
+                const auto v=gallery_inventory_sync.versions().find(
+                    gallery_local_cof);
+                if(current_firestorm_epoch!=gallery_local_epoch||
+                   !firestorm_region_lease.matches(gallery_local_epoch)||
+                   caps_state.current_outfit_folder!=gallery_local_cof||
+                   v==gallery_inventory_sync.versions().end()||
+                   v->second!=gallery_local_cof_version)
+                    clear_gallery_local_texture_previews();
+            }
+            if(gallery_texture_requested)
+            {
+                gallery_texture_requested=false;
+                const auto& id=caps_state.current_outfit_folder;
+                const auto v=gallery_inventory_sync.versions().find(id);
+                if(!outfit_gallery_open||!active_session||
+                   !simulation_ready||!login_ui.authenticated||
+                   gallery_plan_visible||gallery_texture_cap.empty()||
+                   !protocol::is_valid_http_uri(gallery_texture_cap)||
+                   gallery_local_texture_future.valid()||
+                   !gallery_local_texture_pending.empty()||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   v==gallery_inventory_sync.versions().end()||
+                   v->second==0U||id.empty()||
+                   gallery_asset_epoch!=current_firestorm_epoch||
+                   gallery_asset_cof!=id||
+                   gallery_asset_cof_version!=v->second||
+                   !gallery_asset_pending.empty()||
+                   !gallery_asset_active_id.empty()||
+                   gallery_asset_total==0U||gallery_asset_errors!=0U||
+                   gallery_decoded_wearable_assets.size()!=gallery_asset_total)
+                    gallery_local_texture_status=
+                        "Erst authentifizierte Wearables/COF vollstaendig laden";
+                else
+                {
+                    const auto plan=assets::plan_wearable_texture_preview(
+                        gallery_decoded_wearable_assets,12U);
+                    clear_gallery_local_texture_previews();
+                    if(!plan.ready())
+                        gallery_local_texture_status=
+                            "Keine lokalen Firestorm-Texturquellen im Wearable";
+                    else
+                    {
+                        gallery_local_texture_pending=plan.candidates;
+                        for(const auto& ref:plan.candidates)
+                            gallery_local_texture_expected.insert(ref.uuid);
+                        gallery_local_total=plan.candidates.size();
+                        gallery_local_epoch=current_firestorm_epoch;
+                        gallery_local_cof_version=v->second;
+                        gallery_local_cof=id;
+                        gallery_local_texture_status=
+                            "GetTexture: "+std::to_string(plan.local_refs)+
+                            " Quellen, "+std::to_string(plan.duplicates)+
+                            " Duplikate, max 12 RGBA";
+                    }
+                }
+            }
+            if(gallery_local_texture_future.valid()&&
+               gallery_local_texture_future.wait_for(
+                   std::chrono::milliseconds{0})==std::future_status::ready)
+            {
+                try
+                {
+                    auto result=gallery_local_texture_future.get();
+                    const auto v=gallery_inventory_sync.versions().find(
+                        gallery_local_cof);
+                    const bool current=active_session&&simulation_ready&&
+                        login_ui.authenticated&&
+                        firestorm_region_lease.matches(result.region_epoch)&&
+                        result.region_epoch==current_firestorm_epoch&&
+                        caps_state.current_outfit_folder==gallery_local_cof&&
+                        v!=gallery_inventory_sync.versions().end()&&
+                        v->second==gallery_local_cof_version&&
+                        assets::wearable_preview_matches(
+                            result,gallery_local_epoch,gallery_local_cof,
+                            gallery_local_cof_version,
+                            gallery_local_texture_expected);
+                    if(current&&result.image.valid()&&
+                       result.image.width<=128U&&
+                       result.image.height<=128U&&
+                       gallery_local_gpu_textures.size()<12U)
+                    {
+                        const auto handle=renderer.create_rgba_texture(
+                            static_cast<int>(result.image.width),
+                            static_cast<int>(result.image.height),
+                            result.image.pixels.data());
+                        if(handle!=0U)
+                        {
+                            gallery_local_gpu_textures.insert_or_assign(
+                                result.asset_id,handle);
+                            auto& slot=gallery_local_slot_previews[
+                                static_cast<std::size_t>(result.wearable_type)];
+                            if(slot==0U)slot=handle;
+                            gallery_local_texture_status=
+                                "Original GetTexture RGBA: "+
+                                std::to_string(gallery_local_gpu_textures.size())+
+                                "/"+std::to_string(gallery_local_total)+
+                                "; Bildvorschau, KEIN Avatar-Bake";
+                        }
+                        else
+                        {
+                            ++gallery_local_failed;
+                            gallery_local_texture_status=
+                                "GPU Upload der lokalen Vorschau fehlgeschlagen";
+                        }
+                    }
+                    else if(current)
+                    {
+                        ++gallery_local_failed;
+                        gallery_local_texture_status=
+                            "Lokale Textur nicht dekodierbar: "+
+                            result.error.substr(0U,65U);
+                    }
+                    // Stale replies deliberately do NOT produce GPU handles.
+                }
+                catch(const std::exception&)
+                {
+                    ++gallery_local_failed;
+                    gallery_local_texture_status=
+                        "GetTexture/PNG/JPEG2000 Decoderfehler";
+                }
+            }
+            if(!gallery_local_texture_future.valid()&&
+               !gallery_local_texture_pending.empty()&&
+               simulation_ready&&login_ui.authenticated&&active_session&&
+               firestorm_region_lease.matches(gallery_local_epoch)&&
+               current_firestorm_epoch==gallery_local_epoch&&
+               caps_state.current_outfit_folder==gallery_local_cof)
+            {
+                const auto next=gallery_local_texture_pending.front();
+                gallery_local_texture_pending.erase(
+                    gallery_local_texture_pending.begin());
+                gallery_local_texture_future=std::async(std::launch::async,
+                    [transport,cap=gallery_texture_cap,next,
+                     issued=gallery_local_epoch,
+                     cof=gallery_local_cof,
+                     version=gallery_local_cof_version,
+                     &firestorm_region_lease]()
+                    {
+                        assets::WearableTexturePreviewResult reply;
+                        reply.region_epoch=issued;
+                        reply.cof_version=version;
+                        reply.cof_id=cof;
+                        reply.asset_id=next.uuid;
+                        reply.wearable_type=next.wearable_type;
+                        reply.bake_group=next.bake_group;
+                        if(!firestorm_region_lease.matches(issued))
+                        {
+                            reply.error="Region bereits gewechselt";
+                            return reply;
+                        }
+                        assets::TextureAssetLoader loader{transport};
+                        auto loaded=loader.fetch_rgba(cap,next.uuid);
+                        if(!firestorm_region_lease.matches(issued))
+                        {
+                            reply.error="Region beim GetTexture gewechselt";
+                            return reply;
+                        }
+                        if(!loaded.success||!loaded.image.valid()||
+                           loaded.asset_id!=next.uuid)
+                        {
+                            reply.error=loaded.message.empty()
+                                ?"GetTexture fehlgeschlagen":loaded.message;
+                            return reply;
+                        }
+                        // Keep preview memory/GPU footprint <=128*128*4.
+                        while(loaded.image.width>128U||
+                              loaded.image.height>128U)
+                        {
+                            const auto mip=assets::texture_mip_image(
+                                loaded.image,1U);
+                            if(!mip||!mip->valid())
+                            {
+                                reply.error="RGBA Preview Downsampling";
+                                return reply;
+                            }
+                            loaded.image=*mip;
+                        }
+                        reply.image=std::move(loaded.image);
+                        return reply;
+                    });
             }
             if(gallery_appearance_check_requested)
             {
@@ -11135,7 +11435,11 @@ int Application::run(bool enable_developer_modules)
                         gallery_wearables_snapshot,gallery_wearables_visible,
                         gallery_asset_status,
                         gallery_decoded_wearable_assets.size(),
-                        gallery_asset_total);
+                        gallery_asset_total,
+                        gallery_local_texture_status,
+                        gallery_local_gpu_textures.size(),
+                        gallery_local_total,
+                        gallery_local_slot_previews);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,
@@ -11159,6 +11463,7 @@ int Application::run(bool enable_developer_modules)
             renderer.destroy_texture(image.second);
         }
         gallery_gpu_textures.clear();
+        clear_gallery_local_texture_previews();
         world_renderer->shutdown();
     }
 

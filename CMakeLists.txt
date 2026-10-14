@@ -368,6 +368,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-firestorm-wearable-texture-plan-tests
+        tests/firestorm_wearable_texture_plan_tests.cpp)
+    target_link_libraries(nexverse-firestorm-wearable-texture-plan-tests
+        PRIVATE NexVerse::Assets NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-firestorm-wearable-texture-plan-tests)
+    add_test(NAME nexverse-firestorm-wearable-texture-plan-tests
+        COMMAND nexverse-firestorm-wearable-texture-plan-tests)
+
     add_executable(nexverse-firestorm-wearable-transfer-tests
         tests/firestorm_wearable_transfer_tests.cpp)
     target_link_libraries(nexverse-firestorm-wearable-transfer-tests

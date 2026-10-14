@@ -546,3 +546,7 @@ Firestorm_7.2.4 WearableType: Shape0 Skin1 Hair2 Eyes3 Shirt4 Pants5 Shoes6 Sock
 ## Alpha.110
 
 Firestorm LLWearable importStream: v1 text Header/Name/Description, Legacy permissions/sale, type0-16, parameters 0..1000 und textures 0..100. LLUDP Low153 Channel2/Source2 AssetType5/13, Low154 TransferInfo und High17 TransferPacket; keine erfundenen CAPS. Parser/Inbox scope an aktuellen User Originalinventar und CurrentOutfitFolder Version gebunden. TEX_NUM_INDICES=45 und Baked TE 8,9,10,11,19,20,40..44 sind OUTPUTS, nicht lokale Bake-Layer. AgentSetAppearance bleibt gesperrt.
+
+## Alpha.111
+
+Firestorm_7.2.4 LLAvatarAppearanceDictionary::Textures::Textures 45 TE, 17 Wearable Owners, 11 Bake Groups. Nur passende lokale Input-Textur eines bereits owner-/COF-/Epoch-validierten LLWearable darf über Grid GetTexture und JPEG2000/PNG per explizitem Benutzerklick geladen werden. Nie mit fertigem Bake, AgentSetAppearance oder Outfit-Wear verwechseln.
