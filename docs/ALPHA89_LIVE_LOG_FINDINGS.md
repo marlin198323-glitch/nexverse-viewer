@@ -202,3 +202,7 @@ keine AvatarAppearance aus neuem COF
 von Server und GPU bestaetigt.
 Missing/Epoch/Timeout werden nicht
 als erfolgreicher Wear markiert.
+
+## Alpha.107
+
+Alpha.107: COF Batch ADD und Single UNLINK sind per synthetischem Server-Readback im C++-Test abgesichert. Ohne NexVerse Login keine beobachtete AvatarAppearance oder tatsächliches Tragen/Ablegen der Bekleidung; serverseitiger Linkerfolg ist nicht sichtbarer Avatar-Look.

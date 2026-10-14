@@ -163,3 +163,7 @@ vor UI-Klick wird per Seriennummer
 abgewiesen. User-Viewer Core, keine Plugins;
 Wearing/Unwear Outfit und AvatarAppearance
 bleiben an E2E gekoppelt.
+
+## Alpha.107
+
+Alpha.107: parallel Core/GUI Firestorm COF Multi-Add und Single-Unlink, strikt serialisiert mit Serverversion und realem Linkset, no auto resend. GUI-Progress, Batch/Remove-Buttons und Konfliktstatus. Voll-Outfit Appearance-Wear weiter nicht belegt.

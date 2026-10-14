@@ -296,3 +296,15 @@ einem add, keinem remove und anschliessendem
 COF Folder Version+Target Readback.
 Kein AvatarAppearance-Erfolg ohne Livebeleg.
 Operator Docs/OAR Gates bleiben Server-only.
+
+## Alpha.107
+
+OpenGenesisLINK Server main 5831913f3dc840aa9661b83fc844546f9f637070 zu Beginn Alpha.107 erneut geprüft, keine neuen Commits. Original LLClientView Low426/270 und InventoryDescendents2 bleiben Viewer-Core. OAR/IAR ES256 und geschütztes AdminPanel UserLevel>=200 weiter SERVER_ONLY. Noch kein LiveGrid Wear-Beleg.
+
+## Alpha.107 zusätzlicher Release-Serververgleich (14.10.2026)
+
+Während der Alpha.107 Release-Pflichtprüfung erschien ein neuer OpenGenesisLINK-Server Commit: 2b7c19c9396eb2f75fd60a41a33a05655909da6b (17:50:43 UTC, #207). Vorher 5831913f3dc840aa9661b83fc844546f9f637070. Fünf Dateien manuell geprüft: OglApiDocsAccess.cs, NexVerseWorldApiConnector.cs, Robust.ini.example, Robust.HG.ini.example und tools/ci/verify_ogl_docs_admin_ui.py.
+
+Inhalt: abgesicherte AdminDocsTrustedProxyAddresses für TLS-Termination, verifizierte Peer-IP (Loopback oder explizite Allowlist), exakter X-Forwarded-Proto https, keine Annahme untrusted X-Forwarded-For. Anonyme Dashboard-Zugriffe bleiben 401; bei Admin-Bearer kann Proxy-HTTPS-Konfigurationsfehler 426 statt irreführendem 401 gemeldet werden. Owner/GridUser UserLevel >=200 und AdminAll Scope bleiben zwingend. Klassifikation SERVER_ONLY_OPERATOR_ADMIN_SECURITY: weder neue LLUDP/CAPS-Benutzer-Viewer Funktion noch OGL Plugin, kein Token oder Admin-Schlüssel im Desktop Viewer.
+
+Source Review abgeschlossen; geprüften SHA-Pin auf 2b7c19c... aktualisiert. Release-Gate danach erneut ausführen.

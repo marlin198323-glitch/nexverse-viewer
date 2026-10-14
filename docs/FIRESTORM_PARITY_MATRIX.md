@@ -464,3 +464,7 @@ LLUDP LinkInventoryItem Low426/RemoveInventoryItem Low270 sind technisch im View
 | F9 Viewer-Button | Link anlegen mit Confirm und Status | Tragen/Ablegen Mehrfachoperationen |
 | Fehlschlag | 18s Timeout, kein Auto-Resend/Delete | rollback bei Teilfehlerserie |
 | Alte CAPS Antworten | Request-Seriennummer fuer COF-Pruefen | Live Netztest |
+
+## Alpha.107
+
+Firestorm Low426: zwei bis vier reine ADD-LINK Operationen seriell nur nach Auth-CAPS Readback je Schritt. Low270: genau ein COF-LINK-REMOVE mit double consent und exact leftover verification. Kein kombinierter COF Wear/Unwear, kein automatisch reversibler Multi-Link Rollback, keine bestätigte AvatarAppearance.

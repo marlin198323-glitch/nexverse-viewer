@@ -185,3 +185,7 @@ keine falschen 'Tragen' und 'Ablegen'-Buttons.
 FOLDER statt nur das ausgewaehlte Outfit ab.
 Alte in-flight CAPS sind nicht als neue
 Benutzerabfrage erlaubt.
+
+## Alpha.107
+
+F9 Outfit-Galerie hat echte BatchAdd (2-4 Eintraege) und Single-Unlink Buttons im COF-Aenderungsplan, jeweils mit zweitem Bestätigen-Klick. Anzeige von COF-Versions-/AT_LINK-Readback, Fortschritt N/M, Abbruch und Unsicherheit. Komplett Tragen/Ablegen mangels AvatarAppearance-End-to-End noch NICHT freigeschaltet.

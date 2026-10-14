@@ -530,3 +530,7 @@ InventoryDescendents2 und neue Request-
 Seriennummer statt selected-outfit
 FetchInventory2. Kein voller Wear- oder
 Unwear-API Support. Admin Keys bleiben server-only.
+
+## Alpha.107
+
+Original Firestorm LLUDP LinkInventoryItem Low426 und RemoveInventoryItem Low270: im Core verwendbar nur mit owner-gebundenem COF-Readback, Version/RegionEpoch, explizitem zwei-Klick-Consent und Timeout. Mutationsserien ohne Loeschung 2-4, Link-Remove strikt einer und bei nichtleerem COF. Unbestimmtes Ergebnis erfordert manuellen Server-Refresh vor neuem Write.

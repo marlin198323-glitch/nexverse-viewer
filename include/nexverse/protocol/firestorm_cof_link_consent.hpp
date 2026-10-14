@@ -37,7 +37,8 @@ public:
     {
         // An addition alone is the only permitted mutation, and it
         // cannot remove a previous outfit link or bypass version scope.
-        if(awaiting_server()||!plan.preview_ready()||
+        if(phase_==CofLinkPhase::not_confirmed||
+           awaiting_server()||!plan.preview_ready()||
            plan.add.size()!=1U||!plan.remove.empty()||
            epoch==0U||plan.cof_version==0U)
         {

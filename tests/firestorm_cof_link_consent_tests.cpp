@@ -54,7 +54,11 @@ int main()
     if(!send)return 18;
     gate.observe(43,19U,nullptr,now+std::chrono::seconds{20});
     if(gate.phase()!=CofLinkPhase::not_confirmed)return 19;
-    if(!gate.stage(plan,COF,43,now))return 20;
+    // Unknown write outcome must NOT be blindly retried; require a
+    // fresh authenticated user-initiated CurrentOutfitFolder readback.
+    if(gate.stage(plan,COF,43,now))return 20;
+    gate.reset("manual current COF reread completed");
+    if(!gate.stage(plan,COF,43,now))return 30;
     send=gate.confirm(plan,43,COF,now+std::chrono::seconds{1},19U);
     if(!send)return 21;
     gate.observe(44,19U,&current,now+std::chrono::seconds{2});

@@ -3880,3 +3880,26 @@ mehrstufige COF/Appearance-Verarbeitung,
 nachvollziehbare Undo/Pending-Operationen,
 Outfit Tragen/Ablegen nur nach serverseitiger
 Ende-zu-Ende-Abnahme sowie GUI im selben Release.
+
+## Alpha.107 – COF-Transaktionen und sichtbare GUI (14.10.2026)
+
+PRECHECK: OGL develop-current 7b00962acf67ea5cd9e1e4588e660f453b863dd0, OpenGenesisLINK Server main 5831913f3dc840aa9661b83fc844546f9f637070. scripts/check_opengenesislink_server.py --strict vor Arbeit und Push, Server bei neuen Commits neu prüfen. Firestorm_7.2.4 scripts/messages/message_template.msg + llviewerinventory.cpp, OpenGenesisLINK LLClientView Handler LinkInventoryItem/RemoveInventoryItem sind Originalreferenz. Firestorm/OpenSim Kernfunktionen gehören direkt in OGL, keine Pflichtplugins; Robust Betreiber-Admin-Kontrollen bleiben SERVER_ONLY.
+
+1. COF BatchAdd (include/nexverse/protocol/firestorm_cof_batch_add.hpp): 2-4 neue Links als sequenzieller Befehl mit expliziter 2-Klick-Bestätigung unter 20s, nur wenn KEINE Links zu entfernen sind und mindestens eine bestehende COF-Verknüpfung verbleibt. Kein gemischter Outfitwechsel.
+2. Protokoll/Server: eine reale authentifizierte RELIABLE Low426 pro Schritt, niemals mehrere ungeprüfte Commands. Nach jedem Link owner-/RegionEpoch-gebunden InventoryDescendents2 Current Outfit Folder mit höherer Serverversion und GENAU den erwarteten, eindeutigen AT_LINK-Zielen. Erst danach folgende Mutation. Ein UDP ACK allein zählt nicht als serverseitiger Erfolg.
+3. Fehlerbehandlung: Regionwechsel, Loginende, Queue Full, fehlende oder widersprüchliche Serverantwort, 18s Timeout, alte COF-Version oder fremde Links => STOPP mit Teilfortschritt, KEIN Auto-Retry, KEIN zerstörerisches Auto-Rollback. Nach unbestimmtem Ergebnis sind weitere COF-Writes bis zum vom Nutzer ausgelösten frischen COF-Readback gesperrt.
+4. Einzel-Link-Ablegen (include/nexverse/protocol/firestorm_cof_unlink_consent.hpp): exakt EIN RemoveInventoryItem Low270 nur bei einem zu entfernenden Link, keinen Additions, mind. einem erhaltenen COF-Link, echter doppelter Benutzerbestätigung, Versions-/Epoch-Prüfung. Server-Readback muss höhere Version, verschwundene konkrete LinkItemID und unveränderten erwarteten Restbestand belegen. Kein automatisches erneutes Löschen.
+5. F9 GUI parallel: Der Outfit-Änderungsplan zeigt bei 2-4 ADD/no REMOVE den aktiven Button '2-4 Links sequenziell anlegen'. Bei exactly 1 REMOVE/no ADD zeigt die gleiche Stelle 'Einen COF-Link ablegen'. Erste Aktion vorbereitet; zweite BESTAETIGEN. Progress N/M, Erfolgs- und Fehlerzustände sichtbar, auch nach Schließen beim bereits gestarteten Server-Readback. Nicht ausgeführte Bestätigungen beim Schließen verworfen; neuer COF-Status nicht als fertiger Avatar-Look deklariert.
+6. Mutationsausschluss: Single Link Add, Multi-Add und Single-Unlink nie parallel; Unsicherheit sperrt alle weiteren, neue echte CURRENT OUTFIT FOLDER CAPS Anfrage hebt Sperre erst nach erfolgreichem Readback auf. Stale CAPS-Antworten und unautorisierte Sessions dürfen Freigabe nicht ersetzen.
+7. Tests: tests/firestorm_cof_batch_tests.cpp und tests/firestorm_cof_unlink_tests.cpp prüfen sequentielle Bestätigung, richtige Link-IDs, Versionen, fehlende/missgebildete Server-Liste, Timeout, unerwartete Änderungen, Regionwechsel, Queue failure, nur 2-4 ADD ohne DELETE oder eine sichere Entfernung. Single-Link Consent Regression auf fail-closed Unklarheit aktualisiert; F9 Hitbox auf 1280,1920,3440,5120 getestet. Vollständiger C++23 Build, CTest, Python sowie Linux OpenGL GPU GUI-Smoke.
+8. Übergabe/Dokumentation: VERSION, projectplan.md, info.md, CHATUEBERGABE.md, Firestorm-/UI-/Server Integrationsmatrix und docs/ALPHA107_COF_BATCH_UNLINK_UI.md im selben GitHub Commit aktualisieren.
+
+OFFEN: Vollständiges Firestorm Wear/Unwear mit gemischten Add/Remove, bestätigter AvatarAppearance, GPU Outfitvisualisierung und robustem atomarem Rollback. Das serverseitige Bestätigen einer COF-Verknüpfung bedeutet NICHT, dass der Avatar sie sichtbar trägt. Ein authentifizierter NexVerse E2E Inworld-Test wurde nicht durchgeführt. Nächster Release priorisiert Server Appearance/E2E, echte vollständige Wear-/Unwear-Knöpfe erst nach bewiesener Ende-zu-Ende-Funktionalität.
+
+## Alpha.107 zusätzlicher Release-Serververgleich (14.10.2026)
+
+Während der Alpha.107 Release-Pflichtprüfung erschien ein neuer OpenGenesisLINK-Server Commit: 2b7c19c9396eb2f75fd60a41a33a05655909da6b (17:50:43 UTC, #207). Vorher 5831913f3dc840aa9661b83fc844546f9f637070. Fünf Dateien manuell geprüft: OglApiDocsAccess.cs, NexVerseWorldApiConnector.cs, Robust.ini.example, Robust.HG.ini.example und tools/ci/verify_ogl_docs_admin_ui.py.
+
+Inhalt: abgesicherte AdminDocsTrustedProxyAddresses für TLS-Termination, verifizierte Peer-IP (Loopback oder explizite Allowlist), exakter X-Forwarded-Proto https, keine Annahme untrusted X-Forwarded-For. Anonyme Dashboard-Zugriffe bleiben 401; bei Admin-Bearer kann Proxy-HTTPS-Konfigurationsfehler 426 statt irreführendem 401 gemeldet werden. Owner/GridUser UserLevel >=200 und AdminAll Scope bleiben zwingend. Klassifikation SERVER_ONLY_OPERATOR_ADMIN_SECURITY: weder neue LLUDP/CAPS-Benutzer-Viewer Funktion noch OGL Plugin, kein Token oder Admin-Schlüssel im Desktop Viewer.
+
+Source Review abgeschlossen; geprüften SHA-Pin auf 2b7c19c... aktualisiert. Release-Gate danach erneut ausführen.
