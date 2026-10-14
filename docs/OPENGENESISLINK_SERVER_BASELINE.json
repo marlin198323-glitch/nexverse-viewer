@@ -1,10 +1,10 @@
 {
   "repository": "opengenesislink/opengenesislinkserver",
   "branch": "main",
-  "reviewed_sha": "689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3",
-  "reviewed_utc": "2026-10-13T20:25:25Z",
-  "viewer_version": "0.2.0-alpha.101",
-  "last_review": "2026-10-13",
+  "reviewed_sha": "1841c4ee8ef580730be7d306023e594380f8b19f",
+  "reviewed_utc": "2026-10-14T16:41:53Z",
+  "viewer_version": "0.2.0-alpha.102",
+  "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
     {
@@ -38,6 +38,26 @@
       "server_change": "CHAT01/CHAT02 cross region llListen inworld smoke scripts and documented instructions",
       "placement": "SERVER_ONLY LSL test / acceptance; viewer core ChatFromViewer unchanged",
       "note": "No new packet or CAPTCHA; script in tools/diagnostics/ogl_cross_region_chat_smoke.lsl. Must run real two-sim and two-process checks; NOT_RUN is not PASS."
+    },
+    {
+      "server_change": "OGL Feature Control OAR/IAR: ES256 signed Robust node policy, user level >=200 admin world API",
+      "placement": "SERVER_ONLY_OPERATOR_API, not standard end-user viewer",
+      "note": "Source reviewed: doc/NexVerse/OGL_FEATURE_CONTROL_09312.md, OglArchiveFeatureGate.cs, OglFeatureControlApi.cs. No new viewer LLUDP/CAPS and no client key handling."
+    },
+    {
+      "server_change": "OpenGenesisLINK version 0.9.3.12 Dev live-test build",
+      "placement": "SERVER_RELEASE_STATUS_REFERENCE",
+      "note": "Reviewed VersionInfo.cs: VERSION_FLAVOUR = Flavour.Dev. Not RC/Stable, live deployment requires backups, acceptance gates."
+    },
+    {
+      "server_change": "Console German help, NexBus cross-region CI, IAR/OAR archive hardening",
+      "placement": "SERVER_ONLY_OPERATIONS",
+      "note": "No new Firestorm viewer protocol, no C# port to client."
+    },
+    {
+      "server_change": "0.9.3.12 code identifies as Flavour.Release but no GitHub release tag or complete formal 22-case operator evidence",
+      "placement": "SERVER_RELEASE_LABEL_ONLY",
+      "note": "Reviewed VersionInfo.cs and doc/NexVerse/RELEASE_0.9.3.12.md, 09312_RC1_STABLE_ACCEPTANCE.md. v0.9.3.10 remains last independently tagged verified Stable; code Label != deployment or audited release."
     }
   ]
 }

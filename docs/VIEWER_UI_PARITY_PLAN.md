@@ -136,3 +136,15 @@ korrekt gesendeter S32 ChatChannel, und
 meldet den Kanal in der UI.
 Noch keine direkte Welt-Ray-Auswahl,
 echter NexVerse Login-Smoketest offen.
+
+## Alpha.102 – Direktklick in die Welt statt nur Liste
+
+Freier Weltklick wählt ein echtes Root-Prim mittels
+CameraRay und gedrehter BoundingBox. GUI schaltet
+auf Objekte-Floater und selektiert das Objekt
+sichtbar. Unteres Dock erhält Objekte-Knopf.
+Mausloslassen und Fokusverlust werden von
+echtem ObjectDeGrab abgedeckt. HUD-/Overlay-
+Flächen lösen keine Weltaktionen aus.
+Vollständige Mesh-Face-ID/UV-Interaktion
+bleibt offen, kein Fake-Play/Touch-Resultat.

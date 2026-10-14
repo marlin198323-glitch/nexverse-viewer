@@ -2767,3 +2767,95 @@ Entwicklungsblock und unmittelbar vor GitHub
 Commit/Push neu prüfen. Kernstandard nie
 als Zusatzplugin auslagern; Firestorm/LLUDP
 ist Viewer CORE.
+
+## Alpha.102 – 3D-Welt-Klickauswahl und aktuelle Serverprüfung (14.10.2026)
+
+Zu Beginn OGL develop-current SHA
+3592d2e9f08daa40cc8ed1ee0e155da9a4887adf
+und OpenGenesisLINK Server main SHA
+2cc59ceaada1c6791ac8320d3d5638cae941b13a
+live geprüft. Sechs neue Servercommits gegen 689c65ce
+mit Archiv-Gates, deutscher Konsole, CrossRegion CI
+und Dev-Releasekennzeichnung wurden nach Quellen
+und Dokumentation beurteilt. VersionInfo.cs:
+0.9.3.12 mit Flavour.Dev, NICHT RC oder Stable.
+
+Architekturentscheidung: Neue Robust-Feature-Control
+für OAR/IAR Import/Export liegt ausschließlich
+beim Betreiber, signierte Node-Policies (ES256 P-256),
+Admin API UserLevel >=200, kurze TTL/fail-closed.
+Die PrivateKeys/NexBus-Keys werden NIEMALS
+im Endnutzer-OGL-Viewer gespeichert, dieser benötigt
+keinen /api/v1/feature-control Admin-PATCH.
+Archive, Konsole, Testinfrastruktur SERVER-ONLY.
+Standard Firestorm LLUDP und ObjectTouch bleiben
+hingegen VIEWER-CORE und sichtbare Viewer-Funktion.
+
+Viewer Neuerung: include/nexverse/render/world_object_picker.hpp
+baut einen CameraRay passend zur OpenGL-Kamera
+(60 Grad vertikal, Fenster-Aspekt, Mouse Top-Left).
+Dieser schneidet gerotete BoundingBoxes (Quaternion
+und Objekt-Skalierung) der aktuellen WorldModel
+Root-Prims. Positiver nächster Treffer gewinnt.
+NaN, negative/Null-Größe, Out-of-Screen,
+Behind-Camera und zu weit entfernte Prims
+werden abgewiesen; das ist bewusst noch
+KEIN exaktes Mesh-/Sculpt-Triangle Picking,
+keine erfundene FaceID/UV SurfaceInfo.
+
+Im selben Block GUI: Linksklick in echte 3D-Welt,
+nicht durch NexVerse Topbar/Dock/Nav/HUD/Modal,
+liest auf Mainthread und unter WorldMutex den
+authoritativen Agent, Kamera, Root-Prim-Transform.
+Erneuter 15m-Abstandsschutz. Ein Hit aktiviert
+echte ObjectGrab Low117 über bestehenden
+authentifizierten Circuit und zeigt ausgewähltes
+Objekt im Objekte-Floater. Neuer Button Objekte
+im unteren Viewer-Dock und Welt-Menü. Ausgewählte
+Prim bleibt sichtbar, auch wenn sie nicht zu den
+fünf nächstgelegenen gehört. GLFW Release und
+Alt-Tab-Fokusverlust senden DeGrab Low119;
+Maustaste Press+Release im selben Poll-Frame
+führt nicht zu dauerhaft hängenbleibendem Grab.
+RegionEpoch verwirft veraltete LocalID/Pick.
+Touch-Hold bleibt serverseitig; kein Client-Timer.
+
+Tests: neue world_object_picker_tests.cpp mit
+Ray-Intersection, Frontmost, Rotation 90 Grad,
+invalid floats/scales, widescreen 1280/3440/5120
+und hinter der Kamera. viewer_shell_tests.cpp
+kontrolliert WorldHitboxen vs. HUD.
+Existing original LLUDP Grab/DeGrab und
+OpenGL-Shell-Tests bleiben als Release-Gates.
+
+Noch offen: Triangle-BVH für echte Mesh-Objekte,
+FaceIndex/UV/ST, ChildPrim PassTouches,
+serverseitig nachgewiesene touch_start/touch_end,
+COF-Wear/Unwear und vollständiger ScriptEditor.
+Ein neuer authentifizierter NexVerse-Inworld-Test
+fand nicht statt. Nächste Version erweitert
+präzise Oberflächentreffer und Outfit/Scripting
+PARALLEL mit ihren sichtbaren Fenstern.
+Vor JEDEM folgenden Block und unmittelbar
+vor dem GitHub Push aktuelle Server SHA erneut
+prüfen und die Source/Feature-Matrix aktualisieren.
+
+
+## Alpha.102 zweite Upstream-Nachpruefung: 0.9.3.12 Release-Label
+
+Ein weiterer Server-Commit nach der anfaenglichen
+Sechs-Commit-Pruefung: neuer main SHA
+1841c4ee8ef580730be7d306023e594380f8b19f
+(14.10.2026 16:41:53 UTC), aus 2cc59cea.
+Die VersionInfo.cs ist nun auf Flavour.Release
+gestellt; Dokumentation RELEASE_0.9.3.12.md
+und 09312_RC1_STABLE_ACCEPTANCE.md betonen aber:
+**KEIN** allein dadurch publizierter GitHub-Tag,
+KEINE nachgewiesene produktive Installation und
+KEINE vollstaendige 22-Punkte-Release-Evidence.
+Die zuletzt unabhaengig verifizierte/tagged
+Stable bleibt v0.9.3.10. Endnutzer-OGL darf
+keine Server-Livefreigabe aus dem Code-Label
+ableiten. Keine neue Client-LLUDP/CAPS-Funktion
+aus diesen Release-Dokumenten abzuleiten.
+Server-Baseline-SHA nach Review aktualisiert.

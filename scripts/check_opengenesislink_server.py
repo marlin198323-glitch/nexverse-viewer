@@ -19,6 +19,8 @@ def classify(path):
         return "SERVER_ONLY_LSL_CHAT_TEST"
     if "cross_region_lsl_chat" in x or "crossregionchat" in x:
         return "SERVER_ONLY_LSL_CHAT"
+    if "oglfeaturecontrol" in x or "oglarchivefeaturegate" in x or "feature_control" in x:
+        return "SERVER_ONLY_OPERATOR_POLICY"
     if "touch_hold" in x or "touchhold" in x:
         return "VIEWER_CORE_GRAB_COMPAT"
     if "region_dimensions" in x or "regiondimensions" in x:

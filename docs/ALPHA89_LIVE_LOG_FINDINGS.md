@@ -165,3 +165,14 @@ ist zur spaeteren InWorld-Abnahme vorgesehen.
 Firestorm /7 Beep privater Kanal im Viewer-Core.
 Kein neuer authentifizierter InWorld-Test und
 keine bestaetigten realen touch()/llListen-Skriptereignisse.
+
+## Alpha.102 – WorldRay mit GPU-Basis, Live-Abnahme offen
+
+Viewer-Maus kann erstmals echte WorldModel-
+Objekte aus Kamerarichtung per BoundingBox
+selektieren und die vorhandenen Grab/DeGrab
+in die zuverlässige LLUDP Queue geben.
+Synthetic Ray-/GL-/Wiretests ersetzen keine
+InWorld-NexVerse-Sitzung: weder LSL touch()
+noch exakte Mesh-Face/UV-Erkennung bestätigt.
+Server 0.9.3.12 bleibt Dev.

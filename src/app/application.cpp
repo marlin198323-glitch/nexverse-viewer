@@ -69,6 +69,7 @@
 #include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -846,6 +847,22 @@ bool point_inside(double px, double py, float x, float y, float width, float hei
            py <= static_cast<double>(y + height);
 }
 
+void window_focus_callback(GLFWwindow* window,int focused)
+{
+    if(focused!=GLFW_FALSE)return;
+    auto* context=static_cast<InputContext*>(
+        glfwGetWindowUserPointer(window));
+    if(!context||!context->viewer_shell)return;
+    auto& shell=*context->viewer_shell;
+    // Discard a deferred press and release any active grab on focus loss.
+    // This covers Alt-Tab and minimizing mid-hold; server still retains
+    // its five-minute recovery guard for unexpected network loss.
+    shell.world_pick_requested=false;
+    shell.object_touch_press_requested=false;
+    if(shell.held_object_id!=0U)
+        shell.object_touch_release_requested=true;
+}
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int)
 {
     if(button!=GLFW_MOUSE_BUTTON_LEFT)return;
@@ -856,7 +873,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     {
         if(context&&context->viewer_shell&&
            (context->viewer_shell->held_object_id!=0U||
-            context->viewer_shell->object_touch_press_requested))
+            context->viewer_shell->object_touch_press_requested||
+            context->viewer_shell->world_pick_requested))
             context->viewer_shell->object_touch_release_requested=true;
         return;
     }
@@ -1014,6 +1032,16 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         if(shell.input_captured()||
            command==nexverse::ui::ViewerAction::focus_chat)
             return;
+        if(command==nexverse::ui::ViewerAction::none &&
+           layout.world_viewport_hit(mx,my) &&
+           shell.held_object_id==0U)
+        {
+            // Deferred to main thread under world_mutex.
+            shell.world_pick_x=static_cast<float>(mx);
+            shell.world_pick_y=static_cast<float>(my);
+            shell.world_pick_requested=true;
+            return;
+        }
     }
     if(context && context->experience && context->experience->open &&
        context->login && context->login->authenticated)
@@ -3571,6 +3599,7 @@ int Application::run(bool enable_developer_modules)
     glfwSetCharCallback(window, character_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetWindowFocusCallback(window,window_focus_callback);
 
     auto transport = std::make_shared<net::CurlHttpTransport>();
     auto discovery_future = std::async(
@@ -4999,6 +5028,61 @@ int Application::run(bool enable_developer_modules)
 
             // Real UI commands are queued on the render/main thread,
             // never from a network callback or a login-only mockup.
+            if(viewer_shell.world_pick_requested)
+            {
+                viewer_shell.world_pick_requested=false;
+                std::vector<render::WorldPickObject> candidates;
+                render::RenderCamera ray_camera;
+                bool region_ready=false;
+                {
+                    std::scoped_lock lock{world_mutex};
+                    const auto& agent=world_model.agent();
+                    const auto& region=world_model.region();
+                    region_ready=simulation_ready&&login_ui.authenticated&&
+                                 region.connected&&agent.present;
+                    if(region_ready)
+                    {
+                        const auto c=render_camera_from_agent(agent);
+                        ray_camera.position={c.center.x,c.center.y,c.center.z};
+                        ray_camera.forward={c.at.x,c.at.y,c.at.z};
+                        ray_camera.up={c.up.x,c.up.y,c.up.z};
+                        ray_camera.vertical_fov_degrees=60.0f;
+                        for(const auto& [id,obj]:world_model.objects())
+                        {
+                            if(id==0U||obj.parent_id!=0U||
+                               obj.pcode!=protocol::pcode_prim)continue;
+                            const float dx=obj.position.x-agent.position.x;
+                            const float dy=obj.position.y-agent.position.y;
+                            const float dz=obj.position.z-agent.position.z;
+                            if(!std::isfinite(dx)||!std::isfinite(dy)||
+                               !std::isfinite(dz)||
+                               dx*dx+dy*dy+dz*dz>225.0f)continue;
+                            candidates.push_back({id,
+                                {obj.position.x,obj.position.y,obj.position.z},
+                                {obj.rotation.x,obj.rotation.y,
+                                 obj.rotation.z,obj.rotation.w},
+                                {obj.scale.x,obj.scale.y,obj.scale.z}});
+                        }
+                    }
+                }
+                if(region_ready)
+                {
+                    int w=0,h=0;glfwGetWindowSize(window,&w,&h);
+                    const auto picked=render::pick_world_object(
+                        ray_camera,w,h,viewer_shell.world_pick_x,
+                        viewer_shell.world_pick_y,candidates,40.0f);
+                    if(picked && viewer_shell.held_object_id==0U)
+                    {
+                        viewer_shell.selected_object_id=picked->local_id;
+                        viewer_shell.object_touch_press_requested=true;
+                        viewer_shell.status_text=
+                            "3D-Objekt #"+std::to_string(picked->local_id)+
+                            " gewaehlt (Bounding-Box-Treffer).";
+                        viewer_shell.window=ui::ViewerWindow::objects;
+                        viewer_shell.open_menu=-1;
+                    }
+                }
+            }
             if(viewer_shell.object_touch_press_requested)
             {
                 viewer_shell.object_touch_press_requested=false;
@@ -6300,6 +6384,7 @@ int Application::run(bool enable_developer_modules)
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
+                viewer_shell.world_pick_requested=false;
                 // Reject all old-region TransferInfo/Packets, with no
                 // stale clip adoption across distinct simulator sessions.
                 animation_transfers.reset(current_firestorm_epoch);
@@ -9707,6 +9792,30 @@ int Application::run(bool enable_developer_modules)
                                 nearby[i].second);
                             viewer_shell.nearby_object_ids.push_back(
                                 nearby[i].second.local_id);
+                        }
+                        // A world-ray selected object must stay visible
+                        // even if it is not among the nearest five.
+                        if(viewer_shell.selected_object_id!=0U &&
+                           !viewer_shell.nearby_object_ids.empty() &&
+                           std::find(viewer_shell.nearby_object_ids.begin(),
+                                     viewer_shell.nearby_object_ids.end(),
+                                     viewer_shell.selected_object_id)==
+                                     viewer_shell.nearby_object_ids.end())
+                        {
+                            const auto selected=std::find_if(
+                                nearby.begin(),nearby.end(),
+                                [&](const auto& row)
+                                {
+                                    return row.second.local_id==
+                                        viewer_shell.selected_object_id;
+                                });
+                            if(selected!=nearby.end())
+                            {
+                                viewer_shell.nearby_object_ids.back()=
+                                    selected->second.local_id;
+                                shell_view.nearby_objects.back()=
+                                    selected->second;
+                            }
                         }
                     }
                     shell_view.terrain_patches=

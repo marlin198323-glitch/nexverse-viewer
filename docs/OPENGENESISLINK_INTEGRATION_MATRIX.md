@@ -194,3 +194,43 @@ Simulator-C#-Timer als Viewer-Plugin.
 CHAT01/CHAT02: /7 Beep muss korrekten
 ChatFromViewer S32 Channel 7 senden;
 NexBus Routing bleibt Server-only.
+
+## Source Review 14.10.2026 – sechs Upstream-Commits
+
+Alter SHA 689c65ce9fa6d8816e8f3c3be3aa4d0e4bab50a3
+Neuer SHA 2cc59ceaada1c6791ac8320d3d5638cae941b13a.
+Sechs Commits zu OGLFeatureControlApi.cs,
+OglArchiveFeatureGate.cs, deutschem Konsolenhelp,
+NexBus Regressionen, IAR/OAR Archiver und
+0.9.3.12 Development-Kennzeichnung.
+VersionInfo.cs bestätigt Flavour.Dev.
+
+Robust schützt GET /api/v1/feature-control/nodes
+und PATCH für NodeID mit UserLevel >=200 und
+Server-Authentifizierung. Signierte ES256
+Kurzzeit-Freigaben für OAR1/OAR2/IAR4/IAR8
+werden serverseitig durchgesetzt (fail closed).
+KEINE Viewer-Protokolländerung; kein
+Endnutzer-Plugin und keine Admin-Keys im Viewer.
+Normales Objektpicking und Berührung bleiben
+OpenSim/Firestorm Viewer Core.
+
+
+## Alpha.102 zweite Upstream-Nachpruefung: 0.9.3.12 Release-Label
+
+Ein weiterer Server-Commit nach der anfaenglichen
+Sechs-Commit-Pruefung: neuer main SHA
+1841c4ee8ef580730be7d306023e594380f8b19f
+(14.10.2026 16:41:53 UTC), aus 2cc59cea.
+Die VersionInfo.cs ist nun auf Flavour.Release
+gestellt; Dokumentation RELEASE_0.9.3.12.md
+und 09312_RC1_STABLE_ACCEPTANCE.md betonen aber:
+**KEIN** allein dadurch publizierter GitHub-Tag,
+KEINE nachgewiesene produktive Installation und
+KEINE vollstaendige 22-Punkte-Release-Evidence.
+Die zuletzt unabhaengig verifizierte/tagged
+Stable bleibt v0.9.3.10. Endnutzer-OGL darf
+keine Server-Livefreigabe aus dem Code-Label
+ableiten. Keine neue Client-LLUDP/CAPS-Funktion
+aus diesen Release-Dokumenten abzuleiten.
+Server-Baseline-SHA nach Review aktualisiert.

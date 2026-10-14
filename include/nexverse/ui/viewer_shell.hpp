@@ -65,6 +65,8 @@ struct ViewerShellState
     std::uint32_t held_object_id=0U;
     bool object_touch_press_requested=false;
     bool object_touch_release_requested=false;
+    bool world_pick_requested=false;
+    float world_pick_x=0.0f,world_pick_y=0.0f;
     void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
     [[nodiscard]] bool input_captured() const noexcept
     {return window!=ViewerWindow::none;}
@@ -104,14 +106,15 @@ inline constexpr std::array<std::array<ViewerMenuItem,5>,5> menu_items{{
       {"",ViewerAction::none},
       {"",ViewerAction::none}}}
 }};
-inline constexpr std::array<std::string_view,8> action_labels{
+inline constexpr std::array<std::string_view,9> action_labels{
     "Chat","Bewegen","Teleport","Inventar","Outfits","Erlebnisse","Karte",
-    "Animationen"
+    "Animationen","Objekte"
 };
-inline constexpr std::array<ViewerAction,8> action_commands{
+inline constexpr std::array<ViewerAction,9> action_commands{
     ViewerAction::chat,ViewerAction::move,ViewerAction::teleport,
     ViewerAction::inventory,ViewerAction::outfits,
-    ViewerAction::experiences,ViewerAction::map,ViewerAction::animations
+    ViewerAction::experiences,ViewerAction::map,ViewerAction::animations,
+    ViewerAction::objects
 };
 inline constexpr std::array<ViewerAction,7> navigation_commands{
     ViewerAction::region,ViewerAction::teleport,ViewerAction::disabled,
@@ -135,6 +138,14 @@ struct ViewerShellLayout
     [[nodiscard]] static bool inside(
         double px,double py,float x,float y,float w,float h) noexcept
     {return px>=x && py>=y && px<=x+w && py<=y+h;}
+    // Transparent world viewport avoids picking through top/bottom
+    // bars, navigation rail and the system status cards.
+    [[nodiscard]] bool world_viewport_hit(double x,double y) const noexcept
+    {
+        return inside(x,y,215.0f*scale,110.0f*scale,
+                      std::max(0.0f,width-495.0f*scale),
+                      std::max(0.0f,height-168.0f*scale));
+    }
     [[nodiscard]] ViewerAction hit(
         double x,double y,const ViewerShellState& state,
         int* menu_change=nullptr) const noexcept

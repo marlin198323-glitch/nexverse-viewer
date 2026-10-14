@@ -90,6 +90,12 @@ int main()
            ViewerAction::touch_press)return 37;
         if(window_for_action(ViewerAction::objects)!=
             ViewerWindow::objects)return 38;
+        if(!l.world_viewport_hit(550.0f*sc,400.0f*sc)||
+            l.world_viewport_hit(22.0f*sc,400.0f*sc)||
+            l.world_viewport_hit(550.0f*sc,33.0f*sc)||
+            l.world_viewport_hit(l.width-10.0f*sc,400.0f*sc)||
+            l.world_viewport_hit(550.0f*sc,l.height-8.0f*sc))
+            return 40;
         s.window=ViewerWindow::none;
         s.open_menu=2;
         if(l.hit(466.0f*sc,244.0f*sc,s)!=

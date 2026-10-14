@@ -487,6 +487,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-animation-tests
         COMMAND nexverse-avatar-animation-tests)
 
+    add_executable(nexverse-world-object-picker-tests
+        tests/world_object_picker_tests.cpp)
+    target_link_libraries(nexverse-world-object-picker-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-world-object-picker-tests)
+    add_test(NAME nexverse-world-object-picker-tests
+        COMMAND nexverse-world-object-picker-tests)
+
     add_executable(nexverse-object-touch-tests
         tests/object_touch_tests.cpp)
     target_link_libraries(nexverse-object-touch-tests

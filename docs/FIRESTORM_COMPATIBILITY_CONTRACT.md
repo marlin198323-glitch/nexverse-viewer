@@ -453,3 +453,36 @@ Grab nochmal LocalID/Root/Proximity pruefen,
 Regionswechsel invalidiert.
 ChatFromViewer Skriptkanal /7 wird S32 Channel7,
 kein clientseitiges CrossRegionChat-NexBus.
+
+## Alpha.102 – Firestorm WorldRay und Feature-Gate-Rechte
+
+KameraProjection Top-Left Cursor, Aspect und FOV
+entsprechen OpenGL WorldRenderer. Weltklicks
+werden nicht durch Viewer-HUD weitergegeben.
+BoundingBox-Treffer sind keine Triangle-Face-
+Intersections; LLUDP Grab SurfaceInfo bleibt
+leer, bis reale UV/FaceNormal vorhanden sind.
+Signierte OGL Feature Control zum Archivieren
+ist ausschließlich Admin-Serverfunktion:
+keine ES256 PrivateKeys, keine NexBus/Robust
+Operatorzugänge in normalem Viewer.
+
+
+## Alpha.102 zweite Upstream-Nachpruefung: 0.9.3.12 Release-Label
+
+Ein weiterer Server-Commit nach der anfaenglichen
+Sechs-Commit-Pruefung: neuer main SHA
+1841c4ee8ef580730be7d306023e594380f8b19f
+(14.10.2026 16:41:53 UTC), aus 2cc59cea.
+Die VersionInfo.cs ist nun auf Flavour.Release
+gestellt; Dokumentation RELEASE_0.9.3.12.md
+und 09312_RC1_STABLE_ACCEPTANCE.md betonen aber:
+**KEIN** allein dadurch publizierter GitHub-Tag,
+KEINE nachgewiesene produktive Installation und
+KEINE vollstaendige 22-Punkte-Release-Evidence.
+Die zuletzt unabhaengig verifizierte/tagged
+Stable bleibt v0.9.3.10. Endnutzer-OGL darf
+keine Server-Livefreigabe aus dem Code-Label
+ableiten. Keine neue Client-LLUDP/CAPS-Funktion
+aus diesen Release-Dokumenten abzuleiten.
+Server-Baseline-SHA nach Review aktualisiert.

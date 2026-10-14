@@ -423,3 +423,15 @@ E2E gegen einen authentifizierten Server ist weiterhin offen.
 | Welt -> Objekte beruehren | Live WorldModel Root-Prims bis 15m | 3D Ray Picking und Child-Prim |
 | Chat /7 Beep | Parser fuer Signed-Channel im ChatFromViewer | zwei Regionen CHAT01/CHAT02 noch NICHT verifiziert |
 | UI/Backend gemeinsam | aktiver Button und sichtbarer Status | COF-Wear und ScriptEditor folgen |
+
+## Alpha.102 – Direct World Picking und Server Dev Review
+
+- 3D WorldClick: CameraRay, Quaternion-OBB, echte Low117/119.
+- Sichtbare UI: Welt->Objekte und unteres Dock Objekte,
+  Live-RootPrim-Highlight und Status.
+- Fokusverlust/Alt-Tab: aktiven Grab kontrolliert aufheben.
+- Exakte Mesh-Face-/UV-/ChildPrim-Interaktion: OFFEN.
+- OpenGenesisLINK 0.9.3.12 ist DEV-Testversion,
+  keine Freigabe als RC oder Stable.
+- Neue Robust OAR/IAR ES256 Feature-Control ist
+  SERVER-ONLY Admin/API, NICHT User-Viewer-Plugin.

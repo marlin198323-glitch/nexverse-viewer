@@ -120,3 +120,13 @@ daher kein OGL Touch-Timer. Firestorm
 Skript-Kanalchat /7 umgesetzt.
 OpenGL/Maus/PacketGolden Tests gemeinsam;
 echtes InWorld noch offen.
+
+## Alpha.102 – Firestorm-ähnlicher 3D-Klick mit GUI
+
+Die OGL-Kamera kann im sichtbaren Weltfenster
+echte Root-Prims direkt wählen und damit
+die vorhanden verifizierten ObjectGrab/
+ObjectDeGrab-LLUDP-Funktionen auslösen.
+NexVerse-Dock/Floater verknüpft die Auswahl
+sichtbar. Geometry ist noch OBB, kein
+dreiecksgenaues Firestorm Mesh-Picking.
