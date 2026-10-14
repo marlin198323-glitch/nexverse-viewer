@@ -550,3 +550,7 @@ Firestorm LLWearable importStream: v1 text Header/Name/Description, Legacy permi
 ## Alpha.111
 
 Firestorm_7.2.4 LLAvatarAppearanceDictionary::Textures::Textures 45 TE, 17 Wearable Owners, 11 Bake Groups. Nur passende lokale Input-Textur eines bereits owner-/COF-/Epoch-validierten LLWearable darf über Grid GetTexture und JPEG2000/PNG per explizitem Benutzerklick geladen werden. Nie mit fertigem Bake, AgentSetAppearance oder Outfit-Wear verwechseln.
+
+## Alpha.112-115
+
+Alpha112-115: Original Firestorm TexLayer XML LocalSource TE-Name 45, 11 region sets, ordenliche Reihenfolge und Mask/alpha/colors/bump Parameter Semantik als Fakten; nur masken-/parameterfreie lokale RGBA Quelle zum einfachen Teil-Preview verwendet. No genuine AvatarBake, AgentSetAppearance, Wear/Unwear.

@@ -205,3 +205,7 @@ Alpha.110: F9 Outfit-Viewer mit funktionalem links platziertem "Original-Wearabl
 ## Alpha.111
 
 Alpha111 F9 zwei echte Buttons (Wearable-Assets laden, Texturen laden) und 17 Wearable Slot Mini-Bilder aus realen decodierten lokalen PNG/J2C Quellen, eigener Status-Footer ohne Overlap. Hitbox bei 800x480 bis 5120x1440. Wird bei COF/Regionsänderung korrekt freigegeben; volles Outfit Wear und Body Bake bleiben offen.
+
+## Alpha.112-115
+
+Alpha112-115 F9 neue Buttons TexLayer lesen und Teillagen mischen, neben bestehenden Wearable-Assets laden/Texturen laden, plus 3 Head/Upper/Lower partielle GL Farblagenbilder und neue TexLayer Footer Statuszeile. 800x480 bis Ultrawide Klickflächen geprüft. Vollständige Masken bleiben als nicht unterstützt sichtbar.

@@ -183,3 +183,7 @@ Alpha.110: Download echter LLWearable Assets über Original Firestorm TransferRe
 ## Alpha.111
 
 Alpha111 vorhandenen OGL TextureAssetLoader/OpenJPEG/JPEG2000 und GL Textur-Upload wiederverwenden, nicht duplizieren. Readonly lokale Wearable Preview mit 12 asynchronen seriellen 128px GPU Images, sichtbare F9 Swatches samt Status. Original TexLayer-Reihenfolge und Masken sind expliziter Folgeblock.
+
+## Alpha.112-115
+
+Alpha112-115 vier kombinierte Blöcke: TinyXML2 Firestorm avatar_lad.xml Parser, sichere simple RGBA alpha-over Komposition, echter Original Wearable Source-Pixelcache nach TE, sichtbare F9 Buttons und GPU Preview; Browser/UI sowie Protokoll in gemeinsamen Release statt Einzelfunktionen.

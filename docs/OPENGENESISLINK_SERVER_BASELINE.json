@@ -1,9 +1,9 @@
 {
   "repository": "opengenesislink/opengenesislinkserver",
   "branch": "main",
-  "reviewed_sha": "5d9c616470ac5b30de2afdadd6d5f82b33b0ae94",
+  "reviewed_sha": "20a7fd765527807fd9d7887965b5f5f28d42d68f",
   "reviewed_utc": "2026-10-14",
-  "viewer_version": "0.2.0-alpha.111",
+  "viewer_version": "0.2.0-alpha.115",
   "last_review": "2026-10-14",
   "policy": "Do not auto-update pin; human/API/protocol evaluation before advancing SHA",
   "decisions": [
@@ -108,6 +108,16 @@
       "server_change": "Original user GetTexture capability exposed by existing Firestorm region reader, PNG plus JPEG2000 native fallback, exact Firestorm TextureEntry wearable ownership and 11 bake input groups.",
       "placement": "VIEWER_CORE_GETTEXTURE_READ_ONLY_F9_PREVIEW",
       "note": "Alpha111 checked original Firestorm_7.2.4 llavatarappearancedefines.h/cpp and existing OGL TextureAssetLoader and JPEG2000 decoder. Download maximum 12 local source UUIDs only by explicit user click after owner/epoch/COF verified Wearable assets. JPEG2000/PNG -> RGBA8 -> 128px OpenGL swatches; no fake Bake or AgentSetAppearance."
+    },
+    {
+      "server_change": "Firestorm original avatar_lad.xml wearable TexLayer 11 regions and 89 ordered layers installed locally; owner-scoped LLWearable GetTexture inputs for read-only alpha source-over partial preview.",
+      "placement": "VIEWER_CORE_FIRESTORM_LAYER_MANIFEST_AND_READ_ONLY_RGBA_PARTIAL_PREVIEW",
+      "note": "Alpha112-115: original local Firestorm_7.2.4 avatar_lad.xml tinyxml2<=1MiB, 11 regions, 89 layers, 3 simple. All complex mask/color/TGA/bump effects skipped and counted. No baked output, cache ID, GPU avatar-skin mutation, AgentSetAppearance or HTTP operator API. Server #208 remains server-only auth."
+    },
+    {
+      "server_change": "OpenGenesisLINK 0.9.3.12 Control Center v2 (#209), GridUser UserLevel>=200 dashboard, API version/ChatGPT metadata, diagnostics, malformed XML-RPC returns HTTP400, HG IM unresolved recipient logs throttled without suppressing IM delivery.",
+      "placement": "SERVER_ONLY_WORLDAPI_OPERATOR_DIAGNOSTICS_AND_HG_XMLRPC",
+      "note": "Manually reviewed GitHub upstream commit 20a7fd765527807fd9d7887965b5f5f28d42d68f all nine changed files and code patches. No Viewer LLUDP/Firestorm inventory/texture/capability protocol changes, no need to alter viewer GetTexture or bake. Compatible legacy operator X-NexVerse-Api-Key / paths remain on SERVER only. 0.9.3.12 now labeled release in API metadata. HG IM behavior continues retry, only logs throttled. Malformed XML-RPC HTTP400 is server input validation. No admin docs UserLevel200 flow or secrets in ordinary Viewer."
     }
   ]
 }

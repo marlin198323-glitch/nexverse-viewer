@@ -26,6 +26,12 @@ int main()
            OutfitGalleryHit::appearance_check)return 11;
         if(g.hit(g.x+g.pw-315.0f*sc,g.y+80.0f*sc)!=
            OutfitGalleryHit::wearable_check)return 14;
+        if(g.hit(g.x+90.0f*sc,g.y+80.0f*sc)!=
+           OutfitGalleryHit::texlayer_analyze)return 19;
+        if(g.hit(g.x+270.0f*sc,g.y+80.0f*sc)!=
+           OutfitGalleryHit::texlayer_compose)return 20;
+        if(g.hit(g.x+186.0f*sc,g.y+80.0f*sc)!=
+           OutfitGalleryHit::none)return 21;
         if(g.hit(g.x+150.0f*sc,g.y+460.0f*sc)!=
            OutfitGalleryHit::wearable_asset_fetch)return 15;
         if(g.hit(g.x+330.0f*sc,g.y+460.0f*sc)!=

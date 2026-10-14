@@ -80,6 +80,7 @@
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
+#include "nexverse/assets/firestorm_texlayer_composite.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -417,6 +418,8 @@ struct InputContext
     bool* outfit_wearable_check_requested = nullptr;
     bool* outfit_wearable_asset_requested = nullptr;
     bool* outfit_wearable_texture_requested = nullptr;
+    bool* outfit_texlayer_analyze_requested = nullptr;
+    bool* outfit_texlayer_compose_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -1160,6 +1163,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::wearable_texture_fetch:
             if(context->outfit_wearable_texture_requested)
                 *context->outfit_wearable_texture_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::texlayer_analyze:
+            if(context->outfit_texlayer_analyze_requested)
+                *context->outfit_texlayer_analyze_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::texlayer_compose:
+            if(context->outfit_texlayer_compose_requested)
+                *context->outfit_texlayer_compose_requested=true;
             break;
         case nexverse::ui::OutfitGalleryHit::select:
             *context->outfit_selection=
@@ -2224,7 +2235,9 @@ void render_outfit_gallery(
     std::string_view local_texture_status,
     std::size_t local_texture_decoded,
     std::size_t local_texture_total,
-    const std::array<unsigned int,17>& local_texture_previews)
+    const std::array<unsigned int,17>& local_texture_previews,
+    std::string_view texlayer_status,
+    const std::array<unsigned int,3>& partial_layer_previews)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2260,6 +2273,16 @@ void render_outfit_gallery(
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventar und geschuetzte COF-Aktionen",
                   theme::cyan);
+    renderer.rect(x+22.0f*scale,y+64.0f*scale,
+                  159.0f*scale,33.0f*scale,
+                  Color{0.039f,0.129f,0.183f,0.98f},7.0f*scale);
+    renderer.text(x+29.0f*scale,y+73.0f*scale,8.2f*scale,
+                  "TexLayer lesen",theme::cyan);
+    renderer.rect(x+194.0f*scale,y+64.0f*scale,
+                  160.0f*scale,33.0f*scale,
+                  Color{0.038f,0.135f,0.146f,0.98f},7.0f*scale);
+    renderer.text(x+201.0f*scale,y+73.0f*scale,8.2f*scale,
+                  "Teillagen mischen",theme::cyan);
     renderer.rect(x+pw-409.0f*scale,y+64.0f*scale,
                   186.0f*scale,33.0f*scale,
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
@@ -2391,6 +2414,22 @@ void render_outfit_gallery(
     }
     if(!plan_visible)
     {
+        static constexpr std::array<std::string_view,3> group_names{
+            "Head","Upper","Lower"};
+        for(std::size_t i=0U;i<3U;++i)
+        {
+            const float bx=x+(22.0f+140.0f*
+                static_cast<float>(i))*scale;
+            renderer.text(bx,y+428.0f*scale,7.6f*scale,
+                          group_names[i],theme::text_muted);
+            if(partial_layer_previews[i]!=0U)
+                renderer.image(partial_layer_previews[i],
+                               bx+44.0f*scale,y+421.0f*scale,
+                               84.0f*scale,21.0f*scale,1.0f);
+        }
+    }
+    if(!plan_visible)
+    {
         renderer.rect(x+22.0f*scale,y+447.0f*scale,
                       210.0f*scale,27.0f*scale,
                       Color{0.034f,0.110f,0.157f,0.98f},6.0f*scale);
@@ -2510,46 +2549,50 @@ void render_outfit_gallery(
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
     }
-    renderer.text(x+22.0f*scale,y+ph-194.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-200.0f*scale,
+                  7.8f*scale,
+                  "TexLayer: "+std::string(texlayer_status).substr(0U,90U),
+                  theme::text_muted);
+    renderer.text(x+22.0f*scale,y+ph-182.0f*scale,
                   8.0f*scale,
                   "GetTexture RGBA "+std::to_string(local_texture_decoded)+
                   "/"+std::to_string(local_texture_total)+": "+
                   std::string(local_texture_status).substr(0U,65U),
                   theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-175.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-165.0f*scale,
                   8.0f*scale,
                   "Wearable-Assets "+std::to_string(wearable_asset_decoded)+
                   "/"+std::to_string(wearable_asset_total)+": "+
                   std::string(wearable_asset_status).substr(0U,70U),
                   theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-157.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-148.0f*scale,
                   8.0f*scale,
                   "Firestorm 17 Slots: "+
                   std::string(wearable_status).substr(0U,100U),
                   theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-139.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-131.0f*scale,
                   8.0f*scale,
                   "AvatarAppearance: "+
                   std::string(appearance_status).substr(0U,95U),
                   appearance_phase==nexverse::protocol::
                       CofAppearancePhase::appearance_matched
                     ?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-121.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-114.0f*scale,
                   7.8f*scale,std::string(unlink_status).substr(0U,94U),
                   unlink_phase==nexverse::protocol::CofUnlinkPhase::verified
                       ?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-103.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-97.0f*scale,
                   7.8f*scale,
                   "COF Batch "+std::to_string(batch_confirmed)+"/"+
                   std::to_string(batch_total)+": "+
                   std::string(batch_status).substr(0U,66U),
                   batch_phase==nexverse::protocol::CofBatchPhase::
                     confirmed_links?theme::cyan:theme::text_muted);
-    renderer.text(x+22.0f*scale,y+ph-85.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-80.0f*scale,
                   8.0f*scale,std::string(link_status).substr(0U,93U),
                   link_phase==nexverse::protocol::CofLinkPhase::verified
                       ?theme::cyan:theme::warning);
-    renderer.text(x+22.0f*scale,y+ph-67.0f*scale,
+    renderer.text(x+22.0f*scale,y+ph-63.0f*scale,
                   8.2f*scale,std::string(plan_status).substr(0U,101U),
                   theme::cyan);
     renderer.text(x+22.0f*scale,y+ph-45.0f*scale,
@@ -4944,6 +4987,18 @@ int Application::run(bool enable_developer_modules)
     std::size_t gallery_local_total=0U,gallery_local_failed=0U;
     std::uint64_t gallery_local_epoch=0U,gallery_local_cof_version=0U;
     std::string gallery_local_cof;
+    bool gallery_texlayer_analyze_requested=false;
+    bool gallery_texlayer_compose_requested=false;
+    input_context.outfit_texlayer_analyze_requested=
+        &gallery_texlayer_analyze_requested;
+    input_context.outfit_texlayer_compose_requested=
+        &gallery_texlayer_compose_requested;
+    std::optional<assets::FirestormTexLayerManifest> gallery_texlayer_manifest;
+    std::string gallery_texlayer_status="Firestorm avatar_lad.xml nicht geprueft";
+    std::map<unsigned,assets::ImageRgba8> gallery_local_te_rgba;
+    std::array<unsigned int,3> gallery_partial_layer_gpu{};
+    std::uint64_t gallery_composite_version=0U;
+    std::string gallery_composite_cof;
     std::uint64_t gallery_item_fetch_epoch=0U;
     std::string gallery_item_fetch_folder;
     std::string gallery_item_fetch_completed_folder;
@@ -5347,6 +5402,14 @@ int Application::run(bool enable_developer_modules)
             renderer.destroy_texture(handle);
         }
         gallery_local_gpu_textures.clear();
+        for(auto& handle:gallery_partial_layer_gpu)
+        {
+            if(handle)renderer.destroy_texture(handle);
+            handle=0U;
+        }
+        gallery_local_te_rgba.clear();
+        gallery_composite_version=0U;
+        gallery_composite_cof.clear();
         gallery_local_slot_previews.fill(0U);
         gallery_local_total=gallery_local_failed=0U;
         gallery_local_cof.clear();
@@ -8054,6 +8117,23 @@ int Application::run(bool enable_developer_modules)
                         {
                             gallery_local_gpu_textures.insert_or_assign(
                                 result.asset_id,handle);
+                            // Preserve the decoded *local* source pixels
+                            // at every actual TE reference to this exact UUID.
+                            // A repeated UUID may belong to multiple body
+                            // regions; the shared HTTP request stays unique.
+                            for(const auto& [wearable_id,wearable]:
+                                gallery_decoded_wearable_assets)
+                            {
+                                (void)wearable_id;
+                                for(const auto& [entry,id]:wearable.textures)
+                                    if(id==result.asset_id&&
+                                       entry<assets::firestorm_local_texture_owner.size()&&
+                                       assets::firestorm_local_texture_owner[entry]
+                                          ==wearable.type&&
+                                       assets::firestorm_local_bake_groups[entry]>=0)
+                                        gallery_local_te_rgba.insert_or_assign(
+                                            entry,result.image);
+                            }
                             auto& slot=gallery_local_slot_previews[
                                 static_cast<std::size_t>(result.wearable_type)];
                             if(slot==0U)slot=handle;
@@ -8145,6 +8225,97 @@ int Application::run(bool enable_developer_modules)
                         reply.image=std::move(loaded.image);
                         return reply;
                     });
+            }
+            if(gallery_texlayer_analyze_requested)
+            {
+                gallery_texlayer_analyze_requested=false;
+                if(!outfit_gallery_open||!active_session)
+                    gallery_texlayer_status="F9/Login fuer TexLayer Analyse noetig";
+                else if(const auto root=
+                            assets::find_firestorm_avatar_character_directory())
+                {
+                    const auto result=assets::load_firestorm_texlayers(*root);
+                    if(result.manifest)
+                    {
+                        gallery_texlayer_manifest=*result.manifest;
+                        gallery_texlayer_status=
+                            std::to_string(result.manifest->layer_count)+
+                            " Original-Layer, "+
+                            std::to_string(result.manifest->local_layer_count)+
+                            " lokale, "+
+                            std::to_string(result.manifest->safe_layer_count)+
+                            " einfach, "+
+                            std::to_string(
+                                result.manifest->unsupported_layer_count)+
+                            " komplex - KEIN Avatar-Bake";
+                    }
+                    else
+                    {
+                        gallery_texlayer_manifest.reset();
+                        gallery_texlayer_status="TexLayer Parser: "+result.error;
+                    }
+                }
+                else
+                {
+                    gallery_texlayer_manifest.reset();
+                    gallery_texlayer_status=
+                        "avatar_lad.xml fehlt: NEXVERSE_AVATAR_ASSETS setzen";
+                }
+            }
+            if(gallery_texlayer_compose_requested)
+            {
+                gallery_texlayer_compose_requested=false;
+                const auto& id=caps_state.current_outfit_folder;
+                const auto v=gallery_inventory_sync.versions().find(id);
+                if(!outfit_gallery_open||!active_session||
+                   !login_ui.authenticated||!simulation_ready||
+                   !gallery_texlayer_manifest||
+                   !gallery_texlayer_manifest->valid()||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   gallery_local_epoch!=current_firestorm_epoch||
+                   id.empty()||id!=gallery_local_cof||
+                   v==gallery_inventory_sync.versions().end()||
+                   v->second!=gallery_local_cof_version||
+                   !gallery_local_texture_pending.empty()||
+                   gallery_local_texture_future.valid()||
+                   gallery_local_te_rgba.empty())
+                {
+                    gallery_texlayer_status=
+                        "Erst TexLayer lesen, Wearables und Texturen fertig laden";
+                }
+                else
+                {
+                    for(auto& handle:gallery_partial_layer_gpu)
+                    {
+                        if(handle)renderer.destroy_texture(handle);
+                        handle=0U;
+                    }
+                    gallery_composite_cof=id;
+                    gallery_composite_version=v->second;
+                    std::size_t applied=0U,unsupported=0U,missing=0U;
+                    for(unsigned group=0U;group<3U;++group)
+                    {
+                        const auto composed=assets::compose_firestorm_partial_texlayers(
+                            *gallery_texlayer_manifest,group,
+                            gallery_local_te_rgba);
+                        applied+=composed.applied;
+                        unsupported+=composed.unsupported;
+                        missing+=composed.missing;
+                        if(composed.preview_ready()&&
+                           composed.image.width<=128U&&
+                           composed.image.height<=128U)
+                            gallery_partial_layer_gpu[group]=
+                                renderer.create_rgba_texture(
+                                    static_cast<int>(composed.image.width),
+                                    static_cast<int>(composed.image.height),
+                                    composed.image.pixels.data());
+                    }
+                    gallery_texlayer_status=
+                        "RGB-Teillagen "+std::to_string(applied)+
+                        " gemischt, "+std::to_string(unsupported)+
+                        " maskiert/komplex, "+
+                        std::to_string(missing)+" ohne Bild; KEIN Bake";
+                }
             }
             if(gallery_appearance_check_requested)
             {
@@ -11439,7 +11610,9 @@ int Application::run(bool enable_developer_modules)
                         gallery_local_texture_status,
                         gallery_local_gpu_textures.size(),
                         gallery_local_total,
-                        gallery_local_slot_previews);
+                        gallery_local_slot_previews,
+                        gallery_texlayer_status,
+                        gallery_partial_layer_gpu);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,

@@ -222,3 +222,7 @@ Alpha.110: Firestorm LLWearable v1 Parser, LLUDP 5/13 Typed Transfer und F9 GUI 
 ## Alpha.111
 
 Alpha111: lokale User-Wearable Texturen sind nun tatsächlich über GetTexture JPEG2000/PNG decodierbar und im sichtbaren F9 Slot-Mini-GPU Preview angezeigt. CTest mit echten tiny JPEG2000 codestream bytes, KEIN authentifizierter NexVerse Wear/Bake/Avatar visual E2E.
+
+## Alpha.112-115
+
+Alpha112-115 echter lokaler Firestorm avatar_lad.xml Reader mit 89 geordneten TexLayers und drei einfach maskenfreien, realen GL Partial Previews; E2E authentifizierte Avatar-Bake/Outfit-Wear in NexVerse weiterhin nicht getestet.

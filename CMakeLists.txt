@@ -90,6 +90,7 @@ add_library(nexverse-assets
     src/assets/mesh_loader.cpp
     src/assets/firestorm_avatar_mesh.cpp
     src/assets/firestorm_avatar_rig.cpp
+    src/assets/firestorm_texlayer_manifest.cpp
     src/assets/mesh_cache.cpp
 )
 add_library(NexVerse::Assets ALIAS nexverse-assets)
@@ -103,6 +104,7 @@ target_link_libraries(nexverse-assets PUBLIC
     PNG::PNG
     openjp2
     NexVerse::Protocol
+    tinyxml2::tinyxml2
     ZLIB::ZLIB
 )
 
@@ -367,6 +369,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-render-materials-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
+
+    add_executable(nexverse-firestorm-texlayer-manifest-tests
+        tests/firestorm_texlayer_manifest_tests.cpp)
+    target_link_libraries(nexverse-firestorm-texlayer-manifest-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-texlayer-manifest-tests)
+    add_test(NAME nexverse-firestorm-texlayer-manifest-tests
+        COMMAND nexverse-firestorm-texlayer-manifest-tests)
 
     add_executable(nexverse-firestorm-wearable-texture-plan-tests
         tests/firestorm_wearable_texture_plan_tests.cpp)

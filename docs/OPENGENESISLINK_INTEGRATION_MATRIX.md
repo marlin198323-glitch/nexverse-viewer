@@ -330,3 +330,13 @@ Klassifizierung: SERVER_ONLY_OPERATOR_ADMIN_AUTH_REVIEW, **NICHT** im normalen O
 ## Alpha.111
 
 Alpha111 Server-Referenz main 5d9c616470ac5b30de2afdadd6d5f82b33b0ae94, #208 OperatorAdminLogin bleibt SERVER_ONLY. User-VIEWER nutzt bereits vorhandenes authentifiziertes GetTexture Region CAPS mit PNG/X-J2C fallback, per Wearable Original UUID und COF/Epoch-Guard. Keine Admin-Token/secret APIs.
+
+## Alpha.112-115
+
+Alpha112-115 Server main 5d9c616470ac5b30de2afdadd6d5f82b33b0ae94 live verifiziert. Viewer-Core liest Firestorm XML lokal und nutzt nur bereits authentifizierte GetTexture Daten, kein Serveroperator Rest, kein Asset Write, kein AvatarBake CacheID Fake. #208 Control Center bleibt Server-Only.
+
+## Alpha.112–115 Live-Serverreview nach Implementierung (14.10.2026)
+
+Der OpenGenesisLINK Server main ist vor Release auf Commit 20a7fd765527807fd9d7887965b5f5f28d42d68f (#209) vorgerückt, zuvor 5d9c616470ac5b30de2afdadd6d5f82b33b0ae94. Alle neun geänderten Dateien und GitHub-Patches überprüft: Control Center v2, WorldAPI Metadaten für 0.9.3.12 als Release (früher 0.9.3.12 entwicklung), Version-aware ChatGPT Guidance, Operator Diagnose/CI, BaseHttpServer malformed XML-RPC => HTTP400 statt impliziter Erfolgsantwort, HG InstantMessage Log-Throttle nur für unauflösbare Empfänger OHNE Aussetzen der eigentlichen UAS/Zustellversuche.
+
+Entscheidung SERVER_ONLY_WORLDAPI_OPERATOR_DIAGNOSTICS_AND_HG_XMLRPC: Keine User-Viewer LLUDP Transfer/GetTexture/COF Änderungen, kein neues API/Secret im OGL Viewer. Weiterhin OpenGenesisLINK=Server-Produkt, NexVerse=konkretes Grid. Die Rollenprüfung UserLevel >=200 ist nur für den Serveradministrator; darf NICHT in die Anmeldung des normalen Viewers einfließen. Release gilt als serverseitige Metadatenangabe, nicht als Live-NexVerse-Abnahme einer fertig gebackenen Avatar-Kleidung. Baseline aktualisiert auf 20a7fd... und strikten GitHub-Check anschließend wiederholen.

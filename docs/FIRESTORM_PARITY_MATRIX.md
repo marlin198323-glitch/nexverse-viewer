@@ -484,3 +484,7 @@ Alpha.110: Original LLWearable v1 Text-Asset-Parser (permissions/sale/type/Visua
 ## Alpha.111
 
 Alpha111: F9 authentifizierte originale lokale Wearable Texture Input UUIDs via vorhandenes GetTexture PNG + OpenJPEG native J2C laden. Je 17 Original Wearable-Slots echte OpenGL RGBA8 Thumbnail Preview, max 12 deduplizierte Quellen 128px. Korrektes Original 45 TextureEntry Owner-/Bake-Source-Mapping, elf Baked Outputs ausgeschlossen. Kein Avatar-Wear/Bake.
+
+## Alpha.112-115
+
+Alpha112-115: original lokal installiertes Firestorm avatar_lad.xml 11 original LayerSets, 89 geordnete Layer und 3 simple Inputs gelesen; Shader/TexLayer Compiler mit Grenzen und Masken/TGA/Bump/Color-Erkennung. Source-over nur safe local RGBA8 und 3 F9 Head/Upper/Lower Teilgrafiken. VOLLSTÄNDIGER GPU Bake und Wear/Unwear weiterhin offen.
