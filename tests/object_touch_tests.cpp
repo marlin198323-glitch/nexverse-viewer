@@ -6,6 +6,7 @@
 #include "nexverse/protocol/chat_channel_command.hpp"
 #include <cstdint>
 #include <iostream>
+#include <limits>
 int main()
 {
     using namespace nexverse::protocol;
@@ -35,6 +36,60 @@ int main()
             for(std::size_t i=36U;i<48U;++i)
                 if(p[i]!=0U)return 6;
     }
+    // Actual Firestorm SurfaceInfo is 64 bytes, counted as ONE
+    // variable block; checked independently for Grab and DeGrab.
+    TouchSurfaceInfo surf;
+    surf.uv={0.25f,0.75f,0};
+    surf.st={0.5f,0.125f,0};
+    surf.face=7;
+    surf.position={128.0f,129.0f,26.0f};
+    surf.normal={1.0f,0.0f,0.0f};
+    surf.binormal={0.0f,0.0f,1.0f};
+    if(!surf.valid())return 14;
+    for(const auto phase:{ObjectTouchPhase::begin,ObjectTouchPhase::end})
+    {
+        const auto bytes=encode_object_touch(224U,login,
+            {0x12345678U,phase,surf});
+        const auto packet=decode_lludp_packet(bytes);
+        const std::size_t base=phase==ObjectTouchPhase::begin?48U:36U;
+        if(!packet.ok()||
+           packet.packet->payload.size()!=base+1U+64U||
+           packet.packet->payload[base]!=1U)
+            return 15;
+        const auto& p=packet.packet->payload;
+        const auto read32=[&](std::size_t offset)
+        {
+            std::uint32_t result=0U;
+            for(unsigned j=0;j<4U;++j)
+                result|=static_cast<std::uint32_t>(
+                    p[offset+j])<<(j*8U);
+            return result;
+        };
+        const auto checkf=[&](std::size_t offset,float expected)
+        {return std::bit_cast<float>(read32(offset))==expected;};
+        const std::size_t o=base+1U;
+        if(!checkf(o+0U,0.25f)||!checkf(o+4U,0.75f)||
+           !checkf(o+12U,0.5f)||!checkf(o+16U,0.125f)||
+           read32(o+24U)!=7U||
+           !checkf(o+28U,128.0f)||!checkf(o+32U,129.0f)||
+           !checkf(o+36U,26.0f)||
+           !checkf(o+40U,1.0f)||!checkf(o+44U,0.0f)||
+           !checkf(o+52U,0.0f)||!checkf(o+60U,1.0f))
+            return 16;
+    }
+    const auto bad_surf=surf;
+    auto invalid_surf=bad_surf;
+    invalid_surf.normal={0,0,0};
+    if(invalid_surf.valid()||
+       !encode_object_touch(6U,login,
+            {15U,ObjectTouchPhase::begin,invalid_surf}).empty())
+        return 17;
+    invalid_surf=bad_surf;
+    invalid_surf.uv[0]=std::numeric_limits<float>::quiet_NaN();
+    if(invalid_surf.valid()||
+       !encode_object_touch(6U,login,
+            {15U,ObjectTouchPhase::end,invalid_surf}).empty())
+        return 18;
     if(!encode_object_touch(4U,login,{0U,ObjectTouchPhase::begin}).empty())
         return 7;
     login.agent_id="bad";

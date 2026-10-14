@@ -519,6 +519,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-firestorm-keyframe-motion-tests
         COMMAND nexverse-firestorm-keyframe-motion-tests)
 
+    add_executable(nexverse-outfit-gallery-layout-tests
+        tests/outfit_gallery_layout_tests.cpp)
+    target_link_libraries(nexverse-outfit-gallery-layout-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-outfit-gallery-layout-tests)
+    add_test(NAME nexverse-outfit-gallery-layout-tests
+        COMMAND nexverse-outfit-gallery-layout-tests)
+
     add_executable(nexverse-viewer-shell-tests
         tests/viewer_shell_tests.cpp)
     target_link_libraries(nexverse-viewer-shell-tests

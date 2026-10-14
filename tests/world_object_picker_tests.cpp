@@ -81,7 +81,10 @@ int main()
        exact->local_id!=90U||
        std::abs(exact->distance-7.0f)>1e-4f||
        std::abs(exact->u-0.5f)>1e-4f||
-       std::abs(exact->v-0.5f)>1e-4f)return 12;
+       std::abs(exact->v-0.5f)>1e-4f||
+       !exact->surface_ready||
+       std::abs(exact->normal.x+1.0f)>1e-4f||
+       std::abs(exact->binormal.z-1.0f)>1e-4f)return 12;
     // Behind the triangle inside the cube bounding box is NOT
     // acceptable: exact mesh wins and no phantom OBB pick.
     mesh->vertices[2]=1.0f;

@@ -185,3 +185,7 @@ nicht durch einen neu angemeldeten
 NexVerse Avatar. F9 Outfit Galerie kann
 ihren autorisierten CAPS Readback neu
 anfordern; Wear/Unwear immer noch offen.
+
+## Alpha.104
+
+Alpha.104: LLUDP Original TouchSurface Byte-Golden, TriangleNormal/Binormal, GUI/Outfit-Fetch Tests lokal. Ohne authentifizierte NexVerse-InWorld-Testumgebung kein LSL-Face-/UV-Ereignis und kein erfolgreicher COF-Wear nachgewiesen.

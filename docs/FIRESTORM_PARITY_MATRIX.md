@@ -445,3 +445,7 @@ E2E gegen einen authentifizierten Server ist weiterhin offen.
 | LLUDP ObjectGrab | weiterhin zuverlässig Low117 | geprüfte SurfaceInfo Normal/ST/Binormal |
 | Sichtbares Weltfenster | Face/UV oder BoundingBox-Näherung | Child-Prim |
 | Outfit Galerie | aktueller authentifizierter Read-Only Refresh-Button | COF Wear/Unwear |
+
+## Alpha.104
+
+Alpha.104: Original ObjectGrab/DeGrab SurfaceInfo VariableCount1 mit 64 Bytes (UV/ST/Face/Position/Normal/Binormal) aus Mesh/GetMesh/TextureEntry, sonst Count0. Anzeige im Objektfenster. Outfit F9 COF pruefen authentifiziert FetchInventory2, kein Wear/Unwear.

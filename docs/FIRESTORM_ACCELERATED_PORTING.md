@@ -141,3 +141,7 @@ Parallel ergänzt echter F9-Outfit-Galerie-
 Aktualisieren-Button einen bestehenden
 authenticated InventoryDescendents2-Backend-
 Pfad; keine Dummy-COF-Wear-Aktionen.
+
+## Alpha.104
+
+Alpha.104: Original Firestorm ObjectGrab/ObjectDeGrab SurfaceInfo komplett fuer echte Mesh-Hits; Weltfenster mit sichtbarem Sendestatus. Outfit F9 GUI parallel mit COF pruefen und echten Caps FetchInventory2 read-only, Wear-Transaktion noch offen.

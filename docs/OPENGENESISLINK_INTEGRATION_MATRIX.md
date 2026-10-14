@@ -247,3 +247,33 @@ Keine neue Server-CAPS für Face Picking.
 Server-only: OAR/IAR Betreiberfeatureflags,
 ES256 private Keys, NexBus. Optional:
 Hardware-RTX oder hochwertige Wettermodule.
+
+## Alpha.104
+
+Alpha.104: Server main 1841c4ee8ef580730be7d306023e594380f8b19f erneut vor Entwicklung geprueft, vor Release erneut pruefen. SurfaceTouchEventArgs auf Server ist protokollkompatibles Viewer Core Feature. Serverinterne Admin-ES256 OAR/IAR weiter server-only. Outfit Readback via FetchInventory2 Core, COF-Mutationen nicht vorgetaeuscht.
+
+## Alpha.104 verpflichtender GitHub Release-Preflight
+
+Vor GitHub Release am 14.10.2026 wurde neuer
+OpenGenesisLINK main SHA
+5831913f3dc840aa9661b83fc844546f9f637070
+gegen 1841c4ee entdeckt: 1 Commit, 6 Dateien.
+Begutachtet OglApiDocsAccess.cs, NexApiDocsPage.cs,
+NexVerseWorldApiConnector.cs und
+doc/OpenGenesisLINK/WORLD_API_CONTROL_CENTER.md
+sowie CI. Admin Anmeldung:
+GET /api/v1/docs ist nur Login Shell,
+GET /api/v1/docs/panel liefert Dashboard
+nur mit HTTPS, authentifiziertem GridUser,
+aktuellem LoginAllowed, UserLevel>=200,
+AdminAll Scope und servervalidiertem Token.
+Machine Keys sind kein Admin Login.
+**SERVER-ONLY_OPERATOR_ADMIN_UI**, keine
+neuen OpenSim LLUDP/CAPS Viewer-Pakete,
+kein Admin-ControlCenter mit Adminbearer im
+Endnutzer-OGL Viewer. OpenGenesisLINK ist
+Serverprodukt, NexVerse ein konkretes Grid;
+Legacy Namespaces und Header bleiben nur fuer
+Abwaertskompatibilitaet. Live Admin
+Login/Deployment ist nicht automatisch getestet.
+Reviewed SHA in Baseline aktualisiert.

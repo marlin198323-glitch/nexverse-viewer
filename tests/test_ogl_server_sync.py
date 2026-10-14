@@ -26,6 +26,10 @@ class ServerSyncTests(unittest.TestCase):
                 "VIEWER_CORE_INVENTORY_THUMBNAIL",
             "tools/diagnostics/ogl_cross_region_chat_smoke.lsl":
                 "SERVER_ONLY_LSL_CHAT_TEST",
+            "NexVerse/Server/Api/OglApiDocsAccess.cs":
+                "SERVER_ONLY_OPERATOR_ADMIN_UI",
+            "doc/OpenGenesisLINK/WORLD_API_CONTROL_CENTER.md":
+                "SERVER_ONLY_OPERATOR_ADMIN_UI",
             "unknown/NewFeature.cs":"MANUAL_REVIEW"}
         for name,expected in cases.items():
             with self.subTest(name=name): self.assertEqual(MOD.classify(name),expected)

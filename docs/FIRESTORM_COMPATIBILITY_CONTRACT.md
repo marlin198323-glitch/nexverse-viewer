@@ -503,3 +503,7 @@ komplett validiert sind bleibt SurfaceInfo
 im echten ObjectGrab/DeGrab leer.
 Outfit-Refresh ist CAP read-only, echte
 COF-Mutationen weiter gesperrt.
+
+## Alpha.104
+
+Alpha.104: Wire-Layout aus Firestorm lltoolgrab.cpp und message_template.msg Low117/119. SurfaceInfo als ein 64-Byte Eintrag: UV Vector3, ST Vector3, Face S32, Position/Normal/Binormal Vector3. Server LLClientView HandleObjectGrab/DeGrab liest diese Daten. Nur validierter TriangleHit plus Texturface liefert Daten; Count0 bleibt Fallback. Outfit COF weiter read-only.

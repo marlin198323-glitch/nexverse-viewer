@@ -5300,3 +5300,45 @@ Avatar-Appearance-Pipeline. Keine produktive
 Server-E2E-Abnahme behaupten. Alpha.104
 soll BVH/SurfaceInfo und vollständigen COF Core
 in gemeinsamem Funktions+UI Release priorisieren.
+
+## Alpha.104 – Firestorm TouchSurface und Outfit/COF UI (14.10.2026)
+
+Live source precheck vor Entwicklung: OGL develop-current ac9384d358fe96ea8897c1f753fab7c51e57869a; OpenGenesisLINK Server main 1841c4ee8ef580730be7d306023e594380f8b19f. Vor Commit/Push erneut mittels scripts/check_opengenesislink_server.py --strict prüfen. Firestorm_7.2.4 scripts/messages/message_template.msg und indra/newview/lltoolgrab.cpp, Server LLClientView.cs HandleObjectGrab/HandleObjectDeGrab sind die technischen Referenzen. Alle Firestorm-Standardfunktionen im Viewer Core, nicht in Zusatzplugins.
+
+Arbeitspaket 1: Echtes Firestorm ObjectGrab Low117 und ObjectDeGrab Low119 SurfaceInfo, optional eine Variable-Count=1 Struktur mit UVCoord Vec3, STCoord Vec3, FaceIndex S32, Position Vec3, Normal Vec3, Binormal Vec3, zusammen 64 Byte, authentifiziert und RELIABLE. Vorherige Beruehrung ohne genaue Meshdaten bleibt Count=0. Ungueltige/nonfinite Werte oder Basisvektoren werden abgelehnt.
+
+Arbeitspaket 2: GetMesh CPU-Kamera-Triangleray aus Alpha.103 erzeugt bei gueltiger FaceRange und nicht-entarteter UV-Basis WeltNormal und WeltBinormal (Objektrotation und ungleiche Skalierung). OpenSim TextureEntry der ausgewaehlten Face liefert Repeat/Offset/Rotation fuer ST-Koordinaten. Keine falsche Face-Information fuer OBB-Naeherung, planar-texturierte Meshes oder fehlende Texturmetadaten. Region-/Objektwechsel setzt SurfaceInfo zurueck. Derselbe Hit fuer Grab und DeGrab.
+
+Arbeitspaket 3: GUI Welt > Objekte beruehren zeigt Face/UV und ob die komplette SurfaceInfo tatsaechlich gesendet wurde, statt nur einen scheinbaren Treffer.
+
+Arbeitspaket 4: Outfit-Galerie (F9) parallel erweitert: zwei echte Buttons Aktualisieren und COF pruefen. Neuer COF-Pruefen-Klick ist mit der vorhandenen authentifizierten FetchInventory2-Anfrage verbunden, avatareigentuemer- und regionepoch-gebunden, 2s RateLimit, niemals parallele/silent Mutationen. UI meldet Ladeauftrag, Ergebnis-Itemanzahl, Fehler oder fehlende CAPS. Alte Resultate beim Neuladen invalidieren und Regionwechsel setzt Anfrage/Status zurueck. include/nexverse/ui/outfit_gallery_layout.hpp macht Hitboxes testbar.
+
+Arbeitspaket 5: Tests LLUDP Low117/119 64-Byte-Golden inkl S32 Face und 5 Vector3, invalid/Count0; Triangle-UV-/Normal-/Binormal-Regression; Outfit Floater Close/Refresh/COF-Pruefen/Folder-Hitboxen auf 1280x720, 1920x1080, 3440x1440, 5120x1440; kompletter C++23 Debug Build, CTests, Python und NVIDIA GL3.3 Smoke.
+
+NICHT als implementiert behaupten: COF CreateInventoryLink/Wear/Unwear und AvatarAppearance Mutation mit Rollback, echtes InWorld LSL touch_start/touch/touch_end/touchUV/touchST, Sculpt-/Hollow-Prims und ChildPrim-PassTouches sowie Produktions-Login-E2E. Naechster Block: korrekter authorisierter COF-Write/Readback mit Transaktions- und Reconciliation-Tests, sichtbarer funktionaler Outfit-Wear/Unwear-Bedienung, Inworld-Facecheck. Vor jeder Arbeit und Release erneut aktuelle Server-HEADs pruefen.
+
+## Alpha.104 verpflichtender GitHub Release-Preflight
+
+Vor GitHub Release am 14.10.2026 wurde neuer
+OpenGenesisLINK main SHA
+5831913f3dc840aa9661b83fc844546f9f637070
+gegen 1841c4ee entdeckt: 1 Commit, 6 Dateien.
+Begutachtet OglApiDocsAccess.cs, NexApiDocsPage.cs,
+NexVerseWorldApiConnector.cs und
+doc/OpenGenesisLINK/WORLD_API_CONTROL_CENTER.md
+sowie CI. Admin Anmeldung:
+GET /api/v1/docs ist nur Login Shell,
+GET /api/v1/docs/panel liefert Dashboard
+nur mit HTTPS, authentifiziertem GridUser,
+aktuellem LoginAllowed, UserLevel>=200,
+AdminAll Scope und servervalidiertem Token.
+Machine Keys sind kein Admin Login.
+**SERVER-ONLY_OPERATOR_ADMIN_UI**, keine
+neuen OpenSim LLUDP/CAPS Viewer-Pakete,
+kein Admin-ControlCenter mit Adminbearer im
+Endnutzer-OGL Viewer. OpenGenesisLINK ist
+Serverprodukt, NexVerse ein konkretes Grid;
+Legacy Namespaces und Header bleiben nur fuer
+Abwaertskompatibilitaet. Live Admin
+Login/Deployment ist nicht automatisch getestet.
+Reviewed SHA in Baseline aktualisiert.

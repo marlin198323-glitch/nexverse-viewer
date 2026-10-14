@@ -160,3 +160,7 @@ Aktualisieren-Button mit Auth-CAPS
 InventoryDescendents2 read-only, Besitzer-/
 RegionEpoch-Check und >=2s Throttle. Kein
 Tragen/Abnehmen, bis echte COF-Mutation steht.
+
+## Alpha.104
+
+Alpha.104: Welt-Objektfenster zeigt, ob gueltige SurfaceInfo an Simulator gesendet wurde. F9 Outfit-Galerie hat funktionierende Klicks auf Aktualisieren und COF pruefen inkl begrenztem FetchInventory2 und echtem Antwortstatus. Kein unechter Wear-Button.

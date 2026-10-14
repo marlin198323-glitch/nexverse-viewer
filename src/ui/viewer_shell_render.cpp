@@ -293,7 +293,10 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                   ", "+std::to_string(state.world_pick_v)
                 :"3D-Klick: BoundingBox-Naeherung / kein exaktes Face";
             r.text(x+29.0f*sc,y+ph-125.0f*sc,8.0f*sc,
-                   compact(info,72U),
+                   compact(info+
+                     (state.touch_surface_sent?
+                       " | SurfaceInfo gesendet":
+                       " | SurfaceInfo nicht verfuegbar"),72U),
                    state.world_pick_exact?theme::cyan:theme::text_muted);
         }
         r.rect(x+pw-216.0f*sc,y+ph-90.0f*sc,

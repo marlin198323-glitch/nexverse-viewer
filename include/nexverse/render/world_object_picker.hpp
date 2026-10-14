@@ -35,6 +35,9 @@ struct WorldPickHit
     bool exact_mesh=false;
     std::uint32_t face=0U;
     float u=0.0f,v=0.0f;
+    RenderVec3 normal{};
+    RenderVec3 binormal{};
+    bool surface_ready=false;
 };
 namespace detail_pick
 {
@@ -68,6 +71,15 @@ inline bool finite(RenderVec3 v) noexcept
 {return std::isfinite(v.x)&&std::isfinite(v.y)&&std::isfinite(v.z);}
 inline RenderVec3 div(RenderVec3 a,RenderVec3 b) noexcept
 {return {a.x/b.x,a.y/b.y,a.z/b.z};}
+inline RenderVec3 rotate(RenderQuaternion q,RenderVec3 v) noexcept
+{
+    const float l=q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w;
+    if(!(l>1e-8f)||!std::isfinite(l))return v;
+    const float scale=1.0f/std::sqrt(l);
+    const float x=q.x*scale,y=q.y*scale,z=q.z*scale,w=q.w*scale;
+    const auto t=mul(cross({x,y,z},v),2.0f);
+    return add(v,add(mul(t,w),cross({x,y,z},t)));
+}
 [[nodiscard]] inline std::optional<WorldPickHit> mesh_hit(
     const WorldPickObject& obj,RenderVec3 world_origin,RenderVec3 world_ray,
     float max_distance) noexcept
@@ -120,13 +132,37 @@ inline RenderVec3 div(RenderVec3 a,RenderVec3 b) noexcept
         const float v=uv(ia,1)*(1.0f-bu-bv)+uv(ib,1)*bu+uv(ic,1)*bv;
         if(!std::isfinite(u)||!std::isfinite(v))continue;
         std::uint32_t face=0U;
+        bool face_found=false;
         for(const auto& range:mesh.faces)
             if(i>=range.first_index &&
                i-range.first_index<range.index_count)
-            {face=range.face;break;}
+            {face=range.face;face_found=true;break;}
+        const auto we1=rotate(obj.rotation,{
+            edge1.x*obj.size.x,edge1.y*obj.size.y,edge1.z*obj.size.z});
+        const auto we2=rotate(obj.rotation,{
+            edge2.x*obj.size.x,edge2.y*obj.size.y,edge2.z*obj.size.z});
+        auto normal=unit(cross(we1,we2));
+        if(dot(normal,world_ray)>0.0f)normal=mul(normal,-1.0f);
+        const float du1=uv(ib,0)-uv(ia,0);
+        const float dv1=uv(ib,1)-uv(ia,1);
+        const float du2=uv(ic,0)-uv(ia,0);
+        const float dv2=uv(ic,1)-uv(ia,1);
+        const float uvdet=du1*dv2-du2*dv1;
+        RenderVec3 binormal{};
+        if(std::isfinite(uvdet)&&std::abs(uvdet)>1e-8f)
+        {
+            const auto bitangent=mul(
+                sub(mul(we2,du1),mul(we1,du2)),1.0f/uvdet);
+            // Gram-Schmidt guarantees a unit vector perpendicular to
+            // the geometric surface normal, even with scaled meshes.
+            binormal=unit(sub(bitangent,mul(normal,dot(bitangent,normal))));
+        }
         best=dist;
+        const bool precise=face_found&&face<64U&&
+            dot(normal,normal)>0.5f&&dot(binormal,binormal)>0.5f;
         result=WorldPickHit{obj.local_id,dist,
-            add(world_origin,mul(world_ray,dist)),true,face,u,v};
+            add(world_origin,mul(world_ray,dist)),true,face,u,v,
+            normal,binormal,precise};
     }
     return result;
 }
@@ -139,8 +175,8 @@ inline RenderVec3 div(RenderVec3 a,RenderVec3 b) noexcept
     using namespace detail_pick;
     if(viewport_width<=0||viewport_height<=0||
        !std::isfinite(screen_x)||!std::isfinite(screen_y)||
-       screen_x<0||screen_y<0||screen_x>=viewport_width||
-       screen_y>=viewport_height||
+       screen_x<0||screen_y<0||screen_x>=static_cast<float>(viewport_width)||
+       screen_y>=static_cast<float>(viewport_height)||
        !(max_distance>0.0f)||!std::isfinite(max_distance)||
        !(camera.vertical_fov_degrees>1.0f)||
        !(camera.vertical_fov_degrees<179.0f))

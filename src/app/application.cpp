@@ -70,6 +70,7 @@
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/world_object_picker.hpp"
+#include "nexverse/ui/outfit_gallery_layout.hpp"
 #include "nexverse/ui/theme.hpp"
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
@@ -399,6 +400,7 @@ struct InputContext
     bool* outfits = nullptr;
     std::size_t* outfit_selection = nullptr;
     bool* outfit_refresh_requested = nullptr;
+    bool* outfit_verify_requested = nullptr;
     bool* inventory_open=nullptr;
     std::string* inventory_parent=nullptr;
     std::size_t* inventory_selection=nullptr;
@@ -917,6 +919,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                 shell.selected_object_id=shell.nearby_object_ids[row];
                 shell.world_pick_object_id=0U;
                 shell.world_pick_exact=false;
+                shell.touch_surface_sent=false;
                 shell.status_text="Prim #"+
                     std::to_string(shell.selected_object_id)+" ausgewaehlt.";
             }
@@ -1100,32 +1103,25 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         glfwGetWindowSize(window,&w,&h);
         double px=0.0,py=0.0;
         glfwGetCursorPos(window,&px,&py);
-        const float scale=std::clamp(
-            static_cast<float>(h)/1080.0f,0.75f,1.5f);
-        const float panel_w=std::min(790.0f*scale,
-                                    static_cast<float>(w)-32.0f);
-        const float x=(static_cast<float>(w)-panel_w)*0.5f;
-        const float y=std::max(30.0f,
-            (static_cast<float>(h)-500.0f*scale)*0.5f);
-        if(point_inside(px,py,x+panel_w-55.0f*scale,
-                        y+10.0f*scale,45.0f*scale,35.0f*scale))
+        const nexverse::ui::OutfitGalleryLayout gallery_layout{w,h};
+        switch(gallery_layout.hit(static_cast<float>(px),
+                                  static_cast<float>(py)))
         {
-            *context->outfits=false;
-            return;
-        }
-        if(point_inside(px,py,x+panel_w-226.0f*scale,
-                        y+11.0f*scale,153.0f*scale,34.0f*scale))
-        {
+        case nexverse::ui::OutfitGalleryHit::close:
+            *context->outfits=false;break;
+        case nexverse::ui::OutfitGalleryHit::refresh:
             if(context->outfit_refresh_requested)
                 *context->outfit_refresh_requested=true;
-            return;
-        }
-        if(point_inside(px,py,x+22.0f*scale,y+115.0f*scale,
-                        425.0f*scale,300.0f*scale))
-        {
-            const auto index=static_cast<std::size_t>(
-                (py-(y+115.0f*scale))/(30.0f*scale));
-            *context->outfit_selection=std::min(index,std::size_t{9U});
+            break;
+        case nexverse::ui::OutfitGalleryHit::verify:
+            if(context->outfit_verify_requested)
+                *context->outfit_verify_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::select:
+            *context->outfit_selection=
+                gallery_layout.selected_row(static_cast<float>(py));
+            break;
+        case nexverse::ui::OutfitGalleryHit::none:break;
         }
         return;
     }
@@ -2160,7 +2156,7 @@ void render_outfit_gallery(
     const CapsRuntimeState& caps,
     const std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>&
         image_textures,
-    std::size_t selected_outfit)
+    std::size_t selected_outfit,std::string_view validation_status)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2182,6 +2178,11 @@ void render_outfit_gallery(
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
     renderer.text(x+pw-212.0f*scale,y+19.0f*scale,
                   9.0f*scale,"Aktualisieren",theme::cyan);
+    renderer.rect(x+pw-390.0f*scale,y+11.0f*scale,
+                  151.0f*scale,34.0f*scale,
+                  Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
+    renderer.text(x+pw-380.0f*scale,y+19.0f*scale,
+                  9.0f*scale,"COF pruefen",theme::cyan);
     renderer.text(x+22.0f*scale,y+59.0f*scale,
                   9.3f*scale,"Firestorm-Inventarordner (nur lesend)",
                   theme::cyan);
@@ -2283,7 +2284,8 @@ void render_outfit_gallery(
                     : "Inventar-CAP-Antwort nicht verfuegbar",
                   theme::warning);
     renderer.text(x+22.0f*scale,y+ph-24.0f*scale,
-                  8.3f*scale,"F9 / ESC schließen",theme::text_muted);
+                  8.1f*scale,std::string(validation_status),
+                  theme::text_muted);
 }
 
 void render_inventory_tree(
@@ -3582,6 +3584,10 @@ int Application::run(bool enable_developer_modules)
 
     LoginUiState login_ui;
     ui::ViewerShellState viewer_shell;
+    // Exact touch surface remains per current region and only belongs to
+    // the last accepted world ray. Never reuse for a list-based selection.
+    std::optional<protocol::TouchSurfaceInfo> picked_touch_surface;
+    std::optional<protocol::TouchSurfaceInfo> held_touch_surface;
     protocol::ExperienceUiState experience_ui;
     protocol::ExperiencePermissionConsent experience_consent;
     std::optional<protocol::ExperiencePermissionRequest>
@@ -4622,6 +4628,11 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t gallery_sync_dirty_revision=0U;
     bool gallery_force_refresh=false;
     input_context.outfit_refresh_requested=&gallery_force_refresh;
+    bool gallery_verify_requested=false;
+    input_context.outfit_verify_requested=&gallery_verify_requested;
+    std::string gallery_verify_status="COF noch nicht erneut geprueft";
+    bool gallery_verify_awaiting=false;
+    std::chrono::steady_clock::time_point last_gallery_verify{};
     auto last_gallery_sync=std::chrono::steady_clock::now();
     std::vector<std::future<GalleryTextureReply>> gallery_image_futures;
     std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>
@@ -5106,9 +5117,57 @@ int Application::run(bool enable_developer_modules)
                         viewer_shell.selected_object_id=picked->local_id;
                         viewer_shell.world_pick_object_id=picked->local_id;
                         viewer_shell.world_pick_exact=picked->exact_mesh;
+                        viewer_shell.touch_surface_sent=false;
                         viewer_shell.world_pick_face=picked->face;
                         viewer_shell.world_pick_u=picked->u;
                         viewer_shell.world_pick_v=picked->v;
+                        picked_touch_surface.reset();
+                        if(picked->exact_mesh&&picked->surface_ready)
+                        {
+                            // LLDetectedTouchST needs the actual
+                            // TextureEntry UV transformation for the
+                            // selected FACE, not unconditionally raw UV.
+                            std::scoped_lock lock{world_mutex};
+                            const auto obj=world_model.objects().find(
+                                picked->local_id);
+                            if(obj!=world_model.objects().end())
+                            {
+                                const protocol::TextureEntryDefaultFace* tex=
+                                    obj->second.parsed_texture_entry
+                                    ? &obj->second.parsed_texture_entry->face(
+                                        picked->face)
+                                    : obj->second.default_texture
+                                      ? &*obj->second.default_texture
+                                      : nullptr;
+                                if(tex&&!tex->texgen_planar()&&
+                                   std::isfinite(tex->repeat_u)&&
+                                   std::isfinite(tex->repeat_v)&&
+                                   std::isfinite(tex->offset_u)&&
+                                   std::isfinite(tex->offset_v)&&
+                                   std::isfinite(tex->rotation))
+                                {
+                                    const float du=(picked->u-0.5f)*tex->repeat_u;
+                                    const float dv=(picked->v-0.5f)*tex->repeat_v;
+                                    const float cs=std::cos(tex->rotation);
+                                    const float sn=std::sin(tex->rotation);
+                                    protocol::TouchSurfaceInfo surface;
+                                    surface.face=static_cast<std::int32_t>(
+                                        picked->face);
+                                    surface.uv={picked->u,picked->v,0.0f};
+                                    surface.st={0.5f+tex->offset_u+cs*du-sn*dv,
+                                                0.5f+tex->offset_v+sn*du+cs*dv,
+                                                0.0f};
+                                    surface.position={picked->point.x,
+                                        picked->point.y,picked->point.z};
+                                    surface.normal={picked->normal.x,
+                                        picked->normal.y,picked->normal.z};
+                                    surface.binormal={picked->binormal.x,
+                                        picked->binormal.y,picked->binormal.z};
+                                    if(surface.valid())
+                                        picked_touch_surface=surface;
+                                }
+                            }
+                        }
                         viewer_shell.object_touch_press_requested=true;
                         viewer_shell.status_text=
                             "3D-Objekt #"+std::to_string(picked->local_id)+
@@ -5149,11 +5208,24 @@ int Application::run(bool enable_developer_modules)
                 }
                 if(touch_allowed&&viewer_shell.held_object_id==0U&&
                    outbound_queue.push(protocol::ObjectTouchCommand{
-                       local_id,protocol::ObjectTouchPhase::begin}))
+                       local_id,protocol::ObjectTouchPhase::begin,
+                       viewer_shell.world_pick_exact&&
+                       viewer_shell.world_pick_object_id==local_id
+                           ?picked_touch_surface:std::nullopt}))
                 {
                     viewer_shell.held_object_id=local_id;
-                    viewer_shell.status_text="Beruehrung aktiv: Prim #"+
-                        std::to_string(local_id);
+                    viewer_shell.touch_surface_sent=
+                        viewer_shell.world_pick_exact&&
+                        viewer_shell.world_pick_object_id==local_id&&
+                        picked_touch_surface.has_value();
+                    held_touch_surface=
+                        viewer_shell.world_pick_exact&&
+                        viewer_shell.world_pick_object_id==local_id
+                            ?picked_touch_surface:std::nullopt;
+                    viewer_shell.status_text=
+                        "Beruehrung aktiv: Prim #"+std::to_string(local_id)+
+                        (held_touch_surface?" (Face/ST an Simulator)":
+                            " (ohne Faceinfo)");
                 }
                 else
                     viewer_shell.status_text=
@@ -5165,9 +5237,11 @@ int Application::run(bool enable_developer_modules)
                 {
                     if(outbound_queue.push(protocol::ObjectTouchCommand{
                         viewer_shell.held_object_id,
-                        protocol::ObjectTouchPhase::end}))
+                        protocol::ObjectTouchPhase::end,
+                        held_touch_surface}))
                     {
                         viewer_shell.held_object_id=0U;
+                        held_touch_surface.reset();
                         viewer_shell.object_touch_release_requested=false;
                         viewer_shell.status_text=
                             "Beruehrung beendet; ObjectDeGrab gesendet.";
@@ -6423,6 +6497,12 @@ int Application::run(bool enable_developer_modules)
                 viewer_shell.selected_object_id=0U;
                 viewer_shell.world_pick_object_id=0U;
                 viewer_shell.world_pick_exact=false;
+                viewer_shell.touch_surface_sent=false;
+                picked_touch_surface.reset();
+                held_touch_surface.reset();
+                gallery_verify_awaiting=false;
+                gallery_verify_requested=false;
+                gallery_verify_status="COF nach Regionswechsel neu pruefen";
                 viewer_shell.object_touch_press_requested=false;
                 viewer_shell.object_touch_release_requested=false;
                 viewer_shell.nearby_object_ids.clear();
@@ -6993,11 +7073,54 @@ int Application::run(bool enable_developer_modules)
                             gallery_item_fetch_folder;
                         gallery_item_fetch_completed_folder=
                             gallery_item_fetch_folder;
+                        if(gallery_verify_awaiting)
+                        {
+                            gallery_verify_status=
+                                "FetchInventory2 geprueft: "+
+                                std::to_string(caps_state.resolved_outfit_items.size())+
+                                " Items (nur Lesen)";
+                            gallery_verify_awaiting=false;
+                        }
                     }
                 }
                 catch(const std::exception&)
                 {
+                    if(gallery_verify_awaiting)
+                    {
+                        gallery_verify_status=
+                            "COF-Pruefung fehlgeschlagen (keine Veraenderung)";
+                        gallery_verify_awaiting=false;
+                    }
                     core::warning("Firestorm FetchInventory2 on-demand failed");
+                }
+            }
+            if(gallery_verify_requested)
+            {
+                gallery_verify_requested=false;
+                const auto verification_now=std::chrono::steady_clock::now();
+                if(!outfit_gallery_open||!active_session||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   gallery_inventory_items_cap.empty())
+                    gallery_verify_status=
+                        "COF-Pruefung nicht verfuegbar: Caps/Login fehlen";
+                else if(gallery_item_fetch_future.valid())
+                    gallery_verify_status="FetchInventory2 bereits aktiv";
+                else if(last_gallery_verify!=
+                            std::chrono::steady_clock::time_point{}&&
+                        verification_now-last_gallery_verify<std::chrono::seconds{2})
+                    gallery_verify_status="Bitte 2 Sekunden bis zum naechsten Abruf";
+                else
+                {
+                    last_gallery_verify=verification_now;
+                    gallery_item_fetch_folder.clear();
+                    gallery_item_fetch_completed_folder.clear();
+                    gallery_verify_awaiting=true;
+                    {
+                        std::scoped_lock lock{caps_mutex};
+                        caps_state.resolved_outfit_items.clear();
+                        caps_state.resolved_outfit_folder.clear();
+                    }
+                    gallery_verify_status="COF/Outfit: FetchInventory2 angefordert";
                 }
             }
             if(outfit_gallery_open&&active_session&&
@@ -9978,7 +10101,8 @@ int Application::run(bool enable_developer_modules)
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
-                        caps_snapshot,gallery_gpu_textures,outfit_selection);
+                        caps_snapshot,gallery_gpu_textures,
+                        outfit_selection,gallery_verify_status);
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,
