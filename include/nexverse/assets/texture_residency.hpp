@@ -19,17 +19,19 @@ struct TextureResidencyPlan
     std::vector<std::string> eviction_ids;
 };
 
-// Particle assets have priority over background world materials. A
-// bounded resident cache may evict no-longer-relevant GPU textures.
+// Active self/nearby avatar baked BODY assets are held ahead of particle
+// and background materials. Priority is bounded by the same shared GPU
+// budget, and region transitions naturally revoke stale preferred IDs.
 [[nodiscard]] inline TextureResidencyPlan plan_texture_residency(
     const std::vector<std::string>& particle_ids,
     const std::vector<std::string>& object_ids,
     const std::unordered_set<std::string>& loaded,
-    std::size_t budget = 512U)
+    std::size_t budget = 512U,
+    const std::vector<std::string>& avatar_body_ids = {})
 {
     TextureResidencyPlan plan;
     plan.preferred_ids.reserve(std::min(budget,
-        particle_ids.size()+object_ids.size()));
+        avatar_body_ids.size()+particle_ids.size()+object_ids.size()));
     plan.desired_ids.reserve(budget);
     const auto visit=[&](const std::vector<std::string>& ids)
     {
@@ -41,6 +43,7 @@ struct TextureResidencyPlan
             plan.preferred_ids.push_back(id);
         }
     };
+    visit(avatar_body_ids);
     visit(particle_ids);
     visit(object_ids);
     for (const auto& id:loaded)

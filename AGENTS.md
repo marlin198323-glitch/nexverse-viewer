@@ -33,5 +33,5 @@
 
 ## Stand Pi5-Runner-Migration (15.10.2026)
 - Alle fünf Repo-Runner wurden auf Raspberry Pi 5 registriert und per GitHub Actions Smoke auf separatem Branch erfolgreich getestet.
-- Pi5 `develop-current` CI in `.github/workflows/pi5-ci.yml`: only static source and bash syntax. CMake/vcpkg and Windows/macOS/Linux-x64 builds remain open.
+- Pi5 develop-current CI: Quelltext-/Bash-Prüfung plus native ARM64 C++23 und Python-Regressionstests. CMake/vcpkg und Windows/macOS/Linux-x64 GUI/GPU-Builds bleiben offen.
 - Ein erfolgreicher Smoke-Test beweist Runner-/Checkout-Funktion, nicht die vollständige Projekt-Testabdeckung.

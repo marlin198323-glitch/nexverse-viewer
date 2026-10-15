@@ -5670,3 +5670,13 @@ Nächster Viererblock Alpha.124–127: tatsächliche Firestorm global skin/hair/
 - **Tatsächliche Tests (Pi5):** Zwei native ARM64 C++23-Tests PASS, 18 Python-Unittests PASS, git diff --check PASS, bash Syntax PASS. Upstream strict Exit 2 (neue nicht abschließend geprüfte Server-Commits, explizit blockiert). CMake und vcpkg fehlen auf Pi: vollständige CTest-/Viewer-/OpenGL-/GPU-E2E noch NICHT ausgeführt.
 - **Offene echte Features:** vollständiger elf-Regionen-Bake mit originalem Firestorm-Pixelvergleich, überprüfter Simulator-CacheID-/Upload mit Berechtigungen, GPU-Textur-Skin im laufenden Grid, bestätigtes Wear/Unwear mit Rollback, authentifizierte NexVerse-Inworld-Abnahme. Erst nach Nachweisen freigeben.
 - **Nächste Blöcke:** (a) autorisierte Body-Bake-GetTexture-Streaming/Priorisierung, (b) lokale UV/Pixel-Testfixtures mit legal vorhandenen Firestorm-Assets, (c) Pi CMake/vcpkg in isolierter Build-Umgebung mit <=2 Jobs, (d) Upstream-Einzelcommits bis vollständiger Review abgeschlossen.
+
+## 15.10.2026 – Alpha.132–135 – Avatar Streaming / F9-Live / Pi5
+SelfAvatar Head/Upper/Lower Server-Bake-IDs erhalten Vorrang im gemeinsamen
+GPU-Residency-Budget, nahe Avatare folgen bis 96m. Opt-in F9 Appearance pruefen
+zeigt lokalen Live-GPU-/COF-/Server-TE-Status alle 750ms, ohne Extra-CAPS-Requests.
+4 native Pi-C++23-Tests und 18 Python-Tests PASS; CMake/GPU-GUI NICHT getestet.
+Upstream main d31c0316 hat 22 noch nicht vollständig geprüfte Commits
+(300-Dateien-Vergleich abgeschnitten); striktes Gate bleibt BLOCKIERT.
+Kein echtes Bake-Upload, kein abgeschlossener Outfit-Wear/Unwear.
+Siehe docs/ALPHA132_135_AVATAR_BAKE_STREAMING.md.

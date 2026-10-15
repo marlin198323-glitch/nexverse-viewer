@@ -35,6 +35,7 @@
 #include "nexverse/assets/asset_scene_priority_feedback.hpp"
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
+#include "nexverse/assets/avatar_bake_stream_priority.hpp"
 #include "nexverse/assets/texture_cached_request.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
@@ -5031,6 +5032,11 @@ int Application::run(bool enable_developer_modules)
     protocol::CofSingleUnlinkConsent gallery_cof_unlink;
     protocol::CofAppearanceVerifier gallery_appearance_verifier;
     bool gallery_appearance_check_requested=false;
+    // The explicit F9 check opts in to a LOCAL read-only, periodic GPU
+    // residency refresh. Never requests new network/CAPS assets itself.
+    bool gallery_appearance_live_enabled=false;
+    auto gallery_appearance_live_checked_at=
+        std::chrono::steady_clock::time_point{};
     input_context.outfit_appearance_check_requested=
         &gallery_appearance_check_requested;
     std::string gallery_appearance_snapshot_status=
@@ -6723,6 +6729,7 @@ int Application::run(bool enable_developer_modules)
                 world_ready_logged = false;
                 experience_ui.close();
                 outfit_gallery_open=false;
+                gallery_appearance_live_enabled=false;
             }
             else if (!world_ready_logged)
             {
@@ -6954,6 +6961,8 @@ int Application::run(bool enable_developer_modules)
                 gallery_appearance_snapshot_status=
                     "Appearance: Region gewechselt";
                 gallery_appearance_check_requested=false;
+                gallery_appearance_live_enabled=false;
+                gallery_appearance_live_checked_at={};
                 gallery_wearables_requested=false;
                 gallery_wearables_fetch_cof.clear();
                 gallery_wearables_status=
@@ -7103,6 +7112,7 @@ int Application::run(bool enable_developer_modules)
                 }
                 gallery_gpu_textures.clear();
                 outfit_gallery_open=false;
+                gallery_appearance_live_enabled=false;
                 self_avatar_proxy_gl_logged=false;
                 self_avatar_bake_gl_logged=false;
                 self_avatar_original_mesh_gl_logged=false;
@@ -8421,6 +8431,12 @@ int Application::run(bool enable_developer_modules)
             if(gallery_appearance_check_requested)
             {
                 gallery_appearance_check_requested=false;
+                gallery_appearance_live_enabled=
+                    outfit_gallery_open&&active_session.has_value()&&
+                    simulation_ready&&
+                    firestorm_region_lease.matches(current_firestorm_epoch);
+                gallery_appearance_live_checked_at=
+                    std::chrono::steady_clock::now();
                 std::scoped_lock world_lock{world_mutex};
                 if(!active_session||!simulation_ready||
                    !world_model.region().connected||
@@ -10498,6 +10514,16 @@ int Application::run(bool enable_developer_modules)
             {
                 last_texture_residency_plan = texture_plan_now;
                 auto resident_texture_samples=scene_texture_samples;
+                std::vector<assets::AvatarBakeStreamCandidate> body_candidates;
+                body_candidates.reserve(avatar_proxy_update.size());
+                for(const auto& avatar:avatar_proxy_update)
+                    body_candidates.push_back({
+                        avatar.is_self,avatar.baked_texture_ids,
+                        avatar.position.x,avatar.position.y,avatar.position.z});
+                const auto avatar_body_priority=
+                    assets::prioritize_avatar_body_bakes(
+                        body_candidates,render_agent.position.x,
+                        render_agent.position.y,render_agent.position.z);
                 for(const auto& avatar:avatar_proxy_update)
                     for(const auto& baked:avatar.baked_texture_ids)
                         if(!baked.empty())
@@ -10541,7 +10567,8 @@ int Application::run(bool enable_developer_modules)
                     &camera_hint);
                 auto updated_residency = assets::plan_texture_residency(
                     emitter_texture_ids, nearby_textures,
-                    object_texture_loaded_ids, max_object_texture_assets);
+                    object_texture_loaded_ids, max_object_texture_assets,
+                    avatar_body_priority);
                 texture_residency = std::move(updated_residency);
                 texture_gpu_staging_recovery.synchronize(
                     texture_budget_deferred_ids,texture_residency.desired_ids);
@@ -11685,6 +11712,45 @@ int Application::run(bool enable_developer_modules)
                     renderer,window_width,window_height,
                     viewer_shell,shell_view);
                 if(outfit_gallery_open &&active_session)
+                {
+                    // Refresh the F9 read-only proof while textures arrive.
+                    // No extra network traffic and no simulator mutation.
+                    const auto live_now=std::chrono::steady_clock::now();
+                    if(gallery_appearance_live_enabled &&
+                       live_now-gallery_appearance_live_checked_at >=
+                           std::chrono::milliseconds{750})
+                    {
+                        gallery_appearance_live_checked_at=live_now;
+                        std::scoped_lock lock{world_mutex};
+                        if(!simulation_ready||
+                           !firestorm_region_lease.matches(current_firestorm_epoch)||
+                           !world_model.region().connected)
+                            gallery_appearance_snapshot_status=
+                                "Appearance Live: Region nicht mehr gueltig";
+                        else if(const auto& packet=world_model.self_appearance();
+                                !packet||packet->avatar_id!=active_session->agent_id||
+                                packet->appearance_data.empty())
+                            gallery_appearance_snapshot_status=
+                                "Appearance Live: Selbst-Avatar-Paket fehlt";
+                        else
+                        {
+                            const auto& folder=caps_snapshot.current_outfit_folder;
+                            const auto version=
+                                gallery_inventory_sync.versions().find(folder);
+                            const auto inventory_version=
+                                version==gallery_inventory_sync.versions().end()
+                                    ?0U:version->second;
+                            const auto evidence=
+                                protocol::audit_avatar_bake_evidence(
+                                    protocol::extract_avatar_bakes(
+                                        packet->texture_entry),
+                                    object_texture_loaded_ids);
+                            gallery_appearance_snapshot_status=
+                                protocol::describe_avatar_bake_evidence(
+                                    packet->appearance_data.back().cof_version,
+                                    inventory_version,evidence,true);
+                        }
+                    }
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
@@ -11716,6 +11782,7 @@ int Application::run(bool enable_developer_modules)
                         gallery_local_slot_previews,
                         gallery_texlayer_status,
                         gallery_partial_layer_gpu);
+                }
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,
                                           inventory_tree,

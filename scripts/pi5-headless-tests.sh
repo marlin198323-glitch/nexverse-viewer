@@ -7,8 +7,9 @@ command -v python3 >/dev/null || { echo "python3 missing" >&2; exit 2; }
 tmp="$(mktemp -d)"
 trap 'rm -rf -- "$tmp"' EXIT
 echo "OGL native: $(uname -m); g++ $(g++ -dumpversion)"
-for name in avatar_bake_evidence_tests firestorm_appearance_verification_tests; do
-    g++ -std=c++23 -O0 -Wall -Wextra -Wpedantic -Iinclude         "tests/$name.cpp" -o "$tmp/$name"
+for name in avatar_bake_evidence_tests avatar_bake_stream_priority_tests texture_residency_tests firestorm_appearance_verification_tests; do
+    g++ -std=c++23 -O0 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+        "tests/$name.cpp" -o "$tmp/$name"
     "$tmp/$name"
 done
 python3 -m unittest discover -s tests -p 'test*.py'

@@ -79,11 +79,11 @@ struct AvatarBakeEvidence
 [[nodiscard]] inline std::string describe_avatar_bake_evidence(
     std::uint32_t simulator_cof_version,
     std::uint32_t inventory_cof_version,
-    const AvatarBakeEvidence& evidence)
+    const AvatarBakeEvidence& evidence,bool live=false)
 {
     const bool versions_match=simulator_cof_version!=0U &&
         simulator_cof_version==inventory_cof_version;
-    return std::string{"KEIN BAKE | COF "}+
+    return std::string{live?"KEIN BAKE LIVE | COF ":"KEIN BAKE | COF "}+
         std::to_string(simulator_cof_version)+"/"+
         std::to_string(inventory_cof_version)+
         (versions_match?" OK":" OFFEN")+

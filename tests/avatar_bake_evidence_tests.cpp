@@ -34,6 +34,9 @@ int main()
        label.find("TE 3/11 GPU 2/11 Body 1/3")==std::string::npos||
        label.find("H:G U:S L:-")==std::string::npos||label.size()>95U)
         return 5;
+    const auto live=describe_avatar_bake_evidence(17U,17U,partial,true);
+    if(live.find("KEIN BAKE LIVE | COF 17/17 OK")!=0U ||
+       live.size()>95U)return 9;
     const auto stale=describe_avatar_bake_evidence(17U,18U,partial);
     const auto unknown=describe_avatar_bake_evidence(0U,0U,partial);
     if(stale.find("COF 17/18 OFFEN")==std::string::npos||
