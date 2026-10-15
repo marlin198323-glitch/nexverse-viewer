@@ -1,5 +1,15 @@
 # OpenGenesisLINK Viewer – Chat-Übergabe
 
+## Aktuelle Raspberry-Pi-Entwicklungsumgebung (15.10.2026)
+
+- Ab sofort Remote Desktop Commander auf `s359142.srv.nexvortex.de`, Device-ID `76f55079-2e1f-4660-a6b5-4c9ac490b3be`, Linux-Benutzer `nexdev` und Pfad `/srv/nexdev/development/projects/ogl-viewer` verwenden. Nicht ungefragt zu Linux Mint wechseln; ältere Pfadangaben in diesem Dokument gelten als historische Entwicklungsstände.
+- GitHub: `marlin198323-glitch/nexverse-viewer`; Arbeitsbranch `develop-current`, nicht `main` oder `develop`. Die lokale Pi-Arbeitskopie ist **noch nicht geklont**, bis der separate OGL-SSH-Deploy-Key in GitHub freigegeben wird.
+- Eigener OGL-GitHub-Schlüssel liegt unter `/home/nexdev/.ssh/ogl_viewer_git_ed25519`, SSH-Alias `github-ogl-viewer`. Den privaten Schlüssel niemals auslesen, kopieren oder im Chat weitergeben. Checkout nach Freigabe: `bash /srv/nexdev/development/setup-ogl-viewer-checkout.sh`.
+- CI: eigener GitHub-Self-hosted-Runner `pi5-ogl` auf Raspberry Pi registriert und Smoke-Test bestanden. Pi-CI prüft bisher nur Quellen/Shell-Syntax; CMake ist auf dem Pi noch nicht installiert; dies ist kein kompletter C++-/Firestorm-/GPU-/Windows-/macOS-Buildnachweis.
+- Grid-Diagnose vom Pi: `http://hg.stadt-nexverse.de/get_grid_info` antwortet HTTP 200 und nennt `http://hg.stadt-nexverse.de:80/` als Login. `https://hg.stadt-nexverse.de/get_grid_info` und der HTTPS-Root können Port 443 nicht verbinden (curl 7). `https://stadt-nexverse.de/service/welcome` antwortet 200. HTTP-Discovery weiter verwenden, bis HTTPS auf dem **Gridserver** eingerichtet, mit gültigem Zertifikat getestet und dessen Konfiguration angepasst ist. Keine TLS-Zertifikatsprüfung umgehen.
+- Sicherheits- und Funktionsstatus getrennt berichten: Grid-HTTP-Erreichbarkeit bedeutet keine funktionierende HTTPS-Anmeldung und keinen erfolgreichen In-World-Test.
+
+
 Stand: 11.10.2026
 
 ## 1. Projekt
