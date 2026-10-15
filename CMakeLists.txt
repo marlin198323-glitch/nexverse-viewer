@@ -371,6 +371,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-avatar-body-uv-evidence-tests
+        tests/avatar_body_uv_evidence_tests.cpp)
+    target_link_libraries(nexverse-avatar-body-uv-evidence-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-body-uv-evidence-tests)
+    add_test(NAME nexverse-avatar-body-uv-evidence-tests
+        COMMAND nexverse-avatar-body-uv-evidence-tests)
+
     add_executable(nexverse-avatar-bake-stream-priority-tests
         tests/avatar_bake_stream_priority_tests.cpp)
     target_link_libraries(nexverse-avatar-bake-stream-priority-tests

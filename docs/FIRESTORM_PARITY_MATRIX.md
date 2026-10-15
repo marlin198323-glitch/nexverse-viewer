@@ -510,3 +510,13 @@ F9 zeigt nach aktivem Appearance-Klick elf originale Server-TE-Bakes getrennt vo
 ## Alpha.132–135 (15.10.2026)
 
 Server-echte Avatar Head/Upper/Lower BakedTextureIDs werden vor Welttexturen priorisiert. F9 zeigt nach explizitem Klick Read-only GPU-Residency live. Vollständige Firestorm-Bake-Pixelparität und Wear/Upload noch offen. Vier native Pi C++ plus 18 Python PASS; Upstream strict weiter BLOCKIERT. Details in docs/ALPHA132_135_AVATAR_BAKE_STREAMING.md.
+
+## 15.10.2026 – Alpha.136–139 / Renderer + F9
+
+Original Firestorm Avatar-Body-UVs werden vor GL-Upload validiert,
+per-frame Head/Upper/Lower-Bake-GL-Draws pro originalem LLM-Körpermesh
+gezählt, und in F9 als reine Draw-Provenance angezeigt. Kein Pixel-
+oder Wear-Nachweis. Native Pi5 C++-Tests 5/5, Python 22/22.
+Vollständiger Grafiktest NICHT erfolgt; OpenGenesisLINK Server-Pin
+bleibt bis vollständiger Einzelcommitprüfung unverändert.
+Siehe docs/ALPHA136_139_GPU_BODY_UV_PROOF.md.

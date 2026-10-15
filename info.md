@@ -4073,3 +4073,23 @@ Upstream main d31c0316 hat 22 noch nicht vollständig geprüfte Commits
 (300-Dateien-Vergleich abgeschnitten); striktes Gate bleibt BLOCKIERT.
 Kein echtes Bake-Upload, kein abgeschlossener Outfit-Wear/Unwear.
 Siehe docs/ALPHA132_135_AVATAR_BAKE_STREAMING.md.
+
+## 15.10.2026 – Alpha.136–139 – UV-Gate, echter GL-Mesh-Beleg, F9-Probe
+
+- Alpha.136: Original Firestorm UV/xyz/Normal-/Indexwerte vor
+  Avatar-GL-Upload validieren, gültige wiederholende UV nicht verändern.
+- Alpha.137: Read-only per-frame selbst Avatar H/U/L Counter nur nach
+  echten OpenGL-Bake-Draw-Aufrufen des anatomischen Original-LLM-Meshes;
+  provisorische Proxy-Fallbacks sind separat und ausgeschlossen.
+- Alpha.138: F9-Galerie zeigt per H/U/L den tatsächlichen 3D Body
+  GL-Draw-Status (G/-), klickgesteuert und ohne Pixel-Paritätsbehauptung;
+  Layout bei schmalem Fenster ohne zweite kollidierende Statuszeile.
+- Alpha.139: Native Pi5 5 C++23 PASS, Python 22 Tests PASS, CMake-CTest
+  und Self-hosted Pi5-Script ergänzt. Volle GL-/GUI-/CMake-Prüfung
+  wegen fehlender Build-Toolchain nicht gelaufen.
+- Geprüfter Server-Main-HEAD d31c03168f0f04f4ce02e82ee3246e16de744748;
+  Upstream-Vergleich mit 22 neuen Commits weiterhin strict BLOCKIERT
+  (300-Dateien-GitHub-Compare-Trunkierung), Baseline nicht erhöht.
+- Offene Freigaben: Original-UV-/Pixelgleichheit auf GPU, echte Avatar-
+  Skin/Outfit/Wear/Unwear, Simulator CacheID/Upload und GUI-E2E.
+- Detailreport: docs/ALPHA136_139_GPU_BODY_UV_PROOF.md.

@@ -70,6 +70,7 @@
 #include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"\n#include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
 #include "nexverse/protocol/firestorm_cof_change_plan.hpp"
@@ -2241,7 +2242,9 @@ void render_outfit_gallery(
     std::size_t local_texture_total,
     const std::array<unsigned int,17>& local_texture_previews,
     std::string_view texlayer_status,
-    const std::array<unsigned int,3>& partial_layer_previews)
+    const std::array<unsigned int,3>& partial_layer_previews,
+    const std::array<std::uint64_t,3U>& self_body_bake_gl_draws,
+    bool gl_probe_enabled)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2274,9 +2277,21 @@ void render_outfit_gallery(
                   Color{0.046f,0.134f,0.202f,0.98f},7.0f*scale);
     renderer.text(x+pw-538.0f*scale,y+19.0f*scale,
                   9.0f*scale,"Aenderungsplan",theme::cyan);
-    renderer.text(x+22.0f*scale,y+59.0f*scale,
-                  9.3f*scale,"Firestorm-Inventar und geschuetzte COF-Aktionen",
-                  theme::cyan);
+    // On wide windows show both titles, on compact windows prioritize
+    // the meaningful GL evidence without painting beyond the floater.
+    const bool wide_gallery=pw>=760.0f*scale;
+    if(wide_gallery)
+        renderer.text(x+22.0f*scale,y+59.0f*scale,
+                      9.3f*scale,
+                      "Firestorm-Inventar und geschuetzte COF-Aktionen",
+                      theme::cyan);
+    // Only GL submissions of the original .llm meshes count; a texture
+    // cache hit or the seven-piece procedural proxy never does.
+    renderer.text(x+(wide_gallery?456.0f:22.0f)*scale,
+                  y+59.0f*scale,7.4f*scale,
+        nexverse::render::describe_avatar_gl_body_draws(
+            self_body_bake_gl_draws,gl_probe_enabled),
+        gl_probe_enabled?theme::cyan:theme::text_muted);
     renderer.rect(x+22.0f*scale,y+64.0f*scale,
                   159.0f*scale,33.0f*scale,
                   Color{0.039f,0.129f,0.183f,0.98f},7.0f*scale);
@@ -11781,7 +11796,9 @@ int Application::run(bool enable_developer_modules)
                         gallery_local_total,
                         gallery_local_slot_previews,
                         gallery_texlayer_status,
-                        gallery_partial_layer_gpu);
+                        gallery_partial_layer_gpu,
+                        render_diagnostics.self_avatar_body_bake_gl_draws,
+                        gallery_appearance_live_enabled);
                 }
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,

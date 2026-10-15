@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/material_pass.hpp"
@@ -3215,6 +3216,9 @@ public:
            geometry.indices.size()<3U||
            geometry.indices.size()%3U!=0U)
             return false;
+        if(!audit_avatar_body_uv(
+                geometry.vertices,geometry.indices).safe_for_gpu)
+            return false;
         if(!geometry.skin_weights.empty())
         {
             if(geometry.skin_weights.size()!=geometry.vertices.size()/8U ||
@@ -3303,6 +3307,7 @@ public:
         diagnostics_.self_avatar_weighted_skin_draw_calls = 0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
+        diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -4322,7 +4327,12 @@ public:
                         {
                             ++diagnostics_.avatar_baked_texture_draw_calls;
                             if(avatar.is_self)
+                            {
                                 ++diagnostics_.self_avatar_baked_texture_draw_calls;
+                                // Only original Firestorm .llm anatomical
+                                // draws; never count 7-part proxy fallback.
+                                ++diagnostics_.self_avatar_body_bake_gl_draws[slot];
+                            }
                         }
                         diagnostics_.triangles+=static_cast<std::uint64_t>(
                             gpu.index_count/3);

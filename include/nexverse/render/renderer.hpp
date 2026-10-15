@@ -349,6 +349,9 @@ struct RenderDiagnostics
     std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
+    // Actual original three Firestorm .llm body GL submissions with a baked
+    // server texture bound, Head/Upper/Lower. Proxy fallback excluded.
+    std::array<std::uint64_t,3U> self_avatar_body_bake_gl_draws{};
 };
 
 enum class GpuUploadFailure
