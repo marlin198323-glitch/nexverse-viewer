@@ -1,0 +1,215 @@
+{
+  "repository": "opengenesislink/opengenesislinkserver",
+  "old_reviewed_sha": "4e99976630f1008db9014ea2b86c3723b09e9fe6",
+  "current_sha": "d31c03168f0f04f4ce02e82ee3246e16de744748",
+  "commits_inventoried": 22,
+  "changed_file_entries": 1276,
+  "classifications": {
+    "MANUAL_REVIEW": 1208,
+    "REFERENCE_ONLY": 12,
+    "SERVER_ONLY_ASSET_DELETE_HARDENING": 2,
+    "SERVER_ONLY_ASSET_UPLOAD_PERMISSION": 3,
+    "SERVER_ONLY_CI": 31,
+    "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION": 3,
+    "SERVER_ONLY_NODE_BUS": 2,
+    "SERVER_ONLY_OPERATOR_ADMIN_UI": 5,
+    "SERVER_ONLY_OPERATOR_POLICY": 3,
+    "SERVER_ONLY_WORLDAPI": 4,
+    "VIEWER_CORE_CROSS_REGION_FLIGHT_COMPAT": 3
+  },
+  "commits": [
+    {
+      "sha": "b022f4054360ccb95254dae07dad02bc9e96b319",
+      "files": 9,
+      "categories": {
+        "MANUAL_REVIEW": 6,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 1,
+        "SERVER_ONLY_OPERATOR_POLICY": 1
+      }
+    },
+    {
+      "sha": "8a0e711b74116e1f8e796637c48406b73089c127",
+      "files": 9,
+      "categories": {
+        "MANUAL_REVIEW": 3,
+        "REFERENCE_ONLY": 2,
+        "SERVER_ONLY_CI": 3,
+        "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION": 1
+      }
+    },
+    {
+      "sha": "829a5fe039768c74d1fbbd88eace856ee14d08d6",
+      "files": 11,
+      "categories": {
+        "MANUAL_REVIEW": 6,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_ASSET_DELETE_HARDENING": 2,
+        "SERVER_ONLY_CI": 2
+      }
+    },
+    {
+      "sha": "63233703275d2ea2f619e5635d9cb0c23e92c138",
+      "files": 89,
+      "categories": {
+        "MANUAL_REVIEW": 89
+      }
+    },
+    {
+      "sha": "41bfb0eb59be7195fb6fe86f0f4086477de1d955",
+      "files": 1088,
+      "categories": {
+        "MANUAL_REVIEW": 1088
+      }
+    },
+    {
+      "sha": "5416edf30145876ca50a8ede289783e53b1930d5",
+      "files": 10,
+      "categories": {
+        "MANUAL_REVIEW": 2,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_ASSET_UPLOAD_PERMISSION": 3,
+        "SERVER_ONLY_CI": 4
+      }
+    },
+    {
+      "sha": "8eb11eee175ab4e4b557f85cb4db2fca85a81053",
+      "files": 7,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 2,
+        "SERVER_ONLY_NODE_BUS": 1,
+        "SERVER_ONLY_OPERATOR_POLICY": 2
+      }
+    },
+    {
+      "sha": "a6b9dfbc6aa9e1b57a729b97295a17c887e691b8",
+      "files": 4,
+      "categories": {
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 2,
+        "VIEWER_CORE_CROSS_REGION_FLIGHT_COMPAT": 1
+      }
+    },
+    {
+      "sha": "edc4095b94dd62c7989c65a02615d1b329867e61",
+      "files": 4,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "SERVER_ONLY_CI": 3
+      }
+    },
+    {
+      "sha": "0ed672264c349c8d921b585286529bece3c7d6a8",
+      "files": 7,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 3,
+        "VIEWER_CORE_CROSS_REGION_FLIGHT_COMPAT": 2
+      }
+    },
+    {
+      "sha": "6631c1db5607f4ff42d77f1eef7f0398169792a7",
+      "files": 1,
+      "categories": {
+        "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION": 1
+      }
+    },
+    {
+      "sha": "b2f8484eea285aabda01a808b4e914a905be5953",
+      "files": 1,
+      "categories": {
+        "MANUAL_REVIEW": 1
+      }
+    },
+    {
+      "sha": "80115b8e5ad4cd43c8b7c009a0318594081b1eb6",
+      "files": 1,
+      "categories": {
+        "MANUAL_REVIEW": 1
+      }
+    },
+    {
+      "sha": "10670649d809e45cd9290737454f7eed57ac27ae",
+      "files": 1,
+      "categories": {
+        "MANUAL_REVIEW": 1
+      }
+    },
+    {
+      "sha": "275f4832e43637905684e23c0df2d11bef764fec",
+      "files": 1,
+      "categories": {
+        "SERVER_ONLY_CI": 1
+      }
+    },
+    {
+      "sha": "1aa48161ccd516ea5fe5dedfb97f256b61d65f48",
+      "files": 1,
+      "categories": {
+        "REFERENCE_ONLY": 1
+      }
+    },
+    {
+      "sha": "7fef96ce33695e8d0f8b46c0d1267837557e6b8f",
+      "files": 1,
+      "categories": {
+        "SERVER_ONLY_CI": 1
+      }
+    },
+    {
+      "sha": "54792655caa85a7aba8b48c89613fcfb0d540fca",
+      "files": 7,
+      "categories": {
+        "MANUAL_REVIEW": 3,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 2,
+        "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION": 1
+      }
+    },
+    {
+      "sha": "6986f344da9a9eb5a6c5e084bd3ebc6165a784c2",
+      "files": 6,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "SERVER_ONLY_CI": 2,
+        "SERVER_ONLY_OPERATOR_ADMIN_UI": 2,
+        "SERVER_ONLY_WORLDAPI": 1
+      }
+    },
+    {
+      "sha": "b6eae3c8f9617d17781b80adbce2ad02edf8b6ab",
+      "files": 11,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 3,
+        "SERVER_ONLY_NODE_BUS": 1,
+        "SERVER_ONLY_OPERATOR_ADMIN_UI": 3,
+        "SERVER_ONLY_WORLDAPI": 2
+      }
+    },
+    {
+      "sha": "9b97b2594f132bbd2dd1deac71eed9af604b276b",
+      "files": 2,
+      "categories": {
+        "MANUAL_REVIEW": 1,
+        "SERVER_ONLY_CI": 1
+      }
+    },
+    {
+      "sha": "d31c03168f0f04f4ce02e82ee3246e16de744748",
+      "files": 5,
+      "categories": {
+        "MANUAL_REVIEW": 2,
+        "REFERENCE_ONLY": 1,
+        "SERVER_ONLY_CI": 1,
+        "SERVER_ONLY_WORLDAPI": 1
+      }
+    }
+  ],
+  "compatibility_approved": false,
+  "notes": "Complete file enumeration is not human patch review; do not advance pinned reviewed_sha automatically."
+}

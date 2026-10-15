@@ -36,6 +36,7 @@
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/assets/avatar_bake_stream_priority.hpp"
+#include "nexverse/assets/avatar_bake_mip_priority.hpp"
 #include "nexverse/assets/texture_cached_request.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
@@ -71,6 +72,7 @@
 #include "nexverse/protocol/avatar_bakes.hpp"\n#include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
+#include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
 #include "nexverse/protocol/firestorm_cof_change_plan.hpp"
@@ -2244,7 +2246,8 @@ void render_outfit_gallery(
     std::string_view texlayer_status,
     const std::array<unsigned int,3>& partial_layer_previews,
     const std::array<std::uint64_t,3U>& self_body_bake_gl_draws,
-    bool gl_probe_enabled)
+    bool gl_probe_enabled,
+    const std::array<unsigned int,3U>& server_body_bake_previews)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2459,6 +2462,27 @@ void render_outfit_gallery(
                       Color{0.031f,0.159f,0.152f,0.98f},6.0f*scale);
         renderer.text(x+252.0f*scale,y+455.0f*scale,8.4f*scale,
                       "Texturen laden",theme::cyan);
+    }
+    if(!plan_visible)
+    {
+        // Only GPU-resident simulator-supplied baked textures, shared with
+        // the real anatomical renderer. Not synthesized Firestorm composites.
+        constexpr std::array<std::string_view,3U> labels{
+            "Head","Upper","Lower"};
+        renderer.text(x+22.0f*scale,y+480.0f*scale,
+            7.5f*scale,"Server-Bake GPU (nur Vorschau)",theme::text_muted);
+        for(std::size_t i=0U;i<labels.size();++i)
+        {
+            const float xx=x+(22.0f+141.0f*static_cast<float>(i))*scale;
+            renderer.text(xx,y+502.0f*scale,8.1f*scale,
+                          labels[i],theme::text_muted);
+            if(server_body_bake_previews[i]!=0U)
+                renderer.image(server_body_bake_previews[i],
+                    xx+49.0f*scale,y+494.0f*scale,
+                    82.0f*scale,24.0f*scale,1.0f);
+            else renderer.text(xx+50.0f*scale,y+502.0f*scale,
+                7.8f*scale,"nicht geladen",theme::warning);
+        }
     }
     if(plan_visible)
     {
@@ -10556,6 +10580,16 @@ int Application::run(bool enable_developer_modules)
                     if (!active_particles.contains(id))
                         level=texture_lod_dwell.resolve(
                             id,level,texture_gpu_mips,texture_plan_now);
+                // Current self Head/Upper/Lower get full-resolution
+                // preference. Never bypass shared VRAM admission or retry.
+                if(!avatar_proxy_update.empty()&&
+                   avatar_proxy_update.front().is_self)
+                    (void)assets::pin_self_avatar_body_full_mip(
+                        planned_mips,
+                        avatar_proxy_update.front().baked_texture_ids,
+                        simulation_ready&&
+                        firestorm_region_lease.matches(
+                            current_firestorm_epoch));
                 if (planned_mips != texture_desired_mips)
                 {
                     for(const auto& [id,quality]:planned_mips)
@@ -11766,6 +11800,26 @@ int Application::run(bool enable_developer_modules)
                                     inventory_version,evidence,true);
                         }
                     }
+                    std::array<unsigned int,3U> live_body_previews{};
+                    if(gallery_appearance_live_enabled&&simulation_ready&&
+                       firestorm_region_lease.matches(current_firestorm_epoch)&&
+                       !avatar_proxy_update.empty()&&
+                       avatar_proxy_update.front().is_self)
+                    {
+                        protocol::AvatarBakedTextures self_bakes{};
+                        const auto& ids=
+                            avatar_proxy_update.front().baked_texture_ids;
+                        for(std::size_t i=0U;i<ids.size();++i)
+                            self_bakes.ids[i]=ids[i];
+                        const auto selected=
+                            render::select_avatar_bake_previews(
+                                self_bakes,object_texture_loaded_ids,true);
+                        for(std::size_t i=0U;i<selected.ids.size();++i)
+                            if(!selected.ids[i].empty())
+                                live_body_previews[i]=
+                                    world_renderer->avatar_bake_preview_handle(
+                                        selected.ids[i]);
+                    }
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
@@ -11798,7 +11852,7 @@ int Application::run(bool enable_developer_modules)
                         gallery_texlayer_status,
                         gallery_partial_layer_gpu,
                         render_diagnostics.self_avatar_body_bake_gl_draws,
-                        gallery_appearance_live_enabled);
+                        gallery_appearance_live_enabled,live_body_previews);
                 }
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,

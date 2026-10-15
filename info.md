@@ -4093,3 +4093,32 @@ Siehe docs/ALPHA132_135_AVATAR_BAKE_STREAMING.md.
 - Offene Freigaben: Original-UV-/Pixelgleichheit auf GPU, echte Avatar-
   Skin/Outfit/Wear/Unwear, Simulator CacheID/Upload und GUI-E2E.
 - Detailreport: docs/ALPHA136_139_GPU_BODY_UV_PROOF.md.
+
+## 15.10.2026 – Alpha.140–144 – Fünf größere Entwicklungsblöcke
+
+140: Echte Server-GetTexture GL-Handle-Vorschau für originalen Head/Upper/Lower
+in der bestehenden Rendering-API, read-only, Session-/Region-gebunden;
+Platzhalter und fehlende GPU Assets bleiben ungerendert.
+
+141: F9 Outfit-Galerie zeigt drei echte, vorhandene Server-Bake-Bilder
+anstelle erfundener Skin-Platzhalter, samt "nicht geladen"-Status.
+Keine neuen Web/CAPS-Abfragen durch diese GUI.
+
+142: Shader setzt Avatar-uObjectTexGenPlanar auf false und uObjectScale
+auf 1 zurück, damit Prim-Welttexturprojektion die Original-LLM-UV
+nicht verfälscht.
+
+143: Vorhandene SelfAvatar-Bake-IDs werden auf Quell-MIP0 bevorzugt;
+shared VRAM 256MiB, GPU Slots 512, Retry/Region/Admission bleiben gültig.
+
+144: GitHub Server-Inventarisierung commitweise/paginiert vollständig
+durchgeführt: OpenGenesisLINK main d31c03168f0f04f4ce02e82ee3246e16de744748,
+22 Commits, 1276 Dateieinträge, davon 1208 MANUAL_REVIEW.
+Report: docs/OPENGENESISLINK_UPSTREAM_INVENTORY_20261015.json.
+Pinned Server-SHA bleibt 4e99976630f1008db9014ea2b86c3723b09e9fe6;
+strict Vergleich/Freigabe weiterhin BLOCKIERT.
+
+Pi5 native 7 C++23-Tests PASS und 28 Python PASS (finaler GitHub CI
+separat prüfen); CMake, GPU, Firestorm Inworld und echte Wear/Unwear
+NICHT getestet. Vollständige technische Beschreibung:
+docs/ALPHA140_144_GPU_BAKE_PREVIEW_AND_UPSTREAM_AUDIT.md.

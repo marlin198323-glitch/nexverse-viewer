@@ -241,3 +241,13 @@ oder Wear-Nachweis. Native Pi5 C++-Tests 5/5, Python 22/22.
 Vollständiger Grafiktest NICHT erfolgt; OpenGenesisLINK Server-Pin
 bleibt bis vollständiger Einzelcommitprüfung unverändert.
 Siehe docs/ALPHA136_139_GPU_BODY_UV_PROOF.md.
+
+## 15.10.2026 – Alpha.140–144 (Core/Firestorm/GUI/Server-Gate)
+
+Read-only reale GPU-Server-Bake-Vorschauen Head/Upper/Lower in F9,
+korrekter Shader-UV-State-Reset, Body Quell-MIP0 Priorität ohne
+VRAM-Budgetumgehung. Ein Live-Inventar von 22 OpenGenesisLINK Commits
+und 1276 File-Einträgen ist vollständig; manuelle Prüfung und
+Kompatibilitäts-Pin stehen weiterhin aus. Native Pi7 C++23, Python28
+PASS. Full GUI/GPU-Firestorm-Parität NICHT bestätigt.
+Siehe docs/ALPHA140_144_GPU_BAKE_PREVIEW_AND_UPSTREAM_AUDIT.md.

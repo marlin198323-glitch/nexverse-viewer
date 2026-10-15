@@ -2961,6 +2961,13 @@ public:
         object_textures_.erase(it);
         object_texture_alpha_.erase(id);
     }
+    [[nodiscard]] unsigned int avatar_bake_preview_handle(
+        const std::string& server_bake_id) const override
+    {
+        if(server_bake_id.empty())return 0U;
+        const auto it=object_textures_.find(server_bake_id);
+        return it==object_textures_.end()?0U:it->second;
+    }
     void clear_object_textures() override
     {
         for(auto& [id,texture]:object_textures_)
@@ -4152,6 +4159,14 @@ public:
             glUniform1i(
                 glGetUniformLocation(program_, "uUsePrimDeform"),
                 GL_FALSE);
+            // Original .llm UVs are NEVER generated using a world-object
+            // planar mapping, even when the prior scene used texgen.
+            glUniform1i(
+                glGetUniformLocation(program_, "uObjectTexGenPlanar"),
+                GL_FALSE);
+            glUniform3f(
+                glGetUniformLocation(program_, "uObjectScale"),
+                1.0f,1.0f,1.0f);
             glUniform1i(
                 glGetUniformLocation(program_, "uUseLegacyNormalMap"),
                 GL_FALSE);

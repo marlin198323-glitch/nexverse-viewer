@@ -404,6 +404,10 @@ public:
         const std::vector<std::string>& evict_after_success) = 0;
     virtual void remove_object_texture(const std::string& texture_id) = 0;
     virtual void clear_object_textures() = 0;
+    // Render-thread-only read-only GL handle for existing texture UUIDs.
+    // Caller may use it for UI in THIS frame only; invalid after eviction.
+    [[nodiscard]] virtual unsigned int avatar_bake_preview_handle(
+        const std::string& server_bake_id) const = 0;
     // GPU uploads and removals must happen on the render thread.
     [[nodiscard]] virtual bool set_mesh_asset(
         const std::string& mesh_id,

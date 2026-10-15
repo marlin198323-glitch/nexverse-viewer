@@ -371,6 +371,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-avatar-bake-preview-tests
+        tests/avatar_bake_preview_tests.cpp)
+    target_link_libraries(nexverse-avatar-bake-preview-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-avatar-bake-preview-tests)
+    add_test(NAME nexverse-avatar-bake-preview-tests
+        COMMAND nexverse-avatar-bake-preview-tests)
+
+    add_executable(nexverse-avatar-bake-mip-priority-tests
+        tests/avatar_bake_mip_priority_tests.cpp)
+    target_link_libraries(nexverse-avatar-bake-mip-priority-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-avatar-bake-mip-priority-tests)
+    add_test(NAME nexverse-avatar-bake-mip-priority-tests
+        COMMAND nexverse-avatar-bake-mip-priority-tests)
+
     add_executable(nexverse-avatar-body-uv-evidence-tests
         tests/avatar_body_uv_evidence_tests.cpp)
     target_link_libraries(nexverse-avatar-body-uv-evidence-tests
