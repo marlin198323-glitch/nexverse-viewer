@@ -67,7 +67,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
-#include "nexverse/protocol/avatar_bakes.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"\n#include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -8448,15 +8448,12 @@ int Application::run(bool enable_developer_modules)
                                 ?0U:current_version->second;
                         const auto bakes=protocol::extract_avatar_bakes(
                             packet.texture_entry);
+                        const auto evidence=
+                            protocol::audit_avatar_bake_evidence(
+                                bakes,object_texture_loaded_ids);
                         gallery_appearance_snapshot_status=
-                            "Simulator COF v"+std::to_string(server_ver)+
-                            "; Inventory CAPS v"+std::to_string(cof_ver)+
-                            "; Server-TE Bakes "+std::to_string(
-                                bakes.valid_count())+"/11"+
-
-                            (server_ver==cof_ver&&cof_ver!=0U
-                                ?"; Versionsgleichheit (Bake noch unbewiesen)"
-                                :"; keine nachgewiesene Versionsgleichheit");
+                            protocol::describe_avatar_bake_evidence(
+                                server_ver,cof_ver,evidence);
                     }
                 }
             }

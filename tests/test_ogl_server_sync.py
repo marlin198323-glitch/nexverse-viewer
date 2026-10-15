@@ -30,6 +30,13 @@ class ServerSyncTests(unittest.TestCase):
                 "SERVER_ONLY_OPERATOR_ADMIN_UI",
             "doc/OpenGenesisLINK/WORLD_API_CONTROL_CENTER.md":
                 "SERVER_ONLY_OPERATOR_ADMIN_UI",
+            "OpenSim/Region/CoreModules/Framework/EntityTransfer/EntityTransferModule.cs":
+                "VIEWER_CORE_CROSS_REGION_FLIGHT_COMPAT",
+            "OpenSim/Framework/AssetUploadLevelPolicy.cs":
+                "SERVER_ONLY_ASSET_UPLOAD_PERMISSION",
+            "OpenSim/Server/Handlers/Inventory/XInventoryInConnector.cs":
+                "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION",
+            "NexVerse/Server/Api/NexStatisticsApi.cs":"SERVER_ONLY_WORLDAPI",
             "unknown/NewFeature.cs":"MANUAL_REVIEW"}
         for name,expected in cases.items():
             with self.subTest(name=name): self.assertEqual(MOD.classify(name),expected)
@@ -48,4 +55,17 @@ class ServerSyncTests(unittest.TestCase):
             self.assertIn("OFFLINE FIXTURE",result.stdout)
             self.assertIn("VIEWER_CORE_GRAB_COMPAT",result.stdout)
             self.assertIn("VIEWER_CORE_PROTOCOL_REVIEW",result.stdout)
+    def test_github_compare_truncation_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            (root/"baseline.json").write_text(json.dumps({"reviewed_sha":"a"*40}))
+            (root/"diff.json").write_text(json.dumps({
+                "head":"b"*40,"ahead_by":22,"files":[
+                    {"filename":f"bin/cache/{i}.jpg"} for i in range(300)]}))
+            r=subprocess.run([sys.executable,str(SCRIPT),
+                "--baseline",str(root/"baseline.json"),
+                "--fixture",str(root/"diff.json"),"--strict"],
+                capture_output=True,text=True,check=False,timeout=5)
+            self.assertEqual(r.returncode,2,r.stderr)
+            self.assertIn("TRUNCATED COMPARE",r.stdout)
 if __name__=="__main__":unittest.main()

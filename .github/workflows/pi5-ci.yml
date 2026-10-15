@@ -34,4 +34,7 @@ jobs:
             bash -n "$file"
           done
           echo "OGL_PI5_SOURCE_CHECK_OK"
-          echo "Native viewer builds still require CMake, vcpkg, OpenGL and platform-specific targets."
+          echo "Full viewer builds still require CMake, vcpkg, OpenGL and platform-specific targets."
+      - name: Run native C++23 headless and Python regressions (Pi5)
+        shell: bash
+        run: bash scripts/pi5-headless-tests.sh

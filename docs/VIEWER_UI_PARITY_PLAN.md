@@ -223,3 +223,7 @@ Alpha120–123 visible F9 TexLayer lesen reports count of color layers and param
 Real avatar_lad.xml global skin/hair/eye palettes and only authenticated actual LLWearable type-owned parameters; two-plus-mask ADD/MULTIPLY order. Unsupported domain/morph/bump/visibility fails closed, F9 shows color/mask/11-region input counts. No pixel-identical Firestorm bake, no server upload or 3D clothing proof. New tests + projectplan, docs/ALPHA124_127_GLOBAL_MASK_COVERAGE.md.
 
 Upstream OpenGenesisLINK 4e999766 (#210): Hypergrid friends reconnect status/negative cache are SERVER_ONLY; existing avatar online/offline viewer packets unchanged. Full viewer friends GUI compatibility remains CORE backlog, not separate admin credentials.
+
+## 15.10.2026 – Alpha.128–131 Firestorm/OGL-Kompatibilität
+
+F9 zeigt nach aktivem Appearance-Klick elf originale Server-TE-Bakes getrennt von GPU-Residency und Head/Upper/Lower. Kein vollständiger Bake, Upload oder Wear. Details in docs/ALPHA128_131_PI5_BAKE_EVIDENCE.md. Upstream main d31c0316 unreviewed (22 Commits, >=300 Compare-Dateien), Pin bleibt alt; 2 native C++23 und 18 Python Pi-Tests PASS, CMake/GPU nicht verfügbar.

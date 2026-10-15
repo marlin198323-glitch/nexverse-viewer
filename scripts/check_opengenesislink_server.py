@@ -27,6 +27,16 @@ def classify(path):
         return "VIEWER_CORE_GRAB_COMPAT"
     if "region_dimensions" in x or "regiondimensions" in x:
         return "VIEWER_CORE_LSL_EDITOR_FUTURE"
+    if "entitytransfermodule.cs" in x or "flightneighbourprefetchpolicy.cs" in x or "scenepresence.cs" in x:
+        return "VIEWER_CORE_CROSS_REGION_FLIGHT_COMPAT"
+    if "assetuploadlevelpolicy.cs" in x or "assettransactionmodule.cs" in x or "bunchofcapsmodule.cs" in x:
+        return "SERVER_ONLY_ASSET_UPLOAD_PERMISSION"
+    if "xinventoryinconnector.cs" in x:
+        return "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION"
+    if "assetserverdeletehandler.cs" in x or "assetservicesconnector.cs" in x:
+        return "SERVER_ONLY_ASSET_DELETE_HARDENING"
+    if "nexstatisticsapi.cs" in x or "nexverseuserapi.cs" in x:
+        return "SERVER_ONLY_WORLDAPI"
     if "thumbnail" in x or ("inventory" in x and "connector" in x):
         return "VIEWER_CORE_INVENTORY_THUMBNAIL"
     if "scene.packethandlers.cs" in x or "/capabilities/" in x:
@@ -79,11 +89,18 @@ def main(argv=None):
         if len(head)!=40: raise ValueError("Invalid current SHA")
         print("UPSTREAM",REPO,"reviewed",old,"current",head)
         print("GitHub upstream commits since review:",comp.get("ahead_by","?"))
-        for change in comp.get("files",[]):
+        for change in comp.get("files",[])[:35]:
             path=change.get("filename")
             if path: print("  ["+classify(path)+"]",path)
+        if len(comp.get("files",[]))>35:
+            print("  ... and",len(comp["files"])-35,"additional entries")
         if "files" not in comp:
             raise ValueError("Comparison lacks file list; cannot claim reviewed")
+        if len(comp["files"]) >= 300:
+            print("TRUNCATED COMPARE: GitHub returns at most 300 changed "
+                  "files; inspect each upstream commit separately before "
+                  "advancing baseline")
+            return 2 if options.strict else 0
         if head!=old:
             print("REVIEW REQUIRED: do not advance baseline without manual integration")
             return 2 if options.strict else 0
