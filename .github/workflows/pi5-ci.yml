@@ -1,0 +1,37 @@
+name: OpenGenesisLINK Viewer Pi5 Source Check
+on:
+  push:
+    branches: [develop-current]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pi5-ogl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-check:
+    name: ARM64 source contract checks (no native GUI build)
+    runs-on: [self-hosted, linux, ARM64, pi5-ogl]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify source and shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = aarch64
+          git diff --check
+          test -s CMakeLists.txt
+          test -s projectplan.md
+          test -s CHATUEBERGABE.md
+          test -s vcpkg.json
+          find scripts -type f -name '*.sh' -print0 | while IFS= read -r -d '' file; do
+            bash -n "$file"
+          done
+          echo "OGL_PI5_SOURCE_CHECK_OK"
+          echo "Native viewer builds still require CMake, vcpkg, OpenGL and platform-specific targets."
