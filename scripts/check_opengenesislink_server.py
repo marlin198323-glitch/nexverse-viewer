@@ -15,6 +15,16 @@ BASE=ROOT/"docs/OPENGENESISLINK_SERVER_BASELINE.json"
 
 def classify(path):
     x=path.lower()
+    # Known source-independent large cleanup; inventory is not a code review.
+    if x.startswith("bin/opt/cache/assetcache/") or x.startswith("bin/opt/cache/fsassets/"):
+        return "SERVER_ONLY_ASSET_CACHE_FILES"
+    if x.startswith("bin/nexverse-deutschland/terrain/") and x.endswith(".r32"):
+        return "SERVER_ONLY_TERRAIN_HEIGHTMAP_DATA"
+    if x.startswith("bin/nexverse-deutschland/") and (
+        x.endswith(".txt") or x.endswith(".csv")):
+        return "SERVER_ONLY_TERRAIN_IMPORT_DATA"
+    if x==".gitignore":
+        return "REPOSITORY_METADATA"
     if "cross_region_chat_smoke" in x:
         return "SERVER_ONLY_LSL_CHAT_TEST"
     if "cross_region_lsl_chat" in x or "crossregionchat" in x:

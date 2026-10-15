@@ -371,6 +371,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-render-materials-tests)
     add_test(NAME nexverse-render-materials-tests COMMAND nexverse-render-materials-tests)
 
+    add_executable(nexverse-outfit-bake-preview-layout-tests
+        tests/outfit_gallery_bake_preview_layout_tests.cpp)
+    target_link_libraries(nexverse-outfit-bake-preview-layout-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-outfit-bake-preview-layout-tests)
+    add_test(NAME nexverse-outfit-bake-preview-layout-tests
+        COMMAND nexverse-outfit-bake-preview-layout-tests)
+
     add_executable(nexverse-avatar-bake-preview-tests
         tests/avatar_bake_preview_tests.cpp)
     target_link_libraries(nexverse-avatar-bake-preview-tests

@@ -46,6 +46,19 @@ struct AvatarBakedTextures
         return count;
     }
 };
+// Viewer self bake sources require current authenticated agent ownership
+// AND a live simulator region. A stale other-agent packet is NOT a skin.
+[[nodiscard]] inline bool self_bake_owner_is_current(
+    std::string_view packet_avatar_id,
+    std::string_view active_agent_id,
+    std::string_view renderer_agent_id,
+    bool region_connected) noexcept
+{
+    return region_connected && !packet_avatar_id.empty() &&
+        packet_avatar_id==active_agent_id &&
+        packet_avatar_id==renderer_agent_id;
+}
+
 [[nodiscard]] inline AvatarBakedTextures extract_avatar_bakes(
     std::span<const std::uint8_t> texture_entry)
 {

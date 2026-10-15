@@ -69,7 +69,8 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
-#include "nexverse/protocol/avatar_bakes.hpp"\n#include "nexverse/protocol/avatar_bake_evidence.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"
+#include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
@@ -422,6 +423,7 @@ struct InputContext
     bool* outfit_link_requested = nullptr;
     bool* outfit_batch_requested = nullptr;
     bool* outfit_appearance_check_requested = nullptr;
+    bool* outfit_bake_preview_open = nullptr;
     bool* outfit_wearable_check_requested = nullptr;
     bool* outfit_wearable_asset_requested = nullptr;
     bool* outfit_wearable_texture_requested = nullptr;
@@ -1154,6 +1156,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         case nexverse::ui::OutfitGalleryHit::batch_add:
             if(context->outfit_batch_requested)
                 *context->outfit_batch_requested=true;
+            break;
+        case nexverse::ui::OutfitGalleryHit::bake_preview_toggle:
+            if(context->outfit_bake_preview_open)
+                *context->outfit_bake_preview_open=
+                    !*context->outfit_bake_preview_open;
             break;
         case nexverse::ui::OutfitGalleryHit::appearance_check:
             if(context->outfit_appearance_check_requested)
@@ -2247,7 +2254,8 @@ void render_outfit_gallery(
     const std::array<unsigned int,3>& partial_layer_previews,
     const std::array<std::uint64_t,3U>& self_body_bake_gl_draws,
     bool gl_probe_enabled,
-    const std::array<unsigned int,3U>& server_body_bake_previews)
+    const std::array<unsigned int,3U>& server_body_bake_previews,
+    bool bake_preview_open)
 {
     const float w=static_cast<float>(std::max(width,1));
     const float h=static_cast<float>(std::max(height,1));
@@ -2463,27 +2471,6 @@ void render_outfit_gallery(
         renderer.text(x+252.0f*scale,y+455.0f*scale,8.4f*scale,
                       "Texturen laden",theme::cyan);
     }
-    if(!plan_visible)
-    {
-        // Only GPU-resident simulator-supplied baked textures, shared with
-        // the real anatomical renderer. Not synthesized Firestorm composites.
-        constexpr std::array<std::string_view,3U> labels{
-            "Head","Upper","Lower"};
-        renderer.text(x+22.0f*scale,y+480.0f*scale,
-            7.5f*scale,"Server-Bake GPU (nur Vorschau)",theme::text_muted);
-        for(std::size_t i=0U;i<labels.size();++i)
-        {
-            const float xx=x+(22.0f+141.0f*static_cast<float>(i))*scale;
-            renderer.text(xx,y+502.0f*scale,8.1f*scale,
-                          labels[i],theme::text_muted);
-            if(server_body_bake_previews[i]!=0U)
-                renderer.image(server_body_bake_previews[i],
-                    xx+49.0f*scale,y+494.0f*scale,
-                    82.0f*scale,24.0f*scale,1.0f);
-            else renderer.text(xx+50.0f*scale,y+502.0f*scale,
-                7.8f*scale,"nicht geladen",theme::warning);
-        }
-    }
     if(plan_visible)
     {
         const float bx=x+465.0f*scale;
@@ -2591,6 +2578,42 @@ void render_outfit_gallery(
         renderer.text(x+pw-286.0f*scale,y+365.0f*scale,
                       8.0f*scale,std::string(link_status).substr(0U,45U),
                       theme::warning);
+    }
+    if(!plan_visible && pw>=600.0f*scale)
+    {
+        // The detail pane toggles to large, real read-only bake previews.
+        // The outfit list, COF actions and bottom diagnostics stay visible.
+        const float bx=x+pw-151.0f*scale;
+        if(bake_preview_open)
+        {
+            const float left=x+465.0f*scale;
+            renderer.rect(left,y+107.0f*scale,pw-477.0f*scale,
+                338.0f*scale,Color{0.012f,0.037f,0.063f,0.99f},
+                8.0f*scale);
+            renderer.text(left+12.0f*scale,y+130.0f*scale,10.0f*scale,
+                "Server-Bake: Head / Upper / Lower",theme::cyan);
+            renderer.text(left+12.0f*scale,y+149.0f*scale,7.2f*scale,
+                "Nur GPU-Texturen - kein Wear/Upload",theme::warning);
+            static constexpr std::array<std::string_view,3U> names{
+                "Head","Upper","Lower"};
+            for(std::size_t i=0U;i<names.size();++i)
+            {
+                const float yy=y+(171.0f+87.0f*
+                    static_cast<float>(i))*scale;
+                renderer.text(left+12.0f*scale,yy+22.0f*scale,
+                    8.2f*scale,names[i],theme::text_muted);
+                const auto texture=server_body_bake_previews[i];
+                if(texture!=0U)
+                    renderer.image(texture,left+68.0f*scale,yy,
+                        219.0f*scale,75.0f*scale,1.0f);
+                else renderer.text(left+75.0f*scale,yy+22.0f*scale,
+                    8.5f*scale,"Nicht geladen",theme::warning);
+            }
+        }
+        renderer.rect(bx,y+106.0f*scale,135.0f*scale,29.0f*scale,
+            Color{0.034f,0.125f,0.180f,0.98f},6.0f*scale);
+        renderer.text(bx+7.0f*scale,y+115.0f*scale,7.7f*scale,
+            bake_preview_open?"Outfit-Inhalt":"Server-Bakes",theme::cyan);
     }
     renderer.text(x+22.0f*scale,y+ph-200.0f*scale,
                   7.8f*scale,
@@ -5074,6 +5097,8 @@ int Application::run(bool enable_developer_modules)
     // The explicit F9 check opts in to a LOCAL read-only, periodic GPU
     // residency refresh. Never requests new network/CAPS assets itself.
     bool gallery_appearance_live_enabled=false;
+    bool gallery_bake_preview_open=false;
+    input_context.outfit_bake_preview_open=&gallery_bake_preview_open;
     auto gallery_appearance_live_checked_at=
         std::chrono::steady_clock::time_point{};
     input_context.outfit_appearance_check_requested=
@@ -6769,6 +6794,7 @@ int Application::run(bool enable_developer_modules)
                 experience_ui.close();
                 outfit_gallery_open=false;
                 gallery_appearance_live_enabled=false;
+                gallery_bake_preview_open=false;
             }
             else if (!world_ready_logged)
             {
@@ -7001,6 +7027,7 @@ int Application::run(bool enable_developer_modules)
                     "Appearance: Region gewechselt";
                 gallery_appearance_check_requested=false;
                 gallery_appearance_live_enabled=false;
+                gallery_bake_preview_open=false;
                 gallery_appearance_live_checked_at={};
                 gallery_wearables_requested=false;
                 gallery_wearables_fetch_cof.clear();
@@ -7152,6 +7179,7 @@ int Application::run(bool enable_developer_modules)
                 gallery_gpu_textures.clear();
                 outfit_gallery_open=false;
                 gallery_appearance_live_enabled=false;
+                gallery_bake_preview_open=false;
                 self_avatar_proxy_gl_logged=false;
                 self_avatar_bake_gl_logged=false;
                 self_avatar_original_mesh_gl_logged=false;
@@ -9466,7 +9494,12 @@ int Application::run(bool enable_developer_modules)
                         self_hover=std::clamp(
                             appearance->hover_heights.front().z,-2.0f,2.0f);
                     std::array<std::string,3U> baked_ids{};
-                    if(const auto& self=world_model.self_appearance();self)
+                    if(const auto& self=world_model.self_appearance();
+                       self&&active_session&&
+                       protocol::self_bake_owner_is_current(
+                           self->avatar_id,active_session->agent_id,
+                           render_agent.agent_id,
+                           world_model.region().connected))
                         baked_ids=protocol::extract_avatar_bakes(
                             self->texture_entry).visible_body();
                     avatar_proxy_update.push_back({
@@ -10583,7 +10616,8 @@ int Application::run(bool enable_developer_modules)
                 // Current self Head/Upper/Lower get full-resolution
                 // preference. Never bypass shared VRAM admission or retry.
                 if(!avatar_proxy_update.empty()&&
-                   avatar_proxy_update.front().is_self)
+                   avatar_proxy_update.front().is_self&&active_session&&
+                   active_session->agent_id==render_agent.agent_id)
                     (void)assets::pin_self_avatar_body_full_mip(
                         planned_mips,
                         avatar_proxy_update.front().baked_texture_ids,
@@ -11760,6 +11794,8 @@ int Application::run(bool enable_developer_modules)
                 ui::render_viewer_shell(
                     renderer,window_width,window_height,
                     viewer_shell,shell_view);
+                if(!outfit_gallery_open)
+                    gallery_bake_preview_open=false;
                 if(outfit_gallery_open &&active_session)
                 {
                     // Refresh the F9 read-only proof while textures arrive.
@@ -11777,8 +11813,11 @@ int Application::run(bool enable_developer_modules)
                             gallery_appearance_snapshot_status=
                                 "Appearance Live: Region nicht mehr gueltig";
                         else if(const auto& packet=world_model.self_appearance();
-                                !packet||packet->avatar_id!=active_session->agent_id||
-                                packet->appearance_data.empty())
+                                !packet||packet->appearance_data.empty()||
+                                !protocol::self_bake_owner_is_current(
+                                    packet->avatar_id,active_session->agent_id,
+                                    render_agent.agent_id,
+                                    world_model.region().connected))
                             gallery_appearance_snapshot_status=
                                 "Appearance Live: Selbst-Avatar-Paket fehlt";
                         else
@@ -11804,7 +11843,8 @@ int Application::run(bool enable_developer_modules)
                     if(gallery_appearance_live_enabled&&simulation_ready&&
                        firestorm_region_lease.matches(current_firestorm_epoch)&&
                        !avatar_proxy_update.empty()&&
-                       avatar_proxy_update.front().is_self)
+                       avatar_proxy_update.front().is_self&&
+                       active_session->agent_id==render_agent.agent_id)
                     {
                         protocol::AvatarBakedTextures self_bakes{};
                         const auto& ids=
@@ -11852,7 +11892,8 @@ int Application::run(bool enable_developer_modules)
                         gallery_texlayer_status,
                         gallery_partial_layer_gpu,
                         render_diagnostics.self_avatar_body_bake_gl_draws,
-                        gallery_appearance_live_enabled,live_body_previews);
+                        gallery_appearance_live_enabled,live_body_previews,
+                        gallery_bake_preview_open);
                 }
                 if(inventory_tree_open)
                     render_inventory_tree(renderer,window_width,window_height,

@@ -6,6 +6,12 @@
 using namespace nexverse::protocol;
 int main()
 {
+    if(!self_bake_owner_is_current("my-agent","my-agent","my-agent",true)||
+       self_bake_owner_is_current("other","my-agent","my-agent",true)||
+       self_bake_owner_is_current("my-agent","my-agent","other",true)||
+       self_bake_owner_is_current("my-agent","my-agent","my-agent",false)||
+       self_bake_owner_is_current("","","",true))
+        return 10;
     AvatarBakedTextures bakes;
     const std::unordered_set<std::string> gpu{"head","eyes","stale"};
     auto empty=audit_avatar_bake_evidence(bakes,gpu);

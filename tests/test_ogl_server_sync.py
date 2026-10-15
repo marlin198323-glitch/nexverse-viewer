@@ -37,6 +37,13 @@ class ServerSyncTests(unittest.TestCase):
             "OpenSim/Server/Handlers/Inventory/XInventoryInConnector.cs":
                 "SERVER_ONLY_HG_INVENTORY_AUTHORIZATION",
             "NexVerse/Server/Api/NexStatisticsApi.cs":"SERVER_ONLY_WORLDAPI",
+            "bin/opt/cache/fsassets/123.gz":"SERVER_ONLY_ASSET_CACHE_FILES",
+            "bin/opt/cache/assetcache/001/uuid":"SERVER_ONLY_ASSET_CACHE_FILES",
+            "bin/nexverse-deutschland/terrain/Test.r32":
+                "SERVER_ONLY_TERRAIN_HEIGHTMAP_DATA",
+            "bin/nexverse-deutschland/regionen.csv":
+                "SERVER_ONLY_TERRAIN_IMPORT_DATA",
+            ".gitignore":"REPOSITORY_METADATA",
             "unknown/NewFeature.cs":"MANUAL_REVIEW"}
         for name,expected in cases.items():
             with self.subTest(name=name): self.assertEqual(MOD.classify(name),expected)

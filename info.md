@@ -4122,3 +4122,22 @@ Pi5 native 7 C++23-Tests PASS und 28 Python PASS (finaler GitHub CI
 separat prüfen); CMake, GPU, Firestorm Inworld und echte Wear/Unwear
 NICHT getestet. Vollständige technische Beschreibung:
 docs/ALPHA140_144_GPU_BAKE_PREVIEW_AND_UPSTREAM_AUDIT.md.
+
+## 15.10.2026 – Alpha.145–149 (5 Entwicklungsblöcke)
+
+145: SelfAvatar-Bake nur mit gleicher AvatarAppearance/Login/WorldModel
+AgentUUID und aktiver Region; F9 und MIP0 ebenfalls geschützt.
+146: Klickbarer F9 Tab Server-Bakes / Outfit-Inhalt mit 3 echten
+219x75 GPU-Bildvorschauen Head/Upper/Lower aus Server-GetTexture.
+147: Kleine Fenster und F9 Lifecycle abgesichert; keine überdeckten
+Statuszeilen, automatische Tab-Rücksetzung bei Schließen/Regionwechsel.
+148: OpenGenesisLINK Server main d31c0316, 22 Commits, 1276
+Dateieinträge. 1087 Cache-/Terrain-Quellen in einem einzigen
+Cleanup-Commit sind durch neue Regeln klassifizierbar.
+Neuer Live-Abruf scheiterte GitHub API 403 Rate Limit, deshalb
+altes vollständig inventarisiertes Protokoll beibehalten;
+Server-Reviewed-SHA NICHT erhöht, strict Gate bleibt BLOCKIERT.
+149: Defekte C++ Präprozessor-Include-Zeile und falsches CMake-Ziel
+NexVerse::Ui repariert, Regressionen ergänzt. Pi5 8 native C++23,
+31 Python PASS; voller CMake-/GUI-/GPU-/Inworld-Test NICHT erfolgt.
+Belege: docs/ALPHA145_149_AUTH_F9_SERVER_REVIEW.md.

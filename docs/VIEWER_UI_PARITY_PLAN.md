@@ -251,3 +251,7 @@ und 1276 File-Einträgen ist vollständig; manuelle Prüfung und
 Kompatibilitäts-Pin stehen weiterhin aus. Native Pi7 C++23, Python28
 PASS. Full GUI/GPU-Firestorm-Parität NICHT bestätigt.
 Siehe docs/ALPHA140_144_GPU_BAKE_PREVIEW_AND_UPSTREAM_AUDIT.md.
+
+## 15.10.2026 – Alpha.145–149
+
+Identity-bound server Head/Upper/Lower, klickbare große F9 GPU Vorschau, responsive Layout und Region-/Logout-Reset. Firestorm Baked-Pixel und echter Wear/Unwear weiter OFFEN. Pi 8 C++23 und 31 Python PASS, voller GL-/GUI-Build NICHT GETESTET. Upstream main d31c0316 bleibt wegen unvollständigem Codepatchreview gesperrt; neue Live API Abfrage erhielt HTTP 403. Details: docs/ALPHA145_149_AUTH_F9_SERVER_REVIEW.md.

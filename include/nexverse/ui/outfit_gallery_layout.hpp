@@ -8,7 +8,7 @@
 #include <cmath>
 namespace nexverse::ui
 {
-enum class OutfitGalleryHit { none, close, refresh, verify, plan, link_add, batch_add, appearance_check, wearable_check, wearable_asset_fetch, wearable_texture_fetch, texlayer_analyze, texlayer_compose, select };
+enum class OutfitGalleryHit { none, close, refresh, verify, plan, link_add, batch_add, bake_preview_toggle, appearance_check, wearable_check, wearable_asset_fetch, wearable_texture_fetch, texlayer_analyze, texlayer_compose, select };
 struct OutfitGalleryLayout
 {
     float sc=1.0f,x=0.0f,y=0.0f,pw=790.0f;
@@ -36,6 +36,10 @@ struct OutfitGalleryLayout
                   151.0f*sc,34.0f*sc))return OutfitGalleryHit::verify;
         if(inside(px,py,x+pw-550.0f*sc,y+11.0f*sc,
                   147.0f*sc,34.0f*sc))return OutfitGalleryHit::plan;
+        if(pw>=600.0f*sc &&
+           inside(px,py,x+pw-151.0f*sc,y+106.0f*sc,
+                  135.0f*sc,29.0f*sc))
+            return OutfitGalleryHit::bake_preview_toggle;
         if(inside(px,py,x+pw-297.0f*sc,y+392.0f*sc,
                   274.0f*sc,37.0f*sc))return OutfitGalleryHit::link_add;
         if(inside(px,py,x+pw-297.0f*sc,y+439.0f*sc,

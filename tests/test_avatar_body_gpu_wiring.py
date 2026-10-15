@@ -44,7 +44,7 @@ class AvatarBodyGpuWiring(unittest.TestCase):
         self.assertIn("select_avatar_bake_previews(",APP)
         self.assertIn("avatar_bake_preview_handle(",APP)
         self.assertIn("gallery_appearance_live_enabled&&simulation_ready",APP)
-        self.assertIn("Server-Bake GPU (nur Vorschau)",APP)
+        self.assertIn("Server-Bake: Head / Upper / Lower",APP)
         self.assertIn("live_body_previews",APP)
         self.assertIn("pin_self_avatar_body_full_mip(",APP)
 
@@ -54,6 +54,24 @@ class AvatarBodyGpuWiring(unittest.TestCase):
         self.assertIn('"uObjectTexGenPlanar"',avatar_segment)
         self.assertIn('"uObjectScale"',avatar_segment)
         self.assertIn('"uUsePrimDeform"',avatar_segment)
+
+    def test_viewer_uses_existing_ui_cmake_target(self):
+        cmake=(ROOT/"CMakeLists.txt").read_text()
+        self.assertIn("PRIVATE NexVerse::UI)",cmake)
+        self.assertNotIn("PRIVATE NexVerse::Ui)",cmake)
+
+    def test_firestorm_bake_include_is_real_cpp(self):
+        # Regression from earlier alpha: literal backslash-n in #include
+        # silently passed the legacy Pi headless path.
+        self.assertNotIn(chr(92)+"n#include",APP)
+        self.assertIn('#include "nexverse/protocol/avatar_bake_evidence.hpp"',APP)
+
+    def test_f9_toggle_is_clickable_and_region_reset(self):
+        self.assertIn("OutfitGalleryHit::bake_preview_toggle",APP)
+        self.assertIn("outfit_bake_preview_open",APP)
+        self.assertIn("gallery_bake_preview_open=false;",APP)
+        self.assertIn("if(!outfit_gallery_open)",APP)
+        self.assertIn("bake_preview_open?",APP)
 
     def test_f9_draw_proof_is_connected_and_responsive(self):
         self.assertIn("render_diagnostics.self_avatar_body_bake_gl_draws,",APP)
