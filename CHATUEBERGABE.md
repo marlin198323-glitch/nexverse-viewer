@@ -3610,3 +3610,24 @@ Xvfb-GUI-Smoke; GitHub develop-current + Pi5 ARM64 CI.
 OpenGenesisLINK main ec760cac, reviewed_sha unverändert,
 echter Avatar-/Welt-Login-E2E weiterhin offen.
 Details: docs/ALPHA195_199_AVATAR_CAMERA_ORBIT.md.
+
+## 16.10.2026 – Alpha.200–204 – Originalsystemicon und Login-Refresh
+
+200: Nutzer-Originalicon 1254px JPEG identisch per SHA-256 mit
+/home/jam/Downloads/icon.jpeg, daraus 32/48/64/128/256/512
+RGBA-PNG mit transparenten Ecken, Windows ICO und macOS ICNS.
+201: GLFW X11-Fensterklasse opengenesislink-viewer, echtes 128px
+Cinnamon-Taskleistenicon mit _NET_WM_ICON ARGB32 Pixelproperty,
+XGetWindowProperty per Xvfb+Metacity readback verifiziert.
+202: Der alte Login-Header-Platzhalter links oben wird durch
+echte Original-OG-Icon-OpenGL-Textur ersetzt; WelcomePage/
+WebKit/https://stadt-nexverse.de/service/welcome ausdrücklich
+UNVERÄNDERT, kein erzeugtes Mockup.
+203: Dezent moderner Navy/Cyan-Header und Login-Karte;
+Linux .desktop und hicolor Icons per CMake, Mint User-Starter
+unter ~/.local/share/applications installiert. Windows .ico/.rc
+und macOS .icns im Build definiert (nicht nativ gebaut).
+204: Native PNG-/Logo-Test, Python-Branding-Contract, versteckte
+X11-Icon-/WM_CLASS Prüfung und volle Linux CI sowie Pi5
+Headless Workflow; echte Grid-Avatar-/Welt-E2E weiterhin offen.
+Details: docs/ALPHA200_204_BRANDING_SYSTEM_ICON_AND_LOGIN.md.

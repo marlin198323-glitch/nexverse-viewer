@@ -15,7 +15,8 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("original_body_gpu_ready=true;",app)
         self.assertIn("Avatar-Mesh: Firestorm 3/3 auf GPU bereit",app)
         self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
-        self.assertIn("welcome_texture,original_body_gpu_ready,viewer_shell",app)
+        self.assertIn("welcome_texture,brand_texture,",app)
+        self.assertIn("original_body_gpu_ready,viewer_shell",app)
 
     def test_avatar_packet_gpu_draw_stages_on_inworld_hud(self):
         app=(ROOT/"src/app/application.cpp").read_text()

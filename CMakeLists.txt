@@ -43,6 +43,7 @@ find_package(PNG REQUIRED)
 find_package(OpenJPEG CONFIG REQUIRED)
 
 if(UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(WEBKITGTK REQUIRED IMPORTED_TARGET webkit2gtk-4.1)
 endif()
@@ -178,6 +179,7 @@ target_link_libraries(nexverse-render PUBLIC
 target_compile_definitions(nexverse-render PUBLIC GLFW_INCLUDE_NONE)
 
 add_library(nexverse-ui
+    src/ui/brand_icon.cpp
     src/ui/ui_renderer.cpp
     src/ui/viewer_shell_render.cpp
     src/ui/welcome_page.cpp
@@ -201,15 +203,19 @@ target_link_libraries(nexverse-ui PUBLIC
     glfw
     glad::glad
     Freetype::Freetype
+    PNG::PNG
 )
 
 target_link_libraries(nexverse-ui PRIVATE Threads::Threads)
 
 if(UNIX AND NOT APPLE)
-    target_link_libraries(nexverse-ui PRIVATE PkgConfig::WEBKITGTK)
+    target_link_libraries(nexverse-ui PRIVATE PkgConfig::WEBKITGTK X11::X11)
 endif()
 
 target_compile_definitions(nexverse-ui PUBLIC GLFW_INCLUDE_NONE)
+target_compile_definitions(nexverse-ui PRIVATE
+    NEXVERSE_BRAND_SOURCE_ICON_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/branding/opengenesislink-viewer.png"
+)
 
 if(APPLE)
     target_compile_definitions(nexverse-ui PRIVATE GL_SILENCE_DEPRECATION)
@@ -244,13 +250,41 @@ nexverse_enable_warnings(nexverse-world)
 nexverse_enable_warnings(nexverse-render)
 nexverse_enable_warnings(nexverse-ui)
 
-add_executable(nexverse-viewer apps/viewer/main.cpp)
+if(WIN32)
+    enable_language(RC)
+    set(OGL_WINDOWS_ICON packaging/windows/opengenesislink-viewer.rc)
+endif()
+add_executable(nexverse-viewer apps/viewer/main.cpp ${OGL_WINDOWS_ICON})
+if(APPLE)
+    set_source_files_properties(
+        assets/branding/opengenesislink-viewer.icns
+        assets/branding/opengenesislink-viewer.png
+        PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(nexverse-viewer PRIVATE
+        assets/branding/opengenesislink-viewer.icns
+        assets/branding/opengenesislink-viewer.png)
+    set_target_properties(nexverse-viewer PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_ICON_FILE opengenesislink-viewer.icns)
+endif()
 target_link_libraries(nexverse-viewer PRIVATE NexVerse::UI)
 nexverse_enable_warnings(nexverse-viewer)
 
 install(TARGETS nexverse-viewer
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .
 )
+install(FILES assets/branding/opengenesislink-viewer.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/opengenesislink-viewer)
+if(UNIX AND NOT APPLE)
+    install(FILES packaging/linux/opengenesislink-viewer.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+    foreach(size IN ITEMS 32 48 64 128 256 512)
+        install(FILES assets/branding/opengenesislink-viewer-${size}.png
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/${size}x${size}/apps
+            RENAME opengenesislink-viewer.png)
+    endforeach()
+endif()
 
 # The example module is a local developer-only test plugin, not installed by default.
 if(WIN32)
@@ -406,6 +440,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-camera-zoom-controls-tests)
     add_test(NAME nexverse-camera-zoom-controls-tests
         COMMAND nexverse-camera-zoom-controls-tests)
+
+    add_executable(nexverse-brand-icon-tests tests/brand_icon_tests.cpp)
+    target_link_libraries(nexverse-brand-icon-tests PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-brand-icon-tests)
+    add_test(NAME nexverse-brand-icon-tests
+        COMMAND nexverse-brand-icon-tests)
+    set_tests_properties(nexverse-brand-icon-tests PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
     add_executable(nexverse-world-hud-toggle-tests
         tests/world_hud_toggle_tests.cpp)

@@ -295,3 +295,7 @@ Firestorm-kompatibler Third-Person-View-Zoom nun per Wheel, Keyboard und echten 
 ## 16.10.2026 – Alpha.195–199
 
 Echter lokaler Avatar-Kameraorbit: Front/Seite/Hinten per V/[ ] und drei sichtbare, klickbare Schalter. Firestorm-basierter GL-Renderer und WorldRay-Picking nutzen gleiche Pose, Avatar bleibt simulatorauthentisch. NaN-/Inf-Zoom-Normierungsfehler behoben. Native Mint-/Pi5-C++-Tests und echte NVIDIA-OpenGL-Pixelprobe aus Front- und Rueckansicht mit synthetischen Meshes. Echter NexVerse-Login mit sichtbarem Avatar und vollstaendige 11-Bake-/Outfit-Paritaet weiterhin ausstehend. Server reviewed SHA unveraendert. Details: docs/ALPHA195_199_AVATAR_CAMERA_ORBIT.md.
+
+## 16.10.2026 – Alpha.200–204 Branding
+
+Das vom Nutzer bereitgestellte Original-OG-Viewer-Icon wird als echtes GLFW/X11-Cinnamon-Taskleistenicon und OpenGL-Logo oben links im Login verwendet. Linux hicolor Starter, Windows ICO und macOS ICNS stehen als native Ressourcen bereit. Vorhandener WelcomePage WebKit Browser und Grid-Login bleiben unverändert; nur Navy/Cyan-Details frischer gestaltet. Keine Full-UI-Mockups oder Server/Avatar-/Wear-Protokolländerungen. Siehe docs/ALPHA200_204_BRANDING_SYSTEM_ICON_AND_LOGIN.md.

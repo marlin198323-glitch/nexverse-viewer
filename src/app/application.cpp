@@ -80,6 +80,7 @@
 #include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/ui/world_hud_layout.hpp"
 #include "nexverse/ui/world_hud_toggle.hpp"
+#include "nexverse/ui/brand_icon.hpp"
 #include "nexverse/ui/camera_zoom_controls.hpp"
 #include "nexverse/ui/camera_orbit_controls.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
@@ -107,6 +108,12 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#if defined(__linux__)
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -3139,7 +3146,7 @@ void render_shell(
     const nexverse::ui::AssetStreamProof& assets_proof,
     bool simulation_ready,bool world_hud_visible,float camera_distance,
     float camera_orbit_degrees,
-    unsigned int welcome_texture,
+    unsigned int welcome_texture,unsigned int brand_texture,
     bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
@@ -3213,27 +3220,22 @@ void render_shell(
 
     renderer.rect(
         0.0f, 0.0f, w, top_h,
-        Color{0.012f, 0.030f, 0.058f, 0.99f},
+        Color{0.008f, 0.034f, 0.077f, 0.99f},
         0.0f);
     renderer.rect(
-        0.0f, top_h - 1.0f, w, 1.0f,
-        with_alpha(theme::cyan, 0.24f),
+        0.0f, top_h - 2.0f, w, 2.0f,
+        with_alpha(theme::cyan, 0.50f),
         0.0f);
 
-    renderer.rect(
-        18.0f * scale,
-        14.0f * scale,
-        56.0f * scale,
-        56.0f * scale,
-        Color{0.025f, 0.120f, 0.235f, 1.0f},
-        14.0f * scale);
-    renderer.rect(
-        27.0f * scale,
-        23.0f * scale,
-        38.0f * scale,
-        38.0f * scale,
-        with_alpha(theme::cyan, 0.24f),
-        9.0f * scale);
+    // Real original brand icon in the upper-left header, not a mockup.
+    renderer.rect(17.0f*scale,13.0f*scale,58.0f*scale,58.0f*scale,
+        with_alpha(theme::cyan,0.28f),15.0f*scale);
+    if(brand_texture!=0U)
+        renderer.image(brand_texture,19.0f*scale,15.0f*scale,
+            54.0f*scale,54.0f*scale,1.0f);
+    else
+        renderer.rect(19.0f*scale,15.0f*scale,54.0f*scale,54.0f*scale,
+            Color{0.025f,0.120f,0.235f,1.0f},13.0f*scale);
 
     renderer.text(
         88.0f * scale,
@@ -3320,12 +3322,20 @@ void render_shell(
         const float panel_y = top_h + std::max(44.0f * scale, (h - top_h - bottom_h - panel_h) * 0.5f);
 
         renderer.rect(
+            panel_x-1.0f*scale,panel_y-1.0f*scale,
+            panel_w+2.0f*scale,panel_h+2.0f*scale,
+            with_alpha(theme::cyan,0.24f),17.0f*scale);
+        renderer.rect(
             panel_x,
             panel_y,
             panel_w,
             panel_h,
-            Color{0.016f, 0.034f, 0.063f, 0.98f},
+            Color{0.010f, 0.035f, 0.073f, 0.96f},
             16.0f * scale);
+        renderer.rect(
+            panel_x+18.0f*scale,panel_y+10.0f*scale,
+            45.0f*scale,2.0f*scale,
+            with_alpha(theme::cyan,0.85f),1.0f*scale);
 
         renderer.text(
             panel_x + 28.0f * scale,
@@ -4123,6 +4133,12 @@ int Application::run(bool enable_developer_modules)
         return 10;
     }
 
+#if defined(__linux__) && defined(GLFW_X11_CLASS_NAME)
+    // Cinnamon / X11 taskbar groups our window with the installed .desktop
+    // launcher. The uploaded OGL icon is also set via glfwSetWindowIcon.
+    glfwWindowHintString(GLFW_X11_CLASS_NAME,"opengenesislink-viewer");
+    glfwWindowHintString(GLFW_X11_INSTANCE_NAME,"opengenesislink-viewer");
+#endif
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -4163,6 +4179,91 @@ int Application::run(bool enable_developer_modules)
         glfwTerminate();
         return 11;
     }
+
+    // User-provided OpenGenesisLINK logo, copied by GLFW into the X11
+    // window icon property used by Cinnamon's taskbar and window switcher.
+    std::error_code icon_path_error;
+    auto icon_executable=std::filesystem::read_symlink(
+        "/proc/self/exe",icon_path_error);
+    if(icon_path_error)
+        icon_executable=std::filesystem::current_path()/"nexverse-viewer";
+    const auto icon_file=ui::find_brand_icon(icon_executable);
+    const ui::BrandIcon brand_icon=ui::load_brand_icon_png(icon_file);
+    // The 256px artwork is used in the UI. For the native X11 property,
+    // prefer the 128px icon to stay below the X server's per-request
+    // _NET_WM_ICON size limit (65538 CARDINALs would exceed 64Ki).
+    const ui::BrandIcon small_icon=ui::load_brand_icon_png(
+        icon_file.parent_path()/"opengenesislink-viewer-128.png");
+    const ui::BrandIcon& system_icon=small_icon.valid()?small_icon:brand_icon;
+    if(brand_icon.valid())
+    {
+        const GLFWimage icon{system_icon.width,system_icon.height,
+            const_cast<unsigned char*>(system_icon.rgba.data())};
+        glfwSetWindowIcon(window,1,&icon);
+#if defined(__linux__)
+        // On some GLFW/X11 builds, glfwSetWindowIcon leaves an empty
+        // _NET_WM_ICON property. Provide exact ARGB32 icon pixels so
+        // Cinnamon, Alt-Tab and the taskbar have actual drawable data.
+        // This path is X11-specific; Wayland/backends still use GLFW.
+        if(glfwGetPlatform()==GLFW_PLATFORM_X11)
+        {
+            Display* const display=glfwGetX11Display();
+            const Window xwindow=glfwGetX11Window(window);
+            if(display!=nullptr&&xwindow!=0U)
+            {
+                std::vector<unsigned long> pixels;
+                pixels.reserve(2U+system_icon.rgba.size()/4U);
+                pixels.push_back(static_cast<unsigned long>(system_icon.width));
+                pixels.push_back(static_cast<unsigned long>(system_icon.height));
+                for(std::size_t i=0U;i<system_icon.rgba.size();i+=4U)
+                {
+                    const auto* p=system_icon.rgba.data()+i;
+                    const std::uint32_t rgba=
+                        (std::uint32_t(p[3])<<24U)|
+                        (std::uint32_t(p[0])<<16U)|
+                        (std::uint32_t(p[1])<<8U)|std::uint32_t(p[2]);
+                    pixels.push_back(static_cast<unsigned long>(rgba));
+                }
+                const Atom icon_atom=XInternAtom(
+                    display,"_NET_WM_ICON",False);
+                XChangeProperty(display,xwindow,icon_atom,XA_CARDINAL,32,
+                    PropModeReplace,reinterpret_cast<const unsigned char*>(
+                        pixels.data()),static_cast<int>(pixels.size()));
+                XFlush(display);
+                Atom actual_type=0;
+                int actual_format=0;
+                unsigned long actual_count=0,bytes_after=0;
+                unsigned char* property=nullptr;
+                const int xstatus=XGetWindowProperty(display,xwindow,
+                    icon_atom,0,5,False,XA_CARDINAL,&actual_type,
+                    &actual_format,&actual_count,&bytes_after,&property);
+                bool installed=false;
+                if(xstatus==Success&&actual_format==32&&
+                   actual_type==XA_CARDINAL&&actual_count>=2U&&
+                   property!=nullptr)
+                {
+                    const auto* words=reinterpret_cast<const unsigned long*>(
+                        property);
+                    installed=words[0]==static_cast<unsigned long>(
+                        system_icon.width)&&
+                        words[1]==static_cast<unsigned long>(
+                            system_icon.height)&&bytes_after>0U;
+                }
+                if(property)XFree(property);
+                if(installed)
+                    core::info("X11 system taskbar icon installed: "+
+                        std::to_string(system_icon.width)+"x"+
+                        std::to_string(system_icon.height));
+                else core::warning(
+                    "X11 WM_ICON property did not confirm icon data");
+            }
+            else core::warning("X11 icon property display unavailable");
+        }
+        else core::warning("Native desktop is not X11");
+#endif
+        core::info("OpenGenesisLINK branded system window icon loaded");
+    }
+    else core::warning("OpenGenesisLINK application icon not found");
 
     glfwSetWindowSizeLimits(
         window,
@@ -5736,6 +5837,12 @@ int Application::run(bool enable_developer_modules)
         gallery_local_texture_status="Texturvorschau nicht geladen";
     };
 
+        // Branding is an independent GL texture; the WebKit Welcome page
+        // and its frame/update pipeline remain exactly as before.
+        const unsigned int brand_texture=brand_icon.valid()
+            ?renderer.create_rgba_texture(
+                brand_icon.width,brand_icon.height,brand_icon.rgba.data())
+            :0U;
         ui::WelcomePage welcome_page;
         unsigned int welcome_texture = 0U;
         int welcome_texture_width = 0;
@@ -11960,7 +12067,8 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics,
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
                 simulation_ready,world_hud_visible,camera_zoom_distance,
-                camera_orbit_degrees,welcome_texture,original_body_gpu_ready,viewer_shell,
+                camera_orbit_degrees,welcome_texture,brand_texture,
+                original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)
             {
@@ -12223,6 +12331,7 @@ int Application::run(bool enable_developer_modules)
             glfwSwapBuffers(window);
         }
 
+        renderer.destroy_texture(brand_texture);
         renderer.destroy_texture(welcome_texture);
         for(const auto& [folder,image]:gallery_gpu_textures)
         {

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=OpenGenesisLINK Viewer
+GenericName=OpenSim Virtual World Viewer
+Comment=OpenGenesisLINK Viewer für NexVerse und OpenSim
+Exec=nexverse-viewer
+TryExec=nexverse-viewer
+Icon=opengenesislink-viewer
+Terminal=false
+Categories=Game;
+StartupNotify=true
+StartupWMClass=opengenesislink-viewer
