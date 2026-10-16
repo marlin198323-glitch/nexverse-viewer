@@ -4335,3 +4335,23 @@ GitHub-Commit, Pi5 Selfhosted ARM64 CI danach.
 Echter Login/Welt-/Avatar-End-to-End-Frame weiter offen,
 Firestorm TexLayer-/COF Wear-Parität nicht bewiesen.
 Report: docs/ALPHA190_194_CAMERA_ZOOM_AND_F9_BAKES.md.
+
+## 16.10.2026 – Alpha.195–199 – Avatar ansehen: Front, Seite, Rueckseite
+
+195: Lokaler Third-Person-Kameraorbit relativ zur Avatar-Quaternion
+0, +/-90 und 180 Grad für echte Front-/Seiten-/Rückansicht.
+Behebung: Invalid/NaN-Zoom jetzt auch im Normierungsnenner bereinigt.
+196: V wechselt Front/Hinten, [ und ] je +/-45 Grad mit
+Session-/Modalinput-Guard, kein Avatar-/LLUDP-Update.
+197: Drei sichtbare anklickbare Orbit-Schalter neben Zoom
+und reale Orientierung Hinten/Vorne/Rechts/Links/Seite
+in F5-Navigation sowie F5-freier Weltansicht. Gleiche
+Kamera für GL-Renderer, Raycast und Asset-Priorität.
+198: Native C++23-Mint/Pi5-Regression plus echter versteckter
+NVIDIA-Framebuffer-Meshpixel-Test für 0 und 180 Grad
+ohne TerrainLayerData; kein Live-Grid-Avatarbeweis.
+199: Voller Mint-CMake-/NVIDIA-CI-/Python-/Headless-Test,
+Xvfb-GUI-Smoke; GitHub develop-current + Pi5 ARM64 CI.
+OpenGenesisLINK main ec760cac, reviewed_sha unverändert,
+echter Avatar-/Welt-Login-E2E weiterhin offen.
+Details: docs/ALPHA195_199_AVATAR_CAMERA_ORBIT.md.

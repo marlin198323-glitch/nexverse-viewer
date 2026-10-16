@@ -211,6 +211,46 @@ int main()
                     error=16;
                 }
             }
+            // ACTUAL GPU pixel evidence for back- and front-facing
+            // self-avatar camera orbit. The demo quad is double-sided
+            // for the test: only the camera moves; the world/mesh does
+            // not follow it and no TerrainLayerData is required.
+            if(!error)
+            {
+                auto orbit_quad=quad;
+                for(std::size_t v=0;v<orbit_quad.vertices.size()/8U;++v)
+                    orbit_quad.vertices[v*8U+2U]*=3.0f;
+                orbit_quad.indices={0U,1U,2U,0U,2U,3U,
+                                     2U,1U,0U,3U,2U,0U};
+                scene.position={0.0f,0.0f,0.0f};
+                scene.mesh_id="orbit-double-sided-quad";
+                if(!renderer->set_mesh_asset(scene.mesh_id,orbit_quad))
+                    error=17;
+                const auto test_orbit=[&](float degrees)->bool
+                {
+                    const auto pose=third_person_camera(
+                        {0.0f,0.0f,0.0f},{},8.0f,degrees);
+                    renderer->set_camera({
+                        {pose.position.x,pose.position.y,pose.position.z},
+                        {pose.forward.x,pose.forward.y,pose.forward.z},
+                        {pose.left.x,pose.left.y,pose.left.z},
+                        {pose.up.x,pose.up.y,pose.up.z},
+                        60.0f,0.1f,40.0f});
+                    renderer->set_scene_objects({});
+                    const auto sky=capture(*renderer);
+                    renderer->set_scene_objects({scene});
+                    const auto mesh=capture(*renderer);
+                    const auto stats=renderer->diagnostics();
+                    const int pixels=distance(sky,mesh);
+                    if(pixels<35||stats.scene_mesh_draw_calls==0U)
+                        std::cerr<<"Orbit "<<degrees<<" GPU pixels="<<
+                            pixels<<" draws="<<stats.scene_mesh_draw_calls<<'\n';
+                    return pixels>=35&&stats.scene_mesh_draw_calls>0U&&
+                        glGetError()==GL_NO_ERROR;
+                };
+                if(!error&&(!test_orbit(0.0f)||!test_orbit(180.0f)))
+                    error=18;
+            }
             // Objects entirely behind the camera must no longer count
             // as visible or successful GL-world submissions.
             if(!error)

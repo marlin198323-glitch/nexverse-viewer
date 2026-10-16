@@ -36,17 +36,28 @@ class MintBuildContractTests(unittest.TestCase):
     def test_world_hud_f5_and_click_keep_3d_active(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("key==GLFW_KEY_F5",app)
-        self.assertIn("renderer,width,height,false,camera_distance)",app)
+        self.assertIn("renderer,width,height,false,camera_distance,",app)
         self.assertIn("if(world_hud_visible)",app)
         self.assertIn("input_context.world_hud_visible=&world_hud_visible",app)
         self.assertIn("HUD EIN  [F5]",app)
+
+    def test_avatar_orbit_controls_are_real_hud_keyboard_and_gl(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("key==GLFW_KEY_V",app)
+        self.assertIn("GLFW_KEY_LEFT_BRACKET",app)
+        self.assertIn("GLFW_KEY_RIGHT_BRACKET",app)
+        self.assertIn("hit_camera_orbit(",app)
+        self.assertIn("orbit_label(camera_orbit_degrees)",app)
+        self.assertIn("input_context.camera_orbit_degrees=&camera_orbit_degrees",app)
+        self.assertIn("render_camera_from_agent(agent,camera_zoom_distance,camera_orbit_degrees)",app)
+        self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance,camera_orbit_degrees)",app)
 
     def test_camera_zoom_scroll_raycast_streaming_and_f9_shortcut(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("glfwSetScrollCallback(window,scroll_callback)",app)
         self.assertIn("hit_camera_zoom(",app)
-        self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance)",app)
-        self.assertIn("render_camera_from_agent(agent,camera_zoom_distance)",app)
+        self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance,camera_orbit_degrees)",app)
+        self.assertIn("render_camera_from_agent(agent,camera_zoom_distance,camera_orbit_degrees)",app)
         self.assertIn("camera_zoom_label(camera_distance)",app)
         self.assertIn("input_context.camera_zoom_distance=&camera_zoom_distance",app)
         self.assertIn("key==GLFW_KEY_B&&context->outfit_bake_preview_open",app)
@@ -56,7 +67,7 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("render::third_person_camera(",app)
         self.assertIn("camera_fallback_this_frame=",app)
         self.assertIn("scene_proof.camera_fallback=camera_fallback_this_frame",app)
-        self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance)",app)
+        self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance,camera_orbit_degrees)",app)
 
     def test_scene_can_unlock_without_terrain_and_status_is_honest(self):
         app=(ROOT/"src/app/application.cpp").read_text()

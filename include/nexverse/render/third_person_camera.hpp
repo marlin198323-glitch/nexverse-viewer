@@ -21,7 +21,7 @@ struct ThirdPersonCamera
 [[nodiscard]] inline ThirdPersonCamera third_person_camera(
     const protocol::Vec3& agent_position,
     const protocol::Quaternion& agent_rotation,
-    float distance=8.0f) noexcept
+    float distance=8.0f,float orbit_degrees=0.0f) noexcept
 {
     // Zoom is local-only: it never changes the authoritative AgentState
     // or sends any movement packet to the simulator.
@@ -67,18 +67,29 @@ struct ThirdPersonCamera
     // uses a finite default. Both flags remain available for diagnostics.
     const protocol::Vec3 target{
         origin.x,origin.y,origin.z+1.45f};
+    // Orbit rotates the LOCAL viewing position around the simulator's
+    // self avatar. It must not rotate the authoritative AgentState.
+    // A 180 degree orbit is in front of the avatar looking back at it.
+    constexpr double pi=3.14159265358979323846;
+    const double angle=std::isfinite(orbit_degrees)
+        ?std::remainder(double(orbit_degrees),360.0)*pi/180.0:0.0;
+    const float cs=static_cast<float>(std::cos(angle));
+    const float sn=static_cast<float>(std::sin(angle));
+    const float ox=hx*cs-hy*sn;
+    const float oy=hx*sn+hy*cs;
     result.position={
-        target.x-zoom*hx,
-        target.y-zoom*hy,
+        target.x-zoom*ox,
+        target.y-zoom*oy,
         target.z+zoom*0.525f};
     const float height=zoom*0.525f;
+    // Use sanitised zoom, never the raw (possibly NaN) network/UI input.
     const float inv_length=1.0f/std::sqrt(
-        distance*distance+height*height);
+        zoom*zoom+height*height);
     result.forward={
-        zoom*hx*inv_length,
-        zoom*hy*inv_length,
+        zoom*ox*inv_length,
+        zoom*oy*inv_length,
         -height*inv_length};
-    result.left={-hy,hx,0.0f};
+    result.left={-oy,ox,0.0f};
     return result;
 }
 }
