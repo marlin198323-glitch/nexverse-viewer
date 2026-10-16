@@ -4547,3 +4547,17 @@ groessere Widescreen-Texte in Avatar/CAPS/World-Status.
 Xvfb/Icon, GitHub und Pi5-CI Freigabe.
 Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
 Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.
+
+## Alpha.230–234 – Freigabe nach nativen Mint- und Pi5-Prüfungen
+
+Codecommit 52be76d42bc2b99aa92f3e48801d373d1347161f,
+Version 0.2.0-alpha.234. Linux Mint x64 CMake/Ninja
+Vollbuild, 134/134 native C++23/NVIDIA OpenGL CTests,
+62/62 Python, Pi5-kompatibles C++23 Headless,
+isolierter Xvfb-Vollviewer und X11-Systemicon grün.
+GitHub Pi5 Self-hosted Run 38970180604: SUCCESS.
+Alle fünf Blöcke 230–234 im Projektplan FERTIG.
+Der nächste neue Chat startet nach Lesen der CHATUEBERGABE.md
+mit fünf vollständigen Blöcken Alpha.235–239.
+Realer erneut überprüfter NexVerse Avatar-Bake-/Terrain-
+Screenshot unter alpha.234 bleibt als Praxisprüfung offen.

@@ -9,6 +9,17 @@
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
 - NÄCHSTE ARBEIT BEIM START: aktuelle VERSION und GitHub HEAD neu feststellen. Der Durchlauf Alpha.225–229 folgt auf Alpha.224. Nicht einen alten SHA als HEAD annehmen. Detaillierte Fünferregel im projectplan.md.
 
+### AKTUELLER VERBINDLICHER ENTWICKLUNGSSTAND – ALPHA.234
+
+- Version 0.2.0-alpha.234, alle fünf Blöcke Alpha.230–234 FERTIG.
+- Code-Commit develop-current: 52be76d42bc2b99aa92f3e48801d373d1347161f.
+- Mint Linux x64 Fullbuild, 134/134 Native/NVIDIA-GL, 62/62 Python, Pi5 kompatible Headless Tests, isolierter Xvfb Viewer und X11 Original-Systemicon erfolgreich.
+- GitHub Pi5 ARM64 CI Run 38970180604 SUCCESS für genau diesen Codecommit.
+- F2 DETAIL/SPAREN schaltet echten Mesh-LoD-Pfad und klickbaren Status, Kamera 5.5m/F4, lesbareres Avatar-HUD.
+- Neue echte AvatarAppearance Self/Fremd/Invalid-Diagnose und GL Terrain Textur-/Graufallback-Status im Welt-HUD.
+- NÄCHSTER verpflichtender FÜNF-BLÖCKE-DURCHLAUF Alpha.235–239: Restarbeiten AvatarAppearance Server-/Bake-Komposition, visuelles Terrain und HighLOD-Praxisbefund, Firestorm Animation und UI. Fünf echte Code-/UI-Blöcke, Mint-Build, GitHub und Pi5 CI.
+- Authentifizierter Live-Vergleich nach dem neuen Client-Build noch OFFEN, keine vollständige Firestorm-Parität behaupten.
+
 ### GEPRÜFTER AKTUELLER STAND / SOFORT WEITERARBEITEN
 
 - Version 0.2.0-alpha.229; alle fünf Blöcke Alpha.225–229 implementiert, lokal grün und Pi5-ARM64-CI SUCCESS.
@@ -16,7 +27,7 @@
 - Mint Native/NVIDIA-GL CTest: 131/131; Python: 60/60; Pi5 Headless, isolierter Xvfb-Vollviewer und X11 Original-Icon grün.
 - CI-Bericht: https://github.com/marlin198323-glitch/nexverse-viewer/actions/runs/38965645437
 - F3-Ladediagnose: zuletzt erreichte Regionen-/Agent-/Circuit-Stufen mit Zeiten, konkrete Ursache für gesperrten Reconnect, Manueller Reconnect-Versuchszähler, privater Export nach Nutzerklick.
-- **LAUFENDER 5-BLÖCKE-DURCHLAUF: Alpha.230–234 (noch nicht nach Pi5-CI freigegeben).** Bei neuem WEITER unverzüglich alle fünf realen Arbeitsblöcke inkl. GUI/Tests/Commit/CI bearbeiten.
+- **NÄCHSTER 5-BLÖCKE-DURCHLAUF: Alpha.235–239.** Bei neuem WEITER unverzüglich alle fünf realen Arbeitsblöcke inkl. GUI/Tests/Commit/CI bearbeiten.
 - Offen: autorisierter NexVerse-Login mit realer Welt-/Avatar-GPU-Pixelbestätigung und echter LLUDP-Reconnect-Praxistest.
 
 ---

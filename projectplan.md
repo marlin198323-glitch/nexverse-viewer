@@ -122,18 +122,18 @@ als gesonderte Ende-zu-Ende-Praxisprüfungen OFFEN.
 
 ### Fuenferdurchlauf Alpha.230–234 – 16.10.2026
 
-- Alpha.230 [GETESTET]: Echte Self/Fremd/Invalid/Region
+- Alpha.230 [FERTIG]: Echte Self/Fremd/Invalid/Region
   LLUDP AvatarAppearance-Pakete unterscheiden und
   im Live-HUD anzeigen; keine erfundenen Bake-Pixel.
-- Alpha.231 [GETESTET]: Echte GL-Terrain-Textur-
+- Alpha.231 [FERTIG]: Echte GL-Terrain-Textur-
   und Fallback-Draws getrennt messen, Shader-Texturanteil
   verbessern, sichtbarer Bodenstatus in der UI.
-- Alpha.232 [GETESTET]: DETAIL/SPAREN-Taste F2,
+- Alpha.232 [FERTIG]: DETAIL/SPAREN-Taste F2,
   anklickbarer Knopf im Welt-HUD/F5-Modus, echte
   High/Medium/Low-Streaming-LoD-Policy und Neuplanung.
-- Alpha.233 [GETESTET]: Standardkamera/F4 5.5m
+- Alpha.233 [FERTIG]: Standardkamera/F4 5.5m
   statt 8m sowie besser lesbare Avatar-/Welt-/CAPS-HUD-Texte.
-- Alpha.234 [GETESTET; Pi5-CI AUSSTEHEND – 134/134 Mint native OpenGL, 62/62 Python, ARM64-kompatibles Headless, Xvfb und X11 Icon]: Versionswechsel, native GPU/
+- Alpha.234 [FERTIG – 134/134 Mint native OpenGL, 62/62 Python, ARM64-kompatibles Headless, Xvfb und X11 Icon, Pi5-CI Run 38970180604 SUCCESS]: Versionswechsel, native GPU/
   C++23/Python/Headless/isolierte Xvfb-Tests,
   vollstaendiger Mint x64-Build, Systemicon,
   Dokumentation und synchrones Github/Pi5-CI.
@@ -6250,3 +6250,17 @@ groessere Widescreen-Texte in Avatar/CAPS/World-Status.
 Xvfb/Icon, GitHub und Pi5-CI Freigabe.
 Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
 Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.
+
+## Alpha.230–234 – Freigabe nach nativen Mint- und Pi5-Prüfungen
+
+Codecommit 52be76d42bc2b99aa92f3e48801d373d1347161f,
+Version 0.2.0-alpha.234. Linux Mint x64 CMake/Ninja
+Vollbuild, 134/134 native C++23/NVIDIA OpenGL CTests,
+62/62 Python, Pi5-kompatibles C++23 Headless,
+isolierter Xvfb-Vollviewer und X11-Systemicon grün.
+GitHub Pi5 Self-hosted Run 38970180604: SUCCESS.
+Alle fünf Blöcke 230–234 im Projektplan FERTIG.
+Der nächste neue Chat startet nach Lesen der CHATUEBERGABE.md
+mit fünf vollständigen Blöcken Alpha.235–239.
+Realer erneut überprüfter NexVerse Avatar-Bake-/Terrain-
+Screenshot unter alpha.234 bleibt als Praxisprüfung offen.
