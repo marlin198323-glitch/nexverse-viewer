@@ -4227,3 +4227,24 @@ Desktopfenster, Commit nach GitHub develop-current und ARM64
 Pi5 CI. OpenGenesisLINK main ec760cac unverändert.
 Eine authentifizierte Welt/Avatar-E2E-Sichtprüfung bleibt offen.
 Bericht: docs/ALPHA165_169_EARLY_SCENE_AND_WORLD_DIAG.md.
+
+## 16.10.2026 – Alpha.170–174: Avatar-Pipeline / Inworld UI (5 Blöcke)
+
+170: Netzwerk-/CAPS-Statuskarte und Systemstatus-Überschrift
+überdeckten sich nach Alpha.169; Koordinaten von Überschrift,
+GL-/RAM-/VRAM-Zeilen untereinander korrigiert.
+171: Neues AvatarPipelineProof: valide eigene AvatarAppearance
+mit Agent-ID/Region/Epoch, echte 11 TE-Bake UUIDs, aktuelle
+GPU-residente IDs und wirklich ausgeführte LLM-/BakeGL-Draws;
+kein Fake Bake/Wear/Upload.
+172: Zusätzliche sichtbare Inworld-Avatar-Karte zeigt fehlende
+Pakete, Server TE N/11 GPU M/11, echte H/U/L GPU-/GL-Stufen.
+Warnfarbe bis alle drei Bodies tatsächlich mit 3 Server-Bakes
+gezeichnet sind; bei engen Fensterhöhen keine Überdeckung.
+173: Native C++ CTests und NVIDIA-GL3.3-Regression bestätigen
+den aktuellen Serverref/GPU/Draw-Zustand sowie GPU-Eviction.
+174: Voller Linux-x64 CMake/Ninja, Native GL/Python und
+Pi5 ARM64 CI; Voll-Viewer-Test nur virtuell unter Xvfb.
+Echter autorisierter Grid-Login und tatsächliche Welt-/
+Avatar-Framebuffer-Sichtbarkeit weiterhin offen.
+Referenz: docs/ALPHA170_174_AVATAR_PIPELINE_GUI.md.

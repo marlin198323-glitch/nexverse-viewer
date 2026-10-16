@@ -17,6 +17,19 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
         self.assertIn("welcome_texture,original_body_gpu_ready,viewer_shell",app)
 
+    def test_avatar_packet_gpu_draw_stages_on_inworld_hud(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("ui::AvatarPipelineProof avatar_proof{}",app)
+        self.assertIn("protocol::audit_avatar_bake_evidence(",app)
+        self.assertIn("describe_avatar_pipeline(avatar_proof)",app)
+        self.assertIn("describe_avatar_body_pipeline(avatar_proof)",app)
+        self.assertIn("self_bake_owner_is_current(",app)
+        # System status must no longer overlap with the taller CAPS card.
+        self.assertIn('rail_y + 237.0f * scale,\n        11.0f * scale,\n        "Systemstatus"',app)
+        self.assertIn("rail_y+370.0f*scale",app)
+        self.assertIn("if(rail_h>=490.0f*scale)",app)
+        self.assertIn("avatar_proof.body_bake_draws=",app)
+
     def test_scene_can_unlock_without_terrain_and_status_is_honest(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         model=(ROOT/"src/world/world_model.cpp").read_text()

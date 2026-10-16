@@ -550,3 +550,7 @@ Alle automatischen GUI-Viewer-Starttests ausschließlich Xvfb, keine sichtbaren 
 ## 16.10.2026 – Alpha.165–169
 
 Simulator-authentifizierte SceneReady tritt nun vor später TerrainLayerData auf. Volle Terrain-Readiness bleibt ein separater Vertrag. Inworld HUD zeigt echte WorldModel Objekte und GL-Drawevidence sowie Terrain 0..256, CAPS Lifecycle ohne falsches LIVE. Native WorldModel, HUD und NVIDIA-GL Tests prüfen Szene und Meshdraw vor erstem Terrain-Paket. Inworld Login/Avatar und COF Wear/Unwear weiter offen, Server-Review-Pin bleibt unverändert. Siehe docs/ALPHA165_169_EARLY_SCENE_AND_WORLD_DIAG.md.
+
+## 16.10.2026 – Alpha.170–174
+
+AvatarPipelineProof liefert read-only authentifizierte Agent/Region AvatarAppearance Server-TE/Bake und GPU-Residency sowie tatsächlich im Frame gezeichnete Original-LLM/BakeGL-Werte. Neue sichtbare Inworld-Karte mit H/U/L und Packet-Missing Status; positive Farbe nur bei kompletten 3 Texturen und 3 originalen Meshdraws. Überlappte CAPS-/Systemstatuskarten repariert; enge Fenster ohne überdeckte FPS-Leiste. GPU-Regression mit tatsächlichen GL-Submissions und Eviction, Native Header-Pi5-Tests. Kein vollständiger E2E Grid-Login, kein bestätigtes Outfit-Wear, Server-Reviewed-SHA bleibt blockiert. Details: docs/ALPHA170_174_AVATAR_PIPELINE_GUI.md.

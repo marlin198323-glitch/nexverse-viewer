@@ -1,6 +1,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
+#include "nexverse/ui/avatar_pipeline_proof.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <glad/glad.h>
@@ -181,6 +182,27 @@ int main()
                        renderer->avatar_bake_preview_handle("avatar-bake")==0U ||
                        renderer->avatar_bake_preview_handle("missing")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=26;
+                    // After the GL render, combine actual GPU Draw counters
+                    // with a server-like AvatarAppearance TextureEntry's
+                    // currently-resident baked UUIDs. This test still uses
+                    // fixtures, not an authenticated real grid packet.
+                    nexverse::protocol::AvatarBakedTextures fake_server{};
+                    fake_server.ids[0]="avatar-bake";
+                    fake_server.ids[1]="avatar-bake";
+                    fake_server.ids[2]="avatar-bake";
+                    nexverse::ui::AvatarPipelineProof pipeline{};
+                    pipeline.appearance_received=true;
+                    pipeline.bakes=nexverse::protocol::audit_avatar_bake_evidence(
+                        fake_server,{"avatar-bake"});
+                    pipeline.original_body_draws=
+                        anatomical.self_avatar_anatomical_mesh_draw_calls;
+                    pipeline.body_bake_draws=
+                        anatomical.self_avatar_body_bake_gl_draws;
+                    if(nexverse::ui::describe_avatar_pipeline(pipeline)!=
+                           "Server TE 3/11 GPU 3/11" ||
+                       nexverse::ui::describe_avatar_body_pipeline(pipeline)!=
+                           "H:G U:G L:G | LLM 3 BakeGL 3")
+                        error=39;
                     // Read back the actual GL 3.3 texture stored under
                     // the server-like bake ID. Draw counters alone cannot
                     // prove GPU contents, and synthetic F9 textures would
@@ -337,6 +359,19 @@ int main()
                     if(glIsTexture(baked_handle)!=GL_FALSE)
                         error=38;
                     const auto untextured=render();
+                    if(!error)
+                    {
+                        pipeline.bakes=
+                            nexverse::protocol::audit_avatar_bake_evidence(
+                                fake_server,{});
+                        pipeline.original_body_draws=
+                            untextured.self_avatar_anatomical_mesh_draw_calls;
+                        pipeline.body_bake_draws=
+                            untextured.self_avatar_body_bake_gl_draws;
+                        if(nexverse::ui::describe_avatar_body_pipeline(
+                            pipeline)!="H:S U:S L:S | LLM 3 BakeGL 0")
+                            error=40;
+                    }
                     if(untextured.avatar_anatomical_mesh_draw_calls!=3U ||
                        untextured.avatar_baked_texture_draw_calls!=0U ||
                        untextured.self_avatar_body_bake_gl_draws!=

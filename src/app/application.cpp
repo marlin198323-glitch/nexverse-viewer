@@ -75,6 +75,7 @@
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
+#include "nexverse/ui/avatar_pipeline_proof.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -1847,6 +1848,7 @@ void render_world_hud(
     const nexverse::render::RenderDiagnostics& render_diagnostics,
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     const nexverse::ui::WorldSceneProof& scene_proof,
+    const nexverse::ui::AvatarPipelineProof& avatar_proof,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
 {
@@ -2109,12 +2111,12 @@ void render_world_hud(
         card_x,
         rail_y + 225.0f * scale,
         card_w,
-        124.0f * scale,
+        134.0f * scale,
         Color{0.018f, 0.036f, 0.062f, 0.88f},
         9.0f * scale);
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 168.0f * scale,
+        rail_y + 237.0f * scale,
         11.0f * scale,
         "Systemstatus",
         theme::text);
@@ -2141,7 +2143,7 @@ void render_world_hud(
 
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 194.0f * scale,
+        rail_y + 263.0f * scale,
         8.5f * scale,
         "Renderer  READY",
         theme::success);
@@ -2154,23 +2156,41 @@ void render_world_hud(
             render_diagnostics.self_avatar_body_bake_gl_draws);
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 214.0f * scale,
+        rail_y + 284.0f * scale,
         7.3f * scale,
         avatar_draw_proof,
         render_diagnostics.self_avatar_anatomical_mesh_draw_calls>0U
             ? theme::cyan : theme::warning);
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 234.0f * scale,
+        rail_y + 305.0f * scale,
         8.5f * scale,
         "RAM  " + std::to_string(to_mib(ram_used)) + " MiB",
         theme::text_muted);
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 254.0f * scale,
+        rail_y + 328.0f * scale,
         8.5f * scale,
         "VRAM  " + vram,
         theme::text_muted);
+
+    // Read-only authenticated AvatarAppearance pipeline. A server-provided
+    // bake UUID is NOT a downloaded GPU texture; a GL submission is NOT
+    // proof of final screen visibility. No invented Avatar or Wear action.
+    if(rail_h>=490.0f*scale)
+    {
+    renderer.rect(card_x,rail_y+370.0f*scale,card_w,101.0f*scale,
+        Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
+    renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
+        10.2f*scale,"Avatar-Pipeline",theme::text);
+    renderer.text(card_x+14.0f*scale,rail_y+410.0f*scale,
+        7.6f*scale,nexverse::ui::describe_avatar_pipeline(avatar_proof),
+        avatar_proof.appearance_received?theme::cyan:theme::warning);
+    renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
+        7.6f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
+        avatar_proof.body_gpu_drawn()
+            ?theme::cyan:theme::warning);
+    }
 
     const std::string debug_line =
         "FPS " + std::to_string(static_cast<int>(std::round(frame_metrics.fps))) +
@@ -2956,6 +2976,7 @@ void render_shell(
     const nexverse::render::RenderDiagnostics& render_diagnostics,
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     const nexverse::ui::WorldSceneProof& scene_proof,
+    const nexverse::ui::AvatarPipelineProof& avatar_proof,
     bool simulation_ready,
     unsigned int welcome_texture,
     bool original_body_gpu_ready,
@@ -2990,7 +3011,7 @@ void render_shell(
             circuit,caps,
             frame_metrics,
             render_diagnostics,
-            memory_metrics,scene_proof,shell,
+            memory_metrics,scene_proof,avatar_proof,shell,
             inventory_open,outfit_open,experiences_open);
         return;
     }
@@ -11715,6 +11736,27 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_draw_calls;
             scene_proof.missing_mesh_draws=
                 render_diagnostics.scene_missing_mesh_draw_calls;
+            ui::AvatarPipelineProof avatar_proof{};
+            if(simulation_ready && active_session &&
+               firestorm_region_lease.matches(current_firestorm_epoch) &&
+               active_session->agent_id==render_agent.agent_id)
+            {
+                std::scoped_lock lock{world_mutex};
+                if(const auto& packet=world_model.self_appearance();
+                   packet && protocol::self_bake_owner_is_current(
+                       packet->avatar_id,active_session->agent_id,
+                       render_agent.agent_id,world_model.region().connected))
+                {
+                    avatar_proof.appearance_received=true;
+                    avatar_proof.bakes=protocol::audit_avatar_bake_evidence(
+                        protocol::extract_avatar_bakes(packet->texture_entry),
+                        object_texture_loaded_ids);
+                    avatar_proof.original_body_draws=
+                        render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
+                    avatar_proof.body_bake_draws=
+                        render_diagnostics.self_avatar_body_bake_gl_draws;
+                }
+            }
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -11724,7 +11766,7 @@ int Application::run(bool enable_developer_modules)
                 caps_snapshot,
                 frame_metrics,
                 render_diagnostics,
-                memory_metrics,scene_proof,
+                memory_metrics,scene_proof,avatar_proof,
                 simulation_ready,
                 welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
