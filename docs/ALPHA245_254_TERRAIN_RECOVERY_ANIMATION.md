@@ -97,3 +97,16 @@ Exposition im Grid prüfen, optionales serverseitiges
 Addon nur nach autorisiertem Health/Read-Only-Vertrag
 integrieren, Firestorm-Netzwerk-/Avatar- und Weltzustände
 weiter behandeln.
+
+## GitHub CI Release-Abschluss Alpha.254 – 17.10.2026
+
+Feature SHA 392b609c9820cdf62be49d960501f2627fc56b04,
+Pi5-Self-hosted Runner Run 38976703736 completed SUCCESS
+für exakt diesen Codecommit. Linux Mint x64
+Ninja-Fullbuild, 140/140 Native/NVIDIA CTests,
+80/80 Python, Headless-C++23, isolierter Xvfb-Viewer
+und X11-Originalsystemicon sämtlich PASS.
+Alle 10 Blöcke Alpha.245–254 im projectplan.md FERTIG.
+Gesamtfortschritt 39 % aus den gewogenen Bereichswerten,
+kein E2E-Beweis für den authentifizierten OpenSim-Avatar.
+Nächster Zehnerdurchlauf Alpha.255–264.

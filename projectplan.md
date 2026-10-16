@@ -53,7 +53,7 @@ Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
 
 ### Alpha.245–254 – Funktionale Terrain-Reparatur und Viewer-UI
 
-- **245 [GETESTET]:** Neuester OpenGenesisLINK Server main
+- **245 [FERTIG]:** Neuester OpenGenesisLINK Server main
   d8f4426110379b39be7c0f45161f7c0c6b5d811e gegenüber
   ec760cac geprüft; neuer Patch betrifft Mesh-Upload-LLSD,
   nicht das GET Mesh des Viewers; reviewed baseline unverändert.
@@ -63,31 +63,31 @@ Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
   Viewer-GetTexture bleibt zunächst unverändert;
   API/Health/CAPS-Vertrag als eigener P1-Punkt
   in Alpha.255–264 prüfen, nicht ungeprüft deployen.
-- **246 [GETESTET]:** TerrainDetailRetry mit maximal vier
+- **246 [FERTIG]:** TerrainDetailRetry mit maximal vier
   Versuchen (2/5/15s Backoff) und sicherer Region-/Materialrevision.
-- **247 [GETESTET]:** Erfolgreiche RGBA-Layer trotz
+- **247 [FERTIG]:** Erfolgreiche RGBA-Layer trotz
   fehlgeschlagener anderer Terrain-Texturen behalten;
   nur noch fehlende Layer erneut anfordern.
-- **248 [GETESTET]:** OpenGL akzeptiert mehr gültige Layer
+- **248 [FERTIG]:** OpenGL akzeptiert mehr gültige Layer
   innerhalb derselben Materialrevision, verhindert
   Downgrade und redundante GPU-Reuploads.
-- **249 [GETESTET]:** Kritischer Fehler repariert:
+- **249 [FERTIG]:** Kritischer Fehler repariert:
   Terrain-Textur-/Fallback-Diagnose pro Frame zurücksetzen;
   versteckter NVIDIA-GL-Test für 1/4 -> 2/4,
   Downgrade- und Revisionswechsel.
-- **250 [GETESTET]:** Self-AvatarAppearance-Paketzähler
+- **250 [FERTIG]:** Self-AvatarAppearance-Paketzähler
   bei Regionswechsel zurücksetzen, regionale Fehler/
   Fremd-Self-Status nur als private numerische F3-Diagnose.
-- **251 [GETESTET]:** F7-Regionsfenster zeigt
+- **251 [FERTIG]:** F7-Regionsfenster zeigt
   konkrete Nachladeversuche und reale GPU-Terrain-Layer
   statt bloß pauschaler Erfolgsmeldung.
-- **252 [GETESTET]:** Echter Self-Server-Keyframe-GL-
+- **252 [FERTIG]:** Echter Self-Server-Keyframe-GL-
   Playback-Beginn protokolliert, sichtbarer Skinstatus
   im Viewer-Fenster Animationen.
-- **253 [GETESTET]:** C++23/NVIDIA-OpenGL-/Python-
+- **253 [FERTIG]:** C++23/NVIDIA-OpenGL-/Python-
   Regressionen, 10er-Regel und privacy-safe F3
   Datenfluss; Kompatibilitätsmatrizen nachgeführt.
-- **254 [IN_ARBEIT]:** Mint-x64-Vollbuild, 3D-GPU-CTest,
+- **254 [FERTIG – Mint x64 Build, 140/140 Native/NVIDIA GL, 80/80 Python, Headless/Xvfb/Icon PASS, GitHub Pi5 ARM64 Run 38976703736 SUCCESS]:** Mint-x64-Vollbuild, 3D-GPU-CTest,
   Python, Pi5-kompatible Headless-Tests, isolierter
   Xvfb-GUI-Smoke und Taskleistenicon, Versionsrelease,
   GitHub-Commit/Push und erfolgreicher Pi5-CI-Beleg.
@@ -97,6 +97,18 @@ gewichtete 38,65 Prozentpunkte). Echte NexVerse-Live-
 Avatar-Bakes, Terrain-Pixelvergleich und Firestorm-Parität
 bleiben ausdrücklich OFFEN.
 **Nächster verpflichtender Zehnerdurchlauf:** Alpha.255–264.
+
+
+
+**Freigabestatus:** Featurecommit
+392b609c9820cdf62be49d960501f2627fc56b04,
+GitHub Pi5-ARM64-CI 38976703736 SUCCESS (gleicher SHA),
+Linux Mint Fullbuild/NVIDIA GL 140/140 Native, Python 80/80,
+Pi5-kompatible Headless, Xvfb und Original-X11-Taskleistenicon
+bestätigt. 10/10 Blöcke 245–254 FERTIG.
+Aktueller Gesamtfortschritt 39 % (38,65 % ungerundet).
+Nächste zehn Blöcke: Alpha.255–264. Reale NexVerse
+Avatar-/Terrain-Pixelgleichheit weiterhin nicht belegt.
 
 ### Historischer Fünferdurchlauf Alpha.210–214
 - **Alpha.210:** Fünferregel und GitHub-/Server-Baseline [FERTIG].

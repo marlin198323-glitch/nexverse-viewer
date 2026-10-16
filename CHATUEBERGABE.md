@@ -23,6 +23,27 @@
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
 - NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Zehnergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.255–264. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Zehnerregel in projectplan.md.
 
+### VERIFIZIERTER RELEASE ALPHA.254 – ALLE 10 BLÖCKE FERTIG
+
+- Version 0.2.0-alpha.254; Gesamtfortschritt ca. 39 %
+  (38,65 % gewichtet), nach echten Terrain-Retry-/GPU-Fixes.
+- Featurecommit develop-current
+  392b609c9820cdf62be49d960501f2627fc56b04.
+- GitHub ARM64 Self-hosted pi5-ogl CI Run 38976703736:
+  **completed SUCCESS** für exakt diesen Feature-SHA.
+- Linux Mint vollständiger x64 Build, 140/140 NVIDIA/OpenGL
+  C++23 CTests, 80/80 Python, Pi5-kompatibles Headless,
+  Xvfb-Vollviewer und WM_CLASS Original-Taskleistenicon PASS.
+- NÄCHSTER 10-BLOCK-DURCHLAUF **Alpha.255–264**,
+  wieder direkte Entwicklung auf Mint, GitHub+Pi5 CI.
+- **NICHT TESTBELEGT:** aktuelles NexVerse SelfAvatarAppearance,
+  komplette Head/Upper/Lower-Bakes, Firestorm-Terrainpixel
+  und komplette Inworld-Animations-/Outfit-Parität.
+- OpenGenesisLINK Server aktueller geprüfter HEAD
+  bf55a17524a9f3f175c56d2adeaa4d39083f446f,
+  OGL AssetService Addon disabled-by-default;
+  nicht blind aktivieren.
+
 ### NEUSTER STAND – OGL ALPHA.254 – FUNKTIONALES TERRAIN-RETRY
 
 - Der verbindliche 10-Block-Lauf Alpha.245–254 beinhaltet
