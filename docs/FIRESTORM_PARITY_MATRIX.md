@@ -594,3 +594,7 @@ GPU-Avatar-Mesh-Fragmente dürfen nach Kamerabewegung/Originalmesh-Ausfall nicht
 ## 16.10.2026 – Alpha.220–224
 
 F3 WorldEntry-Diagnose vor WorldReady, echte getrennte LLUDP/Region/Agent/CAPS-Flags, private Datei ohne Secrets, anklickbarer manueller Circuit-Retry nur nach vollständig fehlgeschlagenem Worker und bekanntem Simulatorziel. Loading-Progress aus Pflichtmilestones, nicht CAPS/Terrain. Original-NexVerse-WebKit-Welcome und Firestorm-Outfits/UI bleiben unangetastet. Kein echter Grid-Avatar/Retry-E2E. Details docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
+
+## 16.10.2026 – Alpha.225–229
+
+Fünf echte Entwicklungsblöcke pro WEITER im neuen Chat dauerhaft verbindlich; pro Session max. fünf WorldEntryStage-Enum-Werte mit Haltezeit in F3 (nur vertraulichkeitsfreie Fakten), LLUDP Retry-Grund aus tatsächlicher abgeschlossener Circuit-Worker-/Region-Endpoint-/Cooldown-Policy und privatem explizitem POSIX 0600-Diagnoseexport. Klickbarer F3-Ladestatus und Original Welcome bleiben erhalten. Kein echter NexVerse-Welt-/Avatar- oder Retry-End-to-End-Beleg. Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.

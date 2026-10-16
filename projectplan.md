@@ -8,6 +8,9 @@ Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firesto
 
 ## VERBINDLICHE FÜNF-BLÖCKE-REGEL – ab 16.10.2026
 
+**Neuer Chat:** Erstes Lesen: CHATUEBERGABE.md oberster Abschnitt. Das Kriterium fünf echte Arbeitsblöcke pro WEITER ist dauerhaft und gilt uneingeschränkt über Chatgrenzen.
+
+
 Für jedes Nutzerkommando WEITER beziehungsweise Projektfortsetzung
 werden ohne wiederholte Freigaberückfrage standardmäßig
 **fünf substanzielle, zusammenhängende Entwicklungsblöcke** in einem
@@ -92,6 +95,30 @@ ohne Speichern von Kontogeheimnissen zu prüfen.
 
 Echter authentifizierter NexVerse-Login mit gerenderter Welt und
 Avatar sowie manueller Live-Simulator-Retry weiterhin offen.
+
+### Fünferdurchlauf Alpha.225–229 – 16.10.2026
+- **Alpha.225 [GETESTET]:** Neue Chatübergabe-Regel ganz oben,
+  in AGENTS/Plan/info gespiegelt; neuer typisierter WorldEntryTrace-
+  Ring (max. 5 Stufen, max. 3600 s, keine IDs/Netzwerkdaten),
+  Reset ohne Login und C++23 Native-Test.
+- **Alpha.226 [GETESTET]:** Getypter Reconnect-Sperrgrund aus denselben
+  sicheren Circuit-/Endpoint-/Worker-/Cooldown-Prüfungen wie
+  der tatsächliche Neustart; alle negativen Policy-Fälle getestet.
+- **Alpha.227 [GETESTET]:** Erweiterter privater 0600-Diagnosebericht
+  mit WorldEntry-Historie, manuellen Reconnect-Versuchen und
+  freigegebenem Retry-Statuscode; keine UUIDs, Login-/Chat-/IP-Daten.
+- **Alpha.228 [GETESTET]:** Im echten F3-Ladediagnosefenster sind jetzt
+  die letzten zwei Weltstufen samt Dauer, Retry-Sperrgrund und
+  Anzahl manueller Neustarts sichtbar; fünf neue Python-Contracts,
+  vollständig verdrahtete Source-/UI-/File-Felder.
+- **Alpha.229 [IN_ARBEIT]:** Vollständiger Mint x64/NVIDIA OpenGL Build,
+  alle C++23/Python/Headless-Regressions, isolierter GUI-Xvfb-Smoke,
+  Original-Taskleistenicon, Doku/Kompatibilität, GitHub Push und
+  erfolgreicher pi5-ogl ARM64-CI-Lauf.
+
+Auch nach diesem Durchlauf bleiben authentifizierter echter
+Grid-Login, gerenderte Welt/Avatar und reale LLUDP-Recovery
+als gesonderte Ende-zu-Ende-Praxisprüfungen OFFEN.
 
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
@@ -6154,3 +6181,20 @@ typisierte begrenzte Enum-Whitelist im Report.
 Mint-GitHub-Push und Pi5-CI-Freigabe.
 Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
 Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.
+
+## 16.10.2026 – Alpha.225–229: Welt-Entry-Verlauf, Reconnect-Gründe, F3 und fünf-Blöcke-Regel
+
+225: Ganz oben in CHATUEBERGABE.md dauerhafte Fünfer-Arbeitsregel
+für jeden neuen Chat, in AGENTS/Plan/info gespiegelt; zusätzlich
+bounded 5-Einträge WorldEntryTrace ohne Geheimnisse/Netzwerkinfos.
+226: Typisierter Grund warum manuelles LLUDP Retry gesperrt/frei
+ist (noch arbeitender Worker, Region-Endpoint, 15s Cooldown, etc).
+227: F3 privater mode-0600 Export mit Enum-Stufenverlauf,
+begrenzter Dauer, manuellem Retry-Zähler und Statuscode.
+228: Letzte zwei Stufen + Zeit, Retry-Sperrgrund und Versuchszähler
+echter sichtbarer F3-Ladebildschirm, Python Contract und native
+Privacy-/Ring-/Policy-Tests.
+229: Mint-x64 full/GL/Native/Python/Headless/Xvfb/Systemicon,
+GitHub commit/push und pi5-ogl CI.
+Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
+Kein noch ungetesteter Live-NexVerse-Welt-/Avatar-/LLUDP-Erfolg behauptet.

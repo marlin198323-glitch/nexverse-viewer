@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 #include "nexverse/ui/world_entry_stage.hpp"
+#include "nexverse/ui/world_entry_trace.hpp"
+#include "nexverse/ui/loading_circuit_retry_policy.hpp"
 namespace nexverse::ui
 {
 // Strictly whitelisted, locally observed facts. Never store agent, region,
@@ -30,12 +32,19 @@ struct AvatarDiagnosticReport
     std::uint64_t missing_mesh_objects=0;
     WorldEntryStage world_entry_stage=WorldEntryStage::login;
     std::uint32_t world_entry_wait_seconds=0;
+    LoadingCircuitRetryReason retry_reason=
+        LoadingCircuitRetryReason::login_missing;
+    std::uint32_t manual_reconnect_count=0;
+    std::array<WorldEntryTraceItem,WorldEntryTrace::capacity> entry_trace{};
+    std::size_t entry_trace_count=0U;
     std::uint64_t terrain_packets=0,object_packets=0;
     std::uint64_t avatar_packets=0,other_packets=0;
     bool caps_event_queue_available=false;
     std::uint32_t frame_width=0,frame_height=0;
 };
 [[nodiscard]] std::string avatar_diagnostic_text(
+    const AvatarDiagnosticReport& report);
+[[nodiscard]] std::string avatar_diagnostic_trace_text(
     const AvatarDiagnosticReport& report);
 // Writes one private O_CREAT|O_EXCL file (0600 on POSIX). 'folder'
 // should be the current user's local-state diagnostics directory.

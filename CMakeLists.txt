@@ -506,6 +506,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-loading-diagnostics-layout-tests
         COMMAND nexverse-loading-diagnostics-layout-tests)
 
+    add_executable(nexverse-world-entry-trace-tests
+        tests/world_entry_trace_tests.cpp)
+    target_link_libraries(nexverse-world-entry-trace-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-world-entry-trace-tests)
+    add_test(NAME nexverse-world-entry-trace-tests
+        COMMAND nexverse-world-entry-trace-tests)
+
     add_executable(nexverse-world-entry-stage-tests
         tests/world_entry_stage_tests.cpp)
     target_link_libraries(nexverse-world-entry-stage-tests PRIVATE NexVerse::UI)

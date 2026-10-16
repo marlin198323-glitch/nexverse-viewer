@@ -1,3 +1,5 @@
+NÄCHSTER CHAT: Bei JEDEM WEITER verbindlich **5 echte Entwicklungsblöcke** mit Code, sichtbarer Viewer-GUI, Mint Full Build, Tests, GitHub und Pi5-CI, Details zuerst in CHATUEBERGABE.md, AGENTS.md, projectplan.md. Kein ungefragter Mint-Desktop-GUI-Start; Pi nur CI.
+
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
 
 > `projectplan.md` ist für Architektur, Reihenfolge und Projektumfang immer maßgebend.
@@ -4497,3 +4499,20 @@ Klick ein neuer Versuch angefordert werden, 15s Cooldown.
 Nächster verpflichtender Fünferdurchlauf Alpha.225–229.
 Echter NexVerse-Login-Welt-/Avatar-Pixel-Nachweis und echter
 Reconnect-E2E nach wie vor nicht getestet.
+
+## 16.10.2026 – Alpha.225–229: Welt-Entry-Verlauf, Reconnect-Gründe, F3 und fünf-Blöcke-Regel
+
+225: Ganz oben in CHATUEBERGABE.md dauerhafte Fünfer-Arbeitsregel
+für jeden neuen Chat, in AGENTS/Plan/info gespiegelt; zusätzlich
+bounded 5-Einträge WorldEntryTrace ohne Geheimnisse/Netzwerkinfos.
+226: Typisierter Grund warum manuelles LLUDP Retry gesperrt/frei
+ist (noch arbeitender Worker, Region-Endpoint, 15s Cooldown, etc).
+227: F3 privater mode-0600 Export mit Enum-Stufenverlauf,
+begrenzter Dauer, manuellem Retry-Zähler und Statuscode.
+228: Letzte zwei Stufen + Zeit, Retry-Sperrgrund und Versuchszähler
+echter sichtbarer F3-Ladebildschirm, Python Contract und native
+Privacy-/Ring-/Policy-Tests.
+229: Mint-x64 full/GL/Native/Python/Headless/Xvfb/Systemicon,
+GitHub commit/push und pi5-ogl CI.
+Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
+Kein noch ungetesteter Live-NexVerse-Welt-/Avatar-/LLUDP-Erfolg behauptet.

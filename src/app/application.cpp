@@ -3291,8 +3291,23 @@ void render_loading_diagnostics_panel(
         " s auf diesen Schritt",theme::warning);
     if(!wait_hint.empty())
         line(215.0f,std::string(wait_hint),theme::warning);
-    line(242.0f,"Bericht ohne Zugangsdaten/UUIDs.",
-        theme::text_muted);
+    line(242.0f,std::string("Reconnect: ")+
+        nexverse::ui::loading_retry_reason_label(report.retry_reason)+
+        " | Versuche "+std::to_string(report.manual_reconnect_count),
+        retry_available?theme::cyan:theme::text_muted);
+    // Two most recent transitions with bounded seconds, never identifiers.
+    std::string trail="Verlauf: ";
+    const auto count=std::min(report.entry_trace_count,
+        nexverse::ui::WorldEntryTrace::capacity);
+    const auto begin=count>2U?count-2U:0U;
+    for(std::size_t i=begin;i<count;++i)
+    {
+        if(i>begin)trail+=" > ";
+        trail+=std::string(nexverse::ui::world_entry_stage_key(
+            report.entry_trace[i].stage))+
+            " "+std::to_string(report.entry_trace[i].dwell_seconds)+"s";
+    }
+    line(264.0f,trail,theme::text_muted);
     renderer.rect(l.save.x,l.save.y,l.save.w,l.save.h,
         Color{0.043f,0.167f,0.247f,0.99f},7.0f*sc);
     renderer.text(l.save.x+13.0f*sc,l.save.y+14.0f*sc,9.0f*sc,
@@ -4505,6 +4520,10 @@ int Application::run(bool enable_developer_modules)
     bool avatar_report_save_requested=false;
     bool loading_diagnostics_open=false;
     ui::WorldEntryWaitMonitor world_entry_wait_monitor{};
+    ui::WorldEntryTrace world_entry_trace{};
+    ui::LoadingCircuitRetryReason loading_circuit_retry_reason=
+        ui::LoadingCircuitRetryReason::login_missing;
+    std::uint32_t manual_circuit_reconnect_count=0U;
     bool loading_circuit_retry_requested=false;
     bool loading_circuit_retry_available=false;
     std::chrono::steady_clock::time_point last_manual_circuit_retry{};
@@ -7326,13 +7345,15 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::steady_clock::time_point{}||
                 attempt_now-last_manual_circuit_retry>=
                     std::chrono::seconds{15};
-            loading_circuit_retry_available=
-                ui::can_retry_loading_circuit(
+            loading_circuit_retry_reason=ui::loading_retry_reason(
                     login_ui.authenticated&&active_session.has_value(),
                     circuit_started,
                     current_circuit_state==protocol::CircuitState::failed,
                     old_circuit_finished,circuit_stop.load(),
                     retry_target_matches_region,retry_cooldown_elapsed);
+            loading_circuit_retry_available=
+                loading_circuit_retry_reason==
+                    ui::LoadingCircuitRetryReason::ready;
             if(loading_circuit_retry_requested)
             {
                 loading_circuit_retry_requested=false;
@@ -7356,6 +7377,8 @@ int Application::run(bool enable_developer_modules)
                     circuit_stop.store(false);
                     launch_circuit(std::move(retry_session));
                     last_manual_circuit_retry=attempt_now;
+                    if(manual_circuit_reconnect_count<9999U)
+                        ++manual_circuit_reconnect_count;
                     loading_circuit_retry_available=false;
                     avatar_report_notice=
                         "LLUDP-Verbindungsversuch gestartet; Status abwarten";
@@ -12402,9 +12425,17 @@ int Application::run(bool enable_developer_modules)
             const std::string_view world_entry_status=
                 ui::describe_world_entry(world_entry_stage);
             avatar_diagnostic.world_entry_stage=world_entry_stage;
+            const auto trace_now=std::chrono::steady_clock::now();
+            if(!login_ui.authenticated)
+                world_entry_trace.reset();
+            world_entry_trace.observe(world_entry_stage,trace_now);
+            avatar_diagnostic.entry_trace=world_entry_trace.snapshot();
+            avatar_diagnostic.entry_trace_count=world_entry_trace.size();
+            avatar_diagnostic.retry_reason=loading_circuit_retry_reason;
+            avatar_diagnostic.manual_reconnect_count=
+                manual_circuit_reconnect_count;
             avatar_diagnostic.world_entry_wait_seconds=
-                world_entry_wait_monitor.seconds(
-                    world_entry_stage,std::chrono::steady_clock::now());
+                world_entry_wait_monitor.seconds(world_entry_stage,trace_now);
             const std::string_view world_entry_wait_hint=
                 ui::world_entry_wait_hint(world_entry_stage,
                     avatar_diagnostic.world_entry_wait_seconds);

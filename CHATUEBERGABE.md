@@ -1,3 +1,16 @@
+# CHATÜBERGABE – IM NEUEN CHAT ZUERST LESEN
+
+## VERBINDLICH AB SOFORT: BEI JEDEM WEITER FÜNF ECHTE ENTWICKLUNGSBLÖCKE
+
+- Der Nutzer verlangt ohne erneute Rückfrage **fünf zusammenhängende, tatsächlich umgesetzte und getestete Entwicklungsblöcke** bei JEDEM WEITER, auch im neuen Chat. Standard nicht auf drei oder einen Block reduzieren. Nur ausdrückliche neue Nutzeranweisung ändert den Umfang.
+- Am Anfang GitHub marlin198323-glitch/nexverse-viewer, Branch develop-current, projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, den Server-Repo-HEAD opengenesislink/opengenesislinkserver sowie aktuelle lokale Änderungen prüfen.
+- INTERAKTIVE Entwicklung ausschließlich Linux Mint jam-MS-7D28 (Desktop Commander), Checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer nach erneuter Verifikation. Raspberry Pi 5 ist nur der pi5-ogl ARM64-CI-Runner. Kein ungefragter sichtbarer Viewerstart auf dem echten Desktop; vollständiger GUI-Smoke nur auf isoliertem Xvfb.
+- PRO DURCHLAUF: fünf fortlaufende Alpha-/Block-IDs, zusammenhängende echte Änderungen an Code UND zugehöriger sichtbarer GUI, native C++23/NVIDIA-OpenGL/Python/Headless-Regressionen, vollständiger Mint-x64-Build, Xvfb/Taskleistenicon, Dokumentation in projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, Kompatibilitätsmatrizen, GitHub-Commit/Push und erfolgreichen Pi5-ARM64-CI-Lauf nachweisen.
+- Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
+- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION und GitHub HEAD neu feststellen. Der Durchlauf Alpha.225–229 folgt auf Alpha.224. Nicht einen alten SHA als HEAD annehmen. Detaillierte Fünferregel im projectplan.md.
+
+---
+
 # OpenGenesisLINK Viewer – Chat-Übergabe
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
@@ -3752,3 +3765,20 @@ Klick ein neuer Versuch angefordert werden, 15s Cooldown.
 Nächster verpflichtender Fünferdurchlauf Alpha.225–229.
 Echter NexVerse-Login-Welt-/Avatar-Pixel-Nachweis und echter
 Reconnect-E2E nach wie vor nicht getestet.
+
+## 16.10.2026 – Alpha.225–229: Welt-Entry-Verlauf, Reconnect-Gründe, F3 und fünf-Blöcke-Regel
+
+225: Ganz oben in CHATUEBERGABE.md dauerhafte Fünfer-Arbeitsregel
+für jeden neuen Chat, in AGENTS/Plan/info gespiegelt; zusätzlich
+bounded 5-Einträge WorldEntryTrace ohne Geheimnisse/Netzwerkinfos.
+226: Typisierter Grund warum manuelles LLUDP Retry gesperrt/frei
+ist (noch arbeitender Worker, Region-Endpoint, 15s Cooldown, etc).
+227: F3 privater mode-0600 Export mit Enum-Stufenverlauf,
+begrenzter Dauer, manuellem Retry-Zähler und Statuscode.
+228: Letzte zwei Stufen + Zeit, Retry-Sperrgrund und Versuchszähler
+echter sichtbarer F3-Ladebildschirm, Python Contract und native
+Privacy-/Ring-/Policy-Tests.
+229: Mint-x64 full/GL/Native/Python/Headless/Xvfb/Systemicon,
+GitHub commit/push und pi5-ogl CI.
+Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
+Kein noch ungetesteter Live-NexVerse-Welt-/Avatar-/LLUDP-Erfolg behauptet.

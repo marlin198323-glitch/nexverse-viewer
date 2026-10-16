@@ -44,6 +44,10 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::string(world_entry_stage_key(r.world_entry_stage))+"\n"
        "world_entry_wait_seconds="+
             std::to_string(r.world_entry_wait_seconds)+"\n"
+       "manual_reconnect_attempts="+
+            std::to_string(r.manual_reconnect_count)+"\n"
+       "retry_reason_code="+
+            std::to_string(static_cast<unsigned>(r.retry_reason))+"\n"
        "terrain_packets="+std::to_string(r.terrain_packets)+"\n"
        "object_packets="+std::to_string(r.object_packets)+"\n"
        "avatar_packets="+std::to_string(r.avatar_packets)+"\n"
@@ -53,6 +57,22 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "framebuffer_height="+std::to_string(r.frame_height)+"\n"
        "limitations=GL_depth_fragments_are_not_final_avatar_pixels_or_COFPose\n";
 }
+// Include only predefined stage enums and finite elapsed seconds.
+std::string avatar_diagnostic_trace_text(const AvatarDiagnosticReport& r)
+{
+    std::string result="world_entry_trace_size="+
+        std::to_string(std::min(r.entry_trace_count,
+                           WorldEntryTrace::capacity))+"\n";
+    for(std::size_t i=0U;i<std::min(r.entry_trace_count,
+                                  WorldEntryTrace::capacity);++i)
+    {
+        result+="world_entry_trace_"+std::to_string(i)+"="+
+            std::string(world_entry_stage_key(r.entry_trace[i].stage))+
+            ":"+std::to_string(r.entry_trace[i].dwell_seconds)+"s\n";
+    }
+    return result;
+}
+
 std::optional<std::filesystem::path> save_avatar_diagnostic(
     const std::filesystem::path& folder,const AvatarDiagnosticReport& report)
 {
@@ -63,7 +83,8 @@ std::optional<std::filesystem::path> save_avatar_diagnostic(
     const auto now=std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     const auto target=folder/("avatar-diagnose-"+std::to_string(now)+".txt");
-    const std::string body=avatar_diagnostic_text(report);
+    const std::string body=avatar_diagnostic_text(report)+
+        avatar_diagnostic_trace_text(report);
 #if defined(__unix__) || defined(__APPLE__)
     const int fd=open(target.c_str(),O_CREAT|O_EXCL|O_WRONLY
 #ifdef O_NOFOLLOW

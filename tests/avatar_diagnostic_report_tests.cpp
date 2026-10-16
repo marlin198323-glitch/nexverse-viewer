@@ -23,6 +23,11 @@ int main()
     r.object_packets=27U;
     r.avatar_packets=2U;
     r.world_entry_stage=nexverse::ui::WorldEntryStage::agent_position;
+    r.manual_reconnect_count=1U;
+    r.retry_reason=nexverse::ui::LoadingCircuitRetryReason::cooldown_wait;
+    r.entry_trace_count=2U;
+    r.entry_trace[0]={nexverse::ui::WorldEntryStage::simulator_circuit,16U};
+    r.entry_trace[1]={nexverse::ui::WorldEntryStage::agent_position,18U};
     r.world_entry_wait_seconds=18;
     r.caps_event_queue_available=true;
     r.original_mesh_draws=3U;
@@ -54,7 +59,15 @@ int main()
     if(!file||!fs::exists(*file))return 3;
     std::ifstream in(*file);
     std::string contents{std::istreambuf_iterator<char>{in},{}};
-    if(contents!=text)return 4;
+    if(contents!=text+nexverse::ui::avatar_diagnostic_trace_text(r))
+        return 4;
+    for(const auto secret:{"agent_id=","session_id=","password=",
+                           "avatar_name=","simulator_ip=","chat_message="})
+        if(contents.find(secret)!=std::string::npos)return 9;
+    if(contents.find("world_entry_trace_0=simulator_circuit:16s")==
+       std::string::npos||
+       contents.find("manual_reconnect_attempts=1")==std::string::npos)
+        return 8;
 #if defined(__unix__) || defined(__APPLE__)
     struct stat state{};
     if(stat(file->c_str(),&state)!=0||(state.st_mode&0777)!=0600)

@@ -14,6 +14,21 @@ int main()
             checks[0],checks[1],checks[2],checks[3],checks[4],
             checks[5],checks[6]))return bit+2;
     }
+    using namespace nexverse::ui;
+    if(loading_retry_reason(true,true,true,true,false,true,true)!=
+       LoadingCircuitRetryReason::ready)return 11;
+    if(loading_retry_reason(true,true,false,true,false,true,true)!=
+       LoadingCircuitRetryReason::circuit_not_failed)return 12;
+    if(loading_retry_reason(true,true,true,false,false,true,true)!=
+       LoadingCircuitRetryReason::worker_still_running)return 13;
+    if(loading_retry_reason(true,true,true,true,false,true,false)!=
+       LoadingCircuitRetryReason::cooldown_wait)return 14;
+    if(loading_retry_reason(true,true,true,true,false,false,true)!=
+       LoadingCircuitRetryReason::target_not_verified)return 15;
+    if(loading_retry_reason(true,true,true,true,true,true,true)!=
+       LoadingCircuitRetryReason::stopping_or_handoff)return 16;
+    if(loading_retry_reason_label(LoadingCircuitRetryReason::ready)[0]=='\0')
+        return 17;
     std::cout<<"Failed completed worker only, valid session/endpoint, cooldown & stop gates PASS\n";
     return 0;
 }

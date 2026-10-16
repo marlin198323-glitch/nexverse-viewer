@@ -2,6 +2,8 @@
 
 ## VERBINDLICHE FÜNF-BLÖCKE-REGEL (16.10.2026)
 
+**NEUER CHAT: zuerst CHATUEBERGABE.md mit fünf verpflichtenden Entwicklungsblöcken und dem jeweils letzten Commit lesen. Bei JEDEM WEITER ohne Rückfrage alle fünf echten Blöcke inkl. Mint-Build/GitHub/Pi5-CI bearbeiten, niemals nur Plan schreiben.**
+
 Bei jedem WEITER fünf echte zusammenhängende Entwicklungsblöcke mit Code+sichtbarer UI, Tests, GitHub-Servercheck, vollständigem Mint-Build und Xvfb, GitHub-Push und Pi5-CI; Status und Block-IDs in projectplan.md nachführen. Blockiert != fertig. Keine Pi-Entwicklung, kein sichtbarer Desktop-Viewer-Start. Diese Regel gilt auch in neuen Chats.
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
