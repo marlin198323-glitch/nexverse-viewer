@@ -3546,3 +3546,27 @@ Kein tatsächlicher authentifizierter Grid-/Avatar-Framebuffer-
 E2E-Test durchgeführt. Kompletter Server-Upstream-Review
 bleibt blockiert, reviewed SHA unverändert.
 Bericht: docs/ALPHA180_184_THIRD_PERSON_CAMERA_AND_GL_FRAMEBUFFER.md.
+
+## 16.10.2026 – Alpha.185–189 | 3D-Weltfokus und echte Renderer-Cull-Verbesserung
+
+185: GL-Renderer zählt nicht mehr vollständig hinter der
+Kamera liegende Objekte als sichtbare erfolgreiche Draws;
+konservative Kamera-Forward/Radius/FarClip-Prüfung,
+nicht-endliche Objektdaten abgewiesen.
+186: Neue sichtbare HUD-AUS/AN-[F5]-Schaltfläche
+ermöglicht freie Weltansicht ohne große Seitenleisten.
+GL-Szene, Menüs, F9 und Simulator laufen weiter.
+187: Maus trifft exakt denselben Widescreen HUD-Button,
+unsichtbare Dashboard-Hit-Zonen werden nicht länger
+getroffen; Klick in freie Weltansicht geht zur Objektauswahl.
+188: Neue native C++23/Pi5-Tests für F5/Widescreen/
+Click-Routing und Objekt-Forward-Culling; versteckter
+NVIDIA-GL-Framebuffer-Test bestätigt hinter der Kamera
+0 GL WorldDraws und unveränderte Hintergrundpixel.
+189: Voller nativer Linux-x64 Build, CTests/Python und
+Xvfb-GUI-Smoke nur im isolierten Display. Nach grünen
+Gates Push auf develop-current und Pi5 ARM64 CI.
+Tatsächliche NexVerse Grid-Avatar-/Welt-E2E-Sichtprüfung
+bleibt offen, Firestorm11 Bake/Wear/COF idem,
+Server reviewed_sha bleibt ungeändert.
+Report: docs/ALPHA185_189_WORLD_FOCUS_AND_VISIBILITY.md.

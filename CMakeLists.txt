@@ -383,6 +383,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-outfit-bake-preview-layout-tests
         COMMAND nexverse-outfit-bake-preview-layout-tests)
 
+    add_executable(nexverse-scene-forward-visibility-tests
+        tests/scene_forward_visibility_tests.cpp)
+    target_link_libraries(nexverse-scene-forward-visibility-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-scene-forward-visibility-tests)
+    add_test(NAME nexverse-scene-forward-visibility-tests
+        COMMAND nexverse-scene-forward-visibility-tests)
+
+    add_executable(nexverse-world-hud-toggle-tests
+        tests/world_hud_toggle_tests.cpp)
+    target_link_libraries(nexverse-world-hud-toggle-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-world-hud-toggle-tests)
+    add_test(NAME nexverse-world-hud-toggle-tests
+        COMMAND nexverse-world-hud-toggle-tests)
+
     add_executable(nexverse-third-person-camera-tests
         tests/third_person_camera_tests.cpp)
     target_link_libraries(nexverse-third-person-camera-tests

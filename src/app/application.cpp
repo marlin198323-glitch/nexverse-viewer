@@ -79,6 +79,7 @@
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
 #include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/ui/world_hud_layout.hpp"
+#include "nexverse/ui/world_hud_toggle.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -413,6 +414,7 @@ struct InputContext
     std::size_t* inventory_item_selection=nullptr;
     bool* inventory_item_detail_requested=nullptr;
     bool* simulation_ready = nullptr;
+    bool* world_hud_visible=nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
     CapsRuntimeState* caps=nullptr;
@@ -549,6 +551,16 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             *context->inventory_open=false;
         else
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+        return;
+    }
+    // Firestorm-like world focus shortcut: the underlying 3D renderer
+    // remains active; only diagnostic/navigation panels are hidden.
+    if(context && context->world_hud_visible&&context->login&&
+       context->login->authenticated&&context->simulation_ready&&
+       *context->simulation_ready&&key==GLFW_KEY_F5&&
+       action==GLFW_PRESS)
+    {
+        *context->world_hud_visible=!*context->world_hud_visible;
         return;
     }
     if(context && context->viewer_shell &&
@@ -898,6 +910,29 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         double mx=0.0,my=0.0;
         glfwGetCursorPos(window,&mx,&my);
         auto& shell=*context->viewer_shell;
+        const auto hud_click=context->world_hud_visible
+            ?nexverse::ui::world_hud_click_target(
+                width,height,mx,my,*context->world_hud_visible,
+                shell.window!=nexverse::ui::ViewerWindow::none||
+                shell.open_menu>=0)
+            :nexverse::ui::WorldHudClickTarget::dashboard_or_floater;
+        if(hud_click==nexverse::ui::WorldHudClickTarget::toggle_hud)
+        {
+            *context->world_hud_visible=!*context->world_hud_visible;
+            return;
+        }
+        if(hud_click==nexverse::ui::WorldHudClickTarget::scene)
+        {
+            // Never activate invisible navigation/menu hit targets.
+            // The full 3D viewport is pickable in world-focus mode.
+            if(shell.held_object_id==0U)
+            {
+                shell.world_pick_x=static_cast<float>(mx);
+                shell.world_pick_y=static_cast<float>(my);
+                shell.world_pick_requested=true;
+            }
+            return;
+        }
         const nexverse::ui::ViewerShellLayout layout{width,height};
         int menu_change=-2;
         const auto command=layout.hit(mx,my,shell,&menu_change);
@@ -1809,6 +1844,18 @@ void render_loading_screen(
         theme::text_muted);
 }
 
+// A real clickable button with the exact same hit rectangle as the
+// mouse callback, whether diagnostic rails are currently shown or hidden.
+void render_world_hud_toggle(UiRenderer& renderer,int width,int height,
+    bool visible)
+{
+    const auto r=nexverse::ui::world_hud_toggle_rect(width,height);
+    renderer.rect(r.x,r.y,r.width,r.height,
+        Color{0.027f,0.100f,0.157f,0.95f},6.0f);
+    renderer.text(r.x+8.0f,r.y+8.0f,10.0f,
+        visible?"HUD AUS  [F5]":"HUD EIN  [F5]",theme::cyan);
+}
+
 void render_world_hud(
     UiRenderer& renderer,
     int width,
@@ -1903,6 +1950,7 @@ void render_world_hud(
         circuit.state == nexverse::protocol::CircuitState::active;
     const Color live_color = udp_live ? theme::success : theme::warning;
 
+    render_world_hud_toggle(renderer,width,height,true);
     const float chip_w = 96.0f * scale;
     const float chip_gap = 8.0f * scale;
     float chip_x = w - margin - chip_w;
@@ -2962,7 +3010,7 @@ void render_shell(
     const nexverse::ui::WorldSceneProof& scene_proof,
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
     const nexverse::ui::AssetStreamProof& assets_proof,
-    bool simulation_ready,
+    bool simulation_ready,bool world_hud_visible,
     unsigned int welcome_texture,
     bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
@@ -2987,17 +3035,20 @@ void render_shell(
 
     if (simulation_ready)
     {
-        render_world_hud(
-            renderer,
-            width,
-            height,
-            grid_name,
-            login,
-            circuit,caps,
-            frame_metrics,
-            render_diagnostics,
-            memory_metrics,scene_proof,avatar_proof,assets_proof,shell,
-            inventory_open,outfit_open,experiences_open);
+        if(world_hud_visible)
+            render_world_hud(
+                renderer,width,height,grid_name,login,circuit,caps,
+                frame_metrics,render_diagnostics,memory_metrics,
+                scene_proof,avatar_proof,assets_proof,shell,
+                inventory_open,outfit_open,experiences_open);
+        else
+        {
+            // Keep all GL world drawing and separate floater windows
+            // alive. Only navigation/diagnostic dashboard is hidden.
+            render_world_hud_toggle(renderer,width,height,false);
+            renderer.text(16.0f,16.0f,9.0f,
+                "3D-Weltansicht | F5 fuer Navigation",theme::cyan);
+        }
         return;
     }
 
@@ -4021,6 +4072,7 @@ int Application::run(bool enable_developer_modules)
 
     LoginUiState login_ui;
     ui::ViewerShellState viewer_shell;
+    bool world_hud_visible=true;
     // Exact touch surface remains per current region and only belongs to
     // the last accepted world ray. Never reuse for a list-based selection.
     std::optional<protocol::TouchSurfaceInfo> picked_touch_surface;
@@ -4119,6 +4171,7 @@ int Application::run(bool enable_developer_modules)
     input_context.approved_permission=&approved_experience_permission;
     input_context.permission_busy=&experience_permission_busy;
     input_context.simulation_ready=&simulation_ready;
+    input_context.world_hud_visible=&world_hud_visible;
     protocol::PacketDispatcher packet_dispatcher;
     packet_dispatcher.register_handler(
         protocol::msg_transfer_info,
@@ -11769,7 +11822,7 @@ int Application::run(bool enable_developer_modules)
                 frame_metrics,
                 render_diagnostics,
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
-                simulation_ready,
+                simulation_ready,world_hud_visible,
                 welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)

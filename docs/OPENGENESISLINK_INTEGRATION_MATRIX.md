@@ -414,3 +414,7 @@ Inworld-Status zeigt WorldModel/GL und nun Textur/Mesh GPU-Residency mit eindeut
 ## 16.10.2026 – Alpha.180–184
 
 Die OpenGenesisLINK/NexVerse Third-Person-Kamera normalisiert ungültige/nicht-unitäre Agent-Quaternions und begrenzt unplausible Serverpositionen auf einen endlichen lokalen Fallback. Inworld GUI signalisiert Kamera-Fallback; Original-Firestorm-/World-GL-Mesh bei normalem und ungültigem Quaternion-Fallback mit echten GPU-RGBA Framebuffer-Pixeln auf verstecktem NVIDIA OpenGL3.3 getestet, Terrain-LayerData nicht vorausgesetzt. Ein echter eingeloggter Avatar und endgültige Firestorm-Bake-/Outfit-/Szenenparität sind weiterhin NICHT bestätigt. OpenGenesisLINK main ec760cac, Server-reviewed-SHA unverändert. Details: docs/ALPHA180_184_THIRD_PERSON_CAMERA_AND_GL_FRAMEBUFFER.md.
+
+## 16.10.2026 – Alpha.185–189
+
+Firestorm-kompatible Weltbedienung erweitert: direkt anklickbarer HUD AUS/AN F5 Weltfokus mit erhaltenem 3D-Renderer, F9 und Floater-Funktionen. Hidden Hud verhindert Ghost-Bedienflächen und leitet Weltklicks zur bestehenden 3D-Objektauswahl. Das OpenGL-Backend verwirft vollständig hinter der Kamera liegende Szenenobjekte statt sie als Welt-Draws zu zählen; NVIDIA-GL Framebuffer/Gegenblick-Regression plus native C++23 Widescreen/Renderer-Tests. Echter authentifizierter Grid-/Avatar-Framebuffer steht weiterhin aus. Upstream ReviewedSHA gesperrt. Siehe docs/ALPHA185_189_WORLD_FOCUS_AND_VISIBILITY.md.

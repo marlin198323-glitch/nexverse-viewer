@@ -166,6 +166,39 @@ int main()
                    glGetError()!=GL_NO_ERROR))
                     error=14;
             }
+            // Objects entirely behind the camera must no longer count
+            // as visible or successful GL-world submissions.
+            if(!error)
+            {
+                // This fixture's mesh has local x=3 vertices but its
+                // object origin is x=0. Move the actual object origin
+                // behind the camera too; scene sphere-culling is based
+                // on the object's transform, not arbitrary mesh offsets.
+                scene.position={4.0f,0.0f,0.0f};
+                renderer->set_camera({{0.0f,0.0f,0.0f},
+                    {-1.0f,0.0f,0.0f},{0.0f,-1.0f,0.0f},
+                    {0.0f,0.0f,1.0f},60.0f,0.1f,40.0f});
+                renderer->set_scene_objects({});
+                const auto reverse_sky=capture(*renderer);
+                renderer->set_scene_objects({scene});
+                const auto reverse_world=capture(*renderer);
+                const auto reverse_stats=renderer->diagnostics();
+                const int reverse_pixel_diff=
+                    distance(reverse_sky,reverse_world);
+                const auto reverse_gl_error=glGetError();
+                if(reverse_stats.scene_draw_calls!=0U ||
+                   reverse_stats.visible_objects!=0U ||
+                   reverse_pixel_diff>3 ||
+                   reverse_gl_error!=GL_NO_ERROR)
+                {
+                    std::cerr<<"Reverse camera: draws="<<
+                        reverse_stats.scene_draw_calls<<
+                        " visible="<<reverse_stats.visible_objects<<
+                        " pixel_difference="<<reverse_pixel_diff<<
+                        " gl="<<reverse_gl_error<<'\n';
+                    error=15;
+                }
+            }
             std::cout<<"rgba center sky=["<<int(background[0])<<","
                 <<int(background[1])<<","<<int(background[2])
                 <<"] opaque=["<<int(opaque[0])<<","<<int(opaque[1])

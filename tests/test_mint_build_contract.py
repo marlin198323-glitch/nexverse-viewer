@@ -33,6 +33,14 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("if(card_visibility.avatar)",app)
         self.assertIn("avatar_proof.body_bake_draws=",app)
 
+    def test_world_hud_f5_and_click_keep_3d_active(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("key==GLFW_KEY_F5",app)
+        self.assertIn("render_world_hud_toggle(renderer,width,height,false)",app)
+        self.assertIn("if(world_hud_visible)",app)
+        self.assertIn("input_context.world_hud_visible=&world_hud_visible",app)
+        self.assertIn("HUD EIN  [F5]",app)
+
     def test_third_person_camera_is_sanitized_and_visible_in_hud(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("render::third_person_camera(",app)

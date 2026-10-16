@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/scene_forward_visibility.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
@@ -5131,27 +5132,13 @@ private:
         const Mat4& model,
         const RenderSceneObject& object) const
     {
-        const float dx =
-            model.value[12] - camera_.position.x;
-        const float dy =
-            model.value[13] - camera_.position.y;
-        const float dz =
-            model.value[14] - camera_.position.z;
-
-        const float distance_squared =
-            dx * dx + dy * dy + dz * dz;
-
-        const float radius =
-            0.5f * std::sqrt(
-                object.scale.x * object.scale.x +
-                object.scale.y * object.scale.y +
-                object.scale.z * object.scale.z);
-
-        const float limit =
-            std::max(camera_.far_clip, 1.0f) +
-            std::max(radius, 0.5f);
-
-        return distance_squared <= limit * limit;
+        return scene_forward_visible(
+            model.value[12]-camera_.position.x,
+            model.value[13]-camera_.position.y,
+            model.value[14]-camera_.position.z,
+            object.scale.x,object.scale.y,object.scale.z,
+            camera_.forward.x,camera_.forward.y,camera_.forward.z,
+            camera_.far_clip);
     }
 
     void refresh_vram()
