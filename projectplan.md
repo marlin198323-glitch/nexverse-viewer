@@ -41,7 +41,7 @@ Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
 - **Alpha.211:** Echte GPU-Samples für eigenen originalen Avatar [FERTIG].
 - **Alpha.212:** Session-sichere Avatar-Pixel-/Draw-Auswertung im UI [FERTIG].
 - **Alpha.213:** Sichtbares Avatar-Kamera-Fokus-Control mit echter Aktion [FERTIG].
-- **Alpha.214:** 127/127 Mint C++/NVIDIA-GL, 49/49 Python, Pi5-kompatibles Headless, Xvfb-Viewer, Taskleistenicon und GitHub-Push [GETESTET; Pi5-CI AUSSTEHEND].
+- **Alpha.214:** 127/127 Mint C++/NVIDIA-GL, 49/49 Python, Pi5-kompatibles Headless, Xvfb-Viewer, Taskleistenicon, GitHub-Commit f83d0a2 und Pi5-ARM64-CI Run 38958578939 SUCCESS [FERTIG].
 
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
