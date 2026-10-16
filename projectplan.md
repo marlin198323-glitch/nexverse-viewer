@@ -46,20 +46,20 @@ Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
 ### Fünferdurchlauf Alpha.215–219 – laufend (16.10.2026)
 - **Alpha.215:** Alte GL-Avatar-Sichtbarkeits-Queries nach Kamerawechsel
   und Originalmesh-Ausfall invalidieren, echte Nvidia-GL-Regression
-  fuer Pan/keine GL-Draws [GETESTET].
+  fuer Pan/keine GL-Draws [FERTIG].
 - **Alpha.216:** Datensparsames reines Diagnose-Textformat ohne Agent-UUID,
   Session-/Serveradresse/Chat/Zugangsdaten, explizite lokale
-  Dateispeicherung mode 0600 [GETESTET].
+  Dateispeicherung mode 0600 [FERTIG].
 - **Alpha.217:** Bestehendes Fenster Avatarstatus [F3] mit live
   Original-LLM-/Depth-Samples-/ServerBake-Stufen sichtbar erweitern,
   Button "Diagnose speichern [S]" und echte Maus-/Key-Ereignisse
-  anbinden [GETESTET].
+  anbinden [FERTIG].
 - **Alpha.218:** Native Tests fuer private Textreports/Permissions,
   hitboxes 16:9–32:9, GPU-Query-TTL/Reset und Python-Schutz
-  der GUI/Netzwerk- und Geheimnisgrenzen [GETESTET].
+  der GUI/Netzwerk- und Geheimnisgrenzen [FERTIG].
 - **Alpha.219:** VERSION, gesamte Doku, lokaler kompletter Mint-Build,
   Native/OpenGL/Python/Headless-Gates, isolierter Xvfb-Vollviewer-
-  Start, Mint-GitHub Push und Pi5-CI [IN_ARBEIT].
+  Start, Mint-GitHub Push und Pi5-CI [FERTIG – 128/128 native Tests, 50/50 Python, Mint Headless/Xvfb, GitHub ARM64 CI Run 38960517438 SUCCESS].
 
 Offen: Echter authentifizierter NexVerse-Avatar-/Welt-Pixelbeleg
 kann ohne autorisierten praktischen Login nicht als FERTIG gelten.
