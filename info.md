@@ -1,6 +1,8 @@
-VERBINDLICHER STATUS: OGL Gesamtfortschritt ca. 38 % (gewichtete Schaetzung, 16.10.2026, Alpha.234). Nach JEDEM Projektstand den XX-%-Wert nennen; Quelle docs/PROJECT_PROGRESS.json, berechnen mit python3 scripts/project-progress.py. Nach Arbeitsdurchlauf anhand echter Integrations-/Testergebnisse neu bewerten, nicht automatisch pro Release. Regel in AGENTS.md, CHATUEBERGABE.md, projectplan.md. Erlaeuterungen docs/PROJEKTFORTSCHRITT.md.
+NEUER VERBINDLICHER STANDARD: PRO WEITER 10 statt 5 echte Code+GUI-Blöcke, beginnend Alpha.245–254, danach Mint-Build/Tests/GitHub-Pi5-CI und gewichteter Gesamtfortschritt XX % (Start ca. 38 %). Historische Fünferangaben sind überholt.
 
-NÄCHSTER CHAT: Bei JEDEM WEITER verbindlich **5 echte Entwicklungsblöcke** mit Code, sichtbarer Viewer-GUI, Mint Full Build, Tests, GitHub und Pi5-CI, Details zuerst in CHATUEBERGABE.md, AGENTS.md, projectplan.md. Kein ungefragter Mint-Desktop-GUI-Start; Pi nur CI.
+VERBINDLICHER STATUS: OGL Gesamtfortschritt ca. 38 % (gewichtete Schaetzung, 17.10.2026, Alpha.244). Nach JEDEM Projektstand den XX-%-Wert nennen; Quelle docs/PROJECT_PROGRESS.json, berechnen mit python3 scripts/project-progress.py. Nach Arbeitsdurchlauf anhand echter Integrations-/Testergebnisse neu bewerten, nicht automatisch pro Release. Regel in AGENTS.md, CHATUEBERGABE.md, projectplan.md. Erlaeuterungen docs/PROJEKTFORTSCHRITT.md.
+
+NÄCHSTER CHAT: Bei JEDEM WEITER verbindlich **10 echte Entwicklungsblöcke** mit Code, sichtbarer Viewer-GUI, Mint Full Build, Tests, GitHub und Pi5-CI, Details zuerst in CHATUEBERGABE.md, AGENTS.md, projectplan.md. Kein ungefragter Mint-Desktop-GUI-Start; Pi nur CI.
 
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand
 
@@ -4431,7 +4433,7 @@ Noch KEIN realer authentifizierter NexVerse Avatar-
 oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
 Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.
 
-Alpha.214 CI-Freigabe: develop-current f83d0a25424c4eb35e3f0bb663cd525dfdadb080; Raspberry Pi5 GitHub Actions run 38958578939 SUCCESS. Alle fünf Arbeitsblöcke 210–214 in projectplan.md auf FERTIG. Künftiges WEITER umfasst verbindlich wieder fünf echte Blöcke. Echtes Grid-/Avatar-E2E bleibt offen.
+Alpha.214 CI-Freigabe: develop-current f83d0a25424c4eb35e3f0bb663cd525dfdadb080; Raspberry Pi5 GitHub Actions run 38958578939 SUCCESS. Alle fünf Arbeitsblöcke 210–214 in projectplan.md auf FERTIG. Künftiges WEITER umfasst verbindlich wieder zehn echte Blöcke. Echtes Grid-/Avatar-E2E bleibt offen.
 
 ## 16.10.2026 – Alpha.215–219: Frische GPU-Meshsichtbarkeit und lokaler F3-Diagnosebericht
 
@@ -4485,7 +4487,7 @@ Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
 Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.
 
 Alpha.220–224 CI-Abschluss (16.10.2026):
-Version 0.2.0-alpha.224, fünf echte Blöcke FERTIG.
+Version 0.2.0-alpha.224, zehn echte Blöcke FERTIG.
 GitHub Code SHA 45f4ccc168d1eb4bcd6532e2fb21f3732c1e8eef.
 Mint x64 Full CMake/Ninja Build, 130/130 Native/NVIDIA GL CTest,
 55/55 Python, Pi5-kompatible Headless-C++23, isolierter
@@ -4530,7 +4532,7 @@ Viewer-Start und X11 Systemicon/WM_CLASS komplett grün.
 Self-hosted Pi5-ARM64 GitHub Action run 38965645437
 SUCCESS (SHA-gleich geprüft). Alle fünf Planblöcke 225–229
 auf FERTIG. Neuer Chat: sofort CHATUEBERGABE.md oben lesen.
-Bei nächstem WEITER wieder fünf echte Blöcke Alpha.230–234.
+Bei nächstem WEITER wieder zehn echte Blöcke Alpha.230–234.
 Echter NexVerse-Welt-/Avatar-Pixeltest und manuelles Grid-
 Retry-E2E offen; keine falsche End-to-End-Erfolgsaussage.
 

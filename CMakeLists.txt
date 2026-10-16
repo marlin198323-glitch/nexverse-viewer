@@ -537,6 +537,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-appearance-runtime-tests
         COMMAND nexverse-avatar-appearance-runtime-tests)
 
+    add_executable(nexverse-avatar-visual-truth-tests
+        tests/avatar_visual_truth_tests.cpp)
+    target_link_libraries(nexverse-avatar-visual-truth-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-avatar-visual-truth-tests)
+    add_test(NAME nexverse-avatar-visual-truth-tests
+        COMMAND nexverse-avatar-visual-truth-tests)
+
     add_executable(nexverse-avatar-pipeline-proof-tests
         tests/avatar_pipeline_proof_tests.cpp)
     target_link_libraries(nexverse-avatar-pipeline-proof-tests
@@ -1220,6 +1228,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-material-pass-tests)
     add_test(NAME nexverse-material-pass-tests COMMAND nexverse-material-pass-tests)
 
+    add_executable(nexverse-mesh-quality-evidence-tests
+        tests/mesh_quality_evidence_tests.cpp)
+    target_link_libraries(nexverse-mesh-quality-evidence-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-mesh-quality-evidence-tests)
+    add_test(NAME nexverse-mesh-quality-evidence-tests
+        COMMAND nexverse-mesh-quality-evidence-tests)
+
     add_executable(nexverse-mesh-quality-control-tests
         tests/mesh_quality_control_tests.cpp)
     target_link_libraries(nexverse-mesh-quality-control-tests
@@ -1227,6 +1243,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-quality-control-tests)
     add_test(NAME nexverse-mesh-quality-control-tests
         COMMAND nexverse-mesh-quality-control-tests)
+
+    add_executable(nexverse-terrain-layer-coverage-tests
+        tests/terrain_layer_coverage_tests.cpp)
+    target_link_libraries(nexverse-terrain-layer-coverage-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-terrain-layer-coverage-tests)
+    add_test(NAME nexverse-terrain-layer-coverage-tests
+        COMMAND nexverse-terrain-layer-coverage-tests)
 
     add_executable(nexverse-terrain-texture-readiness-tests
         tests/terrain_texture_readiness_tests.cpp)

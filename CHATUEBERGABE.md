@@ -1,25 +1,43 @@
 # CHATÜBERGABE – IM NEUEN CHAT ZUERST LESEN
 
+**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.245–254**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Zehnerregel überschreibt historische Fünferreferenzen in älteren Berichten.
+
 ## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
 
-**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 16.10.2026, Alpha.234).**
+**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 17.10.2026, Alpha.244).**
 
-**Nächste fünf echte Entwicklungsblöcke: Alpha.235–239.**
+**Nächste zehn echte Entwicklungsblöcke: Alpha.245–254.**
 
-- PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Fuenferdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
+- PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Zehnerdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
 - Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
 - Nach jedem Durchlauf die sieben Bewertungsbereiche anhand nachweislich implementierter, integrierter und getesteter Funktionen neu pruefen. Fortschritt darf auch unveraendert bleiben oder sinken. Alpha-Version und Zahl der Commits erzeugen KEINEN automatischen Zuwachs.
 - Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
 - 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
 
-## VERBINDLICH AB SOFORT: BEI JEDEM WEITER FÜNF ECHTE ENTWICKLUNGSBLÖCKE
+## VERBINDLICH AB SOFORT: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE
 
-- Der Nutzer verlangt ohne erneute Rückfrage **fünf zusammenhängende, tatsächlich umgesetzte und getestete Entwicklungsblöcke** bei JEDEM WEITER, auch im neuen Chat. Standard nicht auf drei oder einen Block reduzieren. Nur ausdrückliche neue Nutzeranweisung ändert den Umfang.
+- Der Nutzer verlangt ohne erneute Rückfrage **zehn zusammenhängende, tatsächlich umgesetzte und getestete Entwicklungsblöcke** bei JEDEM WEITER, auch im neuen Chat. Standard nicht auf drei oder einen Block reduzieren. Nur ausdrückliche neue Nutzeranweisung ändert den Umfang.
 - Am Anfang GitHub marlin198323-glitch/nexverse-viewer, Branch develop-current, projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, den Server-Repo-HEAD opengenesislink/opengenesislinkserver sowie aktuelle lokale Änderungen prüfen.
 - INTERAKTIVE Entwicklung ausschließlich Linux Mint jam-MS-7D28 (Desktop Commander), Checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer nach erneuter Verifikation. Raspberry Pi 5 ist nur der pi5-ogl ARM64-CI-Runner. Kein ungefragter sichtbarer Viewerstart auf dem echten Desktop; vollständiger GUI-Smoke nur auf isoliertem Xvfb.
-- PRO DURCHLAUF: fünf fortlaufende Alpha-/Block-IDs, zusammenhängende echte Änderungen an Code UND zugehöriger sichtbarer GUI, native C++23/NVIDIA-OpenGL/Python/Headless-Regressionen, vollständiger Mint-x64-Build, Xvfb/Taskleistenicon, Dokumentation in projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, Kompatibilitätsmatrizen, GitHub-Commit/Push und erfolgreichen Pi5-ARM64-CI-Lauf nachweisen.
+- PRO DURCHLAUF: zehn fortlaufende Alpha-/Block-IDs, zusammenhängende echte Änderungen an Code UND zugehöriger sichtbarer GUI, native C++23/NVIDIA-OpenGL/Python/Headless-Regressionen, vollständiger Mint-x64-Build, Xvfb/Taskleistenicon, Dokumentation in projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, Kompatibilitätsmatrizen, GitHub-Commit/Push und erfolgreichen Pi5-ARM64-CI-Lauf nachweisen.
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
-- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Fünfergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.235–239. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Fünferregel in projectplan.md.
+- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Zehnergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.245–254. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Zehnerregel in projectplan.md.
+
+### AKTUELLE ÜBERGABE: Alpha.235–244 wird abgeschlossen
+
+- OGL-Version: 0.2.0-alpha.244 | Gesamtfortschritt **38 % (Schätzung, unverändert)**.
+- Standard: **10 echte Code-/GUI-/Testblöcke** je Nutzer-„Weiter“.
+- Quellstand nach Tests/Push unten nachführen; nächsten Batch Alpha.245–254 ausführen.
+- Linux Mint jam-MS-7D28 ist Entwicklungsmaschine; Raspberry Pi ausschließlich pi5-ogl CI.
+- Neue tatsächliche Evidenz: Self-Original-LLM-Bakes versus GPU-Bakes,
+  eigene Server-Keyframe-GL-Draws, 4/4 echte Terrain-Layer gegen
+  graue Ersatzlayer und GPU-gematchte Mesh-LODs.
+- Nach wie vor OFFEN: vollständige Firestorm-World/Avatar-Outfit-
+  /Animations-Parität im authentifizierten Live-NexVerse-Grid.
+- Unveränderte Quelle des Projekt-%-Werts: docs/PROJECT_PROGRESS.json;
+  mit python3 scripts/project-progress.py neu berechnen.
+- Alte Berichte mit 'fünf Blöcke' sind HISTORISCH und überschreiben
+  die aktuelle 10-Block-Anweisung nicht.
 
 ### AKTUELLER VERBINDLICHER ENTWICKLUNGSSTAND – ALPHA.234
 
@@ -3728,7 +3746,7 @@ Noch KEIN realer authentifizierter NexVerse Avatar-
 oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
 Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.
 
-Alpha.214 CI-Freigabe: develop-current f83d0a25424c4eb35e3f0bb663cd525dfdadb080; Raspberry Pi5 GitHub Actions run 38958578939 SUCCESS. Alle fünf Arbeitsblöcke 210–214 in projectplan.md auf FERTIG. Künftiges WEITER umfasst verbindlich wieder fünf echte Blöcke. Echtes Grid-/Avatar-E2E bleibt offen.
+Alpha.214 CI-Freigabe: develop-current f83d0a25424c4eb35e3f0bb663cd525dfdadb080; Raspberry Pi5 GitHub Actions run 38958578939 SUCCESS. Alle fünf Arbeitsblöcke 210–214 in projectplan.md auf FERTIG. Künftiges WEITER umfasst verbindlich wieder zehn echte Blöcke. Echtes Grid-/Avatar-E2E bleibt offen.
 
 ## 16.10.2026 – Alpha.215–219: Frische GPU-Meshsichtbarkeit und lokaler F3-Diagnosebericht
 
@@ -3782,7 +3800,7 @@ Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
 Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.
 
 Alpha.220–224 CI-Abschluss (16.10.2026):
-Version 0.2.0-alpha.224, fünf echte Blöcke FERTIG.
+Version 0.2.0-alpha.224, zehn echte Blöcke FERTIG.
 GitHub Code SHA 45f4ccc168d1eb4bcd6532e2fb21f3732c1e8eef.
 Mint x64 Full CMake/Ninja Build, 130/130 Native/NVIDIA GL CTest,
 55/55 Python, Pi5-kompatible Headless-C++23, isolierter

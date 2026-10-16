@@ -2892,6 +2892,7 @@ public:
         texture_generation_ = textures.generation;
         texture_material_revision_ = textures.material_revision;
         terrain_textures_ready_ = false;
+        terrain_real_detail_layers_=0U;
 
         static constexpr std::array<std::array<std::uint8_t, 4>, 4>
             fallback_colors{{
@@ -2952,6 +2953,7 @@ public:
                     GL_UNSIGNED_BYTE,
                     image.pixels.data());
                 any_real = true;
+                ++terrain_real_detail_layers_;
             }
             else
             {
@@ -3352,6 +3354,8 @@ public:
         diagnostics_.avatar_server_selected_skin_draw_calls = 0U;
         diagnostics_.avatar_keyframe_skin_draw_calls = 0U;
         diagnostics_.self_avatar_weighted_skin_draw_calls = 0U;
+        diagnostics_.self_avatar_keyframe_skin_draw_calls=0U;
+        diagnostics_.self_avatar_server_selected_skin_draw_calls=0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
@@ -3542,7 +3546,11 @@ public:
             diagnostics_.draw_calls += 1U;
             diagnostics_.triangles += terrain_index_count_ / 3U;
             if(use_textures)
+            {
                 ++diagnostics_.terrain_textured_draw_calls;
+                diagnostics_.terrain_real_detail_layers=
+                    terrain_real_detail_layers_;
+            }
             else
                 ++diagnostics_.terrain_fallback_draw_calls;
 
@@ -4420,7 +4428,13 @@ public:
                             if(avatar.keyframe_clip)
                                 ++diagnostics_.avatar_keyframe_skin_draw_calls;
                             if(avatar.is_self)
+                            {
                                 ++diagnostics_.self_avatar_weighted_skin_draw_calls;
+                                if(avatar.animation_from_server)
+                                    ++diagnostics_.self_avatar_server_selected_skin_draw_calls;
+                                if(avatar.keyframe_clip)
+                                    ++diagnostics_.self_avatar_keyframe_skin_draw_calls;
+                            }
                         }
                         if(baked)
                         {
@@ -5316,6 +5330,7 @@ private:
     std::uint32_t texture_generation_ = 0U;
     std::uint32_t texture_material_revision_ = 0U;
     bool terrain_textures_ready_ = false;
+    std::uint32_t terrain_real_detail_layers_=0U;
 
     GLuint water_vao_ = 0U;
     GLuint water_vbo_ = 0U;

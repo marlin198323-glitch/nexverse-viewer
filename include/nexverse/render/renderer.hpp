@@ -327,6 +327,7 @@ struct RenderDiagnostics
     // Actual OpenGL shader branch, not simply assets resident.
     std::uint64_t terrain_textured_draw_calls = 0U;
     std::uint64_t terrain_fallback_draw_calls = 0U;
+    std::uint32_t terrain_real_detail_layers = 0U;
     std::uint64_t scene_draw_calls = 0U;
     std::uint64_t scene_mesh_draw_calls = 0U;
     std::uint64_t scene_prim_draw_calls = 0U;
@@ -350,6 +351,9 @@ struct RenderDiagnostics
     std::uint64_t avatar_server_selected_skin_draw_calls = 0U;
     std::uint64_t avatar_keyframe_skin_draw_calls = 0U;
     std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
+    // Counts only the real SELF anatomical 3-part GL skin, never remote avatar.
+    std::uint64_t self_avatar_keyframe_skin_draw_calls=0U;
+    std::uint64_t self_avatar_server_selected_skin_draw_calls=0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
     // GL_ANY_SAMPLES_PASSED on original self head/upper/lower, resolved

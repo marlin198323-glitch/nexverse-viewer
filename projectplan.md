@@ -1,6 +1,8 @@
 # NexVerse Viewer – Projektplan
 
-Stand: 16.10.2026 | OGL 0.2.0-alpha.234 | Gesamtfortschritt ca. 38 % (gewichtete Schätzung)
+**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.235–244**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Regel überschreibt historische Fünferreferenzen in älteren Berichten.
+
+Stand: 17.10.2026 | OGL 0.2.0-alpha.244 | Gesamtfortschritt ca. 38 % (gewichtete Schätzung)
 Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
 
@@ -16,26 +18,26 @@ Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firesto
 - Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
 - 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
 
-## VERBINDLICHE FÜNF-BLÖCKE-REGEL – ab 16.10.2026
+## VERBINDLICHE ZEHN-BLÖCKE-REGEL – ab 16.10.2026
 
-**Neuer Chat:** Erstes Lesen: CHATUEBERGABE.md oberster Abschnitt. Das Kriterium fünf echte Arbeitsblöcke pro WEITER ist dauerhaft und gilt uneingeschränkt über Chatgrenzen.
+**Neuer Chat:** Erstes Lesen: CHATUEBERGABE.md oberster Abschnitt. Das Kriterium zehn echte Arbeitsblöcke pro WEITER ist dauerhaft und gilt uneingeschränkt über Chatgrenzen.
 
 
 Für jedes Nutzerkommando WEITER beziehungsweise Projektfortsetzung
 werden ohne wiederholte Freigaberückfrage standardmäßig
-**fünf substanzielle, zusammenhängende Entwicklungsblöcke** in einem
-Arbeitsdurchlauf geplant UND umgesetzt, nicht nur fünf Dokumentations- oder
+**zehn substanzielle, zusammenhängende Entwicklungsblöcke** in einem
+Arbeitsdurchlauf geplant UND umgesetzt, nicht nur zehn Dokumentations- oder
 Statusabsätze. Die Regel bleibt für alle künftigen Chats verbindlich.
 Bei ausdrücklich anderslautender Nutzeranweisung gilt deren Umfang.
 
-Jeder Fünferdurchlauf umfasst gleichzeitig Backend/Protokoll/Renderer
+Jeder Zehnerdurchlauf umfasst gleichzeitig Backend/Protokoll/Renderer
 **UND** die zugehörigen sichtbaren Viewer-Bedienelemente, falls die
 Funktion eine UI hat. Bestehende Firestorm/OpenSim-Funktionen sowie
 OpenGenesisLINK-Serverkompatibilität wahren; vor jedem Block den
 aktuellen Server- und Viewer-GitHub-Stand prüfen, aber unqualifizierte
 Upstream-Commits niemals ungeprüft freigeben.
 
-**Pflichtabfolge:** fünf Aufgaben mit eindeutigen Alpha-/Block-IDs
+**Pflichtabfolge:** zehn Aufgaben mit eindeutigen Alpha-/Block-IDs
 und prüfbaren Ergebnissen, Umsetzung direkt im Linux-Mint-Checkout
 über Desktop Commander, passende native/OpenGL/Python-Tests,
 vollständiger lokaler Build, Xvfb-GUI-Smoke ohne Start auf dem
@@ -49,7 +51,7 @@ grünen Tests. Fehlende Zugänge/Hindernisse = BLOCKIERT mit
 Grund und nächstem Schritt, nie durch Fake-Tests oder bloße
 Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
 
-### Laufender Fünferdurchlauf Alpha.210–214
+### Historischer Fünferdurchlauf Alpha.210–214
 - **Alpha.210:** Fünferregel und GitHub-/Server-Baseline [FERTIG].
 - **Alpha.211:** Echte GPU-Samples für eigenen originalen Avatar [FERTIG].
 - **Alpha.212:** Session-sichere Avatar-Pixel-/Draw-Auswertung im UI [FERTIG].
@@ -150,6 +152,46 @@ als gesonderte Ende-zu-Ende-Praxisprüfungen OFFEN.
 
 Offen: Echte ServerSelfAppearance/Bake/Animation
 und vollstaendiges Firestorm-Terrain/Mesh-Pixelbild.
+
+### Alpha.235–244 – Zehn vollständige Arbeitsblöcke, OGL 0.2.0-alpha.244
+
+- **235 [GETESTET]:** Standard dauerhaft von 5 auf 10 echte Blöcke
+  je WEITER umstellen. Neue Regel zu Beginn von Handoff, AGENTS,
+  Plan, info und maschinenlesbar im Fortschritts-JSON.
+- **236 [GETESTET]:** Typisierte tatsächliche Self-ServerBake-/
+  Originalkörper-GL-Reife prüfen (Server-Bakes vs GPU vs Draw).
+- **237 [GETESTET]:** Anzahl der tatsächlich hochgeladenen
+  realen Terrain-Layer pro aktueller Regions-/Materialrevision
+  zählen statt 4 Texturen aufgrund einer einzigen geladenen zu melden.
+- **238 [GETESTET]:** Unterschied zwischen 4/4 originalen Layern,
+  teilweise geladenen Layern mit 1x1-Ersatz, reinem
+  Fallback und keinem Terrain-Draw im echten Viewer anzeigen.
+- **239 [GETESTET]:** Mesh-LOD der angeforderten Assets mit
+  exaktem GPU-LOD derselben Mesh-UUID vergleichen; Low wird
+  nicht als erfülltes High-LOD gezählt.
+- **240 [GETESTET]:** Server-selected Motion/Keyframe-Zeichenaufrufe
+  des eigenen Avatars getrennt von anderen Avataren im
+  Originalkörper-Renderer messen.
+- **241 [GETESTET]:** Echte Animation-/Bake-Reife im Avatar-HUD
+  und F3-Fenster, Meshqualität im Fenster 'Objekte' anzeigen;
+  HUD-Größe/Hitbox/kleine Fenster ohne Footer-Überdeckung.
+- **242 [GETESTET]:** Benutzerinitiierter privater F3-Export
+  (POSIX Mode 0600) enthält Whitelist-Terrain-/LOD-/
+  Self-Bake-/Animationszahlen, aber keine UUID, Session-ID
+  oder Serveradresse.
+- **243 [GETESTET]:** C++23-Tests für Avatar-/Terrain-/
+  Meshqualität und UI-Layout sowie Python-Regressionsschutz
+  für komplette tatsächliche Source-Verkabelung und 10er-Regel.
+- **244 [IN_ARBEIT]:** Vollständige Linux-Mint-x64/NVIDIA-
+  OpenGL-Tests, Python, ARM64-kompatible Headless,
+  isolierter Xvfb-Vollviewer und X11 Icon; aktualisierte
+  Paritätsmatrizen, Handoff/Projektfortschritt 38 %,
+  GitHub-Commit/Push und pi5-ogl CI prüfen.
+
+**Gesamtfortschritt bleibt geschätzt 38 %.** Nicht durch
+Alpha-Versionen hochzählen. Echte Server-Self-Appearance,
+fertige Bakes, Terrain-Pixel, HighLOD in NexVerse und
+funktionierende Firestorm-Animationen bleiben E2E offen.
 
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
@@ -6241,7 +6283,7 @@ Viewer-Start und X11 Systemicon/WM_CLASS komplett grün.
 Self-hosted Pi5-ARM64 GitHub Action run 38965645437
 SUCCESS (SHA-gleich geprüft). Alle fünf Planblöcke 225–229
 auf FERTIG. Neuer Chat: sofort CHATUEBERGABE.md oben lesen.
-Bei nächstem WEITER wieder fünf echte Blöcke Alpha.230–234.
+Bei nächstem WEITER wieder zehn echte Blöcke Alpha.230–234.
 Echter NexVerse-Welt-/Avatar-Pixeltest und manuelles Grid-
 Retry-E2E offen; keine falsche End-to-End-Erfolgsaussage.
 

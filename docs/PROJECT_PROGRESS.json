@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-16",
-  "viewer_version": "0.2.0-alpha.234",
+  "as_of": "2026-10-17",
+  "viewer_version": "0.2.0-alpha.244",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.235–239",
-  "assessment": "Begründete Projektleitungs-Schätzung des Funktionsumfangs zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Parität; kein linearer Zeit-/Versionszähler und keine Abnahme.",
+  "next_five_blocks": "Alpha.245–254",
+  "assessment": "Begründete Projektleitungs-Schätzung des Funktionsumfangs zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Parität; kein linearer Zeit-/Versionszähler und keine Abnahme. Der letzte Zehnerdurchlauf 235–244 verbessert belegbare Rendering-/Serverdaten-Transparenz; ohne echten Live-Pixel-/Feature-E2E-Beleg bleibt die Schätzung 38 %.",
   "areas": [
     {
       "id": "connection",
@@ -57,5 +57,7 @@
     }
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
-  "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases."
+  "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
+  "next_batch": "Alpha.245–254",
+  "default_blocks_per_run": 10
 }

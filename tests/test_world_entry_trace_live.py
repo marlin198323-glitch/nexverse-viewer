@@ -47,13 +47,13 @@ class WorldEntryTraceLiveContracts(unittest.TestCase):
         self.assertIn("LoadingCircuitRetryReason::worker_still_running",POLICY)
         self.assertIn("LoadingCircuitRetryReason::target_not_verified",POLICY)
 
-    def test_five_blocks_rule_is_at_top_for_future_chat(self):
+    def test_ten_blocks_rule_is_at_top_for_future_chat(self):
         # The newly mandatory % progress heading now comes first,
-        # and the equally mandatory five-block rule must still be near the top.
-        self.assertTrue("BEI JEDEM WEITER FÜNF ECHTE ENTWICKLUNGSBLÖCKE"
+        # and the equally mandatory ten-block rule must still be near the top.
+        self.assertTrue("BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE"
                         in HANDOFF[:2700])
-        self.assertTrue("FÜNF-BLÖCKE-REGEL" in AGENTS[:1900])
-        self.assertTrue("FÜNF-BLÖCKE-REGEL" in PLAN[:2500])
+        self.assertTrue("ZEHN-BLÖCKE-REGEL" in AGENTS[:1900])
+        self.assertTrue("ZEHN-BLÖCKE-REGEL" in PLAN[:2500])
 
 if __name__=="__main__":
     unittest.main()

@@ -30,6 +30,6 @@ if __name__=="__main__":
     for part in data["areas"]:
         print(f"- {part['name']}: {part['completion_pct']} % "
               f"(Gewichtung {part['weight_pct']} %)")
-    print(f"Nächster Fünferdurchlauf: {data['next_five_blocks']}.")
+    print(f"Nächster Zehnerdurchlauf: {data['next_five_blocks']}.")
     print("100 % setzt vollständige Integration und echte "
           "Firestorm/OpenSim-/Plattform-E2E-Tests voraus.")

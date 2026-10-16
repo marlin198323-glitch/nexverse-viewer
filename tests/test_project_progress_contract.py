@@ -26,6 +26,15 @@ class ProjectProgressContractTests(unittest.TestCase):
         self.assertTrue(data["next_five_blocks"] in
                         (ROOT/"CHATUEBERGABE.md").read_text()[:3800])
 
+    def test_ten_actual_blocks_per_new_chat_is_persistent(self):
+        data=json.loads(PROGRESS.read_text())
+        self.assertEqual(data["default_blocks_per_run"],10)
+        self.assertEqual(data["next_batch"],data["next_five_blocks"])
+        self.assertIn("ZEHN-BLÖCKE-REGEL",
+                      (ROOT/"AGENTS.md").read_text()[:1000])
+        self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",
+                      (ROOT/"CHATUEBERGABE.md").read_text()[:700])
+
     def test_progress_is_not_derived_from_ci_or_version_numbers(self):
         script=(ROOT/"scripts/project-progress.py").read_text()
         self.assertIn('part["weight_pct"]',script)

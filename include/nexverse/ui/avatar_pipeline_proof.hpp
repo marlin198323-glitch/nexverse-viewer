@@ -3,6 +3,7 @@
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/ui/avatar_view_evidence.hpp"
 #include "nexverse/ui/avatar_appearance_runtime.hpp"
+#include "nexverse/ui/avatar_visual_truth.hpp"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -15,6 +16,7 @@ struct AvatarPipelineProof
 {
     bool appearance_received=false;
     AvatarAppearanceRuntime appearance_runtime{};
+    AvatarVisualTruth visual_truth{};
     bool world_ready=false;
     bool self_present=false;
     AvatarViewEvidence view{};
@@ -44,6 +46,14 @@ struct AvatarPipelineProof
         return fragment_samples_passed
             ?"Avatar Fragmente: sichtbar (Depth-Test)"
             :"Avatar Fragmente: 0 (verdeckt/ausserhalb)";
+    }
+    [[nodiscard]] std::string skin_stage() const
+    {
+        return describe_avatar_skin_truth(visual_truth);
+    }
+    [[nodiscard]] std::string animation_stage() const
+    {
+        return describe_avatar_animation_truth(visual_truth);
     }
     [[nodiscard]] bool body_gpu_drawn() const noexcept
     {

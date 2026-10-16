@@ -323,3 +323,15 @@ Fünf echte Entwicklungsblöcke pro WEITER im neuen Chat dauerhaft verbindlich; 
 ## 16.10.2026 – Alpha.230–234
 
 Self-AvatarAppearance realer LLUDP-Handler-Status, GL-Terrain-Shader Textur/Fallback-Draw sichtbar, F2 DETAIL/SPAREN steuert MeshLoD Hysterese und Prioritaet inklusive Neuplanung, Kamera auf 5.5m und groessere HUD Statusschriften. Welcome/Icon bleiben unveraendert. Echter ServerBake/Welt-Pixelbeweis weiterhin OFFEN. Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
+
+## 16.10.2026 – Alpha.235–244
+
+Verbindlich zehn echte Entwicklungsblöcke je WEITER und
+Projektstatus 38 % unverändert. Neue echte Self-Avatar-
+BodyBake-/Keyframe-GL-Diagnosen, 4/4 Terrain-RGBA-Layer
+gegen 1x1-Ersatz, exakte Mesh-UUID+LOD-Matches auf der GPU
+und zusätzliche Anzeigen in HUD, F3 Avatar/Objekte und
+privatem 0600-Diagnoseexport. Weiterhin KEINE bestätigte
+vollständige Firestorm-/NexVerse-Live-Avatar-, Terrain-
+oder Serveranimations-Parität. Original-Welcome/Icon erhalten.
+Details: docs/ALPHA235_244_VISUAL_EVIDENCE.md.

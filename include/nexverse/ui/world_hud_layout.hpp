@@ -19,7 +19,7 @@ struct WorldHudPanelVisibility
     return {
         rail_height>=(215.0f+12.0f+58.0f)*scale,
         rail_height>=(359.0f+12.0f+58.0f)*scale,
-        rail_height>=(471.0f+12.0f+58.0f)*scale
+        rail_height>=(535.0f+12.0f+58.0f)*scale
     };
 }
 }

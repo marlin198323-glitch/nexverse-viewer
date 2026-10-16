@@ -1,14 +1,16 @@
 # nexverse-viewer – Projektanweisungen
 
+**NEU UND VORRANGIG: IMMER 10 ECHTE ENTWICKLUNGSBLÖCKE PRO WEITER (Alpha.245–254 als nächstes); ÄLTERE FÜNFERREGELN SIND ÜBERHOLT.** Nach jedem Durchlauf Prozentfortschritt berechnen, GitHub/Mint/Pi5 CI validieren.
+
 ## VERBINDLICH: GESAMTFORTSCHRITT BEI JEDEM STATUS IN %
 
-**Bei jeder Meldung zum OGL-Projektstand, jedem Fuenferdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.234: **ca. 38 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
+**Bei jeder Meldung zum OGL-Projektstand, jedem Zehnerdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.244: **ca. 38 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
 
-## VERBINDLICHE FÜNF-BLÖCKE-REGEL (16.10.2026)
+## VERBINDLICHE ZEHN-BLÖCKE-REGEL (16.10.2026)
 
-**NEUER CHAT: zuerst CHATUEBERGABE.md mit fünf verpflichtenden Entwicklungsblöcken und dem jeweils letzten Commit lesen. Bei JEDEM WEITER ohne Rückfrage alle fünf echten Blöcke inkl. Mint-Build/GitHub/Pi5-CI bearbeiten, niemals nur Plan schreiben.**
+**NEUER CHAT: zuerst CHATUEBERGABE.md mit zehn verpflichtenden Entwicklungsblöcken und dem jeweils letzten Commit lesen. Bei JEDEM WEITER ohne Rückfrage alle zehn echten Blöcke inkl. Mint-Build/GitHub/Pi5-CI bearbeiten, niemals nur Plan schreiben.**
 
-Bei jedem WEITER fünf echte zusammenhängende Entwicklungsblöcke mit Code+sichtbarer UI, Tests, GitHub-Servercheck, vollständigem Mint-Build und Xvfb, GitHub-Push und Pi5-CI; Status und Block-IDs in projectplan.md nachführen. Blockiert != fertig. Keine Pi-Entwicklung, kein sichtbarer Desktop-Viewer-Start. Diese Regel gilt auch in neuen Chats.
+Bei jedem WEITER zehn echte zusammenhängende Entwicklungsblöcke mit Code+sichtbarer UI, Tests, GitHub-Servercheck, vollständigem Mint-Build und Xvfb, GitHub-Push und Pi5-CI; Status und Block-IDs in projectplan.md nachführen. Blockiert != fertig. Keine Pi-Entwicklung, kein sichtbarer Desktop-Viewer-Start. Diese Regel gilt auch in neuen Chats.
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
 

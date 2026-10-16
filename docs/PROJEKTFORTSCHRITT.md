@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
 **Gesamtfortschritt: ca. 38 % – gewichtete Schätzung.**
-Stand 16.10.2026 | Viewer 0.2.0-alpha.234 | Branch develop-current.
+Stand 17.10.2026 | Viewer 0.2.0-alpha.244 | Branch develop-current.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -53,8 +53,21 @@ begründete Schätzungen und keine Abnahme.
    Bakes, Outfits, Animation, vollstaendiger Welt/
    GUI und Plattform-Releases. Keine 100 % nur durch CI.
 
-**Nächster Durchlauf:** Alpha.235–239 mit wieder fünf
+**Nächster Zehnerdurchlauf:** Alpha.245–254 mit wieder fünf
 echten Entwicklungsblöcken. **Besonders offen** sind Self-
 AvatarAppearance, vollständige Bakes/Outfits/Animationen,
 Terrain, High-LOD-Objekte, fehlende Firestorm-Funktionen
 und Windows/macOS-E2E.
+
+
+## 16.10.2026 – Alpha.235–244, Fortschritt unverändert: 38 %
+
+Die neuen Änderungen zeigen echte Self-Avatar-Keyframe-/Bake-
+GL-Submissions, Terrain-Shader- und 4/4-Textur-Layer-Zustände,
+sowie die LOD-Match-Quote statt bloßer Asset-UUID-Abdeckung.
+Sie verbessern Diagnose, Bedienelemente und Testbarkeit, sind
+aber **kein Nachweis**, dass der Simulator alle Self-AvatarBakes
+liefert oder die Welt bereits Firestorm-paritätisch aussieht.
+Die sieben gewichteten Teilbewertungen werden daher noch
+nicht erhöht; **37,75 % werden weiterhin als 38 % angezeigt**.
+Nächster 10-Block-Lauf: Alpha.245–254.

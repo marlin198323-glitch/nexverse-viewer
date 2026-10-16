@@ -40,6 +40,24 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"
+       "terrain_real_layers="+
+           std::to_string(r.terrain_real_layers)+"\n"
+       "terrain_textured_gl="+yn(r.terrain_textured_gl)+"\n"
+       "terrain_fallback_gl="+yn(r.terrain_fallback_gl)+"\n"
+       "mesh_lod_total="+std::to_string(r.mesh_lod_total)+"\n"
+       "mesh_lod_matched="+std::to_string(r.mesh_lod_matched)+"\n"
+       "mesh_lod_high_requested="+
+           std::to_string(r.mesh_lod_high_requested)+"\n"
+       "avatar_body_bakes_gpu="+
+           std::to_string(r.avatar_body_bakes_gpu)+"\n"
+       "avatar_body_bakes_gl="+
+           std::to_string(r.avatar_body_bakes_gl)+"\n"
+       "avatar_self_keyframe_draws="+
+           std::to_string(r.avatar_self_keyframe_draws)+"\n"
+       "avatar_self_server_motion_draws="+
+           std::to_string(r.avatar_self_server_motion_draws)+"\n"
+       "avatar_server_animation_received="+
+           yn(r.avatar_server_animation_received)+"\n"
        "world_entry_stage="+
            std::string(world_entry_stage_key(r.world_entry_stage))+"\n"
        "world_entry_wait_seconds="+

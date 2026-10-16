@@ -253,9 +253,12 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(1,"Position: "+position(v.agent_position[0],
                                     v.agent_position[1],
                                     v.agent_position[2]));
-        line(2,std::string("Appearance: ")+
-             (v.appearance_ready?"Simulator-Daten da":"noch nicht geladen"));
-        line(3,"Aktive Animationen: "+std::to_string(v.animations));
+        line(2,v.avatar_skin_status.empty()
+            ?(v.appearance_ready?"Appearance: Server-Daten da":
+               "Appearance: noch nicht geladen")
+            :v.avatar_skin_status);
+        line(3,v.avatar_animation_status.empty()
+            ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status);
         line(4,"Attachments: "+std::to_string(v.attachments));
         line(5,v.avatar_view_status,
              theme::cyan);
@@ -279,6 +282,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              theme::text);
         line(1,"Objekt waehlen, dann BERUEHREN gedrueckt halten.",
              theme::text_muted);
+        line(2,v.mesh_quality_status.empty()?"LOD: noch keine Daten":
+             v.mesh_quality_status,theme::cyan);
         for(std::size_t i=0U;i<v.nearby_objects.size()&&i<5U;++i)
         {
             const auto& obj=v.nearby_objects[i];

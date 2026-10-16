@@ -77,6 +77,8 @@
 #include "nexverse/render/third_person_camera.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
+#include "nexverse/ui/avatar_visual_truth.hpp"
+#include "nexverse/render/terrain_layer_coverage.hpp"
 #include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include "nexverse/ui/world_entry_stage.hpp"
 #include "nexverse/ui/asset_stream_proof.hpp"
@@ -87,6 +89,7 @@
 #include "nexverse/ui/camera_orbit_controls.hpp"
 #include "nexverse/ui/camera_avatar_focus.hpp"
 #include "nexverse/ui/mesh_quality_control.hpp"
+#include "nexverse/ui/mesh_quality_evidence.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -2475,11 +2478,11 @@ void render_world_hud(
     renderer.text(
         card_x+14.0f*scale,rail_y+349.0f*scale,
         8.2f*scale,
-        render_diagnostics.terrain_textured_draw_calls>0U
-            ?"Boden: DETAIL-TEXTURE GL"
-            :render_diagnostics.terrain_fallback_draw_calls>0U
-                ?"Boden: GRAU / MATERIAL FEHLT"
-                :"Boden: kein GPU-Draw",
+        nexverse::render::terrain_material_status(
+            render_diagnostics.terrain_textured_draw_calls>0U||
+            render_diagnostics.terrain_fallback_draw_calls>0U,
+            render_diagnostics.terrain_textured_draw_calls>0U,
+            render_diagnostics.terrain_real_detail_layers),
         render_diagnostics.terrain_textured_draw_calls>0U
             ?theme::cyan:theme::warning);
     }
@@ -2489,7 +2492,7 @@ void render_world_hud(
     // proof of final screen visibility. No invented Avatar or Wear action.
     if(card_visibility.avatar)
     {
-    renderer.rect(card_x,rail_y+370.0f*scale,card_w,140.0f*scale,
+    renderer.rect(card_x,rail_y+370.0f*scale,card_w,165.0f*scale,
         Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
     renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
         10.2f*scale,"Avatar-Pipeline",theme::text);
@@ -2511,6 +2514,10 @@ void render_world_hud(
         8.7f*scale,avatar_proof.fragment_stage(),
         avatar_proof.fragment_query_known&&
         avatar_proof.fragment_samples_passed
+            ?theme::cyan:theme::warning);
+    renderer.text(card_x+14.0f*scale,rail_y+514.0f*scale,
+        8.2f*scale,avatar_proof.animation_stage(),
+        avatar_proof.visual_truth.keyframe_skin_draws>0U
             ?theme::cyan:theme::warning);
     }
 
@@ -12420,6 +12427,15 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.self_avatar_visible_samples_known;
             avatar_proof.fragment_samples_passed=
                 render_diagnostics.self_avatar_visible_samples_passed;
+            avatar_proof.visual_truth.keyframe_skin_draws=
+                render_diagnostics.self_avatar_keyframe_skin_draw_calls;
+            avatar_proof.visual_truth.server_selected_skin_draws=
+                render_diagnostics.self_avatar_server_selected_skin_draw_calls;
+            avatar_proof.visual_truth.baked_body_gl_draws=
+                static_cast<std::uint32_t>(
+                    render_diagnostics.self_avatar_body_bake_gl_draws[0]+
+                    render_diagnostics.self_avatar_body_bake_gl_draws[1]+
+                    render_diagnostics.self_avatar_body_bake_gl_draws[2]);
             if(simulation_ready&&render_agent.present)
             {
                 const auto camera=render::third_person_camera(
@@ -12434,17 +12450,27 @@ int Application::run(bool enable_developer_modules)
                active_session->agent_id==render_agent.agent_id)
             {
                 std::scoped_lock lock{world_mutex};
+                avatar_proof.visual_truth.server_animation_received=
+                    world_model.self_animations().has_value();
                 if(const auto& packet=world_model.self_appearance();
                    packet && protocol::self_bake_owner_is_current(
                        packet->avatar_id,active_session->agent_id,
                        render_agent.agent_id,world_model.region().connected))
                 {
                     avatar_proof.appearance_received=true;
+                    avatar_proof.visual_truth.server_appearance=true;
                     avatar_proof.bakes=protocol::audit_avatar_bake_evidence(
                         protocol::extract_avatar_bakes(packet->texture_entry),
                         object_texture_loaded_ids);
                     avatar_proof.body_bake_draws=
                         render_diagnostics.self_avatar_body_bake_gl_draws;
+                    for(std::size_t slot=0U;slot<3U;++slot)
+                        if(avatar_proof.bakes.regions[slot]!=
+                           protocol::AvatarBakeTextureState::missing)
+                            ++avatar_proof.visual_truth.server_body_references;
+                    avatar_proof.visual_truth.resident_body_bakes=
+                        static_cast<std::uint32_t>(
+                            avatar_proof.bakes.visible_body_resident);
                 }
             }
             // Read only renderer-authentic CURRENT-REGION asset UUIDs.
@@ -12457,6 +12483,10 @@ int Application::run(bool enable_developer_modules)
                 assets_proof.meshes=ui::asset_gpu_coverage(
                     scene_mesh_samples,mesh_asset_loaded_ids);
             }
+            // Only exact desired LOD and CURRENT-GPU uploaded LOD count
+            // as visual readiness. UUID loaded alone is insufficient.
+            const ui::MeshQualityEvidence mesh_quality_evidence=
+                ui::inspect_mesh_quality(mesh_desired_lods,mesh_gpu_lods);
             // Build a read-only whitelist snapshot for the modal AND an
             // explicit user-initiated report. No UUID/secret is copied.
             ui::AvatarDiagnosticReport avatar_diagnostic;
@@ -12483,6 +12513,28 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_draw_calls;
             avatar_diagnostic.missing_mesh_objects=
                 render_diagnostics.scene_missing_mesh_objects;
+            avatar_diagnostic.terrain_real_layers=
+                render_diagnostics.terrain_real_detail_layers;
+            avatar_diagnostic.terrain_textured_gl=
+                render_diagnostics.terrain_textured_draw_calls>0U;
+            avatar_diagnostic.terrain_fallback_gl=
+                render_diagnostics.terrain_fallback_draw_calls>0U;
+            avatar_diagnostic.mesh_lod_total=
+                mesh_quality_evidence.total_requested();
+            avatar_diagnostic.mesh_lod_matched=
+                mesh_quality_evidence.matched_gpu_lod;
+            avatar_diagnostic.mesh_lod_high_requested=
+                mesh_quality_evidence.high_requested;
+            avatar_diagnostic.avatar_body_bakes_gpu=
+                avatar_proof.visual_truth.resident_body_bakes;
+            avatar_diagnostic.avatar_body_bakes_gl=
+                avatar_proof.visual_truth.baked_body_gl_draws;
+            avatar_diagnostic.avatar_self_keyframe_draws=
+                avatar_proof.visual_truth.keyframe_skin_draws;
+            avatar_diagnostic.avatar_self_server_motion_draws=
+                avatar_proof.visual_truth.server_selected_skin_draws;
+            avatar_diagnostic.avatar_server_animation_received=
+                avatar_proof.visual_truth.server_animation_received;
             avatar_diagnostic.terrain_packets=load_stats.terrain_packets;
             avatar_diagnostic.object_packets=load_stats.object_packets;
             avatar_diagnostic.avatar_packets=load_stats.avatar_packets;
@@ -12581,6 +12633,11 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_fragment_status=avatar_proof.fragment_stage();
                 shell_view.avatar_bake_status=
                     ui::describe_avatar_body_pipeline(avatar_proof);
+                shell_view.avatar_animation_status=
+                    avatar_proof.animation_stage();
+                shell_view.avatar_skin_status=avatar_proof.skin_stage();
+                shell_view.mesh_quality_status=
+                    ui::describe_mesh_quality(mesh_quality_evidence);
                 shell_view.avatar_report_notice=avatar_report_notice;
                 {
                     std::scoped_lock lock{world_mutex};

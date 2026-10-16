@@ -14,8 +14,10 @@ int main()
     if(!a.connection||!a.system||a.avatar)return 4;
     a=world_hud_panel_visibility(540.0f,1.0f);
     if(!a.connection||!a.system||a.avatar)return 5;
-    a=world_hud_panel_visibility(541.0f,1.0f);
-    if(!a.connection||!a.system||!a.avatar)return 6;
+    a=world_hud_panel_visibility(604.0f,1.0f);
+    if(!a.connection||!a.system||a.avatar)return 6;
+    a=world_hud_panel_visibility(605.0f,1.0f);
+    if(!a.connection||!a.system||!a.avatar)return 9;
     a=world_hud_panel_visibility(400.0f,0.74f);
     if(!a.connection||!a.system||a.avatar)return 7;
     a=world_hud_panel_visibility(1000.0f,0.0f);

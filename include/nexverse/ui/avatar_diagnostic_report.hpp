@@ -30,6 +30,16 @@ struct AvatarDiagnosticReport
     std::uint64_t baked_texture_draws=0;
     std::uint64_t objects_drawn=0;
     std::uint64_t missing_mesh_objects=0;
+    // Whitelisted CURRENT-FRAME rendering facts, not server strings.
+    std::uint32_t terrain_real_layers=0U;
+    bool terrain_textured_gl=false;
+    bool terrain_fallback_gl=false;
+    std::uint32_t mesh_lod_total=0U,mesh_lod_matched=0U;
+    std::uint32_t mesh_lod_high_requested=0U;
+    std::uint32_t avatar_body_bakes_gpu=0U,avatar_body_bakes_gl=0U;
+    std::uint32_t avatar_self_keyframe_draws=0U;
+    std::uint32_t avatar_self_server_motion_draws=0U;
+    bool avatar_server_animation_received=false;
     WorldEntryStage world_entry_stage=WorldEntryStage::login;
     std::uint32_t world_entry_wait_seconds=0;
     LoadingCircuitRetryReason retry_reason=
