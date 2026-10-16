@@ -33,6 +33,13 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("if(card_visibility.avatar)",app)
         self.assertIn("avatar_proof.body_bake_draws=",app)
 
+    def test_third_person_camera_is_sanitized_and_visible_in_hud(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("render::third_person_camera(",app)
+        self.assertIn("camera_fallback_this_frame=",app)
+        self.assertIn("scene_proof.camera_fallback=camera_fallback_this_frame",app)
+        self.assertIn("render_camera_from_agent(render_agent)",app)
+
     def test_scene_can_unlock_without_terrain_and_status_is_honest(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         model=(ROOT/"src/world/world_model.cpp").read_text()

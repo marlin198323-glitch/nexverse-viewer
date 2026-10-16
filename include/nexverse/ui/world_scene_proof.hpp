@@ -16,6 +16,7 @@ struct WorldSceneProof
     std::size_t world_objects=0U;
     std::uint64_t world_scene_draws=0U;
     std::uint64_t missing_mesh_draws=0U;
+    bool camera_fallback=false;
 };
 
 [[nodiscard]] inline std::string describe_terrain_progress(
@@ -30,6 +31,8 @@ struct WorldSceneProof
 [[nodiscard]] inline std::string describe_world_draw_progress(
     const WorldSceneProof& proof)
 {
+    if(proof.camera_fallback)
+        return "Kamera: ungültige Serverpose (Fallback)";
     if(proof.world_scene_draws>0U)
         return "GL "+std::to_string(proof.world_scene_draws)+
                " Draw | MeshFehlt "+std::to_string(proof.missing_mesh_draws);

@@ -74,6 +74,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
+#include "nexverse/render/third_person_camera.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
 #include "nexverse/ui/asset_stream_proof.hpp"
@@ -277,47 +278,17 @@ CameraState camera_from_agent(const nexverse::world::AgentState& agent)
 CameraState render_camera_from_agent(
     const nexverse::world::AgentState& agent)
 {
+    // A live simulator can deliver invalid or non-unit rotations during
+    // initial login/region crossing. Never allow them to poison the GL
+    // view matrix or point the camera away from the avatar.
+    const auto pose=nexverse::render::third_person_camera(
+        agent.position,agent.rotation);
     CameraState camera;
-
-    const auto forward =
-        rotate_vector(agent.rotation, {1.0f, 0.0f, 0.0f});
-
-    const nexverse::protocol::Vec3 target{
-        agent.position.x,
-        agent.position.y,
-        agent.position.z + 1.45f};
-
-    camera.center = {
-        target.x - forward.x * 8.0f,
-        target.y - forward.y * 8.0f,
-        target.z + 4.2f};
-
-    const nexverse::protocol::Vec3 delta{
-        target.x - camera.center.x,
-        target.y - camera.center.y,
-        target.z - camera.center.z};
-
-    const float length = std::sqrt(
-        delta.x * delta.x +
-        delta.y * delta.y +
-        delta.z * delta.z);
-
-    if (length > 0.0001f)
-    {
-        camera.at = {
-            delta.x / length,
-            delta.y / length,
-            delta.z / length};
-    }
-    else
-    {
-        camera.at = forward;
-    }
-
-    camera.left =
-        rotate_vector(agent.rotation, {0.0f, 1.0f, 0.0f});
-    camera.up = {0.0f, 0.0f, 1.0f};
-    camera.far_clip = 512.0f;
+    camera.center=pose.position;
+    camera.at=pose.forward;
+    camera.left=pose.left;
+    camera.up=pose.up;
+    camera.far_clip=512.0f;
     return camera;
 }
 
@@ -11637,8 +11608,14 @@ int Application::run(bool enable_developer_modules)
             world_renderer->set_point_lights(scene_point_lights);
             world_renderer->set_particle_emitters(scene_particle_emitters);
             world_renderer->set_avatar_proxies(avatar_proxy_update);
+            bool camera_fallback_this_frame=false;
             if (simulation_ready)
             {
+                const auto camera_pose=render::third_person_camera(
+                    render_agent.position,render_agent.rotation);
+                camera_fallback_this_frame=
+                    !camera_pose.position_valid||
+                    !camera_pose.orientation_valid;
                 const CameraState camera =
                     render_camera_from_agent(render_agent);
                 world_renderer->set_camera({
@@ -11750,6 +11727,7 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_draw_calls;
             scene_proof.missing_mesh_draws=
                 render_diagnostics.scene_missing_mesh_draw_calls;
+            scene_proof.camera_fallback=camera_fallback_this_frame;
             ui::AvatarPipelineProof avatar_proof{};
             if(simulation_ready && active_session &&
                firestorm_region_lease.matches(current_firestorm_epoch) &&

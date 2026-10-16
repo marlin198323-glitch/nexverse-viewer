@@ -4270,3 +4270,24 @@ von Mint und Self-hosted Pi5-CI. Kein sichtbar gestarteter
 Viewer auf dem Nutzerdesktop. Echter NexVerse
 Welt-/Avatar-/Outfit-Inworld-E2E bleibt offen.
 Bericht: docs/ALPHA175_179_WORLD_ASSET_STREAM_AND_RESPONSIVE_HUD.md.
+
+## 16.10.2026 – Alpha.180–184 | Third-Person-Kamera/GPU-Bildnachweis
+
+180: Serverseitige Agent-Quaternion vor Kameraberechnung als double
+normieren und nur validen horizontalen Heading verwenden. Nonunit,
+Null, NaN/Inf und absurde Positionen mit sicherem Kamera-Fallback;
+Drittperson 8m hinter, 4,2m über Avatarblickpunkt.
+181: Tatsächliche Viewer-Third-Person-Projektion im App-Renderpfad
+nutzt abgesicherte Pose statt unnormierte Server-Quaternion.
+182: Im bestehenden Inworld-Status wird bei ungültiger Serverpose
+"Kamera: ungültige Serverpose (Fallback)" angezeigt.
+183: Hidden NVIDIA-OpenGL3.3-Test belegt, dass echtes Weltmesh
+bei dieser Kameraperspektive im GL-Framebuffer sichtbare
+RGBA-Pixel erzeugt, auch ohne TerrainLayerData.
+184: Echte GLSL-Fallback-Sicht bei Nullquaternion erzeugt
+identische Framebufferpixel ohne GL-Fehler; Header-C++,
+CMake-x64-, Pi5- und Python-Regressionen ergänzt.
+Kein tatsächlicher authentifizierter Grid-/Avatar-Framebuffer-
+E2E-Test durchgeführt. Kompletter Server-Upstream-Review
+bleibt blockiert, reviewed SHA unverändert.
+Bericht: docs/ALPHA180_184_THIRD_PERSON_CAMERA_AND_GL_FRAMEBUFFER.md.

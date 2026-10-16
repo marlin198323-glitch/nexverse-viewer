@@ -558,3 +558,7 @@ AvatarPipelineProof liefert read-only authentifizierte Agent/Region AvatarAppear
 ## 16.10.2026 – Alpha.175–179
 
 Inworld-Status zeigt WorldModel/GL und nun Textur/Mesh GPU-Residency mit eindeutigen aktuellen UUIDs getrennt. Responsive Netzwerk-/System-/Avatar-Karten überdecken keine FPS-Leiste bei niedrigen Fensterhöhen; Tests an Layoutbreakpoints. GL3.3 Nvidia Regression bestätigt echte Texture-Residency-zu-Eviction-Verläufe. Firestorm originale Body-/Bake-/Outfit-Pipeline bleibt Basis, keine Inworld-E2E-Freigabe. Server reviewed SHA unverändert ec760cac main als Referenz. Siehe docs/ALPHA175_179_WORLD_ASSET_STREAM_AND_RESPONSIVE_HUD.md.
+
+## 16.10.2026 – Alpha.180–184
+
+Die OpenGenesisLINK/NexVerse Third-Person-Kamera normalisiert ungültige/nicht-unitäre Agent-Quaternions und begrenzt unplausible Serverpositionen auf einen endlichen lokalen Fallback. Inworld GUI signalisiert Kamera-Fallback; Original-Firestorm-/World-GL-Mesh bei normalem und ungültigem Quaternion-Fallback mit echten GPU-RGBA Framebuffer-Pixeln auf verstecktem NVIDIA OpenGL3.3 getestet, Terrain-LayerData nicht vorausgesetzt. Ein echter eingeloggter Avatar und endgültige Firestorm-Bake-/Outfit-/Szenenparität sind weiterhin NICHT bestätigt. OpenGenesisLINK main ec760cac, Server-reviewed-SHA unverändert. Details: docs/ALPHA180_184_THIRD_PERSON_CAMERA_AND_GL_FRAMEBUFFER.md.

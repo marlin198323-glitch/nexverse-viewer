@@ -1,4 +1,5 @@
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/third_person_camera.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <array>
@@ -121,6 +122,50 @@ int main()
                 blend_stats.scene_alpha_draw_calls!=1U ||
                 blend_stats.scene_alpha_mask_draw_calls!=0U))
                 error=11;
+            // Real OpenGL center-pixel proof for the app third-person
+            // camera, with NO terrain streamed: receiving a mesh is not
+            // enough; the object must actually change the framebuffer.
+            if(!error)
+            {
+                const auto view=third_person_camera(
+                    {0.0f,0.0f,0.0f},{});
+                renderer->set_camera({
+                    {view.position.x,view.position.y,view.position.z},
+                    {view.forward.x,view.forward.y,view.forward.z},
+                    {view.left.x,view.left.y,view.left.z},
+                    {view.up.x,view.up.y,view.up.z},
+                    60.0f,0.1f,40.0f});
+                for(std::size_t i=3U;i<texture.pixels.size();i+=4U)
+                    texture.pixels[i]=255U;
+                if(!renderer->set_object_texture(scene.texture_id,texture))
+                    error=12;
+                scene.face_materials[0]->diffuse_alpha_mode=0U;
+                renderer->set_scene_objects({});
+                const auto clear_frame=capture(*renderer);
+                renderer->set_scene_objects({scene});
+                const auto camera_frame=capture(*renderer);
+                const auto camera_stats=renderer->diagnostics();
+                if(!error && (distance(clear_frame,camera_frame)<35 ||
+                   camera_stats.scene_mesh_draw_calls==0U))
+                    error=13;
+                // No NaN quaternion may poison the active GPU view.
+                const auto fallback=third_person_camera(
+                    {0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f,0.0f});
+                renderer->set_camera({
+                    {fallback.position.x,fallback.position.y,
+                        fallback.position.z},
+                    {fallback.forward.x,fallback.forward.y,
+                        fallback.forward.z},
+                    {fallback.left.x,fallback.left.y,fallback.left.z},
+                    {fallback.up.x,fallback.up.y,fallback.up.z},
+                    60.0f,0.1f,40.0f});
+                const auto fallback_frame=capture(*renderer);
+                if(!error && (!fallback.position_valid||
+                   fallback.orientation_valid||
+                   distance(camera_frame,fallback_frame)>6 ||
+                   glGetError()!=GL_NO_ERROR))
+                    error=14;
+            }
             std::cout<<"rgba center sky=["<<int(background[0])<<","
                 <<int(background[1])<<","<<int(background[2])
                 <<"] opaque=["<<int(opaque[0])<<","<<int(opaque[1])

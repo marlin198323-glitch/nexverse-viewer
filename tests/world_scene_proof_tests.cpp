@@ -23,6 +23,10 @@ int main()
     proof.valid_terrain_patches=257U;
     if(describe_terrain_progress(proof)!="Terrain 256/256 Patches")
         return 5;
+    proof.camera_fallback=true;
+    if(describe_world_draw_progress(proof)!=
+       "Kamera: ungültige Serverpose (Fallback)")return 6;
+    proof.camera_fallback=false;
     std::cout<<"Terrain wait/stream and world CPU vs GL provenance PASS\n";
     return 0;
 }
