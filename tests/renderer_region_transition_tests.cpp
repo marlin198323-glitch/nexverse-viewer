@@ -183,6 +183,33 @@ int main()
                        renderer->avatar_bake_preview_handle("avatar-bake")==0U ||
                        renderer->avatar_bake_preview_handle("missing")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=26;
+                    // This GPU fixture must actually resolve an asynchronous
+                    // GL_ANY_SAMPLES_PASSED result (not just report GL draw
+                    // calls). Query can finish 1-2 frames later; glFlush
+                    // here is TEST ONLY, never on the live render path.
+                    if(!error)
+                    {
+                        bool result_observed=false;
+                        for(int sample_frame=0;sample_frame<6;++sample_frame)
+                        {
+                            // Deterministic fixture only: force the GPU
+                            // to retire its pending GL queries. Production
+                            // rendering never uses glFinish or blocking
+                            // GL_QUERY_RESULT.
+                            glFinish();
+                            const auto queried=render();
+                            if(queried.self_avatar_visible_samples_known)
+                            {
+                                result_observed=true;
+                                break;
+                            }
+                        }
+                        if(!result_observed)error=43;
+                        renderer->reset_self_avatar_visibility();
+                        const auto after_reset=render();
+                        if(after_reset.self_avatar_visible_samples_known)
+                            error=44;
+                    }
                     // After the GL render, combine actual GPU Draw counters
                     // with a server-like AvatarAppearance TextureEntry's
                     // currently-resident baked UUIDs. This test still uses
@@ -401,6 +428,30 @@ int main()
                        renderer->avatar_bake_preview_handle("avatar-bake")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=27;
                 }
+                // Truly behind-camera ORIGINAL LLM geometry still
+                // submits GL draws but zero fragments should survive.
+                // This proves the query is not just a draw counter.
+                renderer->reset_self_avatar_visibility();
+                RenderAvatarProxy behind_avatar;
+                behind_avatar.position={-4.0f,0.0f,0.0f};
+                behind_avatar.is_self=true;
+                renderer->set_avatar_proxies({behind_avatar});
+                bool hidden_known=false;
+                for(int check=0;check<6 && !error;++check)
+                {
+                    glFinish(); // Test only; production remains async
+                    const auto hidden=render();
+                    if(hidden.self_avatar_visible_samples_known)
+                    {
+                        hidden_known=true;
+                        if(hidden.self_avatar_visible_samples_passed||
+                           hidden.self_avatar_anatomical_mesh_draw_calls!=3U)
+                            error=45;
+                        break;
+                    }
+                }
+                if(!hidden_known)error=46;
+                renderer->reset_self_avatar_visibility();
                 renderer->set_avatar_proxies({});
                 const auto cleared_avatar=render();
                 if(cleared_avatar.avatar_proxy_draw_calls!=0U ||

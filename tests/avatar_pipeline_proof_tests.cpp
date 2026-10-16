@@ -38,6 +38,15 @@ int main()
     if(p.body_gpu_drawn())return 7;
     p.body_bake_draws={1U,1U,1U};
     if(!p.body_gpu_drawn())return 8;
+    if(p.fragment_stage()!="Avatar Fragmente: GPU-Abfrage laeuft")
+        return 18;
+    p.fragment_query_known=true;
+    p.fragment_samples_passed=true;
+    if(p.fragment_stage()!="Avatar Fragmente: sichtbar (Depth-Test)")
+        return 19;
+    p.fragment_samples_passed=false;
+    if(p.fragment_stage()!="Avatar Fragmente: 0 (verdeckt/ausserhalb)")
+        return 20;
     p.appearance_received=false;
     if(p.body_gpu_drawn())return 9;
     if(p.bakes.upload_authorized())return 5;

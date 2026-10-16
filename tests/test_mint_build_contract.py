@@ -53,6 +53,22 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("render_camera_from_agent(agent,camera_zoom_distance,camera_orbit_degrees)",app)
         self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance,camera_orbit_degrees)",app)
 
+    def test_self_avatar_occlusion_query_and_f4_are_live(self):
+        src=(ROOT/"src/app/application.cpp").read_text()
+        gpu=(ROOT/"src/render/opengl_renderer.cpp").read_text()
+        contract=(ROOT/"include/nexverse/render/renderer.hpp").read_text()
+        self.assertIn("key==GLFW_KEY_F4",src)
+        self.assertIn("hit_avatar_focus(",src)
+        self.assertIn('"AVATAR  [F4]"',src)
+        self.assertIn("ui::focus_front_avatar()",src)
+        self.assertIn("world_renderer->reset_self_avatar_visibility()",src)
+        self.assertIn("avatar_proof.fragment_stage()",src)
+        self.assertIn("GL_ANY_SAMPLES_PASSED",gpu)
+        self.assertIn("GL_QUERY_RESULT_AVAILABLE",gpu)
+        self.assertIn("self_avatar_visibility_query_epoch_",gpu)
+        self.assertIn("self_avatar_visible_samples_passed",contract)
+        self.assertNotIn("glFinish(",gpu)
+
     def test_camera_zoom_scroll_raycast_streaming_and_f9_shortcut(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("glfwSetScrollCallback(window,scroll_callback)",app)

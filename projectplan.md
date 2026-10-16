@@ -6,6 +6,43 @@ Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firesto
 
 ---
 
+## VERBINDLICHE FÜNF-BLÖCKE-REGEL – ab 16.10.2026
+
+Für jedes Nutzerkommando WEITER beziehungsweise Projektfortsetzung
+werden ohne wiederholte Freigaberückfrage standardmäßig
+**fünf substanzielle, zusammenhängende Entwicklungsblöcke** in einem
+Arbeitsdurchlauf geplant UND umgesetzt, nicht nur fünf Dokumentations- oder
+Statusabsätze. Die Regel bleibt für alle künftigen Chats verbindlich.
+Bei ausdrücklich anderslautender Nutzeranweisung gilt deren Umfang.
+
+Jeder Fünferdurchlauf umfasst gleichzeitig Backend/Protokoll/Renderer
+**UND** die zugehörigen sichtbaren Viewer-Bedienelemente, falls die
+Funktion eine UI hat. Bestehende Firestorm/OpenSim-Funktionen sowie
+OpenGenesisLINK-Serverkompatibilität wahren; vor jedem Block den
+aktuellen Server- und Viewer-GitHub-Stand prüfen, aber unqualifizierte
+Upstream-Commits niemals ungeprüft freigeben.
+
+**Pflichtabfolge:** fünf Aufgaben mit eindeutigen Alpha-/Block-IDs
+und prüfbaren Ergebnissen, Umsetzung direkt im Linux-Mint-Checkout
+über Desktop Commander, passende native/OpenGL/Python-Tests,
+vollständiger lokaler Build, Xvfb-GUI-Smoke ohne Start auf dem
+sichtbaren Benutzerdesktop, Aktualisierung von projectplan.md,
+AGENTS.md, CHATUEBERGABE.md, info.md und Kompatibilitätsmatrizen,
+Commit/Push auf develop-current und anschließende Pi5-CI-Prüfung.
+Raspberry Pi bleibt CI-Runner, keine Viewer-Entwicklung auf Pi.
+
+Ein Block gilt als FERTIG nur nach tatsächlicher Implementation und
+grünen Tests. Fehlende Zugänge/Hindernisse = BLOCKIERT mit
+Grund und nächstem Schritt, nie durch Fake-Tests oder bloße
+Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
+
+### Laufender Fünferdurchlauf Alpha.210–214
+- **Alpha.210:** Fünferregel und GitHub-/Server-Baseline [FERTIG].
+- **Alpha.211:** Echte GPU-Samples für eigenen originalen Avatar [FERTIG].
+- **Alpha.212:** Session-sichere Avatar-Pixel-/Draw-Auswertung im UI [FERTIG].
+- **Alpha.213:** Sichtbares Avatar-Kamera-Fokus-Control mit echter Aktion [FERTIG].
+- **Alpha.214:** 127/127 Mint C++/NVIDIA-GL, 49/49 Python, Pi5-kompatibles Headless, Xvfb-Viewer, Taskleistenicon und GitHub-Push [GETESTET; Pi5-CI AUSSTEHEND].
+
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
 Der Benutzer fordert, dass bei jedem Entwicklungs-/Featureblock und
@@ -6005,3 +6042,27 @@ ansonsten volle Weltansicht. Native Mint/GL/Python, Pi5 Headless
 und Xvfb-Vollviewer-Gates. Server-main ec760cac unverändert.
 Echter Login-/Avatar-Pixelnachweis weiterhin NICHT getestet.
 Detail: docs/ALPHA205_209_WORLD_ENTRY_AND_AVATAR_VIEW_EVIDENCE.md.
+
+## 16.10.2026 – Alpha.210–214: fünf verbindliche Blöcke und echte GL-Avatar-Fragmente
+
+210: Ein verbindlicher Fünferdurchlauf pro WEITER mit fünf
+implementierten Arbeiten + sichtbarer UI, Tests, kompletter
+Mint-Build, GitHub und Pi5-CI ist im Projektplan,
+AGENTS.md und Chatübergabe fest verankert.
+211: Original-LLM-Self-Avatar-Body bekommt asynchron
+GL_ANY_SAMPLES_PASSED für tatsächliche Fragmente nach
+Tiefentest; nonblocking Doppelquery, Renderer-/GPU-
+Lebenszyklus und bisherige Draws weiter korrekt.
+212: Epoch-sichere Queryinvalidate nach Regionwechsel,
+UI trennt UNKNOWN/Depth-Samples 0/Depth-Samples sichtbar
+von bloßer GPU-Submission und fehlenden Avatar-Bakes.
+213: Sichtbarer Avatar-Fokusbutton [F4] + Tastatur-Kürzel,
+echte Kamera 8m/frontal, funktioniert mit/ohne F5 HUD,
+Widescreen, ohne LLUDP-Agent-Rotation oder COF-Schreibzugriff.
+214: Echte NVIDIA-OpenGL-Regression für beantwortete,
+verdeckte und epoch-invalide Avatar-Queries, native
+C++23 Kamera-Button-/Python-Contract, vollständige
+Mint/GPU/Headless/Xvfb und Github/Pi5 CI-Gates.
+Noch KEIN realer authentifizierter NexVerse Avatar-
+oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
+Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.

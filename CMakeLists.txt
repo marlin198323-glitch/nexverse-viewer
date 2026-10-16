@@ -425,6 +425,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-scene-forward-visibility-tests
         COMMAND nexverse-scene-forward-visibility-tests)
 
+    add_executable(nexverse-camera-avatar-focus-tests
+        tests/camera_avatar_focus_tests.cpp)
+    target_link_libraries(nexverse-camera-avatar-focus-tests
+        PRIVATE NexVerse::UI NexVerse::Render)
+    nexverse_enable_warnings(nexverse-camera-avatar-focus-tests)
+    add_test(NAME nexverse-camera-avatar-focus-tests
+        COMMAND nexverse-camera-avatar-focus-tests)
+
     add_executable(nexverse-camera-orbit-controls-tests
         tests/camera_orbit_controls_tests.cpp)
     target_link_libraries(nexverse-camera-orbit-controls-tests

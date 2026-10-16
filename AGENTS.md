@@ -1,5 +1,9 @@
 # nexverse-viewer – Projektanweisungen
 
+## VERBINDLICHE FÜNF-BLÖCKE-REGEL (16.10.2026)
+
+Bei jedem WEITER fünf echte zusammenhängende Entwicklungsblöcke mit Code+sichtbarer UI, Tests, GitHub-Servercheck, vollständigem Mint-Build und Xvfb, GitHub-Push und Pi5-CI; Status und Block-IDs in projectplan.md nachführen. Blockiert != fertig. Keine Pi-Entwicklung, kein sichtbarer Desktop-Viewer-Start. Diese Regel gilt auch in neuen Chats.
+
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
 
 - **Alpha.209 Avatar/Welt-Entry (16.10.2026):** Welt-Loadpanel nennt tatsächliche blockierende Stufe (LLUDP/Region/Agent) statt 100% trotz fehlender Szene. Avatar-Proof projektiert authentischen Agentkopf ins Blickfeld, trennt Original-LLM-GL-Draws/Proxy von Appearance-Bakes; keine Avatar-Pixelbehauptung. Original-Brandicon bleibt im Login und in Welt-HUD. F5-Hinweis nur bei fehlendem Avatar. Native/Python-GPU/Xvfb/CI-Gates und GitHub docs fortführen.

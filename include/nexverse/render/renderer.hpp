@@ -349,6 +349,12 @@ struct RenderDiagnostics
     std::uint64_t self_avatar_weighted_skin_draw_calls = 0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
+    // GL_ANY_SAMPLES_PASSED on original self head/upper/lower, resolved
+    // asynchronously from a preceding frame. Not a completed bake or
+    // a post-UI pixel readback. Explicit validity avoids fake 0-pixel
+    // claims when the GPU has not returned query results.
+    bool self_avatar_visible_samples_known=false;
+    bool self_avatar_visible_samples_passed=false;
     // Actual original three Firestorm .llm body GL submissions with a baked
     // server texture bound, Head/Upper/Lower. Proxy fallback excluded.
     std::array<std::uint64_t,3U> self_avatar_body_bake_gl_draws{};
@@ -423,6 +429,9 @@ public:
         const std::vector<RenderSceneObject>& objects) = 0;
     virtual void set_avatar_proxies(
         const std::vector<RenderAvatarProxy>& avatars) = 0;
+    // Invalidate prior GPU visibility results when the simulator region
+    // epoch changes. Outstanding GL queries are discarded on completion.
+    virtual void reset_self_avatar_visibility() = 0;
     virtual void set_avatar_bind_rig(
         const RenderAvatarBindRig& rig)=0;
     // Readable Firestorm Linden Binary Mesh 1.0 head/upper/lower bind pose.

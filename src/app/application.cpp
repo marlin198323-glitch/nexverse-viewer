@@ -84,6 +84,7 @@
 #include "nexverse/ui/brand_icon.hpp"
 #include "nexverse/ui/camera_zoom_controls.hpp"
 #include "nexverse/ui/camera_orbit_controls.hpp"
+#include "nexverse/ui/camera_avatar_focus.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -607,6 +608,22 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         if(key==GLFW_KEY_V||key==GLFW_KEY_LEFT_BRACKET||
            key==GLFW_KEY_RIGHT_BRACKET)return;
     }
+    // F4 restores the actual third-person camera to a stable frontal
+    // portrait of the authenticated avatar; no LLUDP or agent mutation.
+    if(context && context->login&&context->login->authenticated&&
+       context->simulation_ready&&*context->simulation_ready&&
+       context->camera_orbit_degrees&&context->camera_zoom_distance&&
+       key==GLFW_KEY_F4&&action==GLFW_PRESS&&
+       !(context->experience&&context->experience->open)&&
+       !(context->outfits&&*context->outfits)&&
+       !(context->inventory_open&&*context->inventory_open)&&
+       !(context->viewer_shell&&context->viewer_shell->input_captured()))
+    {
+        const auto focus=nexverse::ui::focus_front_avatar();
+        *context->camera_zoom_distance=focus.distance;
+        *context->camera_orbit_degrees=focus.orbit;
+        return;
+    }
     // Firestorm-like world focus shortcut: the underlying 3D renderer
     // remains active; only diagnostic/navigation panels are hidden.
     if(context && context->world_hud_visible&&context->login&&
@@ -986,6 +1003,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         glfwGetWindowSize(window,&width,&height);
         double mx=0.0,my=0.0;
         glfwGetCursorPos(window,&mx,&my);
+        if(context->camera_orbit_degrees&&
+           context->camera_zoom_distance&&
+           !(context->viewer_shell&&
+             context->viewer_shell->input_captured())&&
+           nexverse::ui::hit_avatar_focus(width,height,mx,my))
+        {
+            const auto focus=nexverse::ui::focus_front_avatar();
+            *context->camera_zoom_distance=focus.distance;
+            *context->camera_orbit_degrees=focus.orbit;
+            return;
+        }
         if(context->camera_orbit_degrees&&
            !(context->viewer_shell&&
              context->viewer_shell->input_captured()))
@@ -1984,6 +2012,11 @@ void render_world_hud_toggle(UiRenderer& renderer,int width,int height,
     draw_button(buttons.far,"-");
     renderer.text(buttons.far.x+39.0f,buttons.far.y+7.0f,10.0f,
         nexverse::ui::camera_zoom_label(camera_distance),theme::text);
+    const auto focus=nexverse::ui::avatar_focus_button(width,height);
+    renderer.rect(focus.x,focus.y,focus.w,focus.h,
+        Color{0.016f,0.155f,0.247f,0.97f},6.0f);
+    renderer.text(focus.x+6.0f,focus.y+8.0f,9.0f,
+        "AVATAR  [F4]",theme::cyan);
     const auto orbit_buttons=nexverse::ui::camera_orbit_buttons(width,height);
     draw_button(orbit_buttons.left,"<");
     draw_button(orbit_buttons.flip,"V");
@@ -2347,7 +2380,7 @@ void render_world_hud(
     // proof of final screen visibility. No invented Avatar or Wear action.
     if(card_visibility.avatar)
     {
-    renderer.rect(card_x,rail_y+370.0f*scale,card_w,117.0f*scale,
+    renderer.rect(card_x,rail_y+370.0f*scale,card_w,140.0f*scale,
         Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
     renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
         10.2f*scale,"Avatar-Pipeline",theme::text);
@@ -2364,6 +2397,11 @@ void render_world_hud(
         7.0f*scale,avatar_proof.view_stage(),
         avatar_proof.view.center_in_frustum&&
         avatar_proof.original_body_draws>0U
+            ?theme::cyan:theme::warning);
+    renderer.text(card_x+14.0f*scale,rail_y+488.0f*scale,
+        7.0f*scale,avatar_proof.fragment_stage(),
+        avatar_proof.fragment_query_known&&
+        avatar_proof.fragment_samples_passed
             ?theme::cyan:theme::warning);
     }
 
@@ -3204,6 +3242,10 @@ void render_shell(
                avatar_proof.original_body_draws==0U)
                 renderer.text(16.0f,38.0f,9.0f,
                     avatar_proof.view_stage(),theme::warning);
+            else if(avatar_proof.fragment_query_known&&
+                    !avatar_proof.fragment_samples_passed)
+                renderer.text(16.0f,38.0f,9.0f,
+                    avatar_proof.fragment_stage(),theme::warning);
         }
         return;
     }
@@ -7368,6 +7410,7 @@ int Application::run(bool enable_developer_modules)
             gallery_inventory_sync.enter(current_firestorm_epoch);
             if(animation_asset_epoch!=current_firestorm_epoch)
             {
+                world_renderer->reset_self_avatar_visibility();
                 // Old simulator LocalIDs have no validity in the next
                 // region. A touch held during teleport must never target
                 // a new simulator using its stale LocalID.
@@ -12050,6 +12093,10 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
             avatar_proof.proxy_draws=
                 render_diagnostics.self_avatar_proxy_draw_calls;
+            avatar_proof.fragment_query_known=
+                render_diagnostics.self_avatar_visible_samples_known;
+            avatar_proof.fragment_samples_passed=
+                render_diagnostics.self_avatar_visible_samples_passed;
             if(simulation_ready&&render_agent.present)
             {
                 const auto camera=render::third_person_camera(

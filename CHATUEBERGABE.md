@@ -3653,3 +3653,31 @@ ansonsten volle Weltansicht. Native Mint/GL/Python, Pi5 Headless
 und Xvfb-Vollviewer-Gates. Server-main ec760cac unverändert.
 Echter Login-/Avatar-Pixelnachweis weiterhin NICHT getestet.
 Detail: docs/ALPHA205_209_WORLD_ENTRY_AND_AVATAR_VIEW_EVIDENCE.md.
+
+## VERBINDLICHE FÜNF-BLÖCKE-REGEL (16.10.2026)
+
+Auf jedes WEITER fünf implementierte und getestete Blöcke; OGL Mint via Desktop Commander, Pi nur ARM64-CI. Vorab OpenGenesisLINK Server checken. Code, sichtbare Viewer-UI, Tests, Plan, Handoff, Commit/Push und Pi-CI zusammen. Blockaden explizit, keine Fake-Fertig-Behauptung. Siehe projectplan.md Alpha.210–214.
+
+## 16.10.2026 – Alpha.210–214: fünf verbindliche Blöcke und echte GL-Avatar-Fragmente
+
+210: Ein verbindlicher Fünferdurchlauf pro WEITER mit fünf
+implementierten Arbeiten + sichtbarer UI, Tests, kompletter
+Mint-Build, GitHub und Pi5-CI ist im Projektplan,
+AGENTS.md und Chatübergabe fest verankert.
+211: Original-LLM-Self-Avatar-Body bekommt asynchron
+GL_ANY_SAMPLES_PASSED für tatsächliche Fragmente nach
+Tiefentest; nonblocking Doppelquery, Renderer-/GPU-
+Lebenszyklus und bisherige Draws weiter korrekt.
+212: Epoch-sichere Queryinvalidate nach Regionwechsel,
+UI trennt UNKNOWN/Depth-Samples 0/Depth-Samples sichtbar
+von bloßer GPU-Submission und fehlenden Avatar-Bakes.
+213: Sichtbarer Avatar-Fokusbutton [F4] + Tastatur-Kürzel,
+echte Kamera 8m/frontal, funktioniert mit/ohne F5 HUD,
+Widescreen, ohne LLUDP-Agent-Rotation oder COF-Schreibzugriff.
+214: Echte NVIDIA-OpenGL-Regression für beantwortete,
+verdeckte und epoch-invalide Avatar-Queries, native
+C++23 Kamera-Button-/Python-Contract, vollständige
+Mint/GPU/Headless/Xvfb und Github/Pi5 CI-Gates.
+Noch KEIN realer authentifizierter NexVerse Avatar-
+oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
+Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.

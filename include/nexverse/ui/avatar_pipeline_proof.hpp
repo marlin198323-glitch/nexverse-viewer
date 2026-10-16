@@ -17,6 +17,10 @@ struct AvatarPipelineProof
     bool self_present=false;
     AvatarViewEvidence view{};
     std::uint64_t proxy_draws=0U;
+    // Pre-UI, depth-tested original-body GL fragments from an asynchronous
+    // query of a previous frame in the SAME simulator region epoch.
+    bool fragment_query_known=false;
+    bool fragment_samples_passed=false;
     nexverse::protocol::AvatarBakeEvidence bakes{};
     std::uint64_t original_body_draws=0U;
     std::array<std::uint64_t,3U> body_bake_draws{};
@@ -26,6 +30,18 @@ struct AvatarPipelineProof
     {
         return describe_avatar_view(world_ready,self_present,view,
             original_body_draws,proxy_draws);
+    }
+    [[nodiscard]] std::string fragment_stage() const
+    {
+        if(!world_ready||!self_present)
+            return "Avatar Fragmente: keine aktive Szene";
+        if(original_body_draws==0U)
+            return "Avatar Fragmente: kein Original-LLM-Draw";
+        if(!fragment_query_known)
+            return "Avatar Fragmente: GPU-Abfrage laeuft";
+        return fragment_samples_passed
+            ?"Avatar Fragmente: sichtbar (Depth-Test)"
+            :"Avatar Fragmente: 0 (verdeckt/ausserhalb)";
     }
     [[nodiscard]] bool body_gpu_drawn() const noexcept
     {
