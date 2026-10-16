@@ -10,7 +10,9 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 
 **Alpha.264 CI:** Commit acaab98d987c6c7602f806da4b33b2de8ae333a5; GitHub Pi5 ARM64 Run 38978541689 SUCCESS (SHA identisch), Mint 140/140 native, 85/85 Python, Headless/Xvfb/Taskleistenicon PASS. Reale Grid-E2E-Prüfung weiterhin offen.
 
-**Alpha.265–274:** F3 Head/Upper/Lower + 8 weitere echte Server-Bake-GPU-/GL-/Depth-Stufen, begrenzte GetTexture-Replanung mit unverändertem Backoff. 39 % (38,65 %) unverändert; kein authentifizierter NexVerse-Live-Avatar-/Outfit-/Pixel-E2E-Beleg. **Nächster Zehnerdurchlauf Alpha.275–284.**\n\n## Gewichtete Projektbewertung
+**Alpha.265–274:** F3 Head/Upper/Lower + 8 weitere echte Server-Bake-GPU-/GL-/Depth-Stufen, begrenzte GetTexture-Replanung mit unverändertem Backoff. 39 % (38,65 %) unverändert; kein authentifizierter NexVerse-Live-Avatar-/Outfit-/Pixel-E2E-Beleg. **Nächster Zehnerdurchlauf Alpha.275–284.**\n\n**Alpha.274 verifiziert:** Featurecommit 427555ab8ccb59adbbc41cd00bf576cbedc62f07; pi5-ogl ARM64-CI 38980155018 SUCCESS mit identischem Feature-SHA. Mint x64 Fullbuild, 141/141 C++/NVIDIA GL, 90/90 Python, Headless und isoliertes Xvfb/Icon PASS. Bewertung 39 % unverändert.
+
+## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |
 |---|---:|---:|---:|

@@ -13,7 +13,7 @@ Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69e
 - **271 IMPLEMENTIERT/TEST:** drei sichtbare F3-Avatarfensterseiten, incl. 11 serverseitige Bake-Slots.
 - **272 IMPLEMENTIERT/TEST:** B/R Maus und Tastatur, real disabled sowie 16:9/32:9-Layout-Hitboxes.
 - **273 IMPLEMENTIERT/TEST:** F3 Status über GPU/GL/Depth/Backoff/CAP, C++23 und Python-Regressions.
-- **274 BUILD/CI-ABSCHLUSS:** x64 Mint-/NVIDIA OpenGL-/Python-/Headless-/Xvfb-/Icon-/Pi5 CI-Gates inkl. Github SHA.
+- **274 FERTIG:** Mint-x64-Vollbuild, 141/141 C++23/NVIDIA GL, 90/90 Python, Headless, Xvfb, Original-Systemicon PASS. Featurecommit 427555ab8ccb59adbbc41cd00bf576cbedc62f07, Pi5 ARM64 Run 38980155018 SUCCESS für diesen SHA; Live-NexVerse E2E weiterhin OFFEN.
 
 Für präzisen Status, Tests und Grenzen siehe docs/ALPHA265_274_AVATAR_BAKE_INSPECTOR.md. 39 % Gesamtfortschritt unverändert; reale authentifizierte Welt/Avatar-/Outfit-Bakes bleiben OFFEN.
 

@@ -17,7 +17,7 @@ Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69e
 | 271 | Sichtbares Avatar-F3-Fenster mit Übersicht, Bake-Seite 1/2 und 2/2 mit elf Slots, echtem GPU-/LLM-GL-/Depth-Status. | Viewer GUI |
 | 272 | B-Button und Tastatur B wechseln die Detailseiten, R-Button/Tastatur R löst die sichere Neuplanung aus; disabled-Fälle und Bildschirmgrößen 1100x700, 1920x1080, 3440x1440 getestet. | Layout/Hitboxes |
 | 273 | Live-Hinweise zu Self-TE, Capability, Inflight, Backoff, Request-Quota und anforderbaren fehlenden Bake-Layern, ohne fremde Avatar-Namen, UUIDs, Tokens oder Admin-Zugangsdaten. | Native/Python source contracts |
-| 274 | VERSION, Docs, Entwicklungsplan, Firestorm-/Server-Matrizen, CMake-Nativtest, Pi5-Headless, voller Mint-x64/NVIDIA GL Build, Xvfb+Systemicon, GitHub-Push+Pi5 CI. | Erfolge nach Gate einzeln dokumentieren |
+| 274 | VERSION, Docs, Entwicklungsplan, Firestorm-/Server-Matrizen, CMake-Nativtest, Pi5-Headless, voller Mint-x64/NVIDIA GL Build, Xvfb+Systemicon, GitHub-Push+Pi5 CI. | FERTIG: Mint 141/141 native GL, 90/90 Python, Headless/Xvfb/Icon PASS; Pi5 Run 38980155018 SUCCESS auf 427555ab8ccb59adbbc41cd00bf576cbedc62f07 |
 
 ## Sicherheits- und Funktionsgrenzen
 
@@ -28,3 +28,7 @@ Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69e
 - Der OpenGenesisLINK-Server-head 8ec7ea25590126 enthält ein disabled-by-default AssetService-Addon, das zwar mitgebaut wird, aber weder automatisch deployed noch aktiviert werden darf. Keine unbekannten Secrets/Admin-Token in den Viewer.
 
 **Projektfortschritt weiterhin 39 %.** Nächste verpflichtende 10 Blöcke: **Alpha.275–284**, mit Fokus auf echte AvatarAppearance-Serverantworten, komplette Bake-/Outfit-Texturen und GPU-Pixelnachweis samt Funktion und Oberfläche.
+
+## Validierter Release-Gate-Abschluss
+
+Featurecommit 427555ab8ccb59adbbc41cd00bf576cbedc62f07; GitHub Pi5 ARM64 CI Run 38980155018 **SUCCESS** auf exakt diesem SHA. Mint-CMake Debug x64 vollständig gebaut, 141/141 native C++23/NVIDIA GL, 90/90 Python, Pi5-kompatibler Headless-Test, versteckter Xvfb-Vollviewer und Original WM_CLASS/Systemicon erfolgreich. Kein echter Grid-Avatar-/Outfit-E2E-Test; Gesamtfortschritt 39 %.
