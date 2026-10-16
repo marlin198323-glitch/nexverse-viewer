@@ -34,7 +34,7 @@ class OriginalBrandingTests(unittest.TestCase):
         self.assertIn("renderer.image(brand_texture,19.0f*scale",src)
         self.assertIn("avatar_proof.view_stage()",src)
         self.assertIn("ui::inspect_avatar_view(",src)
-        self.assertIn("ui::describe_world_entry(stage)",src)
+        self.assertIn("ui::describe_world_entry(world_entry_stage)",src)
         self.assertIn("welcome_texture,world_entry",src)
         self.assertIn("0.96f",src)
 

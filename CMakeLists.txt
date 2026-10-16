@@ -490,6 +490,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-asset-stream-proof-tests
         COMMAND nexverse-asset-stream-proof-tests)
 
+    add_executable(nexverse-loading-circuit-retry-policy-tests
+        tests/loading_circuit_retry_policy_tests.cpp)
+    target_link_libraries(nexverse-loading-circuit-retry-policy-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-loading-circuit-retry-policy-tests)
+    add_test(NAME nexverse-loading-circuit-retry-policy-tests
+        COMMAND nexverse-loading-circuit-retry-policy-tests)
+
+    add_executable(nexverse-loading-diagnostics-layout-tests
+        tests/loading_diagnostics_layout_tests.cpp)
+    target_link_libraries(nexverse-loading-diagnostics-layout-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-loading-diagnostics-layout-tests)
+    add_test(NAME nexverse-loading-diagnostics-layout-tests
+        COMMAND nexverse-loading-diagnostics-layout-tests)
+
     add_executable(nexverse-world-entry-stage-tests
         tests/world_entry_stage_tests.cpp)
     target_link_libraries(nexverse-world-entry-stage-tests PRIVATE NexVerse::UI)

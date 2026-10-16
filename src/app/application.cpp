@@ -106,6 +106,8 @@
 #include "nexverse/ui/viewer_shell.hpp"
 #include "nexverse/ui/viewer_shell_render.hpp"
 #include "nexverse/ui/avatar_diagnostic_report.hpp"
+#include "nexverse/ui/loading_diagnostics_layout.hpp"
+#include "nexverse/ui/loading_circuit_retry_policy.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
@@ -433,6 +435,9 @@ struct InputContext
     float* camera_zoom_distance=nullptr;
     float* camera_orbit_degrees=nullptr;
     bool* avatar_report_save_requested=nullptr;
+    bool* loading_diagnostics_open=nullptr;
+    bool* loading_circuit_retry_requested=nullptr;
+    bool* loading_circuit_retry_available=nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
     CapsRuntimeState* caps=nullptr;
@@ -610,6 +615,22 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         else orbit=nexverse::ui::orbit_normalize(orbit);
         if(key==GLFW_KEY_V||key==GLFW_KEY_LEFT_BRACKET||
            key==GLFW_KEY_RIGHT_BRACKET)return;
+    }
+    // Crucial: F3 diagnostics must work AFTER authentication even if the
+    // world never became ready. No avatar position or UDP CAP required.
+    if(context&&context->login&&context->login->authenticated&&
+       context->simulation_ready&&!*context->simulation_ready&&
+       context->loading_diagnostics_open&&action==GLFW_PRESS)
+    {
+        auto& open=*context->loading_diagnostics_open;
+        if(key==GLFW_KEY_F3){open=!open;return;}
+        if(open&&key==GLFW_KEY_ESCAPE){open=false;return;}
+        if(open&&key==GLFW_KEY_S&&context->avatar_report_save_requested)
+        {
+            *context->avatar_report_save_requested=true;
+            return;
+        }
+        if(open)return; // No movement/UI input behind modal diagnostic
     }
     // F4 restores the actual third-person camera to a stable frontal
     // portrait of the authenticated avatar; no LLUDP or agent mutation.
@@ -1003,6 +1024,30 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         return;
     }
     if(action!=GLFW_PRESS)return;
+    if(context&&context->login&&context->login->authenticated&&
+       context->simulation_ready&&!*context->simulation_ready&&
+       context->loading_diagnostics_open)
+    {
+        int width=0,height=0;
+        glfwGetWindowSize(window,&width,&height);
+        double mx=0.0,my=0.0;
+        glfwGetCursorPos(window,&mx,&my);
+        const auto hit=nexverse::ui::hit_loading_diagnostics(
+            width,height,mx,my,*context->loading_diagnostics_open);
+        if(hit==nexverse::ui::LoadingDiagAction::open)
+            *context->loading_diagnostics_open=true;
+        else if(hit==nexverse::ui::LoadingDiagAction::close)
+            *context->loading_diagnostics_open=false;
+        else if(hit==nexverse::ui::LoadingDiagAction::save&&
+                context->avatar_report_save_requested)
+            *context->avatar_report_save_requested=true;
+        else if(hit==nexverse::ui::LoadingDiagAction::retry&&
+                context->loading_circuit_retry_requested&&
+                context->loading_circuit_retry_available&&
+                *context->loading_circuit_retry_available)
+            *context->loading_circuit_retry_requested=true;
+        return; // loading view has no world clicks
+    }
     if(context &&context->viewer_shell&&context->simulation_ready &&
        *context->simulation_ready&&context->login &&
        context->login->authenticated &&
@@ -1858,7 +1903,8 @@ void render_loading_screen(
     const SimulationLoadStats& load_stats,
     const CapsRuntimeState& caps,
     unsigned int welcome_texture,
-    std::string_view world_entry)
+    std::string_view world_entry,float required_progress,
+    std::string_view wait_hint)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -1905,6 +1951,12 @@ void render_loading_screen(
         Color{0.010f, 0.020f, 0.032f, 0.96f},
         16.0f * scale);
 
+    const nexverse::ui::LoadingDiagnosticsLayout diag{width,height};
+    renderer.rect(diag.open.x,diag.open.y,diag.open.w,diag.open.h,
+        Color{0.026f,0.150f,0.222f,0.96f},7.0f*scale);
+    renderer.text(diag.open.x+12.0f*scale,
+        diag.open.y+13.0f*scale,9.0f*scale,
+        "DIAGNOSE [F3]",theme::cyan);
     renderer.text(
         panel_x + 30.0f * scale,
         panel_y + 26.0f * scale,
@@ -1932,16 +1984,10 @@ void render_loading_screen(
     const bool terrain_ready = load_stats.terrain_packets > 0U;
     const bool object_ready = load_stats.object_packets > 0U;
 
-    const int completed =
-        1 +
-        (udp_ready ? 1 : 0) +
-        (caps_ready ? 1 : 0) +
-        (terrain_ready ? 1 : 0) +
-        (object_ready ? 1 : 0);
-    // Loading-screen path is entered only while scene_ready==false.
-    // Optional terrain/object counters must not claim 100% world-ready.
-    const float progress =
-        std::clamp(static_cast<float>(completed) / 5.0f, 0.04f, 0.96f);
+    // No optional CAPS, Terrain or Object receipt can advance the core
+    // world readiness bar. The independent packet receipt indicators
+    // below still update on authentic server traffic.
+    const float progress=std::clamp(required_progress,0.04f,0.96f);
 
     const float bar_x = panel_x + 30.0f * scale;
     const float bar_y = panel_y + 126.0f * scale;
@@ -1995,8 +2041,11 @@ void render_loading_screen(
             : "");
     renderer.text(panel_x+30.0f*scale,panel_y+282.0f*scale,
         9.0f*scale,world_entry,theme::cyan);
-    renderer.text(panel_x+30.0f*scale,panel_y+306.0f*scale,
+    renderer.text(panel_x+30.0f*scale,panel_y+303.0f*scale,
                   8.2f*scale,parity_caps,theme::text_muted);
+    if(!wait_hint.empty())
+        renderer.text(panel_x+30.0f*scale,panel_y+320.0f*scale,
+            7.4f*scale,wait_hint,theme::warning);
 
     const std::string version =
         std::string{"v"} + std::string{nexverse::core::version()};
@@ -3189,6 +3238,75 @@ void render_experience_floater(
                   theme::text_muted);
 }
 
+void render_loading_diagnostics_panel(
+    UiRenderer& renderer,int width,int height,
+    const nexverse::ui::AvatarDiagnosticReport& report,
+    std::string_view entry_status,std::string_view notice,
+    bool retry_available,std::string_view wait_hint)
+{
+    const nexverse::ui::LoadingDiagnosticsLayout l{width,height};
+    const float sc=l.scale;
+    renderer.rect(0,0,static_cast<float>(width),
+        static_cast<float>(height),Color{0.002f,0.010f,0.024f,0.65f});
+    renderer.rect(l.modal.x,l.modal.y,l.modal.w,l.modal.h,
+        Color{0.012f,0.030f,0.053f,0.99f},12.0f*sc);
+    renderer.rect(l.modal.x,l.modal.y,l.modal.w,3.0f*sc,
+        theme::cyan);
+    renderer.text(l.modal.x+22.0f*sc,l.modal.y+18.0f*sc,16.0f*sc,
+        "Welt-Verbindung / Diagnose",theme::text);
+    renderer.rect(l.close.x,l.close.y,l.close.w,l.close.h,
+        Color{0.130f,0.055f,0.093f,0.97f},6.0f*sc);
+    renderer.text(l.close.x+14.0f*sc,l.close.y+10.0f*sc,
+        10.0f*sc,"X",theme::text);
+    const float x=l.modal.x+24.0f*sc,y=l.modal.y+67.0f*sc;
+    const auto line=[&](float offset,std::string text,Color color)
+    {
+        renderer.text(x,y+offset*sc,9.0f*sc,text,color);
+    };
+    line(0.0f,"Blockierender Schritt: "+std::string(entry_status),theme::cyan);
+    line(31.0f,std::string("Simulator-LLUDP: ")+
+        (report.simulator_circuit_active?"aktiv":"wartet"),
+        report.simulator_circuit_active?theme::success:theme::warning);
+    line(57.0f,std::string("Region Handle: ")+
+        (report.region_handle_present?"empfangen":"fehlt")+
+        "  |  Region verbunden: "+
+        (report.region_connected?"ja":"nein"),theme::text);
+    line(83.0f,std::string("Agent-ID/Session-ID: ")+
+        (report.agent_identity_present?"vorhanden":"fehlt")+
+        "  |  AgentPosition: "+
+        (report.agent_present?"vorhanden":"fehlt"),theme::text);
+    line(109.0f,"LLUDP Pakete  Terrain "+
+        std::to_string(report.terrain_packets)+" | Objekte "+
+        std::to_string(report.object_packets),theme::text_muted);
+    line(135.0f,"LLUDP Pakete  Avatare "+
+        std::to_string(report.avatar_packets)+" | Sonstige "+
+        std::to_string(report.other_packets),theme::text_muted);
+    line(161.0f,std::string("CAPS EventQueue: ")+
+        (report.caps_event_queue_available?"beworben":"nicht verfuegbar")+
+        "  |  AvatarAppearance: "+
+        (report.appearance_received?"empfangen":"ausstehend"),
+        theme::text_muted);
+    line(191.0f,"Wartet seit "+
+        std::to_string(report.world_entry_wait_seconds)+
+        " s auf diesen Schritt",theme::warning);
+    if(!wait_hint.empty())
+        line(215.0f,std::string(wait_hint),theme::warning);
+    line(242.0f,"Bericht ohne Zugangsdaten/UUIDs.",
+        theme::text_muted);
+    renderer.rect(l.save.x,l.save.y,l.save.w,l.save.h,
+        Color{0.043f,0.167f,0.247f,0.99f},7.0f*sc);
+    renderer.text(l.save.x+13.0f*sc,l.save.y+14.0f*sc,9.0f*sc,
+        "Diagnose speichern [S]",theme::cyan);
+    renderer.rect(l.retry.x,l.retry.y,l.retry.w,l.retry.h,
+        retry_available?Color{0.055f,0.163f,0.211f,0.99f}
+                       :Color{0.031f,0.043f,0.052f,0.95f},7.0f*sc);
+    renderer.text(l.retry.x+13.0f*sc,l.retry.y+14.0f*sc,9.0f*sc,
+        retry_available?"SIMULATOR NEU VERBINDEN":"LLUDP: WARTE AUF STATUS",
+        retry_available?theme::cyan:theme::text_muted);
+    renderer.text(l.save.x,l.modal.y+l.modal.h-12.0f*sc,
+        7.2f*sc,std::string(notice).substr(0U,95U),theme::text_muted);
+}
+
 void render_shell(
     UiRenderer& renderer,
     int width,
@@ -3213,6 +3331,7 @@ void render_shell(
     float camera_orbit_degrees,
     unsigned int welcome_texture,unsigned int brand_texture,
     std::string_view world_entry,
+    float required_world_progress,std::string_view wait_hint,
     bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
@@ -3278,7 +3397,8 @@ void render_shell(
             circuit,
             load_stats,
             caps,
-            welcome_texture,world_entry);
+            welcome_texture,world_entry,required_world_progress,
+            wait_hint);
         return;
     }
 
@@ -4383,6 +4503,11 @@ int Application::run(bool enable_developer_modules)
     LoginUiState login_ui;
     ui::ViewerShellState viewer_shell;
     bool avatar_report_save_requested=false;
+    bool loading_diagnostics_open=false;
+    ui::WorldEntryWaitMonitor world_entry_wait_monitor{};
+    bool loading_circuit_retry_requested=false;
+    bool loading_circuit_retry_available=false;
+    std::chrono::steady_clock::time_point last_manual_circuit_retry{};
     std::string avatar_report_notice="S speichert einen lokalen Bericht";
     bool world_hud_visible=true;
     float camera_zoom_distance=nexverse::ui::camera_zoom_default;
@@ -4473,6 +4598,11 @@ int Application::run(bool enable_developer_modules)
     bool simulation_ready = false;
     input_context.viewer_shell=&viewer_shell;
     input_context.avatar_report_save_requested=&avatar_report_save_requested;
+    input_context.loading_diagnostics_open=&loading_diagnostics_open;
+    input_context.loading_circuit_retry_requested=
+        &loading_circuit_retry_requested;
+    input_context.loading_circuit_retry_available=
+        &loading_circuit_retry_available;
     input_context.experience=&experience_ui;
     input_context.outfits=&outfit_gallery_open;
     input_context.outfit_selection=&outfit_selection;
@@ -7172,6 +7302,65 @@ int Application::run(bool enable_developer_modules)
             {
                 std::scoped_lock lock{circuit_mutex};
                 current_circuit_state = circuit_status.state;
+            }
+
+            // Explicit button action ONLY after the previous circuit
+            // worker has fully exited (including its built-in 3 retries).
+            // Never race region handoff or use a new untrusted endpoint.
+            const bool old_circuit_finished=!circuit_future.valid()||
+                circuit_future.wait_for(std::chrono::seconds{0})==
+                    std::future_status::ready;
+            bool retry_target_matches_region=false;
+            {
+                std::scoped_lock lock{world_mutex};
+                const auto& region=world_model.region();
+                retry_target_matches_region=
+                    !circuit_target_ip.empty()&&circuit_target_port>0U&&
+                    (region.simulator_ip.empty()||
+                     (region.simulator_ip==circuit_target_ip&&
+                      region.simulator_port==circuit_target_port));
+            }
+            const auto attempt_now=std::chrono::steady_clock::now();
+            const bool retry_cooldown_elapsed=
+                last_manual_circuit_retry==
+                    std::chrono::steady_clock::time_point{}||
+                attempt_now-last_manual_circuit_retry>=
+                    std::chrono::seconds{15};
+            loading_circuit_retry_available=
+                ui::can_retry_loading_circuit(
+                    login_ui.authenticated&&active_session.has_value(),
+                    circuit_started,
+                    current_circuit_state==protocol::CircuitState::failed,
+                    old_circuit_finished,circuit_stop.load(),
+                    retry_target_matches_region,retry_cooldown_elapsed);
+            if(loading_circuit_retry_requested)
+            {
+                loading_circuit_retry_requested=false;
+                if(loading_circuit_retry_available&&active_session)
+                {
+                    if(circuit_future.valid())
+                        (void)circuit_future.get();
+                    outbound_queue.clear();
+                    movement_controller.reset();
+                    movement_feedback.reset();
+                    movement_heading_initialized=false;
+                    last_reported_control_flags=0U;
+                    protocol::LoginSession retry_session=*active_session;
+                    retry_session.simulator_ip=circuit_target_ip;
+                    retry_session.simulator_port=circuit_target_port;
+                    {
+                        std::scoped_lock lock{circuit_mutex};
+                        circuit_status.state=
+                            protocol::CircuitState::opening_socket;
+                    }
+                    circuit_stop.store(false);
+                    launch_circuit(std::move(retry_session));
+                    last_manual_circuit_retry=attempt_now;
+                    loading_circuit_retry_available=false;
+                    avatar_report_notice=
+                        "LLUDP-Verbindungsversuch gestartet; Status abwarten";
+                    core::info("Manual LLUDP retry launched after stopped worker");
+                }
             }
 
             if (login_ui.authenticated && active_session.has_value())
@@ -12155,56 +12344,80 @@ int Application::run(bool enable_developer_modules)
                 assets_proof.meshes=ui::asset_gpu_coverage(
                     scene_mesh_samples,mesh_asset_loaded_ids);
             }
-            std::string_view world_entry_status="Warte auf Simulator";
-            if(login_ui.authenticated)
+            // Build a read-only whitelist snapshot for the modal AND an
+            // explicit user-initiated report. No UUID/secret is copied.
+            ui::AvatarDiagnosticReport avatar_diagnostic;
+            avatar_diagnostic.authenticated=login_ui.authenticated;
+            avatar_diagnostic.world_ready=simulation_ready;
+            avatar_diagnostic.simulator_circuit_active=
+                circuit_snapshot.state==protocol::CircuitState::active;
+            avatar_diagnostic.agent_present=render_agent.present;
+            avatar_diagnostic.appearance_received=
+                avatar_proof.appearance_received;
+            avatar_diagnostic.camera_valid=avatar_proof.view.valid_pose;
+            avatar_diagnostic.center_in_frustum=
+                avatar_proof.view.center_in_frustum;
+            avatar_diagnostic.gpu_fragment_result_known=
+                avatar_proof.fragment_query_known;
+            avatar_diagnostic.gpu_fragments_passed=
+                avatar_proof.fragment_samples_passed;
+            avatar_diagnostic.original_mesh_draws=
+                avatar_proof.original_body_draws;
+            avatar_diagnostic.proxy_draws=avatar_proof.proxy_draws;
+            avatar_diagnostic.baked_texture_draws=
+                render_diagnostics.self_avatar_baked_texture_draw_calls;
+            avatar_diagnostic.objects_drawn=
+                render_diagnostics.scene_draw_calls;
+            avatar_diagnostic.missing_mesh_objects=
+                render_diagnostics.scene_missing_mesh_objects;
+            avatar_diagnostic.terrain_packets=load_stats.terrain_packets;
+            avatar_diagnostic.object_packets=load_stats.object_packets;
+            avatar_diagnostic.avatar_packets=load_stats.avatar_packets;
+            avatar_diagnostic.other_packets=load_stats.other_packets;
+            avatar_diagnostic.caps_event_queue_available=
+                caps_snapshot.event_queue_available;
+            avatar_diagnostic.frame_width=static_cast<std::uint32_t>(
+                std::max(framebuffer_width,0));
+            avatar_diagnostic.frame_height=static_cast<std::uint32_t>(
+                std::max(framebuffer_height,0));
+            ui::WorldEntryStage world_entry_stage=
+                ui::WorldEntryStage::login;
             {
                 std::scoped_lock lock{world_mutex};
                 const auto& region=world_model.region();
                 const auto& agent=world_model.agent();
-                const auto stage=ui::inspect_world_entry(
-                    true,circuit_snapshot.state==
-                        protocol::CircuitState::active,
-                    region.handle!=0U,region.connected,
-                    !agent.agent_id.empty()&&!agent.session_id.empty(),
-                    agent.present);
-                world_entry_status=ui::describe_world_entry(stage);
+                avatar_diagnostic.region_handle_present=region.handle!=0U;
+                avatar_diagnostic.region_connected=region.connected;
+                avatar_diagnostic.agent_identity_present=
+                    !agent.agent_id.empty()&&!agent.session_id.empty();
+                avatar_diagnostic.agent_present=agent.present;
+                world_entry_stage=ui::inspect_world_entry(
+                    login_ui.authenticated,
+                    avatar_diagnostic.simulator_circuit_active,
+                    avatar_diagnostic.region_handle_present,
+                    avatar_diagnostic.region_connected,
+                    avatar_diagnostic.agent_identity_present,
+                    avatar_diagnostic.agent_present);
             }
-            // Explicit user action only: no background logging of avatar
-            // identity, grid URI, LLUDP headers, credentials, chat or UUIDs.
+            const std::string_view world_entry_status=
+                ui::describe_world_entry(world_entry_stage);
+            avatar_diagnostic.world_entry_stage=world_entry_stage;
+            avatar_diagnostic.world_entry_wait_seconds=
+                world_entry_wait_monitor.seconds(
+                    world_entry_stage,std::chrono::steady_clock::now());
+            const std::string_view world_entry_wait_hint=
+                ui::world_entry_wait_hint(world_entry_stage,
+                    avatar_diagnostic.world_entry_wait_seconds);
+            // Explicit user action only: no background report files.
             if(avatar_report_save_requested)
             {
                 avatar_report_save_requested=false;
-                ui::AvatarDiagnosticReport report;
-                report.authenticated=login_ui.authenticated;
-                report.world_ready=simulation_ready;
-                report.region_connected=world_entry_status==
-                    "3D-Welt freigegeben";
-                report.agent_present=render_agent.present;
-                report.appearance_received=avatar_proof.appearance_received;
-                report.camera_valid=avatar_proof.view.valid_pose;
-                report.center_in_frustum=
-                    avatar_proof.view.center_in_frustum;
-                report.gpu_fragment_result_known=
-                    avatar_proof.fragment_query_known;
-                report.gpu_fragments_passed=
-                    avatar_proof.fragment_samples_passed;
-                report.original_mesh_draws=avatar_proof.original_body_draws;
-                report.proxy_draws=avatar_proof.proxy_draws;
-                report.baked_texture_draws=
-                    render_diagnostics.self_avatar_baked_texture_draw_calls;
-                report.objects_drawn=render_diagnostics.scene_draw_calls;
-                report.missing_mesh_objects=
-                    render_diagnostics.scene_missing_mesh_objects;
-                report.frame_width=static_cast<std::uint32_t>(
-                    std::max(framebuffer_width,0));
-                report.frame_height=static_cast<std::uint32_t>(
-                    std::max(framebuffer_height,0));
                 const char* home=std::getenv("HOME");
-                const auto file=home!=nullptr && *home!=' '
+                const auto file=home!=nullptr && *home!='\0'
                     ?ui::save_avatar_diagnostic(
                         std::filesystem::path(home)/".local"/"state"/
                             "opengenesislink-viewer"/"diagnostics",
-                        report)
+                        avatar_diagnostic)
                     :std::nullopt;
                 avatar_report_notice=file.has_value()
                     ?"Gespeichert unter ~/.local/state/opengenesislink-viewer/diagnostics"
@@ -12213,6 +12426,8 @@ int Application::run(bool enable_developer_modules)
                     core::info("Local avatar diagnostics saved without IDs");
                 else core::warning("Local avatar diagnostics save failed");
             }
+            if(simulation_ready||!login_ui.authenticated)
+                loading_diagnostics_open=false;
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -12225,8 +12440,17 @@ int Application::run(bool enable_developer_modules)
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
                 simulation_ready,world_hud_visible,camera_zoom_distance,
                 camera_orbit_degrees,welcome_texture,brand_texture,
-                world_entry_status,original_body_gpu_ready,viewer_shell,
+                world_entry_status,
+                ui::world_entry_fraction(world_entry_stage),
+                world_entry_wait_hint,
+                original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
+            if(login_ui.authenticated&&!simulation_ready&&
+               loading_diagnostics_open)
+                render_loading_diagnostics_panel(renderer,
+                    window_width,window_height,avatar_diagnostic,
+                    world_entry_status,avatar_report_notice,
+                    loading_circuit_retry_available,world_entry_wait_hint);
             if(simulation_ready)
             {
                 ui::ViewerShellView shell_view;

@@ -311,3 +311,7 @@ Verbindlicher fünf-Blöcke-Durchlauf je WEITER. Echter OpenGL-3.3 Query für Fr
 ## 16.10.2026 – Alpha.215–219
 
 GPU-Avatar-Mesh-Fragmente dürfen nach Kamerabewegung/Originalmesh-Ausfall nicht als aktuelle Werte weiterlaufen. F3 (bestehender Avatarstatus) zeigt aktuelle Kamera-/Original-Linden-Mesh-/ServerBake-/Depth-Samples und hat echten [S]-Bericht-Button; lokaler Export mit POSIX 0600 und Whitelist ohne Identität, UUIDs oder Geheimnisse. F4 Kamera, Login, original OGL-Icon, WebKit-Welcome, F9 Outfit, und bestehende Server-LLUDP unverändert. Kein tatsächlicher NexVerse-Avatar-End-to-End-Beweis. Details: docs/ALPHA215_219_AVATAR_DIAGNOSIS_AND_QUERY_FRESHNESS.md.
+
+## 16.10.2026 – Alpha.220–224
+
+F3 WorldEntry-Diagnose vor WorldReady, echte getrennte LLUDP/Region/Agent/CAPS-Flags, private Datei ohne Secrets, anklickbarer manueller Circuit-Retry nur nach vollständig fehlgeschlagenem Worker und bekanntem Simulatorziel. Loading-Progress aus Pflichtmilestones, nicht CAPS/Terrain. Original-NexVerse-WebKit-Welcome und Firestorm-Outfits/UI bleiben unangetastet. Kein echter Grid-Avatar/Retry-E2E. Details docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.

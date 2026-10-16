@@ -16,6 +16,15 @@ int main()
     r.world_ready=true;
     r.agent_present=true;
     r.region_connected=true;
+    r.simulator_circuit_active=true;
+    r.region_handle_present=true;
+    r.agent_identity_present=false; // identity may be missing after region
+    r.terrain_packets=11U;
+    r.object_packets=27U;
+    r.avatar_packets=2U;
+    r.world_entry_stage=nexverse::ui::WorldEntryStage::agent_position;
+    r.world_entry_wait_seconds=18;
+    r.caps_event_queue_available=true;
     r.original_mesh_draws=3U;
     r.proxy_draws=0U;
     r.frame_width=3440U;
@@ -26,6 +35,14 @@ int main()
     if(text.find("visibility_stage=zero_depth_fragments")==
        std::string::npos||text.find("rendered_original_llm_draws=3")==
        std::string::npos)return 1;
+    if(text.find("region_connected=yes")==std::string::npos||
+       text.find("identity_pair_present=no")==std::string::npos||
+       text.find("terrain_packets=11")==std::string::npos||
+       text.find("object_packets=27")==std::string::npos||
+       text.find("world_entry_stage=agent_position")==std::string::npos||
+       text.find("world_entry_wait_seconds=18")==std::string::npos||
+       text.find("caps_event_queue_available=yes")==std::string::npos)
+        return 7;
     for(const auto word:{"agent_id","session_id","password","capability_url",
                          "avatar_name","chat_message","simulator_ip"})
         if(text.find(word)!=std::string::npos)return 2;

@@ -4460,3 +4460,22 @@ Echter NexVerse-Live-Avatar-/Welt-Pixelnachweis weiterhin OFFEN.
 F3 -> Avatarstatus, S -> privater technischer Diagnosebericht
 unter ~/.local/state/opengenesislink-viewer/diagnostics/;
 kein Login/Session-ID/TexturUUID-Export.
+
+## 16.10.2026 – Alpha.220–224: Verbindungsdiagnose bereits während Welt-Ladevorgang
+
+220: echte getrennte Region-/Handle-/Agent-/Circuit-Statusflags
+unter Mutex und Terrain/Objekt/Avatar/Other-Paketzähler im
+whitelisted F3-Report, kein zurückgerechnetes WorldReady.
+221: F3/ESC/S und klickbarer Lade-DIAGNOSE-Schalter mit Modal
+über Original-Welcome-Webseite, Export nur auf Nutzeraktion;
+Widescreen-Mausflächen getestet.
+222: Manuelles LLUDP-Reconnect nach final beendetem FAILED-Worker,
+gleiches sicheres Regionziel, 15s Cooldown, Queue/Motion Reset,
+keine parallele/automatische neue Netzwerkverbindung.
+223: Fortschrittsbalken ausschließlich Pflichtmilestones bis
+AgentPosition, zeitbasierte Hinweise ab 15s und
+typisierte begrenzte Enum-Whitelist im Report.
+224: alle lokalen Native/GPU/Python/Headless/Xvfb Tests,
+Mint-GitHub-Push und Pi5-CI-Freigabe.
+Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
+Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.

@@ -66,6 +66,33 @@ kann ohne autorisierten praktischen Login nicht als FERTIG gelten.
 Das Diagnosefenster hilft, genau diese noch offene Systemintegration
 ohne Speichern von Kontogeheimnissen zu prüfen.
 
+### Fünferdurchlauf Alpha.220–224 – 16.10.2026
+
+- **Alpha.220 [GETESTET]:** F3-Report mit separat am aktuellen WorldModel
+  unter Mutex ausgelesenen RegionConnected/Handle/AgentIdentity-Bools,
+  LLUDP-Paketzählern und CAPS-EventQueue; unabhängig von SceneReady,
+  streng whitelisted ohne IDs/URLs/Passwörter; Source-NUL entfernt.
+- **Alpha.221 [GETESTET]:** F3/ESC/S und echter klickbarer DIAGNOSE-Schalter
+  auf der authentifizierten Welcome-basierten Ladeansicht vor WorldReady,
+  Modal für Paket-/Region-/Agentstatus und privaten lokalen Bericht.
+  16:9 bis 32:9 getestete Mausflächen und keine Klickdurchleitung.
+- **Alpha.222 [GETESTET]:** Manuelles SIMULATOR NEU VERBINDEN ausschließlich
+  nach explizitem Klick, final FAILED/BEENDET alter LLUDP-Worker,
+  gültiger bisheriger Region-Endpunkt, kein Stop/Handoff,
+  15-s-Cooldown, ein einziger neuer authentifizierter Circuit.
+  Realer Grid-Retry noch nicht E2E geprüft.
+- **Alpha.223 [GETESTET]:** Pflichtstufenbasierter Fortschritt
+  LLUDP/Region/Agent (Terrain/CAPS/Objekte optional), Stufen-Wartezeit
+  mit ab 15 s kontextbezogenen Hinweisen und strikt typisiertem
+  WorldEntryStage-Feld im privaten Report.
+- **Alpha.224 [GETESTET; Pi5-CI AUSSTEHEND]:** VERSION 0.2.0-alpha.224, vollständiger
+  Linux-Mint-x64/CMake/NVIDIA-GL/Native/Python/Headless-Testlauf,
+  isolierter Xvfb-Vollviewer und Taskleistenicon, Doku/Handoff,
+  Commit/Push auf develop-current, ARM64 Pi5-CI.
+
+Echter authentifizierter NexVerse-Login mit gerenderter Welt und
+Avatar sowie manueller Live-Simulator-Retry weiterhin offen.
+
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
 Der Benutzer fordert, dass bei jedem Entwicklungs-/Featureblock und
@@ -6108,3 +6135,22 @@ GPU-Camera-/Avatar-Clear-Tests und Python Routing/Secret Assertions.
 isolierter Xvfb-Vollviewer, Commit develop-current, Pi5-CI.
 Bericht docs/ALPHA215_219_AVATAR_DIAGNOSIS_AND_QUERY_FRESHNESS.md.
 Echter Grid-Avatar-/Welt-Pixelbeweis weiterhin offen.
+
+## 16.10.2026 – Alpha.220–224: Verbindungsdiagnose bereits während Welt-Ladevorgang
+
+220: echte getrennte Region-/Handle-/Agent-/Circuit-Statusflags
+unter Mutex und Terrain/Objekt/Avatar/Other-Paketzähler im
+whitelisted F3-Report, kein zurückgerechnetes WorldReady.
+221: F3/ESC/S und klickbarer Lade-DIAGNOSE-Schalter mit Modal
+über Original-Welcome-Webseite, Export nur auf Nutzeraktion;
+Widescreen-Mausflächen getestet.
+222: Manuelles LLUDP-Reconnect nach final beendetem FAILED-Worker,
+gleiches sicheres Regionziel, 15s Cooldown, Queue/Motion Reset,
+keine parallele/automatische neue Netzwerkverbindung.
+223: Fortschrittsbalken ausschließlich Pflichtmilestones bis
+AgentPosition, zeitbasierte Hinweise ab 15s und
+typisierte begrenzte Enum-Whitelist im Report.
+224: alle lokalen Native/GPU/Python/Headless/Xvfb Tests,
+Mint-GitHub-Push und Pi5-CI-Freigabe.
+Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
+Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.

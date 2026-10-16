@@ -23,6 +23,9 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "authenticated="+std::string(yn(r.authenticated))+"\n"
        "world_ready="+yn(r.world_ready)+"\n"
        "region_connected="+yn(r.region_connected)+"\n"
+       "simulator_circuit_active="+yn(r.simulator_circuit_active)+"\n"
+       "region_handle_present="+yn(r.region_handle_present)+"\n"
+       "identity_pair_present="+yn(r.agent_identity_present)+"\n"
        "agent_present="+yn(r.agent_present)+"\n"
        "appearance_received="+yn(r.appearance_received)+"\n"
        "camera_valid="+yn(r.camera_valid)+"\n"
@@ -37,6 +40,15 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"
+       "world_entry_stage="+
+           std::string(world_entry_stage_key(r.world_entry_stage))+"\n"
+       "world_entry_wait_seconds="+
+            std::to_string(r.world_entry_wait_seconds)+"\n"
+       "terrain_packets="+std::to_string(r.terrain_packets)+"\n"
+       "object_packets="+std::to_string(r.object_packets)+"\n"
+       "avatar_packets="+std::to_string(r.avatar_packets)+"\n"
+       "other_packets="+std::to_string(r.other_packets)+"\n"
+       "caps_event_queue_available="+yn(r.caps_event_queue_available)+"\n"
        "framebuffer_width="+std::to_string(r.frame_width)+"\n"
        "framebuffer_height="+std::to_string(r.frame_height)+"\n"
        "limitations=GL_depth_fragments_are_not_final_avatar_pixels_or_COFPose\n";
