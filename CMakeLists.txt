@@ -179,6 +179,7 @@ target_link_libraries(nexverse-render PUBLIC
 target_compile_definitions(nexverse-render PUBLIC GLFW_INCLUDE_NONE)
 
 add_library(nexverse-ui
+    src/ui/avatar_diagnostic_report.cpp
     src/ui/brand_icon.cpp
     src/ui/ui_renderer.cpp
     src/ui/viewer_shell_render.cpp
@@ -838,6 +839,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-outfit-gallery-layout-tests)
     add_test(NAME nexverse-outfit-gallery-layout-tests
         COMMAND nexverse-outfit-gallery-layout-tests)
+
+    add_executable(nexverse-avatar-diagnostic-report-tests
+        tests/avatar_diagnostic_report_tests.cpp)
+    target_link_libraries(nexverse-avatar-diagnostic-report-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-avatar-diagnostic-report-tests)
+    add_test(NAME nexverse-avatar-diagnostic-report-tests
+        COMMAND nexverse-avatar-diagnostic-report-tests)
 
     add_executable(nexverse-viewer-shell-tests
         tests/viewer_shell_tests.cpp)

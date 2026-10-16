@@ -2697,7 +2697,27 @@ public:
 
     void set_camera(const RenderCamera& camera) override
     {
-        camera_ = camera;
+        // Previous-frame occlusion queries must not be treated as
+        // evidence for a NEW camera position or viewing direction.
+        // Detect real pose changes rather than invalidating on the
+        // normal same-pose set_camera call each rendered frame.
+        const auto changed=[](float a,float b) noexcept
+        {
+            return !std::isfinite(a)||!std::isfinite(b)||
+                   std::abs(a-b)>0.0001f;
+        };
+        const auto vec_changed=[&](RenderVec3 a,RenderVec3 b)
+        {
+            return changed(a.x,b.x)||changed(a.y,b.y)||changed(a.z,b.z);
+        };
+        if(camera_valid_&&(vec_changed(camera_.position,camera.position)||
+           vec_changed(camera_.forward,camera.forward)||
+           vec_changed(camera_.left,camera.left)||
+           vec_changed(camera_.up,camera.up)||
+           changed(camera_.vertical_fov_degrees,camera.vertical_fov_degrees)))
+            reset_self_avatar_visibility();
+        camera_=camera;
+        camera_valid_=true;
 
         if (!test_anchor_initialized_)
         {
@@ -4557,6 +4577,19 @@ public:
 
     void end_frame() override
     {
+        // If original body drawing stopped, any old "visible" query is
+        // no longer current-frame evidence (e.g. region change, proxy).
+        if(diagnostics_.self_avatar_anatomical_mesh_draw_calls==0U)
+        {
+            const bool pending=std::any_of(
+                self_avatar_visibility_pending_.begin(),
+                self_avatar_visibility_pending_.end(),
+                [](bool active){return active;});
+            if(self_avatar_samples_known_||pending)
+                reset_self_avatar_visibility();
+            diagnostics_.self_avatar_visible_samples_known=false;
+            diagnostics_.self_avatar_visible_samples_passed=false;
+        }
         refresh_vram();
     }
 
@@ -5263,6 +5296,7 @@ private:
     std::uint64_t self_avatar_visibility_epoch_=1U;
     bool self_avatar_samples_known_=false;
     bool self_avatar_samples_passed_=false;
+    bool camera_valid_=false;
 
     GLuint terrain_vao_ = 0U;
     GLuint terrain_vbo_ = 0U;

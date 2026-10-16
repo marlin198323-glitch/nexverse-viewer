@@ -43,6 +43,29 @@ Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
 - **Alpha.213:** Sichtbares Avatar-Kamera-Fokus-Control mit echter Aktion [FERTIG].
 - **Alpha.214:** 127/127 Mint C++/NVIDIA-GL, 49/49 Python, Pi5-kompatibles Headless, Xvfb-Viewer, Taskleistenicon, GitHub-Commit f83d0a2 und Pi5-ARM64-CI Run 38958578939 SUCCESS [FERTIG].
 
+### Fünferdurchlauf Alpha.215–219 – laufend (16.10.2026)
+- **Alpha.215:** Alte GL-Avatar-Sichtbarkeits-Queries nach Kamerawechsel
+  und Originalmesh-Ausfall invalidieren, echte Nvidia-GL-Regression
+  fuer Pan/keine GL-Draws [GETESTET].
+- **Alpha.216:** Datensparsames reines Diagnose-Textformat ohne Agent-UUID,
+  Session-/Serveradresse/Chat/Zugangsdaten, explizite lokale
+  Dateispeicherung mode 0600 [GETESTET].
+- **Alpha.217:** Bestehendes Fenster Avatarstatus [F3] mit live
+  Original-LLM-/Depth-Samples-/ServerBake-Stufen sichtbar erweitern,
+  Button "Diagnose speichern [S]" und echte Maus-/Key-Ereignisse
+  anbinden [GETESTET].
+- **Alpha.218:** Native Tests fuer private Textreports/Permissions,
+  hitboxes 16:9–32:9, GPU-Query-TTL/Reset und Python-Schutz
+  der GUI/Netzwerk- und Geheimnisgrenzen [GETESTET].
+- **Alpha.219:** VERSION, gesamte Doku, lokaler kompletter Mint-Build,
+  Native/OpenGL/Python/Headless-Gates, isolierter Xvfb-Vollviewer-
+  Start, Mint-GitHub Push und Pi5-CI [IN_ARBEIT].
+
+Offen: Echter authentifizierter NexVerse-Avatar-/Welt-Pixelbeleg
+kann ohne autorisierten praktischen Login nicht als FERTIG gelten.
+Das Diagnosefenster hilft, genau diese noch offene Systemintegration
+ohne Speichern von Kontogeheimnissen zu prüfen.
+
 ## VERBINDLICH: GitHub-Serververgleich vor JEDEM Entwicklungsblock (13.10.2026)
 
 Der Benutzer fordert, dass bei jedem Entwicklungs-/Featureblock und
@@ -6066,3 +6089,22 @@ Mint/GPU/Headless/Xvfb und Github/Pi5 CI-Gates.
 Noch KEIN realer authentifizierter NexVerse Avatar-
 oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
 Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.
+
+## 16.10.2026 – Alpha.215–219: Frische GPU-Meshsichtbarkeit und lokaler F3-Diagnosebericht
+
+215: Async original Self-LLM GL Depth-Sample-Messung bei Kamera/
+FoV-Wechsel oder fehlenden Originalmeshdaten sofort entwerten.
+NVIDIA-OpenGL-Test belegt query-invalidations nach Kameraänderung.
+216: Private, whitelisted Avatar-Diagnose-Datei mode 0600 auf
+Nutzerwunsch, ohne Agent/Session/Grid-UUIDs, Passwörter, URLs, Chat.
+Nur Renderer-, Avatar-, Bake-, Scene- und Framebufferzahlen.
+217: Echter vorhandener Avatarstatus [F3] Floater mit
+Kamera-/Depthfragment-/ServerBake-Live-Daten, klickbarem
+"Diagnose speichern [S]" und Key S; World-Focus bleibt beim
+Dialog gesperrt, Welcome und F4–F11 weiter unverändert.
+218: C++23 File/Mode/Whitelist-/Widescreen-HitTests,
+GPU-Camera-/Avatar-Clear-Tests und Python Routing/Secret Assertions.
+219: Mint x64 Full Build, alle GL/Native/Python/Headless und
+isolierter Xvfb-Vollviewer, Commit develop-current, Pi5-CI.
+Bericht docs/ALPHA215_219_AVATAR_DIAGNOSIS_AND_QUERY_FRESHNESS.md.
+Echter Grid-Avatar-/Welt-Pixelbeweis weiterhin offen.

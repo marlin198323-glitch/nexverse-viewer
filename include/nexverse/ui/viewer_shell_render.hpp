@@ -21,6 +21,10 @@ struct ViewerShellView
     bool parcel_ready=false;
     bool avatar_present=false;
     bool appearance_ready=false;
+    std::string avatar_view_status;
+    std::string avatar_fragment_status;
+    std::string avatar_bake_status;
+    std::string avatar_report_notice;
     std::array<float,3> agent_position{};
     std::uint32_t region_width=256U,region_height=256U;
     std::size_t objects=0U,terrain_patches=0U;

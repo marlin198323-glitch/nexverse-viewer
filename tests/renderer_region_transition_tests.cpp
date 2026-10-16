@@ -205,6 +205,18 @@ int main()
                             }
                         }
                         if(!result_observed)error=43;
+                        // The SAME camera GL sample must become UNKNOWN
+                        // when the user pans/zooms/rotates. Old GPU samples
+                        // are no longer evidence for a new camera pose.
+                        renderer->set_camera({{0.25f,0.0f,0.0f},
+                            {1.0f,0.0f,0.0f},{0.0f,1.0f,0.0f},
+                            {0.0f,0.0f,1.0f},60.0f,0.1f,40.0f});
+                        const auto moved_camera=render();
+                        if(moved_camera.self_avatar_visible_samples_known)
+                            error=47;
+                        renderer->set_camera({{0.0f,0.0f,0.0f},
+                            {1.0f,0.0f,0.0f},{0.0f,1.0f,0.0f},
+                            {0.0f,0.0f,1.0f},60.0f,0.1f,40.0f});
                         renderer->reset_self_avatar_visibility();
                         const auto after_reset=render();
                         if(after_reset.self_avatar_visible_samples_known)
@@ -456,6 +468,7 @@ int main()
                 const auto cleared_avatar=render();
                 if(cleared_avatar.avatar_proxy_draw_calls!=0U ||
                    cleared_avatar.self_avatar_proxy_draw_calls!=0U||
+                   cleared_avatar.self_avatar_visible_samples_known||
                    glGetError()!=GL_NO_ERROR)error=19;
             }
             // Region transition: old GPU resources must not leak into the

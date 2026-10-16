@@ -105,6 +105,7 @@
 #include "nexverse/ui/ui_renderer.hpp"
 #include "nexverse/ui/viewer_shell.hpp"
 #include "nexverse/ui/viewer_shell_render.hpp"
+#include "nexverse/ui/avatar_diagnostic_report.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
@@ -122,6 +123,7 @@
 #include <array>
 #include <cmath>
 #include <chrono>
+#include <cstdlib>
 #include <deque>
 #include <exception>
 #include <future>
@@ -430,6 +432,7 @@ struct InputContext
     bool* world_hud_visible=nullptr;
     float* camera_zoom_distance=nullptr;
     float* camera_orbit_degrees=nullptr;
+    bool* avatar_report_save_requested=nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
     CapsRuntimeState* caps=nullptr;
@@ -640,11 +643,13 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
        action==GLFW_PRESS)
     {
         auto& shell=*context->viewer_shell;
-        if(key==GLFW_KEY_F6||key==GLFW_KEY_F7)
+        if(key==GLFW_KEY_F3||key==GLFW_KEY_F6||key==GLFW_KEY_F7)
         {
-            const auto which=key==GLFW_KEY_F6
-                ?nexverse::ui::ViewerWindow::chat
-                :nexverse::ui::ViewerWindow::region;
+            const auto which=key==GLFW_KEY_F3
+                ?nexverse::ui::ViewerWindow::avatar
+                :key==GLFW_KEY_F6
+                    ?nexverse::ui::ViewerWindow::chat
+                    :nexverse::ui::ViewerWindow::region;
             shell.window=shell.window==which
                 ?nexverse::ui::ViewerWindow::none:which;
             shell.open_menu=-1;
@@ -654,6 +659,12 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
                 if(context->inventory_open)*context->inventory_open=false;
                 if(context->experience)context->experience->close();
             }
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::avatar&&
+           key==GLFW_KEY_S&&context->avatar_report_save_requested)
+        {
+            *context->avatar_report_save_requested=true;
             return;
         }
         if(shell.window==nexverse::ui::ViewerWindow::chat)
@@ -1127,6 +1138,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                     (my-first)/(31.0f*layout.scale));
                 shell.animation_selected=std::min(row,std::size_t{7U});
             }
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::save_avatar_report)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::avatar&&
+               context->avatar_report_save_requested)
+                *context->avatar_report_save_requested=true;
             return;
         }
         if(command==nexverse::ui::ViewerAction::close)
@@ -4364,6 +4382,8 @@ int Application::run(bool enable_developer_modules)
 
     LoginUiState login_ui;
     ui::ViewerShellState viewer_shell;
+    bool avatar_report_save_requested=false;
+    std::string avatar_report_notice="S speichert einen lokalen Bericht";
     bool world_hud_visible=true;
     float camera_zoom_distance=nexverse::ui::camera_zoom_default;
     float camera_orbit_degrees=0.0f;
@@ -4452,6 +4472,7 @@ int Application::run(bool enable_developer_modules)
     protocol::MovementFeedbackMonitor movement_feedback;
     bool simulation_ready = false;
     input_context.viewer_shell=&viewer_shell;
+    input_context.avatar_report_save_requested=&avatar_report_save_requested;
     input_context.experience=&experience_ui;
     input_context.outfits=&outfit_gallery_open;
     input_context.outfit_selection=&outfit_selection;
@@ -12148,6 +12169,50 @@ int Application::run(bool enable_developer_modules)
                     agent.present);
                 world_entry_status=ui::describe_world_entry(stage);
             }
+            // Explicit user action only: no background logging of avatar
+            // identity, grid URI, LLUDP headers, credentials, chat or UUIDs.
+            if(avatar_report_save_requested)
+            {
+                avatar_report_save_requested=false;
+                ui::AvatarDiagnosticReport report;
+                report.authenticated=login_ui.authenticated;
+                report.world_ready=simulation_ready;
+                report.region_connected=world_entry_status==
+                    "3D-Welt freigegeben";
+                report.agent_present=render_agent.present;
+                report.appearance_received=avatar_proof.appearance_received;
+                report.camera_valid=avatar_proof.view.valid_pose;
+                report.center_in_frustum=
+                    avatar_proof.view.center_in_frustum;
+                report.gpu_fragment_result_known=
+                    avatar_proof.fragment_query_known;
+                report.gpu_fragments_passed=
+                    avatar_proof.fragment_samples_passed;
+                report.original_mesh_draws=avatar_proof.original_body_draws;
+                report.proxy_draws=avatar_proof.proxy_draws;
+                report.baked_texture_draws=
+                    render_diagnostics.self_avatar_baked_texture_draw_calls;
+                report.objects_drawn=render_diagnostics.scene_draw_calls;
+                report.missing_mesh_objects=
+                    render_diagnostics.scene_missing_mesh_objects;
+                report.frame_width=static_cast<std::uint32_t>(
+                    std::max(framebuffer_width,0));
+                report.frame_height=static_cast<std::uint32_t>(
+                    std::max(framebuffer_height,0));
+                const char* home=std::getenv("HOME");
+                const auto file=home!=nullptr && *home!=' '
+                    ?ui::save_avatar_diagnostic(
+                        std::filesystem::path(home)/".local"/"state"/
+                            "opengenesislink-viewer"/"diagnostics",
+                        report)
+                    :std::nullopt;
+                avatar_report_notice=file.has_value()
+                    ?"Gespeichert unter ~/.local/state/opengenesislink-viewer/diagnostics"
+                    :"Diagnose nicht gespeichert (Dateisystem pruefen)";
+                if(file)
+                    core::info("Local avatar diagnostics saved without IDs");
+                else core::warning("Local avatar diagnostics save failed");
+            }
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -12166,6 +12231,11 @@ int Application::run(bool enable_developer_modules)
             {
                 ui::ViewerShellView shell_view;
                 shell_view.avatar_name=login_ui.username;
+                shell_view.avatar_view_status=avatar_proof.view_stage();
+                shell_view.avatar_fragment_status=avatar_proof.fragment_stage();
+                shell_view.avatar_bake_status=
+                    ui::describe_avatar_body_pipeline(avatar_proof);
+                shell_view.avatar_report_notice=avatar_report_notice;
                 {
                     std::scoped_lock lock{world_mutex};
                     const auto& region=world_model.region();

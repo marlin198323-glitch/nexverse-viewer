@@ -25,7 +25,7 @@ enum class ViewerAction {
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
     refresh_inventory, animations, select_animation,
     chat_whisper, chat_say, chat_shout, retry_animation,
-    objects, select_object, touch_press, disabled
+    objects, select_object, touch_press, save_avatar_report, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -85,7 +85,7 @@ inline constexpr std::array<std::string_view,5> menu_labels{
     "Avatar","Kommunikation","Welt","Ansicht","Hilfe"
 };
 inline constexpr std::array<std::array<ViewerMenuItem,5>,5> menu_items{{
-    {{{"Avatarstatus",ViewerAction::avatar},
+    {{{"Avatarstatus [F3]",ViewerAction::avatar},
       {"Inventar",ViewerAction::inventory},
       {"Outfit-Galerie",ViewerAction::outfits},
       {"Animationen",ViewerAction::animations},
@@ -158,6 +158,11 @@ struct ViewerShellLayout
         if(menu_change)*menu_change=-2;
         if(state.window!=ViewerWindow::none)
         {
+            if(state.window==ViewerWindow::avatar &&
+               inside(x,y,panel_x+27.0f*scale,
+                   panel_y+panel_h-93.0f*scale,
+                   208.0f*scale,41.0f*scale))
+                return ViewerAction::save_avatar_report;
             if(inside(x,y,panel_x+panel_w-56.0f*scale,
                       panel_y+10.0f*scale,46.0f*scale,36.0f*scale))
                 return ViewerAction::close;

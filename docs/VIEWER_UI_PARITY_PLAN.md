@@ -307,3 +307,7 @@ Kamera-Blickfeld-Projektion anhand aktueller AgentPosition, verifizierter Avatar
 ## 16.10.2026 – Alpha.210–214
 
 Verbindlicher fünf-Blöcke-Durchlauf je WEITER. Echter OpenGL-3.3 Query für Front/Upper/Lower Original-LLM Self-Avatar-Draws: GPU-Depth-Fragment ja/nein/unknown statt irreführender Draw-Proof, async+RegionEpoch sicher, Native GPU-Regression. Echte interaktive F4 AVATAR Fokus-Taste und Button neben den bisherigen Orbit-/Zoom-Controls (8m, frontal), in beiden F5-Modi. WELCOME und Originalicon bleiben erhalten. Kein NexVerse-Live-Grid-/Appearance-Pixel-E2E-Claim. Dokumentation: docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.
+
+## 16.10.2026 – Alpha.215–219
+
+GPU-Avatar-Mesh-Fragmente dürfen nach Kamerabewegung/Originalmesh-Ausfall nicht als aktuelle Werte weiterlaufen. F3 (bestehender Avatarstatus) zeigt aktuelle Kamera-/Original-Linden-Mesh-/ServerBake-/Depth-Samples und hat echten [S]-Bericht-Button; lokaler Export mit POSIX 0600 und Whitelist ohne Identität, UUIDs oder Geheimnisse. F4 Kamera, Login, original OGL-Icon, WebKit-Welcome, F9 Outfit, und bestehende Server-LLUDP unverändert. Kein tatsächlicher NexVerse-Avatar-End-to-End-Beweis. Details: docs/ALPHA215_219_AVATAR_DIAGNOSIS_AND_QUERY_FRESHNESS.md.

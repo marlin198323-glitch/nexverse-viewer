@@ -257,8 +257,21 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              (v.appearance_ready?"Simulator-Daten da":"noch nicht geladen"));
         line(3,"Aktive Animationen: "+std::to_string(v.animations));
         line(4,"Attachments: "+std::to_string(v.attachments));
-        line(7,"Outfits: Avatar > Outfit-Galerie (nur lesend)",
+        line(5,v.avatar_view_status,
+             theme::cyan);
+        line(6,v.avatar_fragment_status,
              theme::warning);
+        line(7,"Server-Bakes: "+v.avatar_bake_status,
+             theme::text_muted);
+        r.rect(x+27.0f*sc,y+ph-93.0f*sc,208.0f*sc,41.0f*sc,
+               Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);
+        r.text(x+39.0f*sc,y+ph-79.0f*sc,9.2f*sc,
+               "Diagnose speichern [S]",theme::cyan);
+        r.text(x+248.0f*sc,y+ph-73.0f*sc,8.0f*sc,
+               compact(v.avatar_report_notice,60U),theme::text_muted);
+        r.text(x+27.0f*sc,y+ph-24.0f*sc,8.0f*sc,
+               "Export ohne Zugangsdaten, UUIDs oder Chat-Nachrichten.",
+               theme::text_muted);
     }
     else if(state.window==ViewerWindow::objects)
     {
@@ -389,7 +402,7 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(3,"SHIFT: schneller bewegen");
         line(4,"SPACE: springen  /  C: abwaerts");
         line(5,"F: Flugmodus umschalten");
-        line(6,"F6: Chat  /  F7: Region  /  F8: Erlebnisse");
+        line(6,"F3: Avatar-Status  /  F6: Chat  /  F7: Region");
         line(7,"F9: Outfits  /  F10: Inventar  /  F11: Vollbild");
         line(8,"ESC: Fenster schliessen",theme::cyan);
     }

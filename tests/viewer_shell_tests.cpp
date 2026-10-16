@@ -41,6 +41,17 @@ int main()
         if(l.hit((214.0f+104.0f*6.0f+16.0f)*sc,
                  l.height-(58.0f-12.0f)*sc,s)!=
            ViewerAction::map)return 8;
+        s.window=ViewerWindow::avatar;
+        if(l.hit(l.panel_x+75.0f*sc,
+                 l.panel_y+l.panel_h-75.0f*sc,s)!=
+           ViewerAction::save_avatar_report)return 52;
+        if(l.hit(l.panel_x+275.0f*sc,
+                 l.panel_y+l.panel_h-75.0f*sc,s)!=
+           ViewerAction::none)return 53;
+        if(l.hit(l.panel_x+l.panel_w-35.0f*sc,
+                 l.panel_y+25.0f*sc,s)!=ViewerAction::close)return 54;
+        if(window_for_action(ViewerAction::avatar)!=
+           ViewerWindow::avatar)return 55;
         s.window=ViewerWindow::chat;
         if(l.hit(l.panel_x+39.0f*sc,
                  l.panel_y+l.panel_h-135.0f*sc,s)!=

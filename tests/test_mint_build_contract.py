@@ -53,6 +53,23 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("render_camera_from_agent(agent,camera_zoom_distance,camera_orbit_degrees)",app)
         self.assertIn("render_camera_from_agent(render_agent,camera_zoom_distance,camera_orbit_degrees)",app)
 
+    def test_f3_avatar_report_is_real_and_secrets_excluded(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        ui=(ROOT/"src/ui/viewer_shell_render.cpp").read_text()
+        query=(ROOT/"src/render/opengl_renderer.cpp").read_text()
+        self.assertIn("key==GLFW_KEY_F3",app)
+        self.assertIn("key==GLFW_KEY_S&&context->avatar_report_save_requested",app)
+        self.assertIn("ViewerAction::save_avatar_report",app)
+        self.assertIn("save_avatar_diagnostic(",app)
+        self.assertIn("shell_view.avatar_fragment_status=avatar_proof.fragment_stage()",app)
+        self.assertIn('"Diagnose speichern [S]"',ui)
+        self.assertIn("camera_valid_",query)
+        self.assertIn("reset_self_avatar_visibility();",query)
+        report=(ROOT/"src/ui/avatar_diagnostic_report.cpp").read_text()
+        for token in ('agent_id','session_id','password','avatar_name',
+                      'simulator_ip','chat_message'):
+            self.assertNotIn('"'+token+'=',report)
+
     def test_self_avatar_occlusion_query_and_f4_are_live(self):
         src=(ROOT/"src/app/application.cpp").read_text()
         gpu=(ROOT/"src/render/opengl_renderer.cpp").read_text()

@@ -3683,3 +3683,22 @@ oder Weltbildbeweis, Firestorm Bake/Wear weiter offen.
 Bericht docs/ALPHA210_214_FIVE_BLOCK_RULE_AVATAR_SAMPLES.md.
 
 Alpha.214 CI-Freigabe: develop-current f83d0a25424c4eb35e3f0bb663cd525dfdadb080; Raspberry Pi5 GitHub Actions run 38958578939 SUCCESS. Alle fünf Arbeitsblöcke 210–214 in projectplan.md auf FERTIG. Künftiges WEITER umfasst verbindlich wieder fünf echte Blöcke. Echtes Grid-/Avatar-E2E bleibt offen.
+
+## 16.10.2026 – Alpha.215–219: Frische GPU-Meshsichtbarkeit und lokaler F3-Diagnosebericht
+
+215: Async original Self-LLM GL Depth-Sample-Messung bei Kamera/
+FoV-Wechsel oder fehlenden Originalmeshdaten sofort entwerten.
+NVIDIA-OpenGL-Test belegt query-invalidations nach Kameraänderung.
+216: Private, whitelisted Avatar-Diagnose-Datei mode 0600 auf
+Nutzerwunsch, ohne Agent/Session/Grid-UUIDs, Passwörter, URLs, Chat.
+Nur Renderer-, Avatar-, Bake-, Scene- und Framebufferzahlen.
+217: Echter vorhandener Avatarstatus [F3] Floater mit
+Kamera-/Depthfragment-/ServerBake-Live-Daten, klickbarem
+"Diagnose speichern [S]" und Key S; World-Focus bleibt beim
+Dialog gesperrt, Welcome und F4–F11 weiter unverändert.
+218: C++23 File/Mode/Whitelist-/Widescreen-HitTests,
+GPU-Camera-/Avatar-Clear-Tests und Python Routing/Secret Assertions.
+219: Mint x64 Full Build, alle GL/Native/Python/Headless und
+isolierter Xvfb-Vollviewer, Commit develop-current, Pi5-CI.
+Bericht docs/ALPHA215_219_AVATAR_DIAGNOSIS_AND_QUERY_FRESHNESS.md.
+Echter Grid-Avatar-/Welt-Pixelbeweis weiterhin offen.
