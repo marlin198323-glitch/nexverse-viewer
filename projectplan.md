@@ -5983,3 +5983,25 @@ und macOS .icns im Build definiert (nicht nativ gebaut).
 X11-Icon-/WM_CLASS Prüfung und volle Linux CI sowie Pi5
 Headless Workflow; echte Grid-Avatar-/Welt-E2E weiterhin offen.
 Details: docs/ALPHA200_204_BRANDING_SYSTEM_ICON_AND_LOGIN.md.
+
+## 16.10.2026 – Alpha.205–209: Avatar-Sichtbarkeitskette und Welt-Eintritt
+
+205: Neue AvatarFrame-NDC-/FoV-/Viewport-Zentrumsprojektion für
+echte AgentPosition und ThirdPersonCamera: Front/Hinten/Seite,
+Zoom und ultrabreite Fenster, finite Values, backward/near guards.
+206: Live AvatarPipelineProof verknüpft aktuelle Agent-Position,
+Kamera, In-Viewport-Status und wirklich erfolgte GPU-
+Originalmesh-/Fallback-Draws getrennt von AvatarAppearance-/
+Server-Bake-Erfolg; keine Behauptung von Bildpixel-Sichtbarkeit.
+207: Nutzer-Originalicon aus Alpha.204 auch als echte GL-Textur
+oben links in der 3D-Welt-HUD-Leiste; neue Avatarstatus-Zeile.
+Login und WebKit Welcome-Seite bleiben bestehen.
+208: Authentifizierter Weltstart: konkrete Blocker LLUDP,
+Region-Handle/Connected, Agent-/Session-ID und AgentPosition
+im bisherigen Lade-Overlay, Fortschritt vor WorldReady nie 100%.
+Native Tests für jede fehlende Stufe; WorldModel-Lesezugriff locked.
+209: F5-Modus meldet nur Avatar-/Kamerafehler als kleine Zeile,
+ansonsten volle Weltansicht. Native Mint/GL/Python, Pi5 Headless
+und Xvfb-Vollviewer-Gates. Server-main ec760cac unverändert.
+Echter Login-/Avatar-Pixelnachweis weiterhin NICHT getestet.
+Detail: docs/ALPHA205_209_WORLD_ENTRY_AND_AVATAR_VIEW_EVIDENCE.md.

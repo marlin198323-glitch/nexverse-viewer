@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the Mozilla Public License, v. 2.0. */
 #pragma once
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
+#include "nexverse/ui/avatar_view_evidence.hpp"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -12,11 +13,20 @@ namespace nexverse::ui
 struct AvatarPipelineProof
 {
     bool appearance_received=false;
+    bool world_ready=false;
+    bool self_present=false;
+    AvatarViewEvidence view{};
+    std::uint64_t proxy_draws=0U;
     nexverse::protocol::AvatarBakeEvidence bakes{};
     std::uint64_t original_body_draws=0U;
     std::array<std::uint64_t,3U> body_bake_draws{};
     // All three current-server regions must be GPU-resident AND actually
     // submitted by the original LLM GL mesh in THIS frame.
+    [[nodiscard]] std::string view_stage() const
+    {
+        return describe_avatar_view(world_ready,self_present,view,
+            original_body_draws,proxy_draws);
+    }
     [[nodiscard]] bool body_gpu_drawn() const noexcept
     {
         return appearance_received && bakes.visible_body_resident==3U &&

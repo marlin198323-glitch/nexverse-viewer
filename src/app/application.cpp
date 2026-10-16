@@ -77,6 +77,7 @@
 #include "nexverse/render/third_person_camera.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
+#include "nexverse/ui/world_entry_stage.hpp"
 #include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/ui/world_hud_layout.hpp"
 #include "nexverse/ui/world_hud_toggle.hpp"
@@ -1810,7 +1811,8 @@ void render_loading_screen(
     const nexverse::protocol::CircuitStatus& circuit,
     const SimulationLoadStats& load_stats,
     const CapsRuntimeState& caps,
-    unsigned int welcome_texture)
+    unsigned int welcome_texture,
+    std::string_view world_entry)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -1890,8 +1892,10 @@ void render_loading_screen(
         (caps_ready ? 1 : 0) +
         (terrain_ready ? 1 : 0) +
         (object_ready ? 1 : 0);
+    // Loading-screen path is entered only while scene_ready==false.
+    // Optional terrain/object counters must not claim 100% world-ready.
     const float progress =
-        std::clamp(static_cast<float>(completed) / 5.0f, 0.04f, 1.0f);
+        std::clamp(static_cast<float>(completed) / 5.0f, 0.04f, 0.96f);
 
     const float bar_x = panel_x + 30.0f * scale;
     const float bar_y = panel_y + 126.0f * scale;
@@ -1943,7 +1947,9 @@ void render_loading_screen(
         (caps.resident_experiences_read
             ? " | Erlaubt " + std::to_string(caps.allowed_experiences)
             : "");
-    renderer.text(panel_x+30.0f*scale,panel_y+298.0f*scale,
+    renderer.text(panel_x+30.0f*scale,panel_y+282.0f*scale,
+        9.0f*scale,world_entry,theme::cyan);
+    renderer.text(panel_x+30.0f*scale,panel_y+306.0f*scale,
                   8.2f*scale,parity_caps,theme::text_muted);
 
     const std::string version =
@@ -2003,7 +2009,8 @@ void render_world_hud(
     const nexverse::ui::AssetStreamProof& assets_proof,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open,
-    float camera_distance,float camera_orbit_degrees)
+    float camera_distance,float camera_orbit_degrees,
+    unsigned int brand_texture)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -2028,20 +2035,15 @@ void render_world_hud(
         with_alpha(theme::cyan, 0.55f),
         0.0f);
 
-    renderer.rect(
-        14.0f * scale,
-        12.0f * scale,
-        42.0f * scale,
-        42.0f * scale,
-        Color{0.025f, 0.120f, 0.205f, 0.96f},
-        10.0f * scale);
-    renderer.rect(
-        22.0f * scale,
-        20.0f * scale,
-        26.0f * scale,
-        26.0f * scale,
-        with_alpha(theme::cyan, 0.52f),
-        6.0f * scale);
+    // Same uploaded original logo is used in both Login and world HUD.
+    renderer.rect(13.0f*scale,11.0f*scale,44.0f*scale,44.0f*scale,
+        with_alpha(theme::cyan,0.29f),11.0f*scale);
+    if(brand_texture!=0U)
+        renderer.image(brand_texture,15.0f*scale,13.0f*scale,
+            40.0f*scale,40.0f*scale);
+    else
+        renderer.rect(15.0f*scale,13.0f*scale,40.0f*scale,40.0f*scale,
+            Color{0.025f,0.120f,0.205f,0.96f},10.0f*scale);
 
     renderer.text(
         70.0f * scale,
@@ -2345,7 +2347,7 @@ void render_world_hud(
     // proof of final screen visibility. No invented Avatar or Wear action.
     if(card_visibility.avatar)
     {
-    renderer.rect(card_x,rail_y+370.0f*scale,card_w,101.0f*scale,
+    renderer.rect(card_x,rail_y+370.0f*scale,card_w,117.0f*scale,
         Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
     renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
         10.2f*scale,"Avatar-Pipeline",theme::text);
@@ -2355,6 +2357,13 @@ void render_world_hud(
     renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
         7.6f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
         avatar_proof.body_gpu_drawn()
+            ?theme::cyan:theme::warning);
+    // This is a projection plus GL submission, NOT proof of pixels or
+    // finished Firestorm bake. Stages distinguish missing server data.
+    renderer.text(card_x+14.0f*scale,rail_y+463.0f*scale,
+        7.0f*scale,avatar_proof.view_stage(),
+        avatar_proof.view.center_in_frustum&&
+        avatar_proof.original_body_draws>0U
             ?theme::cyan:theme::warning);
     }
 
@@ -3147,6 +3156,7 @@ void render_shell(
     bool simulation_ready,bool world_hud_visible,float camera_distance,
     float camera_orbit_degrees,
     unsigned int welcome_texture,unsigned int brand_texture,
+    std::string_view world_entry,
     bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
@@ -3176,7 +3186,7 @@ void render_shell(
                 frame_metrics,render_diagnostics,memory_metrics,
                 scene_proof,avatar_proof,assets_proof,shell,
                 inventory_open,outfit_open,experiences_open,
-                camera_distance,camera_orbit_degrees);
+                camera_distance,camera_orbit_degrees,brand_texture);
         else
         {
             // Keep all GL world drawing and separate floater windows
@@ -3186,6 +3196,14 @@ void render_shell(
                 camera_orbit_degrees);
             renderer.text(16.0f,16.0f,9.0f,
                 "3D-Weltansicht | F5 fuer Navigation",theme::cyan);
+            // In the fullscreen-like world focus, show a diagnostic only
+            // when world/agent/mesh is NOT ready; otherwise keep the
+            // viewport unobstructed as the user requested.
+            if(!avatar_proof.self_present||
+               !avatar_proof.view.center_in_frustum||
+               avatar_proof.original_body_draws==0U)
+                renderer.text(16.0f,38.0f,9.0f,
+                    avatar_proof.view_stage(),theme::warning);
         }
         return;
     }
@@ -3200,7 +3218,7 @@ void render_shell(
             circuit,
             load_stats,
             caps,
-            welcome_texture);
+            welcome_texture,world_entry);
         return;
     }
 
@@ -12026,6 +12044,21 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_missing_mesh_draw_calls;
             scene_proof.camera_fallback=camera_fallback_this_frame;
             ui::AvatarPipelineProof avatar_proof{};
+            avatar_proof.world_ready=simulation_ready;
+            avatar_proof.self_present=render_agent.present;
+            avatar_proof.original_body_draws=
+                render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
+            avatar_proof.proxy_draws=
+                render_diagnostics.self_avatar_proxy_draw_calls;
+            if(simulation_ready&&render_agent.present)
+            {
+                const auto camera=render::third_person_camera(
+                    render_agent.position,render_agent.rotation,
+                    camera_zoom_distance,camera_orbit_degrees);
+                avatar_proof.view=ui::inspect_avatar_view(
+                    camera,render_agent.position,
+                    framebuffer_width,framebuffer_height);
+            }
             if(simulation_ready && active_session &&
                firestorm_region_lease.matches(current_firestorm_epoch) &&
                active_session->agent_id==render_agent.agent_id)
@@ -12040,8 +12073,6 @@ int Application::run(bool enable_developer_modules)
                     avatar_proof.bakes=protocol::audit_avatar_bake_evidence(
                         protocol::extract_avatar_bakes(packet->texture_entry),
                         object_texture_loaded_ids);
-                    avatar_proof.original_body_draws=
-                        render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
                     avatar_proof.body_bake_draws=
                         render_diagnostics.self_avatar_body_bake_gl_draws;
                 }
@@ -12056,6 +12087,20 @@ int Application::run(bool enable_developer_modules)
                 assets_proof.meshes=ui::asset_gpu_coverage(
                     scene_mesh_samples,mesh_asset_loaded_ids);
             }
+            std::string_view world_entry_status="Warte auf Simulator";
+            if(login_ui.authenticated)
+            {
+                std::scoped_lock lock{world_mutex};
+                const auto& region=world_model.region();
+                const auto& agent=world_model.agent();
+                const auto stage=ui::inspect_world_entry(
+                    true,circuit_snapshot.state==
+                        protocol::CircuitState::active,
+                    region.handle!=0U,region.connected,
+                    !agent.agent_id.empty()&&!agent.session_id.empty(),
+                    agent.present);
+                world_entry_status=ui::describe_world_entry(stage);
+            }
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -12068,7 +12113,7 @@ int Application::run(bool enable_developer_modules)
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
                 simulation_ready,world_hud_visible,camera_zoom_distance,
                 camera_orbit_degrees,welcome_texture,brand_texture,
-                original_body_gpu_ready,viewer_shell,
+                world_entry_status,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)
             {

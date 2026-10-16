@@ -7,6 +7,20 @@ int main()
     ui::AvatarPipelineProof p;
     if(ui::describe_avatar_pipeline(p)!="Appearance: Paket fehlt"||
        ui::describe_avatar_body_pipeline(p)!="Body H:- U:- L:- | GL 0")return 1;
+    if(p.view_stage()!="Avatar: Simulator wartet")return 12;
+    p.world_ready=true;
+    if(p.view_stage()!="Avatar: AgentPosition fehlt")return 13;
+    p.self_present=true;
+    if(p.view_stage()!="Avatar: Kameraposition ungueltig")return 14;
+    p.view.valid_pose=true;
+    p.view.center_in_frustum=true;
+    if(p.view_stage()!="Avatar Mitte im Bildfeld | Mesh GL fehlt")return 15;
+    p.proxy_draws=7U;
+    if(p.view_stage()!="Avatar Mitte im Bildfeld | Ersatz GL 7")return 16;
+    p.original_body_draws=3U;
+    if(p.view_stage()!="Avatar Mitte im Bildfeld | LLM GL 3")return 17;
+    p.original_body_draws=0U;
+    p.proxy_draws=0U;
     p.appearance_received=true;
     if(ui::describe_avatar_pipeline(p)!="Server TE 0/11 GPU 0/11")return 2;
     protocol::AvatarBakedTextures ids{};

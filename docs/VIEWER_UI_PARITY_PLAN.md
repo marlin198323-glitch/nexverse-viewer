@@ -299,3 +299,7 @@ Echter lokaler Avatar-Kameraorbit: Front/Seite/Hinten per V/[ ] und drei sichtba
 ## 16.10.2026 – Alpha.200–204 Branding
 
 Das vom Nutzer bereitgestellte Original-OG-Viewer-Icon wird als echtes GLFW/X11-Cinnamon-Taskleistenicon und OpenGL-Logo oben links im Login verwendet. Linux hicolor Starter, Windows ICO und macOS ICNS stehen als native Ressourcen bereit. Vorhandener WelcomePage WebKit Browser und Grid-Login bleiben unverändert; nur Navy/Cyan-Details frischer gestaltet. Keine Full-UI-Mockups oder Server/Avatar-/Wear-Protokolländerungen. Siehe docs/ALPHA200_204_BRANDING_SYSTEM_ICON_AND_LOGIN.md.
+
+## 16.10.2026 – Alpha.205–209
+
+Kamera-Blickfeld-Projektion anhand aktueller AgentPosition, verifizierter Avatar-Render-GL-Draws und Originalicon in der 3D-Welt-HUD-Kopfzeile. Loading-Overlay ermittelt konkreten fehlenden Welt-Entry-Schritt (LLUDP, Region oder Agent), ohne optionales Terrain/CAPS als Voraussetzung zu behaupten. F5 meldet ausschließlich fehlenden Avatar im leeren Weltfokus. Live Grid-Avatar-/Pixel-Parität weiter unbewiesen; keine COF- oder Server-Änderung. Details: docs/ALPHA205_209_WORLD_ENTRY_AND_AVATAR_VIEW_EVIDENCE.md.

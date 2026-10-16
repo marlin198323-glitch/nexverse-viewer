@@ -481,6 +481,21 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-asset-stream-proof-tests
         COMMAND nexverse-asset-stream-proof-tests)
 
+    add_executable(nexverse-world-entry-stage-tests
+        tests/world_entry_stage_tests.cpp)
+    target_link_libraries(nexverse-world-entry-stage-tests PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-world-entry-stage-tests)
+    add_test(NAME nexverse-world-entry-stage-tests
+        COMMAND nexverse-world-entry-stage-tests)
+
+    add_executable(nexverse-avatar-view-evidence-tests
+        tests/avatar_view_evidence_tests.cpp)
+    target_link_libraries(nexverse-avatar-view-evidence-tests
+        PRIVATE NexVerse::UI NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-view-evidence-tests)
+    add_test(NAME nexverse-avatar-view-evidence-tests
+        COMMAND nexverse-avatar-view-evidence-tests)
+
     add_executable(nexverse-avatar-pipeline-proof-tests
         tests/avatar_pipeline_proof_tests.cpp)
     target_link_libraries(nexverse-avatar-pipeline-proof-tests

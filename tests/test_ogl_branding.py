@@ -27,6 +27,17 @@ class OriginalBrandingTests(unittest.TestCase):
         self.assertIn("const ui::WelcomeFrame& welcome_frame = welcome_page.frame()",src)
         self.assertIn("renderer.image(welcome_texture,",src)
 
+    def test_same_uploaded_icon_continues_in_real_world_hud(self):
+        src=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("camera_orbit_degrees,brand_texture);",src)
+        self.assertIn("renderer.image(brand_texture,15.0f*scale",src)
+        self.assertIn("renderer.image(brand_texture,19.0f*scale",src)
+        self.assertIn("avatar_proof.view_stage()",src)
+        self.assertIn("ui::inspect_avatar_view(",src)
+        self.assertIn("ui::describe_world_entry(stage)",src)
+        self.assertIn("welcome_texture,world_entry",src)
+        self.assertIn("0.96f",src)
+
     def test_linux_launcher_matches_x11_window_class(self):
         data=(ROOT/"packaging/linux/opengenesislink-viewer.desktop").read_text()
         self.assertIn("Icon=opengenesislink-viewer",data)
