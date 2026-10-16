@@ -33,6 +33,45 @@ int main()
     r.dispatched(t+std::chrono::seconds{20});
     r.dispatched(t+std::chrono::seconds{40});
     if(r.ready(ids,t+std::chrono::hours{10}))return 11;
-    std::cout<<"Terrain retry: partial layers retained, bounded retries, region epoch isolation PASS\n";
+    // The viewer must not offer a manual HTTP storm: four automatic
+    // attempts, a real 30s final backoff, at most two explicit restarts.
+    TerrainDetailRetry manual{};
+    if(!manual.enter(7,12))return 12;
+    manual.succeeded(0);
+    if(manual.manual_allowed(ids,t,false,true))return 13;
+    manual.dispatched(t);
+    manual.dispatched(t+std::chrono::seconds{5});
+    manual.dispatched(t+std::chrono::seconds{20});
+    manual.dispatched(t+std::chrono::seconds{40});
+    if(manual.manual_allowed(ids,t+std::chrono::seconds{69},false,true))
+        return 14;
+    if(manual.retry_wait_seconds(t+std::chrono::seconds{69})!=1U)
+        return 15;
+    if(manual.manual_allowed(ids,t+std::chrono::seconds{71},true,true)||
+       manual.manual_allowed(ids,t+std::chrono::seconds{71},false,false))
+        return 16;
+    if(!manual.restart_manually(ids,t+std::chrono::seconds{71},
+                                false,true)||
+       manual.loaded_count()!=1U||manual.manual_restarts!=1U||
+       !manual.ready(ids,t+std::chrono::seconds{71}))return 17;
+    const auto remaining=manual.missing(ids);
+    if(remaining[0]||!remaining[1]||!remaining[2]||!remaining[3])
+        return 18;
+    manual.dispatched(t+std::chrono::seconds{71});
+    manual.dispatched(t+std::chrono::seconds{74});
+    manual.dispatched(t+std::chrono::seconds{79});
+    manual.dispatched(t+std::chrono::seconds{86});
+    if(!manual.restart_manually(ids,t+std::chrono::seconds{117},
+                                false,true))return 19;
+    manual.dispatched(t+std::chrono::seconds{118});
+    manual.dispatched(t+std::chrono::seconds{122});
+    manual.dispatched(t+std::chrono::seconds{128});
+    manual.dispatched(t+std::chrono::seconds{145});
+    if(manual.restart_manually(ids,t+std::chrono::seconds{177},
+                               false,true)||
+       manual.manual_restarts!=2U)return 20;
+    if(!manual.enter(7,13)||manual.manual_restarts!=0U||
+       manual.loaded_count()!=0U||!manual.ready(ids,t))return 21;
+    std::cout<<"Terrain retry: epoch-safe, 4 auto + max 2 manual, missing-only PASS\n";
     return 0;
 }

@@ -25,7 +25,7 @@ enum class ViewerAction {
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
     refresh_inventory, animations, select_animation,
     chat_whisper, chat_say, chat_shout, retry_animation,
-    objects, select_object, touch_press, save_avatar_report, disabled
+    objects, select_object, touch_press, save_avatar_report, retry_terrain, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -60,6 +60,8 @@ struct ViewerShellState
     int teleport_focus=0;
     std::size_t animation_selected=0U;
     bool animation_retry_requested=false;
+    bool terrain_retry_available=false;
+    bool terrain_retry_requested=false;
     std::vector<std::uint32_t> nearby_object_ids;
     std::uint32_t selected_object_id=0U;
     std::uint32_t held_object_id=0U;
@@ -187,6 +189,12 @@ struct ViewerShellLayout
                           panel_w-212.0f*scale,48.0f*scale))
                     return ViewerAction::focus_chat;
             }
+            if(state.window==ViewerWindow::region &&
+               inside(x,y,panel_x+27.0f*scale,
+                      panel_y+panel_h-67.0f*scale,
+                      228.0f*scale,39.0f*scale))
+                return state.terrain_retry_available
+                    ?ViewerAction::retry_terrain:ViewerAction::disabled;
             if(state.window==ViewerWindow::objects)
             {
                 if(inside(x,y,panel_x+panel_w-216.0f*scale,

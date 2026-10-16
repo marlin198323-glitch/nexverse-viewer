@@ -214,7 +214,21 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              ?"Terrain-Details werden ermittelt":
              compact(v.terrain_recovery_status,72U),
              theme::cyan);
-        line(9,"F7: Region / ESC: schliessen",theme::cyan);
+        line(9,v.terrain_recovery_layers.empty()
+             ?"Server-Layer: noch nicht ermittelt":
+             compact(v.terrain_recovery_layers,72U),theme::cyan);
+        const bool enabled=state.terrain_retry_available;
+        r.rect(x+27.0f*sc,y+ph-67.0f*sc,228.0f*sc,39.0f*sc,
+               enabled?theme::blue:
+               Color{0.035f,0.054f,0.071f,0.98f},7.0f*sc);
+        r.text(x+39.0f*sc,y+ph-55.0f*sc,9.5f*sc,
+               enabled?"Fehlende Layer nachladen [T]":
+                       "Nachladen derzeit gesperrt",
+               enabled?theme::text:theme::text_muted);
+        r.text(x+270.0f*sc,y+ph-53.0f*sc,8.6f*sc,
+               state.status_text.empty()?"F7 / ESC: schliessen":
+                   compact(state.status_text,49U),
+               theme::text_muted);
     }
     else if(state.window==ViewerWindow::map)
     {

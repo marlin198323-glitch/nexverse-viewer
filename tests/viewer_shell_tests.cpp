@@ -52,6 +52,21 @@ int main()
                  l.panel_y+25.0f*sc,s)!=ViewerAction::close)return 54;
         if(window_for_action(ViewerAction::avatar)!=
            ViewerWindow::avatar)return 55;
+        s.window=ViewerWindow::region;
+        if(l.hit(l.panel_x+80.0f*sc,
+                 l.panel_y+l.panel_h-50.0f*sc,s)!=ViewerAction::disabled)
+            return 70;
+        s.terrain_retry_available=true;
+        if(l.hit(l.panel_x+80.0f*sc,
+                 l.panel_y+l.panel_h-50.0f*sc,s)!=ViewerAction::retry_terrain)
+            return 71;
+        if(l.hit(l.panel_x+300.0f*sc,
+                 l.panel_y+l.panel_h-50.0f*sc,s)!=ViewerAction::none)
+            return 72;
+        if(l.hit(l.panel_x+l.panel_w-35.0f*sc,
+                 l.panel_y+25.0f*sc,s)!=ViewerAction::close)
+            return 73;
+        s.terrain_retry_available=false;
         s.window=ViewerWindow::chat;
         if(l.hit(l.panel_x+39.0f*sc,
                  l.panel_y+l.panel_h-135.0f*sc,s)!=

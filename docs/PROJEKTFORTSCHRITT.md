@@ -1,10 +1,12 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
 **Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.254 | Branch develop-current.
+Stand 17.10.2026 | Viewer 0.2.0-alpha.264 | Branch develop-current.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
+
+**Alpha.255–264:** begrenztes manuelles Terrain-Nachladen, eigener Regions-F7-Button/T, L1–L4-/CAP-/Backoff-Status und konservierte RGBA-Layer. Tests/Bericht in docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md. **39 % bleiben unverändert.** **Nächster Zehnerdurchlauf Alpha.265–274.**
 
 ## Gewichtete Projektbewertung
 
@@ -26,9 +28,9 @@ begründete Schätzungen und keine Abnahme.
 ## Nachweise und verbleibende Lücken
 
 - **Grid, Login, LLUDP, CAPS und Regionsverbindung (75 %):** Realer Login/LLUDP-Handshake und SCENE_READY im Nutzerlog, EventQueue und Diagnosen; stabile Regionsübergänge noch nicht vollständig E2E belegt.
-- **3D-Welt, Terrain, Himmel und Renderer (40 %):** Echte GL-Szenen- und Terrain-Draws; Terrain grau, Umgebung und Licht noch nicht Firestorm-paritätisch.
+- **3D-Welt, Terrain, Himmel und Renderer (43 %):** GL-Szenen-/Terrain-Draws, progressive Materiallayer; Live-Terrainpixel und Firestorm-Umgebung weiter offen.
 - **Avatar, Server-Bakes, Outfits und Animationen (25 %):** Originale Firestorm-LLM-Meshes sichtbar; aktuelles Self-AvatarAppearance fehlt, Bakes/Kleidung/Animation nicht vollständig.
-- **Texturen, Meshes, LOD und Materialsystem (45 %):** GetTexture/GetMesh und GPU-Streaming funktionieren, aber Low-LOD, Ersatzmeshes, Materialqualität und fehlerhafte Assets offen.
+- **Texturen, Meshes, LOD und Materialsystem (47 %):** GetTexture/GetMesh, GPU-Streaming und bounded Missing-Layer-Retry; vollständige High-LOD-/Materialqualität und Grid-E2E offen.
 - **Viewer-GUI, Menüs, Fenster und Bedienung (30 %):** Originalicon, Welcome-Seite, Login, HUD, Diagnose, Kamera und Grundmenüs vorhanden; viele Firestorm-Bedienfunktionen noch offen.
 - **Inventar, Kommunikation, Teleport, Bauen und weitere Firestorm-Funktionen (10 %):** Teilfunktionen und erste Oberflächen vorhanden; vollständige Bedienung, soziale Funktionen und Inworld-Aktionen vielfach unvollständig.
 - **Plattform-Releases, Stabilität, Sicherheit und E2E (25 %):** Mint-x64-Nativbuild/NVIDIA-GL-Tests/Pi5-CI grün; Windows/macOS-Vollabdeckung und echte Grid-End-to-End-Abnahme fehlen.
@@ -53,7 +55,7 @@ begründete Schätzungen und keine Abnahme.
    Bakes, Outfits, Animation, vollstaendiger Welt/
    GUI und Plattform-Releases. Keine 100 % nur durch CI.
 
-**Nächster Zehnerdurchlauf:** Alpha.255–264 mit wieder fünf
+**Nächster Zehnerdurchlauf:** Alpha.265–274 mit zehn
 echten Entwicklungsblöcken. **Besonders offen** sind Self-
 AvatarAppearance, vollständige Bakes/Outfits/Animationen,
 Terrain, High-LOD-Objekte, fehlende Firestorm-Funktionen

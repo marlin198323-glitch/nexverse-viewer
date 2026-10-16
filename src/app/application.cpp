@@ -703,6 +703,13 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             }
             return;
         }
+        if(shell.window==nexverse::ui::ViewerWindow::region &&
+           key==GLFW_KEY_T)
+        {
+            if(shell.terrain_retry_available)
+                shell.terrain_retry_requested=true;
+            return;
+        }
         if(shell.window==nexverse::ui::ViewerWindow::avatar&&
            key==GLFW_KEY_S&&context->avatar_report_save_requested)
         {
@@ -1195,6 +1202,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         {
             if(shell.selected_object_id!=0U&&shell.held_object_id==0U)
                 shell.object_touch_press_requested=true;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::retry_terrain)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::region &&
+               shell.terrain_retry_available)
+                shell.terrain_retry_requested=true;
             return;
         }
         if(command==nexverse::ui::ViewerAction::retry_animation)
@@ -9844,6 +9858,8 @@ int Application::run(bool enable_developer_modules)
                     std::numeric_limits<std::uint32_t>::max();
                 terrain_detail_retry={};
                 terrain_cached_textures={};
+                viewer_shell.terrain_retry_available=false;
+                viewer_shell.terrain_retry_requested=false;
                 rendered_object_generation =
                     std::numeric_limits<std::uint32_t>::max();
                 rendered_object_revision =
@@ -10946,6 +10962,23 @@ int Application::run(bool enable_developer_modules)
                 terrain_cached_textures.generation=texture_generation_current;
                 terrain_cached_textures.material_revision=
                     texture_material_revision_current;
+            }
+            // Process explicit F7/T or F7-button requests on this frame's
+            // authoritative material and CAP scope, NOT on a cached UI state.
+            if(viewer_shell.terrain_retry_requested)
+            {
+                viewer_shell.terrain_retry_requested=false;
+                const bool accepted=terrain_materials_available &&
+                    terrain_detail_retry.restart_manually(
+                        terrain_detail_ids,std::chrono::steady_clock::now(),
+                        terrain_texture_loading,!texture_capability.empty());
+                viewer_shell.status_text=accepted
+                    ?"Terrain: fehlende Layer werden neu geladen."
+                    :"Terrain-Nachladen aktuell nicht zulaessig.";
+                if(accepted)
+                    core::info("User-requested terrain retry; preserved "+
+                        std::to_string(terrain_detail_retry.loaded_count())+
+                        " loaded server layers");
             }
             if (!terrain_texture_loading &&
                 terrain_materials_available &&
@@ -12648,13 +12681,22 @@ int Application::run(bool enable_developer_modules)
                     ui::describe_avatar_body_pipeline(avatar_proof);
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();
+                viewer_shell.terrain_retry_available=
+                    terrain_materials_available &&
+                    terrain_detail_retry.manual_allowed(
+                        terrain_detail_ids,std::chrono::steady_clock::now(),
+                        terrain_texture_loading,!scoped_get_texture_uri.empty());
                 shell_view.terrain_recovery_status=
                     ui::terrain_recovery_status(
                         terrain_detail_retry,
                         render_diagnostics.terrain_real_detail_layers,
                         render_diagnostics.terrain_textured_draw_calls>0U||
                         render_diagnostics.terrain_fallback_draw_calls>0U,
-                        render_diagnostics.terrain_textured_draw_calls>0U);
+                        render_diagnostics.terrain_textured_draw_calls>0U,
+                        terrain_texture_loading,!scoped_get_texture_uri.empty());
+                shell_view.terrain_recovery_layers=
+                    ui::terrain_recovery_layers(terrain_detail_retry,
+                                                 terrain_detail_ids);
                 shell_view.avatar_skin_status=avatar_proof.skin_stage();
                 shell_view.mesh_quality_status=
                     ui::describe_mesh_quality(mesh_quality_evidence);

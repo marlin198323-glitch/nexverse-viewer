@@ -1,3 +1,13 @@
+Neuester Serverreview 17.10.2026: main 8ec7ea255901260abdeabfc5f17eeb850930d851 (+6 Commits seit bf55a17524a9f3f175c56d2adeaa4d39083f446f), ausschließlich OGL-AssetService-Addon-Build/CI, Legacy FSAssetService bleibt aktiv; keine neue Viewer-CAP/LLUDP-Laufzeitanforderung.
+
+## 17.10.2026 – Alpha.255–264 / Terrain-Retry-F7 (synthetischer Nachweis)
+
+- Viewer-Core (application.cpp, terrain_detail_retry.hpp): material-/regionsgebundener manueller GetTexture-Nachladeversuch; vier automatische Versuche, 30s Backoff, max. zwei bewusst freigegebene manuelle Budgets, nur fehlende Texturlayer.
+- Viewer-UI (viewer_shell.hpp, viewer_shell_render.cpp): sichtbarer, realer Regions-F7-Button, Shortcut T und vier getrennte Layer-/CAP-/Backoff-Stufen. Layout- und Native-Tests belegen die Handlung, **nicht** den echten Grid-Inworld-Download.
+- Upstream opengenesislinkserver main bf55a17524a9: OGL AssetService Addon disabled-by-default, Betreiber-/Serverfunktion; aktuelles GetTexture-CAP-Verhalten NICHT ungeprüft ersetzen, kein Admin-Key in Viewer.
+- Status tested_synthetic für Policy/GUI; tatsächliche Welt-/Avatar-/Outfit-/Terrainpixel und Firestorm-Parität NOT_RUN.
+- OGL Gesamtfortschritt **39 %**, unverändert. Nächste zehn Blöcke Alpha.265–274.
+
 # Firestorm ↔ OpenGenesisLINK ↔ OGL – Paritätsmatrix
 
 Stand: 11.10.2026. Dies ist die **offene, inkrementell zu verifizierende** Soll-/Ist-Matrix. Keine pauschalen Erfolgsmeldungen!

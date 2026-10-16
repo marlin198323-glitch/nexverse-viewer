@@ -16,6 +16,8 @@ struct TerrainDetailRetry
     std::uint32_t generation=0U,revision=0U;
     bool initialized=false;
     std::uint8_t attempts=0U;
+    std::uint8_t manual_restarts=0U;
+    static constexpr std::uint8_t max_manual_restarts=2U;
     std::array<bool,4> loaded{};
     Clock::time_point retry_after{};
     static constexpr std::uint8_t max_attempts=4U;
@@ -61,6 +63,37 @@ struct TerrainDetailRetry
     void succeeded(std::size_t layer)
     {
         if(layer<loaded.size())loaded[layer]=true;
+    }
+    // An explicit user retry is possible only AFTER the bounded automatic
+    // budget and last backoff have elapsed. It does not erase good layers,
+    // bypass the region epoch, or start concurrent HTTP downloads.
+    [[nodiscard]] bool manual_allowed(
+        const std::array<std::string,4>& ids,Clock::time_point now,
+        bool in_flight,bool capability_available) const
+    {
+        if(!initialized||in_flight||!capability_available||
+           attempts<max_attempts||manual_restarts>=max_manual_restarts||
+           now<retry_after)return false;
+        const auto pending=missing(ids);
+        return std::any_of(pending.begin(),pending.end(),
+                           [](bool value){return value;});
+    }
+    [[nodiscard]] bool restart_manually(
+        const std::array<std::string,4>& ids,Clock::time_point now,
+        bool in_flight,bool capability_available)
+    {
+        if(!manual_allowed(ids,now,in_flight,capability_available))
+            return false;
+        ++manual_restarts;
+        attempts=0U;
+        retry_after=now;
+        return true;
+    }
+    [[nodiscard]] std::uint32_t retry_wait_seconds(Clock::time_point now) const
+    {
+        if(!initialized||now>=retry_after)return 0U;
+        return static_cast<std::uint32_t>(
+            std::chrono::ceil<std::chrono::seconds>(retry_after-now).count());
     }
     [[nodiscard]] std::uint32_t loaded_count() const
     {

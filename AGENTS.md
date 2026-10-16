@@ -1,10 +1,23 @@
+# Aktueller Viewerstand – Alpha.264 (17.10.2026)
+
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE, auch im neuen Chat. 10 ECHTE ENTWICKLUNGSBLÖCKE pro Weiter.**
+
+**Gesamtfortschritt: ca. 39 %** (38,65 % gewichtete Schätzung, unverändert). **Nächster Zehnerdurchlauf: Alpha.265–274.** Verbindlich zehn echte Code-/GUI-/Testblöcke je WEITER. Quelle: docs/PROJECT_PROGRESS.json.
+
+**Alpha.255–264:** echter im Regionsfenster F7 per Maus oder T auslösbarer, server-/epochgebundener Terrain-Nachladeversuch. Sicher begrenzt auf zwei manuelle Neustarts NACH vier automatischen und 30s Endpause; vorhandene Texturlayer bleiben erhalten; kein paralleler HTTP-Download, kein Request ohne CAP. Anzeige der vier Layer, Countdown und CAP-/Downloadstatus, inklusive 16:9/32:9-Layout- und C++-Tests. Nächste Priorität: authentifizierte Self-Avatar-Bakes samt sichtbarer Welt-/Kleidungs-Darstellung. Details: docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md.
+
+**OpenGenesisLINK-Server (neuer Main-HEAD):** main 8ec7ea255901260abdeabfc5f17eeb850930d851 nach sechs weiteren reinen Addon-Build/Workflow-Commits; bisheriger Addon-Merge-HEAD bf55a17524a9f3f175c56d2adeaa4d39083f446f, OGL AssetService-Addon disabled-by-default, KEIN unverifiziertes Deployment/Viewer-API-Enable. GitHub Branch develop-current, Entwicklungsrechner Linux Mint, Pi5 nur ARM64-CI. Kein Live-Avatar-/Terrain-E2E-Nachweis.
+
+
+---
+
 # nexverse-viewer – Projektanweisungen
 
-**NEU UND VORRANGIG: IMMER 10 ECHTE ENTWICKLUNGSBLÖCKE PRO WEITER (Alpha.255–264 als nächstes); ÄLTERE FÜNFERREGELN SIND ÜBERHOLT.** Nach jedem Durchlauf Prozentfortschritt berechnen, GitHub/Mint/Pi5 CI validieren.
+**ARCHIV 16.10.2026: IMMER 10 ECHTE ENTWICKLUNGSBLÖCKE PRO WEITER; Alpha.255–264 inzwischen abgeschlossen.** Nach jedem Durchlauf Prozentfortschritt berechnen, GitHub/Mint/Pi5 CI validieren.
 
 ## VERBINDLICH: GESAMTFORTSCHRITT BEI JEDEM STATUS IN %
 
-**Bei jeder Meldung zum OGL-Projektstand, jedem Zehnerdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.254: **ca. 39 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
+**Bei jeder Meldung zum OGL-Projektstand, jedem Zehnerdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Historisch Alpha.254: **ca. 39 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
 
 ## VERBINDLICHE ZEHN-BLÖCKE-REGEL (16.10.2026)
 

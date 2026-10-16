@@ -1,8 +1,28 @@
+## ZEHN-BLÖCKE-REGEL – ALPHA.255–264 – GESAMTLAUF, 17.10.2026
+
+**OGL 0.2.0-alpha.264 | Gesamtfortschritt ca. 39 % (38,65 % gewichtete Schätzung, unverändert).** Nächste zehn Blöcke **Alpha.265–274**. Die darunter archivierten Alpha.255–264-Voranweisungen gelten als erledigt, nicht als nächster Auftrag.
+
+- **255 [GEPRUEFT]:** OpenGenesisLINK main bf55a175 Addon-Merge und neuer HEAD 8ec7ea255901 (6 weitere Commits, vier Build/CI-Dateien): AssetService wird nun bei compile.sh mitgebaut, aber nicht automatisch im ROBUST aktiviert; kein Viewer-CAP-Wechsel/Produktionsenable.
+- **256 [IMPLEMENTIERT + TEST]:** Regions-/Materialrevisionstreue manueller Terrain-Recovery; erfolgreiche Layer bleiben erhalten.
+- **257 [IMPLEMENTIERT + TEST]:** Vier automatische und maximal zwei bewusst angeforderte Budgets; 30s finale Backoff-Sperre.
+- **258 [IMPLEMENTIERT + TEST]:** Neue Downloads nur für fehlende Layer; keine Wiederholung intakter Layer.
+- **259 [IMPLEMENTIERT + TEST]:** GetTexture CAP, in-flight, Materialgeneration und Serverantworten werden als Guards geprüft.
+- **260 [IMPLEMENTIERT + TEST]:** echter klickbarer, zustandsgebunden deaktivierbarer Regions-F7-Button.
+- **261 [IMPLEMENTIERT + TEST]:** T-Tastaturaktion nur im Regionsfenster, identische Host-Prüfung.
+- **262 [IMPLEMENTIERT + TEST]:** getrennte L1–L4-/CAP-/Cooldown-/GPU-Layer-Diagnose und Statusmeldung; keine Secrets.
+- **263 [IMPLEMENTIERT + TEST]:** C++23-/GUI-/Python-Regressionsfälle und 16:9–32:9-Hitboxes.
+- **264 [BUILD/CI-ABSCHLUSS]:** vollständiger Mint-x64 Build/Native-/Python-/Headless-/Xvfb-Test, GitHub develop-current und Pi5-ARM64 Runner; CI-SHA im Abschlussbericht belegen.
+
+Detail: docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md. Bewertung bleibt bei **39 %**, bis reale Server-/Avatar-/Outfit-/Terraindarstellung E2E belegt wird.
+
+
+---
+
 # NexVerse Viewer – Projektplan
 
-**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.255–264**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Regel überschreibt historische Fünferreferenzen in älteren Berichten.
+**ARCHIV 16.10.2026: Zehnerregel gültig, damaliger Durchlauf Alpha.255–264 abgeschlossen.** In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Regel überschreibt historische Fünferreferenzen in älteren Berichten.
 
-Stand: 17.10.2026 | OGL 0.2.0-alpha.254 | Gesamtfortschritt ca. 39 % (gewichtete Schätzung)
+Historischer Stand: 17.10.2026 | OGL 0.2.0-alpha.254 | ca. 39 %; aktueller Stand Alpha.264 oben.
 Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
 
@@ -10,7 +30,7 @@ Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firesto
 
 ## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
 
-**Aktueller OGL-Gesamtfortschritt: ca. 39 % (Schätzung, Stand 17.10.2026, Alpha.254).**
+**Historischer Gesamtfortschritt Alpha.254: ca. 39 %. Aktueller Stand Alpha.264 oben.**
 
 - PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Fuenferdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
 - Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.

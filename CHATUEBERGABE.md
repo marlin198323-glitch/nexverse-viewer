@@ -1,12 +1,25 @@
+# Aktueller Viewerstand – Alpha.264 (17.10.2026)
+
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE, auch im neuen Chat. 10 ECHTE ENTWICKLUNGSBLÖCKE pro Weiter.**
+
+**Gesamtfortschritt: ca. 39 %** (38,65 % gewichtete Schätzung, unverändert). **Nächster Zehnerdurchlauf: Alpha.265–274.** Verbindlich zehn echte Code-/GUI-/Testblöcke je WEITER. Quelle: docs/PROJECT_PROGRESS.json.
+
+**Alpha.255–264:** echter im Regionsfenster F7 per Maus oder T auslösbarer, server-/epochgebundener Terrain-Nachladeversuch. Sicher begrenzt auf zwei manuelle Neustarts NACH vier automatischen und 30s Endpause; vorhandene Texturlayer bleiben erhalten; kein paralleler HTTP-Download, kein Request ohne CAP. Anzeige der vier Layer, Countdown und CAP-/Downloadstatus, inklusive 16:9/32:9-Layout- und C++-Tests. Nächste Priorität: authentifizierte Self-Avatar-Bakes samt sichtbarer Welt-/Kleidungs-Darstellung. Details: docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md.
+
+**OpenGenesisLINK-Server (neuer Main-HEAD):** main 8ec7ea255901260abdeabfc5f17eeb850930d851 nach sechs weiteren reinen Addon-Build/Workflow-Commits; bisheriger Addon-Merge-HEAD bf55a17524a9f3f175c56d2adeaa4d39083f446f, OGL AssetService-Addon disabled-by-default, KEIN unverifiziertes Deployment/Viewer-API-Enable. GitHub Branch develop-current, Entwicklungsrechner Linux Mint, Pi5 nur ARM64-CI. Kein Live-Avatar-/Terrain-E2E-Nachweis.
+
+
+---
+
 # CHATÜBERGABE – IM NEUEN CHAT ZUERST LESEN
 
-**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.255–264**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Zehnerregel überschreibt historische Fünferreferenzen in älteren Berichten.
+**ARCHIV 16.10.2026: Zehnerregel gilt weiterhin; der damalige Durchlauf Alpha.255–264 ist abgeschlossen.** In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Zehnerregel überschreibt historische Fünferreferenzen in älteren Berichten.
 
 ## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
 
-**Aktueller OGL-Gesamtfortschritt: ca. 39 % (Schätzung, Stand 17.10.2026, Alpha.254).**
+**Historischer OGL-Gesamtfortschritt: ca. 39 % (Stand Alpha.254). Aktuell siehe oberster Block Alpha.264.**
 
-**Nächste zehn echte Entwicklungsblöcke: Alpha.255–264.**
+**Historisch geplante zehn Entwicklungsblöcke: Alpha.255–264 (abgeschlossen).**
 
 - PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Zehnerdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
 - Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
