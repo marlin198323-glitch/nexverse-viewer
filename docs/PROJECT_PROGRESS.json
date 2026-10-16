@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.264",
+  "viewer_version": "0.2.0-alpha.274",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.265–274",
-  "assessment": "Stand Alpha.264: Terrain-F7 mit vier getrennten Layern, server-/regiongebundenem und nutzergesteuert begrenztem Retry sowie synthetischen Policy-/GUI-Tests. 39 % unveraendert: kein authentifizierter Terrain-/Avatar-/Firestorm-E2E-Pixelnachweis und keine Windows/macOS-Abnahme.",
+  "next_five_blocks": "Alpha.275–284",
+  "assessment": "Alpha.274: real current-self 11-slot AvatarBake Inspector and guarded shared GetTexture reprioritization with 3/12s budget; no verified live NexVerse AvatarAppearance, outfit or pixel end-to-end. Weighted estimate 38.65%, rounded 39%, unchanged.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.265–274",
+  "next_batch": "Alpha.275–284",
   "default_blocks_per_run": 10
 }

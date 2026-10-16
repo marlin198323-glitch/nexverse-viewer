@@ -24,6 +24,10 @@ struct ViewerShellView
     std::string avatar_view_status;
     std::string avatar_fragment_status;
     std::string avatar_bake_status;
+    std::array<std::string,11U> avatar_bake_rows{};
+    std::string avatar_bake_summary;
+    std::string avatar_bake_visual;
+    std::string avatar_bake_stream_status;
     std::string avatar_animation_status;
     std::string terrain_recovery_status;
     std::string terrain_recovery_layers;

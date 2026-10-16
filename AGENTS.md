@@ -1,3 +1,18 @@
+Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69eefc62cf0b9d22a1 (+2 Commits nach 8ec7ea; einzig bin/Robust.HG.OGLAsset.ini.example). Dieses vollständige Hypergrid-ROBUST-Beispiel ist EXPERIMENTAL, DISABLED BY DEFAULT und ausdrücklich nur für isoliertes Staging mit eigener DB/Assets/Secrets. Kein Laufzeit-Protokoll- oder Viewer-CAP-Wechsel, KEIN automatisches Aktivieren/Deployment.
+
+# OGL aktueller Stand: Alpha.274 (17.10.2026)
+
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. 10 ECHTE ENTWICKLUNGSBLÖCKE je WEITER und neuem Chat.**
+
+**Gesamtfortschritt ca. 39 % (38,65 % gewichtete Schätzung, unverändert).** Nächster Zehnerdurchlauf: **Alpha.275–284**. Bewertungsquelle docs/PROJECT_PROGRESS.json, keine automatische Erhöhung durch Tests oder Version.
+
+**Alpha.265–274:** Authentifizierte SelfAvatarAppearance/Server-TE-Bakes in elf GPU/GL-Statuszeilen im F3-Fenster; echte Schalter B für Übersicht/Bake-Seite 1/2/2/2 und R für streng kontrollierte Replanung fehlender Head/Upper/Lower-GetTexture-Assets. Originales Retry-/VRAM-/Pacer-/CAP-/Region-/Worker-Gating wird nicht umgangen. Details docs/ALPHA265_274_AVATAR_BAKE_INSPECTOR.md.
+
+**Server main 8ec7ea255901260abdeabfc5f17eeb850930d851:** optionales Addon disabled-by-default, kein Viewer-Wire-Protokollwechsel. Mint-PC bleibt der C++/GUI-Buildhost, Raspberry Pi5 nur ARM64-CI. Live-Grid-Avatar-/Outfit-/Pixel-End-to-End bleibt OFFEN.
+
+
+---
+
 # Aktueller Viewerstand – Alpha.264 (17.10.2026)
 
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE, auch im neuen Chat. 10 ECHTE ENTWICKLUNGSBLÖCKE pro Weiter.**

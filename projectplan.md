@@ -1,3 +1,24 @@
+Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69eefc62cf0b9d22a1 (+2 Commits nach 8ec7ea; einzig bin/Robust.HG.OGLAsset.ini.example). Dieses vollständige Hypergrid-ROBUST-Beispiel ist EXPERIMENTAL, DISABLED BY DEFAULT und ausdrücklich nur für isoliertes Staging mit eigener DB/Assets/Secrets. Kein Laufzeit-Protokoll- oder Viewer-CAP-Wechsel, KEIN automatisches Aktivieren/Deployment.
+
+## ZEHN-BLÖCKE-REGEL – LAUF Alpha.265–274 vom 17.10.2026
+
+**Viewer 0.2.0-alpha.274 | Gesamtfortschritt 39 % (38,65 % gewichtet) | Nächster Lauf Alpha.275–284.** Zehn echte Code+GUI+Test-Blöcke je Weiter, nicht nur Dokumentation.
+
+- **265 GEPRÜFT:** Viewer HEAD 72ca214, Server main 8ec7ea – nur Server-Addon-Build, keine neue Viewer-CAPS.
+- **266 IMPLEMENTIERT/TEST:** alle elf Firestorm-Server-Bake-TE-Regionen einzeln als Server/GPU-Stufe.
+- **267 IMPLEMENTIERT/TEST:** echte Head/Upper/Lower-Original-LLM-GL-Draws und GPU-Depth-Status.
+- **268 IMPLEMENTIERT/TEST:** Self-Authentisierung, aktuelle Region/CAP/Worker, 3x/12s-Rate-Limit.
+- **269 IMPLEMENTIERT/TEST:** nur fehlende echte Server-Bakes; ungültige/Placeholder/duplizierte IDs und Asset-Backoff berücksichtigt.
+- **270 IMPLEMENTIERT/TEST:** echte GetTexture-Residency-Replanung, kein ungeprüfter direkter HTTP-Request.
+- **271 IMPLEMENTIERT/TEST:** drei sichtbare F3-Avatarfensterseiten, incl. 11 serverseitige Bake-Slots.
+- **272 IMPLEMENTIERT/TEST:** B/R Maus und Tastatur, real disabled sowie 16:9/32:9-Layout-Hitboxes.
+- **273 IMPLEMENTIERT/TEST:** F3 Status über GPU/GL/Depth/Backoff/CAP, C++23 und Python-Regressions.
+- **274 BUILD/CI-ABSCHLUSS:** x64 Mint-/NVIDIA OpenGL-/Python-/Headless-/Xvfb-/Icon-/Pi5 CI-Gates inkl. Github SHA.
+
+Für präzisen Status, Tests und Grenzen siehe docs/ALPHA265_274_AVATAR_BAKE_INSPECTOR.md. 39 % Gesamtfortschritt unverändert; reale authentifizierte Welt/Avatar-/Outfit-Bakes bleiben OFFEN.
+
+---
+
 ## ZEHN-BLÖCKE-REGEL – ALPHA.255–264 – GESAMTLAUF, 17.10.2026
 
 **OGL 0.2.0-alpha.264 | Gesamtfortschritt ca. 39 % (38,65 % gewichtete Schätzung, unverändert).** Nächste zehn Blöcke **Alpha.265–274**. Die darunter archivierten Alpha.255–264-Voranweisungen gelten als erledigt, nicht als nächster Auftrag.

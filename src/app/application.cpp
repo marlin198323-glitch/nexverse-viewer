@@ -20,6 +20,8 @@
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/terrain_detail_retry.hpp"
+#include "nexverse/assets/avatar_bake_recheck.hpp"
+#include "nexverse/ui/avatar_bake_inspector.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/assets/gpu_staging_budget.hpp"
 #include "nexverse/assets/gpu_staging_recovery.hpp"
@@ -711,6 +713,20 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             return;
         }
         if(shell.window==nexverse::ui::ViewerWindow::avatar&&
+           key==GLFW_KEY_B)
+        {
+            shell.avatar_bake_page=static_cast<std::uint8_t>(
+                (shell.avatar_bake_page+1U)%3U);
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::avatar&&
+           key==GLFW_KEY_R)
+        {
+            if(shell.avatar_recheck_available)
+                shell.avatar_recheck_requested=true;
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::avatar&&
            key==GLFW_KEY_S&&context->avatar_report_save_requested)
         {
             *context->avatar_report_save_requested=true;
@@ -1227,6 +1243,20 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                     (my-first)/(31.0f*layout.scale));
                 shell.animation_selected=std::min(row,std::size_t{7U});
             }
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::cycle_avatar_bakes)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::avatar)
+                shell.avatar_bake_page=static_cast<std::uint8_t>(
+                    (shell.avatar_bake_page+1U)%3U);
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::recheck_avatar_bakes)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::avatar &&
+               shell.avatar_recheck_available)
+                shell.avatar_recheck_requested=true;
             return;
         }
         if(command==nexverse::ui::ViewerAction::save_avatar_report)
@@ -5948,6 +5978,7 @@ int Application::run(bool enable_developer_modules)
     using TerrainTextureResults =
         std::array<assets::TextureAssetResult, 4>;
     assets::TerrainDetailRetry terrain_detail_retry;
+    assets::AvatarBakeRecheck avatar_bake_recheck;
     render::RenderTerrainTextures terrain_cached_textures;
     std::future<TerrainTextureResults> terrain_texture_future;
     bool terrain_texture_loading = false;
@@ -9858,6 +9889,9 @@ int Application::run(bool enable_developer_modules)
                     std::numeric_limits<std::uint32_t>::max();
                 terrain_detail_retry={};
                 terrain_cached_textures={};
+                avatar_bake_recheck={};
+                viewer_shell.avatar_recheck_available=false;
+                viewer_shell.avatar_recheck_requested=false;
                 viewer_shell.terrain_retry_available=false;
                 viewer_shell.terrain_retry_requested=false;
                 rendered_object_generation =
@@ -11325,6 +11359,66 @@ int Application::run(bool enable_developer_modules)
             for (const auto& emitter : scene_particle_emitters)
                 emitter_texture_ids.push_back(emitter.texture_id);
             const auto texture_plan_now = std::chrono::steady_clock::now();
+            avatar_bake_recheck.enter(material_scope.epoch());
+            const auto self_bake_it=std::find_if(
+                avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                [](const auto& item){return item.is_self;});
+            const std::array<std::string,3U> self_bake_ids=
+                self_bake_it==avatar_proxy_update.end()
+                    ?std::array<std::string,3U>{}
+                    :self_bake_it->baked_texture_ids;
+            const bool self_bake_authenticated=login_ui.authenticated&&
+                active_session&&simulation_ready&&render_agent.present&&
+                active_session->agent_id==render_agent.agent_id;
+            const bool self_bake_lease=
+                firestorm_region_lease.matches(current_firestorm_epoch);
+            const auto self_bake_pending=assets::avatar_bake_ready_missing(
+                self_bake_ids,object_texture_loaded_ids,
+                object_texture_retries,texture_plan_now);
+            std::string avatar_bake_stream_status=
+                !self_bake_authenticated || !self_bake_lease
+                    ?"Bakes: keine gueltige Self-/Regionssitzung"
+                :self_bake_ids[0].empty()&&self_bake_ids[1].empty()&&
+                 self_bake_ids[2].empty()
+                    ?"Bakes: Server-TE Head/Upper/Lower fehlen"
+                :texture_capability.empty()
+                    ?"Bakes: GetTexture-CAP fehlt"
+                :object_texture_loading
+                    ?"Bakes: GetTexture-Stream belegt"
+                :self_bake_pending==0U
+                    ?"Bakes: keine freigegebenen fehlenden Layer (GPU/Backoff)"
+                :avatar_bake_recheck.requests>=
+                    assets::AvatarBakeRecheck::max_requests
+                    ?"Bakes: manuelles Replan-Limit erreicht"
+                :texture_plan_now<avatar_bake_recheck.retry_after
+                    ?"Bakes: Replan-Pause noch aktiv"
+                :"Bakes: "+std::to_string(self_bake_pending)+
+                   " fehlende Layer koennen neu eingeplant werden";
+            viewer_shell.avatar_recheck_available=
+                avatar_bake_recheck.allowed(
+                    self_bake_authenticated,self_bake_lease,
+                    !texture_capability.empty(),object_texture_loading,
+                    self_bake_pending>0U,texture_plan_now);
+            if(viewer_shell.avatar_recheck_requested)
+            {
+                viewer_shell.avatar_recheck_requested=false;
+                const bool accepted=avatar_bake_recheck.request(
+                    self_bake_authenticated,self_bake_lease,
+                    !texture_capability.empty(),object_texture_loading,
+                    self_bake_pending>0U,texture_plan_now);
+                viewer_shell.status_text=accepted
+                    ?"Server-Bakes werden durch GetTexture neu eingeplant."
+                    :"Bake-Pruefung gesperrt: Region/CAP/Retry/Download.";
+                if(accepted)
+                {
+                    // Recompute only priorities. Existing shared per-asset
+                    // retry/backoff, VRAM budget and HTTP pacer stay intact.
+                    last_texture_residency_plan={};
+                    core::info("User requested safe current-self bake replan; "+
+                        std::to_string(self_bake_pending)+" slots eligible");
+                }
+                viewer_shell.avatar_recheck_available=false;
+            }
             // Baked Head/Upper/Lower textures travel through the same
             // budgeted GetTexture, residency, cache and region lifecycle as
             // existing scene material textures. Recompute per-frame because
@@ -12679,6 +12773,13 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_fragment_status=avatar_proof.fragment_stage();
                 shell_view.avatar_bake_status=
                     ui::describe_avatar_body_pipeline(avatar_proof);
+                const auto bake_inspector=
+                    ui::inspect_avatar_bakes(avatar_proof);
+                shell_view.avatar_bake_rows=bake_inspector.rows;
+                shell_view.avatar_bake_summary=bake_inspector.summary;
+                shell_view.avatar_bake_visual=bake_inspector.visual;
+                shell_view.avatar_bake_stream_status=
+                    avatar_bake_stream_status;
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();
                 viewer_shell.terrain_retry_available=

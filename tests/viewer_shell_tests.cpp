@@ -47,7 +47,15 @@ int main()
            ViewerAction::save_avatar_report)return 52;
         if(l.hit(l.panel_x+275.0f*sc,
                  l.panel_y+l.panel_h-75.0f*sc,s)!=
-           ViewerAction::none)return 53;
+           ViewerAction::cycle_avatar_bakes)return 53;
+        if(l.hit(l.panel_x+465.0f*sc,
+                 l.panel_y+l.panel_h-75.0f*sc,s)!=
+           ViewerAction::disabled)return 56;
+        s.avatar_recheck_available=true;
+        if(l.hit(l.panel_x+465.0f*sc,
+                 l.panel_y+l.panel_h-75.0f*sc,s)!=
+           ViewerAction::recheck_avatar_bakes)return 57;
+        s.avatar_recheck_available=false;
         if(l.hit(l.panel_x+l.panel_w-35.0f*sc,
                  l.panel_y+25.0f*sc,s)!=ViewerAction::close)return 54;
         if(window_for_action(ViewerAction::avatar)!=

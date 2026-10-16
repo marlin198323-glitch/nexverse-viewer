@@ -25,7 +25,8 @@ enum class ViewerAction {
     focus_teleport_x, focus_teleport_y, focus_teleport_z,
     refresh_inventory, animations, select_animation,
     chat_whisper, chat_say, chat_shout, retry_animation,
-    objects, select_object, touch_press, save_avatar_report, retry_terrain, disabled
+    objects, select_object, touch_press, save_avatar_report, retry_terrain,
+    cycle_avatar_bakes, recheck_avatar_bakes, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -60,6 +61,9 @@ struct ViewerShellState
     int teleport_focus=0;
     std::size_t animation_selected=0U;
     bool animation_retry_requested=false;
+    std::uint8_t avatar_bake_page=0U; // overview, Head..Hair, other 5 bakes
+    bool avatar_recheck_available=false;
+    bool avatar_recheck_requested=false;
     bool terrain_retry_available=false;
     bool terrain_retry_requested=false;
     std::vector<std::uint32_t> nearby_object_ids;
@@ -160,11 +164,23 @@ struct ViewerShellLayout
         if(menu_change)*menu_change=-2;
         if(state.window!=ViewerWindow::none)
         {
-            if(state.window==ViewerWindow::avatar &&
-               inside(x,y,panel_x+27.0f*scale,
+            if(state.window==ViewerWindow::avatar)
+            {
+                if(inside(x,y,panel_x+27.0f*scale,
                    panel_y+panel_h-93.0f*scale,
-                   208.0f*scale,41.0f*scale))
-                return ViewerAction::save_avatar_report;
+                   176.0f*scale,41.0f*scale))
+                    return ViewerAction::save_avatar_report;
+                if(inside(x,y,panel_x+214.0f*scale,
+                   panel_y+panel_h-93.0f*scale,
+                   166.0f*scale,41.0f*scale))
+                    return ViewerAction::cycle_avatar_bakes;
+                if(inside(x,y,panel_x+393.0f*scale,
+                   panel_y+panel_h-93.0f*scale,
+                   166.0f*scale,41.0f*scale))
+                    return state.avatar_recheck_available
+                        ?ViewerAction::recheck_avatar_bakes
+                        :ViewerAction::disabled;
+            }
             if(inside(x,y,panel_x+panel_w-56.0f*scale,
                       panel_y+10.0f*scale,46.0f*scale,36.0f*scale))
                 return ViewerAction::close;

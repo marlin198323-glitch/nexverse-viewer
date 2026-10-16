@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
 **Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.264 | Branch develop-current.
+Stand 17.10.2026 | Viewer 0.2.0-alpha.274 | Branch develop-current.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -10,7 +10,7 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 
 **Alpha.264 CI:** Commit acaab98d987c6c7602f806da4b33b2de8ae333a5; GitHub Pi5 ARM64 Run 38978541689 SUCCESS (SHA identisch), Mint 140/140 native, 85/85 Python, Headless/Xvfb/Taskleistenicon PASS. Reale Grid-E2E-Prüfung weiterhin offen.
 
-## Gewichtete Projektbewertung
+**Alpha.265–274:** F3 Head/Upper/Lower + 8 weitere echte Server-Bake-GPU-/GL-/Depth-Stufen, begrenzte GetTexture-Replanung mit unverändertem Backoff. 39 % (38,65 %) unverändert; kein authentifizierter NexVerse-Live-Avatar-/Outfit-/Pixel-E2E-Beleg. **Nächster Zehnerdurchlauf Alpha.275–284.**\n\n## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |
 |---|---:|---:|---:|
@@ -57,7 +57,7 @@ begründete Schätzungen und keine Abnahme.
    Bakes, Outfits, Animation, vollstaendiger Welt/
    GUI und Plattform-Releases. Keine 100 % nur durch CI.
 
-**Nächster Zehnerdurchlauf:** Alpha.265–274 mit zehn
+**Nächster Zehnerdurchlauf:** Alpha.275–284 mit zehn
 echten Entwicklungsblöcken. **Besonders offen** sind Self-
 AvatarAppearance, vollständige Bakes/Outfits/Animationen,
 Terrain, High-LOD-Objekte, fehlende Firestorm-Funktionen

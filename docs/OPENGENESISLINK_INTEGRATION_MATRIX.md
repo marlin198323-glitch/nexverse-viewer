@@ -1,3 +1,12 @@
+Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69eefc62cf0b9d22a1 (+2 Commits nach 8ec7ea; einzig bin/Robust.HG.OGLAsset.ini.example). Dieses vollständige Hypergrid-ROBUST-Beispiel ist EXPERIMENTAL, DISABLED BY DEFAULT und ausdrücklich nur für isoliertes Staging mit eigener DB/Assets/Secrets. Kein Laufzeit-Protokoll- oder Viewer-CAP-Wechsel, KEIN automatisches Aktivieren/Deployment.
+
+## 17.10.2026 / Alpha.265–274 – Server-Bake-Inspektor und GetTexture-Replanung
+
+- Viewer-Core liest ausschließlich authentifizierte Self-AvatarAppearance-TE-Bakes in der aktuellen Region: 11 Slots mit realer GPU-Residenz, 3 Head/Upper/Lower Original-LLM-GL-Draws und unabhängigen asynchronen GPU-Depth-Werten. Source- und Native-Tests belegen die Datenwege, kein echter NexVerse-Pixelvergleich.
+- F3 Viewer-GUI wechselt per B/echtem Button Übersicht/2 Bake-Seiten, R plant bei expliziter Nutzeraktion höchstens 3-mal pro Epoche (12s Cooldown) die tatsächlich fehlenden, bereits fälligen Bakes über den bestehenden GetTexture-Stream neu ein.
+- OpenGenesisLINK Server main 8ec7ea255901260abdeabfc5f17eeb850930d851 mit deaktiviertem AssetService-Addon: keine bestätigte neue AvatarAppearance/GetTexture-Protokollaktion.
+- Status synthetisch getestet, Live-Grid/Outfit/Bake/Pixels NOT_RUN; Gesamtfortschritt **39 %**. Nächster Lauf Alpha.275–284.
+
 Neuester Serverreview 17.10.2026: main 8ec7ea255901260abdeabfc5f17eeb850930d851 (+6 Commits seit bf55a17524a9f3f175c56d2adeaa4d39083f446f), ausschließlich OGL-AssetService-Addon-Build/CI, Legacy FSAssetService bleibt aktiv; keine neue Viewer-CAP/LLUDP-Laufzeitanforderung.
 
 ## 17.10.2026 – Alpha.255–264 / Terrain-Retry-F7 (synthetischer Nachweis)

@@ -267,31 +267,57 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
     }
     else if(state.window==ViewerWindow::avatar)
     {
-        line(0,"Avatar: "+compact(v.avatar_name,50U),theme::text);
-        line(1,"Position: "+position(v.agent_position[0],
-                                    v.agent_position[1],
-                                    v.agent_position[2]));
-        line(2,v.avatar_skin_status.empty()
-            ?(v.appearance_ready?"Appearance: Server-Daten da":
-               "Appearance: noch nicht geladen")
-            :v.avatar_skin_status);
-        line(3,v.avatar_animation_status.empty()
-            ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status);
-        line(4,"Attachments: "+std::to_string(v.attachments));
-        line(5,v.avatar_view_status,
-             theme::cyan);
-        line(6,v.avatar_fragment_status,
-             theme::warning);
-        line(7,"Server-Bakes: "+v.avatar_bake_status,
-             theme::text_muted);
-        r.rect(x+27.0f*sc,y+ph-93.0f*sc,208.0f*sc,41.0f*sc,
+        if(state.avatar_bake_page==0U)
+        {
+            line(0,"Avatar: "+compact(v.avatar_name,50U),theme::text);
+            line(1,"Position: "+position(v.agent_position[0],
+                                        v.agent_position[1],
+                                        v.agent_position[2]));
+            line(2,v.avatar_skin_status.empty()
+                ?(v.appearance_ready?"Appearance: Server-Daten da":
+                   "Appearance: noch nicht geladen")
+                :v.avatar_skin_status);
+            line(3,v.avatar_animation_status.empty()
+                ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status);
+            line(4,"Attachments: "+std::to_string(v.attachments));
+            line(5,v.avatar_view_status,theme::cyan);
+            line(6,v.avatar_fragment_status,theme::warning);
+            line(7,"Server-Bakes: "+v.avatar_bake_status,theme::text_muted);
+        }
+        else
+        {
+            const std::size_t begin=state.avatar_bake_page==1U?0U:6U;
+            const std::size_t end=state.avatar_bake_page==1U?6U:11U;
+            line(0,compact(v.avatar_bake_summary,72U),theme::cyan);
+            for(std::size_t i=begin;i<end;++i)
+                line(1+static_cast<int>(i-begin),
+                     compact(v.avatar_bake_rows[i],72U),
+                     i<3U?theme::cyan:theme::text);
+            line(7,compact(v.avatar_bake_visual,72U),theme::warning);
+        }
+        line(8,compact(v.avatar_bake_stream_status,72U),
+             state.avatar_recheck_available?theme::cyan:theme::text_muted);
+        r.rect(x+27.0f*sc,y+ph-93.0f*sc,176.0f*sc,41.0f*sc,
                Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);
-        r.text(x+39.0f*sc,y+ph-79.0f*sc,9.2f*sc,
+        r.text(x+36.0f*sc,y+ph-79.0f*sc,8.7f*sc,
                "Diagnose speichern [S]",theme::cyan);
-        r.text(x+248.0f*sc,y+ph-73.0f*sc,8.0f*sc,
-               compact(v.avatar_report_notice,60U),theme::text_muted);
-        r.text(x+27.0f*sc,y+ph-24.0f*sc,8.0f*sc,
-               "Export ohne Zugangsdaten, UUIDs oder Chat-Nachrichten.",
+        r.rect(x+214.0f*sc,y+ph-93.0f*sc,166.0f*sc,41.0f*sc,
+               Color{0.055f,0.165f,0.235f,0.98f},7.0f*sc);
+        r.text(x+223.0f*sc,y+ph-79.0f*sc,8.8f*sc,
+               state.avatar_bake_page==0U?"Bakes 1/2 [B]":
+               state.avatar_bake_page==1U?"Bakes 2/2 [B]":
+               "Uebersicht [B]",theme::cyan);
+        r.rect(x+393.0f*sc,y+ph-93.0f*sc,166.0f*sc,41.0f*sc,
+               state.avatar_recheck_available?theme::blue:
+               Color{0.035f,0.054f,0.071f,0.98f},7.0f*sc);
+        r.text(x+401.0f*sc,y+ph-79.0f*sc,8.6f*sc,
+               state.avatar_recheck_available?"Bakes pruefen [R]":
+               "Pruefung gesperrt",
+               state.avatar_recheck_available?theme::text:theme::text_muted);
+        r.text(x+27.0f*sc,y+ph-24.0f*sc,8.1f*sc,
+               state.status_text.empty()?
+                 "Self-Serverdaten; keine Uploads / IDs / Secrets.":
+                 compact(state.status_text,76U),
                theme::text_muted);
     }
     else if(state.window==ViewerWindow::objects)
