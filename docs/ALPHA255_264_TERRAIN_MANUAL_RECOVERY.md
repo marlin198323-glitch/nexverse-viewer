@@ -15,7 +15,7 @@
 | 261 | Tastatur T nur im authentifizierten aktiven Regions-Floater, dieselbe bewachte Request-Queue wie Mouse. | implementiert, Python-Wiring |
 | 262 | F7 zeigt L1–L4 getrennt (geladen/fehlt/nicht gesetzt), CAP-/In-flight-/Countdown-/Erschöpfungsstatus und Aktionsergebnis, ohne Asset-ID/Token/URL anzuzeigen. | implementiert, Native-/Python-Test |
 | 263 | C++23 Policy-/UI-/Hitbox-Regressionen und Source-Contract-Tests gegen leere CAP, Race/Epoch, Upload-Erhalt und 16:9–32:9. | implementiert, synthetisch |
-| 264 | VERSION/Projektfortschritt, Plan, Übergabe, Matrizen und vollständiger Mint x64 Build, NVIDIA GL CTests, Python, Pi5-kompatibler Headless, isolierter Xvfb-Start und GitHub Pi5 ARM64-CI. | CI-Status im letzten Chat-Abschluss verifizieren |
+| 264 | VERSION/Projektfortschritt, Plan, Übergabe, Matrizen und vollständiger Mint x64 Build, NVIDIA GL CTests, Python, Pi5-kompatibler Headless, isolierter Xvfb-Start und GitHub Pi5 ARM64-CI. | FERTIG: CI 38978541689 SUCCESS fuer Feature-SHA acaab98 (belegt) |
 
 ## Neuer Upstream-Abgleich vor GitHub-Push
 
@@ -35,6 +35,8 @@
 - Python: tests/test_alpha255_264_manual_recovery_contract.py und komplette python3 -m unittest discover -s tests -p test*.py.
 - GUI: scripts/mint-isolated-gui-smoke.sh, Xvfb mit Software-GL statt sichtbarem Desktop.
 - Runner: GitHub Actions pi5-ogl für ARM64-Headless (Ergebnis separat mit Run-SHA belegen).
+
+**Testabschluss:** Mint x64 Fullbuild, 140/140 native/NVIDIA-GL CTests, 85/85 Python, Pi5-kompatibles Headless, Xvfb und Systemicon PASS. Commit acaab98d987c6c7602f806da4b33b2de8ae333a5, GitHub Pi5 ARM64 Run 38978541689 SUCCESS auf exakt diesem SHA. Kein authentifizierter Inworld-Test.
 
 **Bewertung: 39 % unverändert**, da sichere Bedienbarkeit und Diagnose einen begrenzten Teilbereich verbessern, aber der Kernfehlstand echter Avatar-/Welt-/Outfit-Funktionsparität fortbesteht.
 

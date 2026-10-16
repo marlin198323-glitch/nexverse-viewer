@@ -11,7 +11,7 @@
 - **261 [IMPLEMENTIERT + TEST]:** T-Tastaturaktion nur im Regionsfenster, identische Host-Prüfung.
 - **262 [IMPLEMENTIERT + TEST]:** getrennte L1–L4-/CAP-/Cooldown-/GPU-Layer-Diagnose und Statusmeldung; keine Secrets.
 - **263 [IMPLEMENTIERT + TEST]:** C++23-/GUI-/Python-Regressionsfälle und 16:9–32:9-Hitboxes.
-- **264 [BUILD/CI-ABSCHLUSS]:** vollständiger Mint-x64 Build/Native-/Python-/Headless-/Xvfb-Test, GitHub develop-current und Pi5-ARM64 Runner; CI-SHA im Abschlussbericht belegen.
+- **264 [FERTIG – Mint Fullbuild, 140/140 C++/NVIDIA GL, 85/85 Python, Headless/Xvfb/Icon PASS, Pi5-ARM64 Run 38978541689 SUCCESS]:** Featurecommit acaab98d987c6c7602f806da4b33b2de8ae333a5 auf develop-current, grüner Pi5-ARM64-CI-Run exakt für Feature-SHA; Live-Grid-/Avatar-Bakes/E2E weiterhin OFFEN.
 
 Detail: docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md. Bewertung bleibt bei **39 %**, bis reale Server-/Avatar-/Outfit-/Terraindarstellung E2E belegt wird.
 

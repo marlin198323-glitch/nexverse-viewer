@@ -4,6 +4,8 @@
 
 **Gesamtfortschritt: ca. 39 %** (38,65 % gewichtete Schätzung, unverändert). **Nächster Zehnerdurchlauf: Alpha.265–274.** Verbindlich zehn echte Code-/GUI-/Testblöcke je WEITER. Quelle: docs/PROJECT_PROGRESS.json.
 
+**VERIFIZIERTER ALPHA.264-ABSCHLUSS:** Featurecommit acaab98d987c6c7602f806da4b33b2de8ae333a5, GitHub pi5-ogl ARM64-CI Run 38978541689 SUCCESS fuer exakt diesen SHA. Linux Mint x64 Vollbuild, 140/140 C++23/NVIDIA-GL-CTest, 85/85 Python, Pi-kompatibles Headless, isolierter Xvfb-GUI-Smoke und Original-X11-Taskleistenicon PASS. Gesamtfortschritt 39 % (38,65 % gewichtet, unveraendert); Grid/Avatar/Outfit-E2E weiter OFFEN. Nachster Lauf Alpha.265–274.
+
 **Alpha.255–264:** echter im Regionsfenster F7 per Maus oder T auslösbarer, server-/epochgebundener Terrain-Nachladeversuch. Sicher begrenzt auf zwei manuelle Neustarts NACH vier automatischen und 30s Endpause; vorhandene Texturlayer bleiben erhalten; kein paralleler HTTP-Download, kein Request ohne CAP. Anzeige der vier Layer, Countdown und CAP-/Downloadstatus, inklusive 16:9/32:9-Layout- und C++-Tests. Nächste Priorität: authentifizierte Self-Avatar-Bakes samt sichtbarer Welt-/Kleidungs-Darstellung. Details: docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md.
 
 **OpenGenesisLINK-Server (neuer Main-HEAD):** main 8ec7ea255901260abdeabfc5f17eeb850930d851 nach sechs weiteren reinen Addon-Build/Workflow-Commits; bisheriger Addon-Merge-HEAD bf55a17524a9f3f175c56d2adeaa4d39083f446f, OGL AssetService-Addon disabled-by-default, KEIN unverifiziertes Deployment/Viewer-API-Enable. GitHub Branch develop-current, Entwicklungsrechner Linux Mint, Pi5 nur ARM64-CI. Kein Live-Avatar-/Terrain-E2E-Nachweis.

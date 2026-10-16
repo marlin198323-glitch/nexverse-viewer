@@ -8,6 +8,8 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 
 **Alpha.255–264:** begrenztes manuelles Terrain-Nachladen, eigener Regions-F7-Button/T, L1–L4-/CAP-/Backoff-Status und konservierte RGBA-Layer. Tests/Bericht in docs/ALPHA255_264_TERRAIN_MANUAL_RECOVERY.md. **39 % bleiben unverändert.** **Nächster Zehnerdurchlauf Alpha.265–274.**
 
+**Alpha.264 CI:** Commit acaab98d987c6c7602f806da4b33b2de8ae333a5; GitHub Pi5 ARM64 Run 38978541689 SUCCESS (SHA identisch), Mint 140/140 native, 85/85 Python, Headless/Xvfb/Taskleistenicon PASS. Reale Grid-E2E-Prüfung weiterhin offen.
+
 ## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |
