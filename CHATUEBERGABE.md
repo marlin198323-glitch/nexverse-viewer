@@ -9,6 +9,16 @@
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
 - NÄCHSTE ARBEIT BEIM START: aktuelle VERSION und GitHub HEAD neu feststellen. Der Durchlauf Alpha.225–229 folgt auf Alpha.224. Nicht einen alten SHA als HEAD annehmen. Detaillierte Fünferregel im projectplan.md.
 
+### GEPRÜFTER AKTUELLER STAND / SOFORT WEITERARBEITEN
+
+- Version 0.2.0-alpha.229; alle fünf Blöcke Alpha.225–229 implementiert, lokal grün und Pi5-ARM64-CI SUCCESS.
+- Geprüfter Viewer-CODE-Commit: 4a38427699a39385996576d6b632d5cc1e8bfbdd auf develop-current.
+- Mint Native/NVIDIA-GL CTest: 131/131; Python: 60/60; Pi5 Headless, isolierter Xvfb-Vollviewer und X11 Original-Icon grün.
+- CI-Bericht: https://github.com/marlin198323-glitch/nexverse-viewer/actions/runs/38965645437
+- F3-Ladediagnose: zuletzt erreichte Regionen-/Agent-/Circuit-Stufen mit Zeiten, konkrete Ursache für gesperrten Reconnect, Manueller Reconnect-Versuchszähler, privater Export nach Nutzerklick.
+- **NÄCHSTER 5-BLÖCKE-DURCHLAUF: Alpha.230–234.** Bei neuem WEITER unverzüglich alle fünf realen Arbeitsblöcke inkl. GUI/Tests/Commit/CI bearbeiten.
+- Offen: autorisierter NexVerse-Login mit realer Welt-/Avatar-GPU-Pixelbestätigung und echter LLUDP-Reconnect-Praxistest.
+
 ---
 
 # OpenGenesisLINK Viewer – Chat-Übergabe

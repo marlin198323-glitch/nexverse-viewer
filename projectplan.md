@@ -97,21 +97,21 @@ Echter authentifizierter NexVerse-Login mit gerenderter Welt und
 Avatar sowie manueller Live-Simulator-Retry weiterhin offen.
 
 ### Fünferdurchlauf Alpha.225–229 – 16.10.2026
-- **Alpha.225 [GETESTET]:** Neue Chatübergabe-Regel ganz oben,
+- **Alpha.225 [FERTIG]:** Neue Chatübergabe-Regel ganz oben,
   in AGENTS/Plan/info gespiegelt; neuer typisierter WorldEntryTrace-
   Ring (max. 5 Stufen, max. 3600 s, keine IDs/Netzwerkdaten),
   Reset ohne Login und C++23 Native-Test.
-- **Alpha.226 [GETESTET]:** Getypter Reconnect-Sperrgrund aus denselben
+- **Alpha.226 [FERTIG]:** Getypter Reconnect-Sperrgrund aus denselben
   sicheren Circuit-/Endpoint-/Worker-/Cooldown-Prüfungen wie
   der tatsächliche Neustart; alle negativen Policy-Fälle getestet.
-- **Alpha.227 [GETESTET]:** Erweiterter privater 0600-Diagnosebericht
+- **Alpha.227 [FERTIG]:** Erweiterter privater 0600-Diagnosebericht
   mit WorldEntry-Historie, manuellen Reconnect-Versuchen und
   freigegebenem Retry-Statuscode; keine UUIDs, Login-/Chat-/IP-Daten.
-- **Alpha.228 [GETESTET]:** Im echten F3-Ladediagnosefenster sind jetzt
+- **Alpha.228 [FERTIG]:** Im echten F3-Ladediagnosefenster sind jetzt
   die letzten zwei Weltstufen samt Dauer, Retry-Sperrgrund und
   Anzahl manueller Neustarts sichtbar; fünf neue Python-Contracts,
   vollständig verdrahtete Source-/UI-/File-Felder.
-- **Alpha.229 [IN_ARBEIT]:** Vollständiger Mint x64/NVIDIA OpenGL Build,
+- **Alpha.229 [FERTIG – 131/131 native C++/NVIDIA GL, 60/60 Python, Mint Headless/Xvfb/Systemicon, ARM64 pi5-ogl Run 38965645437 SUCCESS]:** Vollständiger Mint x64/NVIDIA OpenGL Build,
   alle C++23/Python/Headless-Regressions, isolierter GUI-Xvfb-Smoke,
   Original-Taskleistenicon, Doku/Kompatibilität, GitHub Push und
   erfolgreicher pi5-ogl ARM64-CI-Lauf.
@@ -6198,3 +6198,18 @@ Privacy-/Ring-/Policy-Tests.
 GitHub commit/push und pi5-ogl CI.
 Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
 Kein noch ungetesteter Live-NexVerse-Welt-/Avatar-/LLUDP-Erfolg behauptet.
+
+## Alpha.225–229 ENDSTAND – Pi5-CI tatsächlich erfolgreich (16.10.2026)
+
+Quellcode Version 0.2.0-alpha.229, Build-/Featurecommit
+4a38427699a39385996576d6b632d5cc1e8bfbdd.
+Auf Linux Mint jam-MS-7D28: Full x64 Debug Build,
+131/131 native C++23/NVIDIA OpenGL CTest, 60/60 Python,
+Pi5-kompatibler Headless-Nativsatz, isolierter Xvfb-
+Viewer-Start und X11 Systemicon/WM_CLASS komplett grün.
+Self-hosted Pi5-ARM64 GitHub Action run 38965645437
+SUCCESS (SHA-gleich geprüft). Alle fünf Planblöcke 225–229
+auf FERTIG. Neuer Chat: sofort CHATUEBERGABE.md oben lesen.
+Bei nächstem WEITER wieder fünf echte Blöcke Alpha.230–234.
+Echter NexVerse-Welt-/Avatar-Pixeltest und manuelles Grid-
+Retry-E2E offen; keine falsche End-to-End-Erfolgsaussage.
