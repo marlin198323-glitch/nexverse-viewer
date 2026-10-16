@@ -1,5 +1,6 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
+#include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <glad/glad.h>
@@ -89,8 +90,19 @@ int main()
             if(!error)
             {
                 const auto first=render();
+                // The scene must draw *before any terrain set_terrain*
+                // call, as when OpenGenesisLINK sends LLUDP objects ahead
+                // of delayed LayerData. Use real GL counters in the HUD
+                // evidence formatter, never fake reception as visibility.
+                const nexverse::ui::WorldSceneProof proof{
+                    false,0U,1U,first.scene_draw_calls,
+                    first.scene_missing_mesh_draw_calls};
                 if(first.scene_mesh_draw_calls!=3U ||
                    first.scene_missing_mesh_objects!=0U ||
+                   nexverse::ui::describe_terrain_progress(proof)!=
+                       "Terrain 0/256 wartet" ||
+                   nexverse::ui::describe_world_draw_progress(proof)!=
+                       "GL 3 Draw | MeshFehlt 0" ||
                    glGetError()!=GL_NO_ERROR)error=4;
             }
             // The self avatar is a provisional humanoid proxy, not a

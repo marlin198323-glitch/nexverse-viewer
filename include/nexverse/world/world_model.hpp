@@ -258,6 +258,9 @@ public:
     [[nodiscard]] std::uint32_t object_revision() const noexcept;
     [[nodiscard]] WorldSnapshot snapshot() const;
 
+    // Simulator scene may become interactive before terrain LayerData
+    // arrives. WorldModel::ready() is the stricter terrain-ready contract.
+    [[nodiscard]] bool scene_ready() const noexcept;
     [[nodiscard]] bool ready() const noexcept;
 
 private:

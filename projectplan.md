@@ -5816,3 +5816,21 @@ Echter Viewer Xvfb-Smoke inklusive Original Firestorm 133 Joints,
 Server main ec760cac unverändert, reviewed_sha nicht angehoben.
 Projektbericht: docs/ALPHA160_164_ISOLATED_GUI_AND_AVATAR_HUD.md.
 Echter Login/Welt-/Avatar-/Outfit-/COF-Inworld-Test weiterhin offen.
+
+## 16.10.2026 – Alpha.165–169 – Frühe Weltanzeige ohne Terrain-Gate
+
+165: WorldModel::scene_ready() trennt bereits autorisierte
+Simulator-/Agent-Sitzung von spät eingehenden TerrainLayerData;
+strenges WorldModel::ready() bleibt unverändert abhängig
+von gültigem Terrain. Zwei App-Gates nutzen scene_ready().
+166: Inworld HUD zeigt Terrain 0..256 Patches, Objektanzahl aus
+WorldModel, tatsächliche GL Draws und Mesh-Fehlfallbacks separat.
+167: CAPS EventQueue-Lifecycle sichtbar; angekündigte CAPS URL
+gilt nicht als CAPS LIVE, ohne erfolgreichen Eventempfang.
+168: Neue native C++ Tests plus versteckter NVIDIA-GL3.3-Test
+beweisen tatsächlich gezeichnete Weltmeshes ohne Terrain.
+169: Voller Mint-CMake/GPU Build und Xvfb-GUI-Smoke ohne
+Desktopfenster, Commit nach GitHub develop-current und ARM64
+Pi5 CI. OpenGenesisLINK main ec760cac unverändert.
+Eine authentifizierte Welt/Avatar-E2E-Sichtprüfung bleibt offen.
+Bericht: docs/ALPHA165_169_EARLY_SCENE_AND_WORLD_DIAG.md.

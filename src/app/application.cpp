@@ -74,6 +74,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
+#include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -1841,9 +1842,11 @@ void render_world_hud(
     std::string_view grid_name,
     const LoginUiState& login,
     const nexverse::protocol::CircuitStatus& circuit,
+    const CapsRuntimeState& caps,
     const FrameMetrics& frame_metrics,
     const nexverse::render::RenderDiagnostics& render_diagnostics,
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
+    const nexverse::ui::WorldSceneProof& scene_proof,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
 {
@@ -2058,7 +2061,7 @@ void render_world_hud(
         card_x,
         rail_y + 10.0f * scale,
         card_w,
-        134.0f * scale,
+        205.0f * scale,
         Color{0.018f, 0.036f, 0.062f, 0.90f},
         9.0f * scale);
     renderer.text(
@@ -2088,10 +2091,23 @@ void render_world_hud(
         "LLUDP",
         udp_live ? "LIVE" : "WAIT",
         live_color);
+    // Simulator circuit and self identity can be ready even if terrain
+    // LayerData is delayed. Show object reception vs REAL GL submissions.
+    renderer.text(card_x+14.0f*scale,rail_y+124.0f*scale,
+        8.0f*scale,nexverse::ui::describe_terrain_progress(scene_proof),
+        scene_proof.terrain_available?theme::cyan:theme::warning);
+    renderer.text(card_x+14.0f*scale,rail_y+149.0f*scale,
+        7.7f*scale,nexverse::ui::describe_world_draw_progress(scene_proof),
+        scene_proof.world_scene_draws>0U?theme::cyan:theme::warning);
+    // EventQueue advertised != EventQueue actually receiving messages.
+    // Display the local CAPS lifecycle state, not a fabricated "LIVE".
+    renderer.text(card_x+14.0f*scale,rail_y+174.0f*scale,
+        7.8f*scale,"CAPS "+caps.status.substr(0U,18U),
+        caps.status=="CAPS LIVE"?theme::cyan:theme::warning);
 
     renderer.rect(
         card_x,
-        rail_y + 154.0f * scale,
+        rail_y + 225.0f * scale,
         card_w,
         124.0f * scale,
         Color{0.018f, 0.036f, 0.062f, 0.88f},
@@ -2939,6 +2955,7 @@ void render_shell(
     const FrameMetrics& frame_metrics,
     const nexverse::render::RenderDiagnostics& render_diagnostics,
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
+    const nexverse::ui::WorldSceneProof& scene_proof,
     bool simulation_ready,
     unsigned int welcome_texture,
     bool original_body_gpu_ready,
@@ -2970,10 +2987,11 @@ void render_shell(
             height,
             grid_name,
             login,
-            circuit,
+            circuit,caps,
             frame_metrics,
             render_diagnostics,
-            memory_metrics,shell,inventory_open,outfit_open,experiences_open);
+            memory_metrics,scene_proof,shell,
+            inventory_open,outfit_open,experiences_open);
         return;
     }
 
@@ -6033,7 +6051,7 @@ int Application::run(bool enable_developer_modules)
                                 {},
                                 {},
                                 false});
-                            simulation_ready = world_model.ready();
+                            simulation_ready = world_model.scene_ready();
                         }
 
                         if (!caps_started &&
@@ -6813,7 +6831,7 @@ int Application::run(bool enable_developer_modules)
                     agent_snapshot.rotation,
                     region_circuit_active});
 
-                simulation_ready = world_model.ready();
+                simulation_ready = world_model.scene_ready();
             }
             else
             {
@@ -6840,7 +6858,7 @@ int Application::run(bool enable_developer_modules)
                 }
 
                 core::info(
-                    "WorldModel READY; simulation UI may unlock; terrain_patches=" +
+                    "WorldModel SCENE_READY; terrain independent; terrain_patches=" +
                     std::to_string(snapshot.terrain.valid_patch_count) +
                     "; objects=" + std::to_string(snapshot.objects.size()) +
                     "; avatars=" + std::to_string(snapshot.avatars.size()) +
@@ -11684,6 +11702,19 @@ int Application::run(bool enable_developer_modules)
                 caps_snapshot = caps_state;
             }
 
+            ui::WorldSceneProof scene_proof{};
+            if(simulation_ready)
+            {
+                std::scoped_lock lock{world_mutex};
+                scene_proof.terrain_available=world_model.terrain().available;
+                scene_proof.valid_terrain_patches=
+                    world_model.terrain().valid_patch_count;
+                scene_proof.world_objects=world_model.objects().size();
+            }
+            scene_proof.world_scene_draws=
+                render_diagnostics.scene_draw_calls;
+            scene_proof.missing_mesh_draws=
+                render_diagnostics.scene_missing_mesh_draw_calls;
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -11693,7 +11724,7 @@ int Application::run(bool enable_developer_modules)
                 caps_snapshot,
                 frame_metrics,
                 render_diagnostics,
-                memory_metrics,
+                memory_metrics,scene_proof,
                 simulation_ready,
                 welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);

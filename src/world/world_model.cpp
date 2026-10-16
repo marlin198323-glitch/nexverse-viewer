@@ -323,13 +323,17 @@ WorldSnapshot WorldModel::snapshot() const
     return value;
 }
 
-bool WorldModel::ready() const noexcept
+bool WorldModel::scene_ready() const noexcept
 {
     return region_.connected &&
            region_.handle != 0U &&
            agent_.present &&
            !agent_.agent_id.empty() &&
-           !agent_.session_id.empty() &&
-           terrain_.available;
+           !agent_.session_id.empty();
+}
+
+bool WorldModel::ready() const noexcept
+{
+    return scene_ready() && terrain_.available;
 }
 }

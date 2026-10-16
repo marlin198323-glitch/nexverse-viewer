@@ -17,6 +17,16 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
         self.assertIn("welcome_texture,original_body_gpu_ready,viewer_shell",app)
 
+    def test_scene_can_unlock_without_terrain_and_status_is_honest(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        model=(ROOT/"src/world/world_model.cpp").read_text()
+        self.assertEqual(app.count("simulation_ready = world_model.scene_ready();"),2)
+        self.assertIn("return scene_ready() && terrain_.available;",model)
+        self.assertIn("describe_terrain_progress(scene_proof)",app)
+        self.assertIn("describe_world_draw_progress(scene_proof)",app)
+        self.assertIn("caps.status=="+chr(34)+"CAPS LIVE"+chr(34),app)
+        self.assertIn("terrain independent",app)
+
     def test_world_hud_discloses_real_avatar_gpu_provenance(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("describe_avatar_gpu_submission(",app)

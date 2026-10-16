@@ -2,6 +2,7 @@
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
 
+- **Ab Alpha.169 (16.10.2026):** Bei verbundenem Simulator und gültigem Agent dürfen Szene/UI bereits vor Terrainpaketen rendern: WorldModel::scene_ready() ist der App-Gate, ready() bleibt strenger Terrain-Gate. Terrainfortschritt/WorldModel-Objekte/GL-Draws/CAPS-Status getrennt darstellen. Kein wirklicher Welt-oder Avatar-Login-Beweis ohne autorisierten echten Gridtest. Voll-Viewer weiterhin niemals ungefragt auf Desktop starten.
 - **Ab Alpha.164: Viewer darf bei ChatGPT-Entwicklung nie ungefragt sichtbar auf dem Mint-Desktop gestartet werden.** Native OpenGL-CTests erzeugen GLFW_VISIBLE=false Fenster; vollständige Starttests ausschließlich mit scripts/mint-isolated-gui-smoke.sh unter xvfb-run, ohne Fallback auf vorhandenes DISPLAY. Nur explizite Nutzer-Anweisung autorisiert sichtbar gestarteten Viewer. Linux-x64 CTest/GPU und Mint-Desktop bleiben primär, Pi5 nur headless CI. Siehe Alpha.160-164 Bericht.
 
 - **Primäre interaktive Entwicklungsmaschine ist wieder der Linux-Mint-PC `jam-MS-7D28`** über Remote Desktop Commander (Device-ID `3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d`). Beim Start `list_devices` prüfen und ausdrücklich dieses Gerät auswählen.

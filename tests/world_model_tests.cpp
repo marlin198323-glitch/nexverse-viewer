@@ -39,9 +39,9 @@ int main()
         {},
         true});
 
-    if (world.ready())
+    if (world.ready() || !world.scene_ready())
     {
-        std::cerr << "WorldModel became ready before validated world data\n";
+        std::cerr << "Scene readiness must precede validated terrain data\n";
         return 2;
     }
 
@@ -55,7 +55,7 @@ int main()
         (3U * 16U + 5U) * 256U +
         (2U * 16U + 7U);
 
-    if (!world.ready() ||
+    if (!world.ready() || !world.scene_ready() ||
         world.terrain().valid_patch_count != 1U ||
         !world.terrain().valid_patches[3U * 16U + 2U] ||
         world.terrain().heights[terrain_sample] != 42.25f)
@@ -253,7 +253,7 @@ int main()
         256U,
         false});
 
-    if (world.ready() ||
+    if (world.ready() || world.scene_ready() ||
         world.region().generation != previous_generation + 1U ||
         world.region().handle != 0x0000030000000400ULL ||
         world.terrain().available ||
@@ -270,13 +270,32 @@ int main()
     }
 
     world.reset();
-    if (world.ready() || world.region().connected || world.agent().present ||
+    if (world.ready() || world.scene_ready() ||
+        world.region().connected || world.agent().present ||
         world.self_appearance().has_value() ||
         world.self_animations().has_value())
     {
         std::cerr << "WorldModel reset failed\n";
         return 7;
     }
+
+    // Region/circuit and agent/session remain hard prerequisites for
+    // scene_ready even though terrain is a soft streaming prerequisite.
+    WorldModel probe;
+    probe.apply_region({
+        44U,"Test",{0.0f,0.0f,0.0f},"192.0.2.1",9100U,"",{},0U,
+        0U,0U,0U,0.0f,{},256U,256U,true});
+    probe.apply_agent({"owner","",{}, {},true});
+    if(probe.scene_ready())return 30;
+    probe.apply_agent({"owner","session",{}, {},true});
+    if(!probe.scene_ready()||probe.ready())return 31;
+    probe.apply_agent({"owner","session",{}, {},false});
+    if(probe.scene_ready())return 32;
+    probe.apply_agent({"owner","session",{}, {},true});
+    probe.apply_region({
+        0U,"Test",{0.0f,0.0f,0.0f},"192.0.2.1",9100U,"",{},0U,
+        0U,0U,0U,0.0f,{},256U,256U,true});
+    if(probe.scene_ready())return 33;
 
     std::cout << "WorldModel foundation tests passed\n";
     return 0;
