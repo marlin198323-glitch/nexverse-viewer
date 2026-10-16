@@ -4248,3 +4248,25 @@ Pi5 ARM64 CI; Voll-Viewer-Test nur virtuell unter Xvfb.
 Echter autorisierter Grid-Login und tatsächliche Welt-/
 Avatar-Framebuffer-Sichtbarkeit weiterhin offen.
 Referenz: docs/ALPHA170_174_AVATAR_PIPELINE_GUI.md.
+
+## 16.10.2026 – Alpha.175–179 – Fünf Linux-Mint-Entwicklungsblöcke
+
+175: Echte einzigartige Welt-Texture-/Mesh-Asset-IDs
+und gegen aktuelle Region GPU-residente Asset-UUIDs
+abgleichen, leere und mehrfach benutzte UUIDs korrekt
+berücksichtigen; native C++23/Pi5-Regression hinzugefügt.
+176: Rechts im Inworld-HUD erscheint Tex N/M GPU |
+Mesh P/Q GPU aus wirklich gesampelten Weltobjekten,
+Texture-/Mesh-GL-Cache; keine erfundenen Assets/Anfragen.
+177: Verbindungs-/System-/Avatar-Statuskarten jetzt mit
+rail_height/scale-Layoutgrenzen und 12pt Abstand zur
+unten verankerten FPS-Leiste. Native Breakpoint-Tests.
+178: NVIDIA GL3.3 RegionTransition Test verifiziert
+GPU Texture vorhanden und nach Eviction nicht mehr,
+duplizierte UUID nur einmal; mehr UI/GPU-Integration.
+179: Voller Linux-x64-Debug CMake/GPU/Python/Headless
+und Xvfb-isolierter Voll-Viewer-Smoke, GitHub push
+von Mint und Self-hosted Pi5-CI. Kein sichtbar gestarteter
+Viewer auf dem Nutzerdesktop. Echter NexVerse
+Welt-/Avatar-/Outfit-Inworld-E2E bleibt offen.
+Bericht: docs/ALPHA175_179_WORLD_ASSET_STREAM_AND_RESPONSIVE_HUD.md.

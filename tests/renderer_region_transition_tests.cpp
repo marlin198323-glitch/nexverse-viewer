@@ -2,6 +2,7 @@
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
+#include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <glad/glad.h>
@@ -209,6 +210,18 @@ int main()
                     // incorrectly pass a draw-only test.
                     const GLuint baked_handle=renderer->
                         avatar_bake_preview_handle("avatar-bake");
+                    // A valid actual GL name backs our GPU read-only
+                    // World stream label: duplicated scene references
+                    // count only one unique texture, not two.
+                    struct TextureSample {std::string id;};
+                    const std::array<TextureSample,2U> samples{{
+                        {"avatar-bake"},{"avatar-bake"}}};
+                    const auto coverage=nexverse::ui::asset_gpu_coverage(
+                        samples,baked_handle!=0U?
+                          std::unordered_set<std::string>{"avatar-bake"}:
+                          std::unordered_set<std::string>{});
+                    if(coverage.requested!=1U||coverage.gpu_resident!=1U)
+                        error=41;
                     if(!error)
                     {
                         GLint old_unit=0;
@@ -358,6 +371,15 @@ int main()
                     renderer->remove_object_texture("avatar-bake");
                     if(glIsTexture(baked_handle)!=GL_FALSE)
                         error=38;
+                    const auto evicted_coverage=
+                        nexverse::ui::asset_gpu_coverage(
+                            samples,renderer->avatar_bake_preview_handle(
+                                "avatar-bake")!=0U?
+                                std::unordered_set<std::string>{"avatar-bake"}:
+                                std::unordered_set<std::string>{});
+                    if(evicted_coverage.requested!=1U||
+                       evicted_coverage.gpu_resident!=0U)
+                        error=42;
                     const auto untextured=render();
                     if(!error)
                     {

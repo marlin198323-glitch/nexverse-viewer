@@ -27,7 +27,10 @@ class MintBuildContractTests(unittest.TestCase):
         # System status must no longer overlap with the taller CAPS card.
         self.assertIn('rail_y + 237.0f * scale,\n        11.0f * scale,\n        "Systemstatus"',app)
         self.assertIn("rail_y+370.0f*scale",app)
-        self.assertIn("if(rail_h>=490.0f*scale)",app)
+        self.assertIn("world_hud_panel_visibility(rail_h,scale)",app)
+        self.assertIn("if(card_visibility.connection)",app)
+        self.assertIn("if(card_visibility.system)",app)
+        self.assertIn("if(card_visibility.avatar)",app)
         self.assertIn("avatar_proof.body_bake_draws=",app)
 
     def test_scene_can_unlock_without_terrain_and_status_is_honest(self):

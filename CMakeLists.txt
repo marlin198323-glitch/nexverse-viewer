@@ -383,6 +383,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-outfit-bake-preview-layout-tests
         COMMAND nexverse-outfit-bake-preview-layout-tests)
 
+    add_executable(nexverse-world-hud-layout-tests
+        tests/world_hud_layout_tests.cpp)
+    target_link_libraries(nexverse-world-hud-layout-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-world-hud-layout-tests)
+    add_test(NAME nexverse-world-hud-layout-tests
+        COMMAND nexverse-world-hud-layout-tests)
+
+    add_executable(nexverse-asset-stream-proof-tests
+        tests/asset_stream_proof_tests.cpp)
+    target_link_libraries(nexverse-asset-stream-proof-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-asset-stream-proof-tests)
+    add_test(NAME nexverse-asset-stream-proof-tests
+        COMMAND nexverse-asset-stream-proof-tests)
+
     add_executable(nexverse-avatar-pipeline-proof-tests
         tests/avatar_pipeline_proof_tests.cpp)
     target_link_libraries(nexverse-avatar-pipeline-proof-tests

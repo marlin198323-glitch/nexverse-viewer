@@ -76,6 +76,8 @@
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
+#include "nexverse/ui/asset_stream_proof.hpp"
+#include "nexverse/ui/world_hud_layout.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -1849,6 +1851,7 @@ void render_world_hud(
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     const nexverse::ui::WorldSceneProof& scene_proof,
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
+    const nexverse::ui::AssetStreamProof& assets_proof,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
 {
@@ -2058,7 +2061,10 @@ void render_world_hud(
 
     const float card_x = right_x + 10.0f * scale;
     const float card_w = right_w - 20.0f * scale;
-
+    const auto card_visibility =
+        nexverse::ui::world_hud_panel_visibility(rail_h,scale);
+    if(card_visibility.connection)
+    {
     renderer.rect(
         card_x,
         rail_y + 10.0f * scale,
@@ -2106,7 +2112,13 @@ void render_world_hud(
     renderer.text(card_x+14.0f*scale,rail_y+174.0f*scale,
         7.8f*scale,"CAPS "+caps.status.substr(0U,18U),
         caps.status=="CAPS LIVE"?theme::cyan:theme::warning);
-
+    renderer.text(card_x+14.0f*scale,rail_y+198.0f*scale,
+        7.5f*scale,nexverse::ui::describe_asset_stream(assets_proof),
+        assets_proof.textures.gpu_resident+
+            assets_proof.meshes.gpu_resident>0U?theme::cyan:theme::warning);
+    }
+    if(card_visibility.system)
+    {
     renderer.rect(
         card_x,
         rail_y + 225.0f * scale,
@@ -2173,11 +2185,12 @@ void render_world_hud(
         8.5f * scale,
         "VRAM  " + vram,
         theme::text_muted);
+    }
 
     // Read-only authenticated AvatarAppearance pipeline. A server-provided
     // bake UUID is NOT a downloaded GPU texture; a GL submission is NOT
     // proof of final screen visibility. No invented Avatar or Wear action.
-    if(rail_h>=490.0f*scale)
+    if(card_visibility.avatar)
     {
     renderer.rect(card_x,rail_y+370.0f*scale,card_w,101.0f*scale,
         Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
@@ -2977,6 +2990,7 @@ void render_shell(
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     const nexverse::ui::WorldSceneProof& scene_proof,
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
+    const nexverse::ui::AssetStreamProof& assets_proof,
     bool simulation_ready,
     unsigned int welcome_texture,
     bool original_body_gpu_ready,
@@ -3011,7 +3025,7 @@ void render_shell(
             circuit,caps,
             frame_metrics,
             render_diagnostics,
-            memory_metrics,scene_proof,avatar_proof,shell,
+            memory_metrics,scene_proof,avatar_proof,assets_proof,shell,
             inventory_open,outfit_open,experiences_open);
         return;
     }
@@ -11757,6 +11771,16 @@ int Application::run(bool enable_developer_modules)
                         render_diagnostics.self_avatar_body_bake_gl_draws;
                 }
             }
+            // Read only renderer-authentic CURRENT-REGION asset UUIDs.
+            // No GetTexture/GetMesh requests are made by HUD diagnostics.
+            ui::AssetStreamProof assets_proof{};
+            if(simulation_ready)
+            {
+                assets_proof.textures=ui::asset_gpu_coverage(
+                    scene_texture_samples,object_texture_loaded_ids);
+                assets_proof.meshes=ui::asset_gpu_coverage(
+                    scene_mesh_samples,mesh_asset_loaded_ids);
+            }
             render_shell(
                 renderer, window_width, window_height, mouse_x, mouse_y,
                 grid_name, grid_status, grid_status_color, login_ui,
@@ -11766,7 +11790,7 @@ int Application::run(bool enable_developer_modules)
                 caps_snapshot,
                 frame_metrics,
                 render_diagnostics,
-                memory_metrics,scene_proof,avatar_proof,
+                memory_metrics,scene_proof,avatar_proof,assets_proof,
                 simulation_ready,
                 welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
