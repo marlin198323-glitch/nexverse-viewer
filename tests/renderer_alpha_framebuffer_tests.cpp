@@ -19,6 +19,15 @@ Pixel capture(nexverse::render::Renderer& renderer)
     renderer.end_frame();
     return result;
 }
+Pixel capture_at(nexverse::render::Renderer& renderer,int x,int y)
+{
+    renderer.begin_frame();
+    renderer.render_world(0.0);
+    std::array<unsigned char,4> result{};
+    glReadPixels(x,y,1,1,GL_RGBA,GL_UNSIGNED_BYTE,result.data());
+    renderer.end_frame();
+    return result;
+}
 int distance(Pixel a,Pixel b)
 {
     return std::abs(int(a[0])-int(b[0]))+
@@ -165,6 +174,42 @@ int main()
                    distance(camera_frame,fallback_frame)>6 ||
                    glGetError()!=GL_NO_ERROR))
                     error=14;
+            }
+            // Actual camera zoom must change world mesh pixel extent
+            // in GPU framebuffer, not merely the GUI zoom label.
+            if(!error)
+            {
+                const auto make_camera=[&](float distance)
+                {
+                    const auto v=third_person_camera(
+                        {0.0f,0.0f,0.0f},{},distance);
+                    renderer->set_camera({
+                        {v.position.x,v.position.y,v.position.z},
+                        {v.forward.x,v.forward.y,v.forward.z},
+                        {v.left.x,v.left.y,v.left.z},
+                        {v.up.x,v.up.y,v.up.z},
+                        60.0f,0.1f,60.0f});
+                };
+                renderer->set_scene_objects({scene});
+                make_camera(3.0f);
+                const auto near_sample=capture_at(*renderer,202,100);
+                const auto near_stats=renderer->diagnostics();
+                make_camera(24.0f);
+                const auto far_sample=capture_at(*renderer,202,100);
+                const auto far_stats=renderer->diagnostics();
+                if(near_stats.scene_mesh_draw_calls==0U||
+                   far_stats.scene_mesh_draw_calls==0U||
+                   distance(near_sample,far_sample)<30||
+                   glGetError()!=GL_NO_ERROR)
+                {
+                    std::cerr<<"Zoom pixels: near="<<int(near_sample[0])
+                        <<","<<int(near_sample[1])<<","<<int(near_sample[2])
+                        <<" far="<<int(far_sample[0])
+                        <<","<<int(far_sample[1])<<","<<int(far_sample[2])
+                        <<" draws="<<near_stats.scene_mesh_draw_calls
+                        <<","<<far_stats.scene_mesh_draw_calls<<'\n';
+                    error=16;
+                }
             }
             // Objects entirely behind the camera must no longer count
             // as visible or successful GL-world submissions.

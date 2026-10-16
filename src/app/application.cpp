@@ -80,6 +80,7 @@
 #include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/ui/world_hud_layout.hpp"
 #include "nexverse/ui/world_hud_toggle.hpp"
+#include "nexverse/ui/camera_zoom_controls.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -277,13 +278,13 @@ CameraState camera_from_agent(const nexverse::world::AgentState& agent)
 }
 
 CameraState render_camera_from_agent(
-    const nexverse::world::AgentState& agent)
+    const nexverse::world::AgentState& agent,float camera_distance)
 {
     // A live simulator can deliver invalid or non-unit rotations during
     // initial login/region crossing. Never allow them to poison the GL
     // view matrix or point the camera away from the avatar.
     const auto pose=nexverse::render::third_person_camera(
-        agent.position,agent.rotation);
+        agent.position,agent.rotation,camera_distance);
     CameraState camera;
     camera.center=pose.position;
     camera.at=pose.forward;
@@ -415,6 +416,7 @@ struct InputContext
     bool* inventory_item_detail_requested=nullptr;
     bool* simulation_ready = nullptr;
     bool* world_hud_visible=nullptr;
+    float* camera_zoom_distance=nullptr;
     nexverse::protocol::ExperiencePermissionConsent* permission_consent=nullptr;
     nexverse::protocol::FirestormRegionLease* region_lease=nullptr;
     CapsRuntimeState* caps=nullptr;
@@ -552,6 +554,24 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         else
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         return;
+    }
+    if(context&&context->camera_zoom_distance&&context->login&&
+       context->login->authenticated&&context->simulation_ready&&
+       *context->simulation_ready&&action==GLFW_PRESS&&
+       !(context->experience&&context->experience->open)&&
+       !(context->outfits&&*context->outfits)&&
+       !(context->inventory_open&&*context->inventory_open)&&
+       (!context->viewer_shell||
+        !context->viewer_shell->input_captured()))
+    {
+        const bool zoom_in=key==GLFW_KEY_EQUAL||key==GLFW_KEY_KP_ADD;
+        const bool zoom_out=key==GLFW_KEY_MINUS||key==GLFW_KEY_KP_SUBTRACT;
+        if(zoom_in||zoom_out)
+        {
+            *context->camera_zoom_distance=nexverse::ui::camera_zoom_adjust(
+                *context->camera_zoom_distance,zoom_in?1.0:-1.0);
+            return;
+        }
     }
     // Firestorm-like world focus shortcut: the underlying 3D renderer
     // remains active; only diagnostic/navigation panels are hidden.
@@ -713,6 +733,13 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         }
         if(context->outfits &&*context->outfits)
         {
+            // F9: toggle authentic read-only Head/Upper/Lower preview.
+            if(key==GLFW_KEY_B&&context->outfit_bake_preview_open)
+            {
+                *context->outfit_bake_preview_open=
+                    !*context->outfit_bake_preview_open;
+                return;
+            }
             if(context->outfit_selection)
             {
                 auto& selection=*context->outfit_selection;
@@ -858,6 +885,22 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
     }
 }
 
+// Local-only wheel zoom; modal outfit/inventory/Experience controls
+// retain their own input and never accidentally reposition the camera.
+void scroll_callback(GLFWwindow* window,double,double dy)
+{
+    auto* context=static_cast<InputContext*>(glfwGetWindowUserPointer(window));
+    if(!context||!context->camera_zoom_distance||!context->login||
+       !context->login->authenticated||!context->simulation_ready||
+       !*context->simulation_ready)return;
+    if(context->experience&&context->experience->open)return;
+    if(context->outfits&&*context->outfits)return;
+    if(context->inventory_open&&*context->inventory_open)return;
+    if(context->viewer_shell&&context->viewer_shell->input_captured())return;
+    *context->camera_zoom_distance=nexverse::ui::camera_zoom_adjust(
+        *context->camera_zoom_distance,dy);
+}
+
 bool point_inside(double px, double py, float x, float y, float width, float height)
 {
     return px >= static_cast<double>(x) &&
@@ -909,6 +952,22 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         glfwGetWindowSize(window,&width,&height);
         double mx=0.0,my=0.0;
         glfwGetCursorPos(window,&mx,&my);
+        if(context->camera_zoom_distance&&
+           !(context->viewer_shell&&
+             context->viewer_shell->input_captured()))
+        {
+            const auto zoom_hit=nexverse::ui::hit_camera_zoom(
+                width,height,mx,my);
+            if(zoom_hit!=nexverse::ui::CameraZoomHit::none)
+            {
+                *context->camera_zoom_distance=
+                    nexverse::ui::camera_zoom_adjust(
+                        *context->camera_zoom_distance,
+                        zoom_hit==nexverse::ui::CameraZoomHit::near
+                            ?1.0:-1.0);
+                return;
+            }
+        }
         auto& shell=*context->viewer_shell;
         const auto hud_click=context->world_hud_visible
             ?nexverse::ui::world_hud_click_target(
@@ -1847,13 +1906,25 @@ void render_loading_screen(
 // A real clickable button with the exact same hit rectangle as the
 // mouse callback, whether diagnostic rails are currently shown or hidden.
 void render_world_hud_toggle(UiRenderer& renderer,int width,int height,
-    bool visible)
+    bool visible,float camera_distance)
 {
     const auto r=nexverse::ui::world_hud_toggle_rect(width,height);
     renderer.rect(r.x,r.y,r.width,r.height,
         Color{0.027f,0.100f,0.157f,0.95f},6.0f);
     renderer.text(r.x+8.0f,r.y+8.0f,10.0f,
         visible?"HUD AUS  [F5]":"HUD EIN  [F5]",theme::cyan);
+    const auto buttons=nexverse::ui::camera_zoom_buttons(width,height);
+    const auto draw_button=[&](const nexverse::ui::CameraZoomButton& b,
+                               std::string_view symbol)
+    {
+        renderer.rect(b.x,b.y,b.w,b.h,
+            Color{0.027f,0.100f,0.157f,0.96f},6.0f);
+        renderer.text(b.x+10.0f,b.y+7.0f,11.0f,symbol,theme::cyan);
+    };
+    draw_button(buttons.near,"+");
+    draw_button(buttons.far,"-");
+    renderer.text(buttons.far.x+39.0f,buttons.far.y+7.0f,10.0f,
+        nexverse::ui::camera_zoom_label(camera_distance),theme::text);
 }
 
 void render_world_hud(
@@ -1871,7 +1942,8 @@ void render_world_hud(
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
     const nexverse::ui::AssetStreamProof& assets_proof,
     const nexverse::ui::ViewerShellState& shell,
-    bool inventory_open,bool outfit_open,bool experiences_open)
+    bool inventory_open,bool outfit_open,bool experiences_open,
+    float camera_distance)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -1950,7 +2022,8 @@ void render_world_hud(
         circuit.state == nexverse::protocol::CircuitState::active;
     const Color live_color = udp_live ? theme::success : theme::warning;
 
-    render_world_hud_toggle(renderer,width,height,true);
+    render_world_hud_toggle(
+        renderer,width,height,true,camera_distance);
     const float chip_w = 96.0f * scale;
     const float chip_gap = 8.0f * scale;
     float chip_x = w - margin - chip_w;
@@ -2701,7 +2774,7 @@ void render_outfit_gallery(
         renderer.rect(bx,y+106.0f*scale,135.0f*scale,29.0f*scale,
             Color{0.034f,0.125f,0.180f,0.98f},6.0f*scale);
         renderer.text(bx+7.0f*scale,y+115.0f*scale,7.7f*scale,
-            bake_preview_open?"Outfit-Inhalt":"Server-Bakes",theme::cyan);
+            bake_preview_open?"Outfit [B]":"Server-Bakes [B]",theme::cyan);
     }
     renderer.text(x+22.0f*scale,y+ph-200.0f*scale,
                   7.8f*scale,
@@ -3010,7 +3083,7 @@ void render_shell(
     const nexverse::ui::WorldSceneProof& scene_proof,
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
     const nexverse::ui::AssetStreamProof& assets_proof,
-    bool simulation_ready,bool world_hud_visible,
+    bool simulation_ready,bool world_hud_visible,float camera_distance,
     unsigned int welcome_texture,
     bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
@@ -3040,12 +3113,14 @@ void render_shell(
                 renderer,width,height,grid_name,login,circuit,caps,
                 frame_metrics,render_diagnostics,memory_metrics,
                 scene_proof,avatar_proof,assets_proof,shell,
-                inventory_open,outfit_open,experiences_open);
+                inventory_open,outfit_open,experiences_open,
+                camera_distance);
         else
         {
             // Keep all GL world drawing and separate floater windows
             // alive. Only navigation/diagnostic dashboard is hidden.
-            render_world_hud_toggle(renderer,width,height,false);
+            render_world_hud_toggle(
+                renderer,width,height,false,camera_distance);
             renderer.text(16.0f,16.0f,9.0f,
                 "3D-Weltansicht | F5 fuer Navigation",theme::cyan);
         }
@@ -4073,6 +4148,7 @@ int Application::run(bool enable_developer_modules)
     LoginUiState login_ui;
     ui::ViewerShellState viewer_shell;
     bool world_hud_visible=true;
+    float camera_zoom_distance=nexverse::ui::camera_zoom_default;
     // Exact touch surface remains per current region and only belongs to
     // the last accepted world ray. Never reuse for a list-based selection.
     std::optional<protocol::TouchSurfaceInfo> picked_touch_surface;
@@ -4109,6 +4185,7 @@ int Application::run(bool enable_developer_modules)
     glfwSetCharCallback(window, character_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetScrollCallback(window,scroll_callback);
     glfwSetWindowFocusCallback(window,window_focus_callback);
 
     auto transport = std::make_shared<net::CurlHttpTransport>();
@@ -4172,6 +4249,7 @@ int Application::run(bool enable_developer_modules)
     input_context.permission_busy=&experience_permission_busy;
     input_context.simulation_ready=&simulation_ready;
     input_context.world_hud_visible=&world_hud_visible;
+    input_context.camera_zoom_distance=&camera_zoom_distance;
     protocol::PacketDispatcher packet_dispatcher;
     packet_dispatcher.register_handler(
         protocol::msg_transfer_info,
@@ -5690,7 +5768,7 @@ int Application::run(bool enable_developer_modules)
                                  region.connected&&agent.present;
                     if(region_ready)
                     {
-                        const auto c=render_camera_from_agent(agent);
+                        const auto c=render_camera_from_agent(agent,camera_zoom_distance);
                         ray_camera.position={c.center.x,c.center.y,c.center.z};
                         ray_camera.forward={c.at.x,c.at.y,c.at.z};
                         ray_camera.up={c.up.x,c.up.y,c.up.z};
@@ -10758,7 +10836,7 @@ int Application::run(bool enable_developer_modules)
                     }
                     texture_desired_mips = std::move(planned_mips);
                 }
-                const auto view = render_camera_from_agent(render_agent);
+                const auto view = render_camera_from_agent(render_agent,camera_zoom_distance);
                 const assets::AssetCameraHint camera_hint{
                     view.center.x,view.center.y,view.center.z,
                     view.at.x,view.at.y,view.at.z};
@@ -11051,7 +11129,7 @@ int Application::run(bool enable_developer_modules)
                     lod=mesh_lod_dwell.resolve(
                         id,lod,mesh_gpu_lods,mesh_plan_now);
                 mesh_desired_lods=std::move(planned_lods);
-                const auto view = render_camera_from_agent(render_agent);
+                const auto view = render_camera_from_agent(render_agent,camera_zoom_distance);
                 const assets::AssetCameraHint camera_hint{
                     view.center.x,view.center.y,view.center.z,
                     view.at.x,view.at.y,view.at.z};
@@ -11665,12 +11743,13 @@ int Application::run(bool enable_developer_modules)
             if (simulation_ready)
             {
                 const auto camera_pose=render::third_person_camera(
-                    render_agent.position,render_agent.rotation);
+                    render_agent.position,render_agent.rotation,
+                    camera_zoom_distance);
                 camera_fallback_this_frame=
                     !camera_pose.position_valid||
                     !camera_pose.orientation_valid;
                 const CameraState camera =
-                    render_camera_from_agent(render_agent);
+                    render_camera_from_agent(render_agent,camera_zoom_distance);
                 world_renderer->set_camera({
                     {camera.center.x, camera.center.y, camera.center.z},
                     {camera.at.x, camera.at.y, camera.at.z},
@@ -11822,7 +11901,7 @@ int Application::run(bool enable_developer_modules)
                 frame_metrics,
                 render_diagnostics,
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
-                simulation_ready,world_hud_visible,
+                simulation_ready,world_hud_visible,camera_zoom_distance,
                 welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)

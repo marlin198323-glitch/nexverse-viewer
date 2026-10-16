@@ -418,3 +418,7 @@ Die OpenGenesisLINK/NexVerse Third-Person-Kamera normalisiert ungültige/nicht-u
 ## 16.10.2026 – Alpha.185–189
 
 Firestorm-kompatible Weltbedienung erweitert: direkt anklickbarer HUD AUS/AN F5 Weltfokus mit erhaltenem 3D-Renderer, F9 und Floater-Funktionen. Hidden Hud verhindert Ghost-Bedienflächen und leitet Weltklicks zur bestehenden 3D-Objektauswahl. Das OpenGL-Backend verwirft vollständig hinter der Kamera liegende Szenenobjekte statt sie als Welt-Draws zu zählen; NVIDIA-GL Framebuffer/Gegenblick-Regression plus native C++23 Widescreen/Renderer-Tests. Echter authentifizierter Grid-/Avatar-Framebuffer steht weiterhin aus. Upstream ReviewedSHA gesperrt. Siehe docs/ALPHA185_189_WORLD_FOCUS_AND_VISIBILITY.md.
+
+## 16.10.2026 – Alpha.190–194
+
+Firestorm-kompatibler Third-Person-View-Zoom nun per Wheel, Keyboard und echten anklickbaren +/- Button mit Live-Meterzahl von 3..24m. Renderer, Raypick und Texture-/Mesh-Priorität nutzen dieselbe Pose, ohne Simulator-Movement zu verändern. F9 Read-only Server-Bake-Vorschau hat sichtbare B-Taste. NVIDIA-OpenGL3.3-Framebuffer-Pixeltest bestätigt reale Near-/Far-Zoomwirkung am synthetischen Weltmesh. Echter Grid-/Avatar-Pixelbeleg und komplettes COF Wear weiter offen; Server-ReviewedSHA unverändert. Siehe docs/ALPHA190_194_CAMERA_ZOOM_AND_F9_BAKES.md.

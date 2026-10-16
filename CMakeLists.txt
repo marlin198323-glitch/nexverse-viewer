@@ -391,6 +391,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-scene-forward-visibility-tests
         COMMAND nexverse-scene-forward-visibility-tests)
 
+    add_executable(nexverse-camera-zoom-controls-tests
+        tests/camera_zoom_controls_tests.cpp)
+    target_link_libraries(nexverse-camera-zoom-controls-tests
+        PRIVATE NexVerse::UI NexVerse::Render)
+    nexverse_enable_warnings(nexverse-camera-zoom-controls-tests)
+    add_test(NAME nexverse-camera-zoom-controls-tests
+        COMMAND nexverse-camera-zoom-controls-tests)
+
     add_executable(nexverse-world-hud-toggle-tests
         tests/world_hud_toggle_tests.cpp)
     target_link_libraries(nexverse-world-hud-toggle-tests

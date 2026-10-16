@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #pragma once
 #include "nexverse/protocol/viewer_messages.hpp"
+#include <algorithm>
 #include <cmath>
 
 namespace nexverse::render
@@ -19,8 +20,13 @@ struct ThirdPersonCamera
 };
 [[nodiscard]] inline ThirdPersonCamera third_person_camera(
     const protocol::Vec3& agent_position,
-    const protocol::Quaternion& agent_rotation) noexcept
+    const protocol::Quaternion& agent_rotation,
+    float distance=8.0f) noexcept
 {
+    // Zoom is local-only: it never changes the authoritative AgentState
+    // or sends any movement packet to the simulator.
+    const float zoom=std::isfinite(distance)
+        ?std::clamp(distance,3.0f,24.0f):8.0f;
     ThirdPersonCamera result;
     const auto valid=[](float n){return std::isfinite(n);};
     // Reject representable but implausible server coordinates that
@@ -62,16 +68,15 @@ struct ThirdPersonCamera
     const protocol::Vec3 target{
         origin.x,origin.y,origin.z+1.45f};
     result.position={
-        target.x-8.0f*hx,
-        target.y-8.0f*hy,
-        target.z+4.2f};
-    constexpr float distance=8.0f;
-    constexpr float height=4.2f;
+        target.x-zoom*hx,
+        target.y-zoom*hy,
+        target.z+zoom*0.525f};
+    const float height=zoom*0.525f;
     const float inv_length=1.0f/std::sqrt(
         distance*distance+height*height);
     result.forward={
-        distance*hx*inv_length,
-        distance*hy*inv_length,
+        zoom*hx*inv_length,
+        zoom*hy*inv_length,
         -height*inv_length};
     result.left={-hy,hx,0.0f};
     return result;

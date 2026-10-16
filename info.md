@@ -4315,3 +4315,23 @@ Tatsächliche NexVerse Grid-Avatar-/Welt-E2E-Sichtprüfung
 bleibt offen, Firestorm11 Bake/Wear/COF idem,
 Server reviewed_sha bleibt ungeändert.
 Report: docs/ALPHA185_189_WORLD_FOCUS_AND_VISIBILITY.md.
+
+## 16.10.2026 – Alpha.190–194: Inworld-Zoom und F9 UI (fünf Blöcke)
+
+190: Third-Person-Kamera unterstützt verstellbare 3..24m statt fester
+8m, behält Normierung/Avatarziel/ungültige Quat-Fallbacks.
+191: Echte GLFW Wheel +/- und Keyboard/Keypad +/- steuern lokal dieselbe
+Kameradistanz; modal Inputs und nicht authentifizierte Simulation gesperrt.
+Renderer, World-Ray-Objektpick und Textur-/Mesh-Streaming verwenden
+denselben Kamera-Zoomzustand, keine LLUDP Bewegung.
+192: Echte sichtbare +/- Kamerabuttons und Live-Meterlabel
+im HUD und F5-freien Weltfokus; Widescreen Hit-Rects.
+193: F9 Outfit Server-Bake-Read-only-Vorschau per B und sichtbarem
+Server-Bakes [B] Button; NVIDIA OpenGL-GPU Framebuffer-Test mit
+nachweisbar verschiedenen Pixeln bei 3m und 24m Zoom.
+194: Vollständige native Mint-x64/NVIDIA/Python/Pi5-Headless-
+Regression plus isolierter Xvfb Vollviewer-Test vor
+GitHub-Commit, Pi5 Selfhosted ARM64 CI danach.
+Echter Login/Welt-/Avatar-End-to-End-Frame weiter offen,
+Firestorm TexLayer-/COF Wear-Parität nicht bewiesen.
+Report: docs/ALPHA190_194_CAMERA_ZOOM_AND_F9_BAKES.md.
