@@ -4565,3 +4565,17 @@ Der nächste neue Chat startet nach Lesen der CHATUEBERGABE.md
 mit fünf vollständigen Blöcken Alpha.235–239.
 Realer erneut überprüfter NexVerse Avatar-Bake-/Terrain-
 Screenshot unter alpha.234 bleibt als Praxisprüfung offen.
+
+## Abschluss Alpha.235–244 – GitHub ARM64-CI bestätigt
+
+Featurecommit 0f13dd74bef477b97e3cfbc924db1f3370e2a28d
+auf develop-current, Pi5-CI GitHub Run 38974639521
+conclusion SUCCESS (SHA korrekt). Linux Mint x64 Fullbuild,
+137/137 Native/NVIDIA GL CTest, 73/73 Python, Pi5-kompatibler
+Headless-Satz, echter isolierter Xvfb-Vollviewer-Smoke und
+Linux-Original-Systemicon PASS. Alle 10 Blöcke 235–244
+im projectplan.md FERTIG. Neuer Standard 10 statt 5 Blöcke
+bleibt ganz vorne in CHATUEBERGABE.md, projectplan.md und
+AGENTS.md. Nächster Durchlauf Alpha.245–254.
+Gesamtfortschritt weiterhin 38 % (unverändert), da
+NexVerse-Live-Firestorm-/Bake-/Terrain-Pixelbeleg OFFEN.

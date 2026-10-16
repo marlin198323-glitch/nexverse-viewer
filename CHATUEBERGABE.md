@@ -23,7 +23,15 @@
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
 - NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Zehnergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.245–254. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Zehnerregel in projectplan.md.
 
-### AKTUELLE ÜBERGABE: Alpha.235–244 wird abgeschlossen
+### ALPHA.244 FERTIG – BESTÄTIGTER AKTUELLER GITHUB-/CI-STAND
+
+- Aktueller Feature-Commit 0f13dd74bef477b97e3cfbc924db1f3370e2a28d auf develop-current, vollständig geprüft; zehn Blöcke 235–244 FERTIG.
+- Linux Mint Native/NVIDIA GL 137/137, Python 73/73, Pi5-kompatible Headless, isolierter Xvfb-Vollviewer und Original-Systemicon grün.
+- GitHub Self-hosted Runner pi5-ogl: Run 38974639521, SUCCESS, SHA identisch.
+- Gesamtfortschritt **ca. 38 % (unverändert)**, gewichtete Projektleitungs-Schätzung. Kein echter neuer NexVerse-Live-Avatar-E2E-Beweis.
+- Nächster verbindlicher 10-Block-Durchlauf Alpha.245–254; bei WEITER sofort Code+GUI+Tests auf Linux Mint, dann Commit/Push und Pi5-CI.
+
+### Historische Übergabe vor CI: Alpha.235–244 wird abgeschlossen
 
 - OGL-Version: 0.2.0-alpha.244 | Gesamtfortschritt **38 % (Schätzung, unverändert)**.
 - Standard: **10 echte Code-/GUI-/Testblöcke** je Nutzer-„Weiter“.

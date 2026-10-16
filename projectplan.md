@@ -155,34 +155,34 @@ und vollstaendiges Firestorm-Terrain/Mesh-Pixelbild.
 
 ### Alpha.235–244 – Zehn vollständige Arbeitsblöcke, OGL 0.2.0-alpha.244
 
-- **235 [GETESTET]:** Standard dauerhaft von 5 auf 10 echte Blöcke
+- **235 [FERTIG]:** Standard dauerhaft von 5 auf 10 echte Blöcke
   je WEITER umstellen. Neue Regel zu Beginn von Handoff, AGENTS,
   Plan, info und maschinenlesbar im Fortschritts-JSON.
-- **236 [GETESTET]:** Typisierte tatsächliche Self-ServerBake-/
+- **236 [FERTIG]:** Typisierte tatsächliche Self-ServerBake-/
   Originalkörper-GL-Reife prüfen (Server-Bakes vs GPU vs Draw).
-- **237 [GETESTET]:** Anzahl der tatsächlich hochgeladenen
+- **237 [FERTIG]:** Anzahl der tatsächlich hochgeladenen
   realen Terrain-Layer pro aktueller Regions-/Materialrevision
   zählen statt 4 Texturen aufgrund einer einzigen geladenen zu melden.
-- **238 [GETESTET]:** Unterschied zwischen 4/4 originalen Layern,
+- **238 [FERTIG]:** Unterschied zwischen 4/4 originalen Layern,
   teilweise geladenen Layern mit 1x1-Ersatz, reinem
   Fallback und keinem Terrain-Draw im echten Viewer anzeigen.
-- **239 [GETESTET]:** Mesh-LOD der angeforderten Assets mit
+- **239 [FERTIG]:** Mesh-LOD der angeforderten Assets mit
   exaktem GPU-LOD derselben Mesh-UUID vergleichen; Low wird
   nicht als erfülltes High-LOD gezählt.
-- **240 [GETESTET]:** Server-selected Motion/Keyframe-Zeichenaufrufe
+- **240 [FERTIG]:** Server-selected Motion/Keyframe-Zeichenaufrufe
   des eigenen Avatars getrennt von anderen Avataren im
   Originalkörper-Renderer messen.
-- **241 [GETESTET]:** Echte Animation-/Bake-Reife im Avatar-HUD
+- **241 [FERTIG]:** Echte Animation-/Bake-Reife im Avatar-HUD
   und F3-Fenster, Meshqualität im Fenster 'Objekte' anzeigen;
   HUD-Größe/Hitbox/kleine Fenster ohne Footer-Überdeckung.
-- **242 [GETESTET]:** Benutzerinitiierter privater F3-Export
+- **242 [FERTIG]:** Benutzerinitiierter privater F3-Export
   (POSIX Mode 0600) enthält Whitelist-Terrain-/LOD-/
   Self-Bake-/Animationszahlen, aber keine UUID, Session-ID
   oder Serveradresse.
-- **243 [GETESTET]:** C++23-Tests für Avatar-/Terrain-/
+- **243 [FERTIG]:** C++23-Tests für Avatar-/Terrain-/
   Meshqualität und UI-Layout sowie Python-Regressionsschutz
   für komplette tatsächliche Source-Verkabelung und 10er-Regel.
-- **244 [IN_ARBEIT]:** Vollständige Linux-Mint-x64/NVIDIA-
+- **244 [FERTIG – Linux Mint 137/137 Native/NVIDIA-GL, 73/73 Python, Headless/Xvfb/Icon PASS, GitHub Pi5 ARM64 Run 38974639521 SUCCESS]:** Vollständige Linux-Mint-x64/NVIDIA-
   OpenGL-Tests, Python, ARM64-kompatible Headless,
   isolierter Xvfb-Vollviewer und X11 Icon; aktualisierte
   Paritätsmatrizen, Handoff/Projektfortschritt 38 %,
