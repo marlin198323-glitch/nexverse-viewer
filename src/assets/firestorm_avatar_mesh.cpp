@@ -172,6 +172,40 @@ find_firestorm_avatar_character_directory()
         // Locally installed Firestorm assets; avoid bundling unknown-license
         // blobs until third-party asset redistribution is reviewed.
         roots.emplace_back(std::filesystem::path(home)/"firestorm"/"character");
+
+        // Firestorm's unpacked Linux packages are often on Desktop or
+        // Schreibtisch. Look only one directory deep under these known
+        // user-owned locations; never crawl arbitrary home trees or
+        // redistribute third-party assets with our binary.
+        std::vector<std::filesystem::path> user_installs;
+        for(const auto folder:{"Schreibtisch","Desktop","Downloads"})
+        {
+            const auto base=std::filesystem::path(home)/folder;
+            std::error_code ec;
+            std::filesystem::directory_iterator it{base,ec};
+            const std::filesystem::directory_iterator end;
+            for(;!ec&&it!=end;it.increment(ec))
+            {
+                if(!it->is_directory(ec))continue;
+                const auto name=it->path().filename().string();
+                if(name.starts_with("Phoenix-FirestormOS-")||
+                   name.starts_with("Firestorm-"))
+                    user_installs.push_back(it->path());
+            }
+        }
+        // Nightly first when both extracted builds exist; stable names
+        // break ties so selection remains deterministic across filesystems.
+        std::sort(user_installs.begin(),user_installs.end(),
+            [](const auto& lhs,const auto& rhs)
+            {
+                const bool left_nightly=lhs.filename().string().find(
+                    "Nightly")!=std::string::npos;
+                const bool right_nightly=rhs.filename().string().find(
+                    "Nightly")!=std::string::npos;
+                if(left_nightly!=right_nightly)return left_nightly;
+                return lhs.generic_string()>rhs.generic_string();
+            });
+        roots.insert(roots.end(),user_installs.begin(),user_installs.end());
     }
     for(auto root:roots)
     {

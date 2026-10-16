@@ -5748,3 +5748,27 @@ Server-Reviewed-SHA NICHT erhöht, strict Gate bleibt BLOCKIERT.
 NexVerse::Ui repariert, Regressionen ergänzt. Pi5 8 native C++23,
 31 Python PASS; voller CMake-/GUI-/GPU-/Inworld-Test NICHT erfolgt.
 Belege: docs/ALPHA145_149_AUTH_F9_SERVER_REVIEW.md.
+
+## 16.10.2026: Alpha.150-154, Desktop Commander Mint x64 native build
+
+- OGL returned to primary Linux-PC jam-MS-7D28 via Desktop Commander,
+  checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer. GitHub
+  develop-current fast-forwarded 12 commits without discarding changes.
+  Pi5 is only the automatic GitHub ARM64 CI runner.
+- Complete x64 CMake/vcpkg/Ninja viewer build OK. After new native
+  locator regression: 113/113 CTests and 33/33 Python pass, including
+  hardware NVIDIA RTX 4070 SUPER OpenGL renderer GPU tests.
+- Real GL body bake draws H/U/L and live preview handles verified,
+  GPU cache eviction invalidation verified, OpenJPEG J2C/JP2 RGBA
+  parity fixture verified.
+- Firestorm source warning fixes and lossless 64-bit COF evidence;
+  VERSION changes trigger CMake configure, --version alpha.154.
+- Viewer now auto-discovers locally extracted Firestorm Release on
+  Desktop/Schreibtisch, favoring Nightly if extracted. 133 joints,
+  55 attachments, 4,320 vertices/7,186 original mesh triangles loaded
+  onto GPU. GUI 1600x900 isolated login screen + Welcome and GridInfo
+  loads, but user account/world/inworld-avatar E2E remains untested.
+- Server main ec760cac added a server-only J2K OpenJPEG layer-boundary
+  retry. Earlier server compatibility review remains blocked;
+  baseline SHA unchanged. Report:
+  docs/ALPHA150_154_LINUX_MINT_FIRESTORM_GPU_BUILD.md.

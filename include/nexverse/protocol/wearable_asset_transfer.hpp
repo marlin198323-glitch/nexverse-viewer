@@ -173,7 +173,8 @@ public:
 private:
     struct Pending
     {
-        Pending(std::string id,std::int32_t type):asset_id(std::move(id)),asset_type(type){}
+        Pending(std::string id,std::int32_t type)
+            :asset_type(type),asset_id(std::move(id)){}
         std::int32_t asset_type=0;
         std::string asset_id;
         std::optional<std::size_t> expected;

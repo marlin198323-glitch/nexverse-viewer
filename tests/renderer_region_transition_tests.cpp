@@ -155,10 +155,17 @@ int main()
                 if(!error)
                 {
                     const auto anatomical=render();
+                    // Real hidden GLFW/OpenGL 3.3 context, not a static
+                    // source check: three bound original body-bake GL
+                    // submissions and a valid live read-only preview name.
                     if(anatomical.avatar_anatomical_mesh_draw_calls!=3U ||
                        anatomical.self_avatar_anatomical_mesh_draw_calls!=3U ||
                        anatomical.avatar_proxy_draw_calls!=0U ||
                        anatomical.avatar_baked_texture_draw_calls!=3U ||
+                       anatomical.self_avatar_body_bake_gl_draws!=
+                           (std::array<std::uint64_t,3U>{1U,1U,1U}) ||
+                       renderer->avatar_bake_preview_handle("avatar-bake")==0U ||
+                       renderer->avatar_bake_preview_handle("missing")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=26;
                     // With installed Firestorm resource files, the GPU
                     // test also uploads the real 7,186-triangle anatomical
@@ -284,6 +291,9 @@ int main()
                     const auto untextured=render();
                     if(untextured.avatar_anatomical_mesh_draw_calls!=3U ||
                        untextured.avatar_baked_texture_draw_calls!=0U ||
+                       untextured.self_avatar_body_bake_gl_draws!=
+                           (std::array<std::uint64_t,3U>{0U,0U,0U}) ||
+                       renderer->avatar_bake_preview_handle("avatar-bake")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=27;
                 }
                 renderer->set_avatar_proxies({});

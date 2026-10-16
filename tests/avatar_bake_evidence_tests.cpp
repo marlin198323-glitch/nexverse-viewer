@@ -62,6 +62,10 @@ int main()
        full.gpu_resident!=11U||full.visible_body_resident!=3U||
        full.upload_authorized()||avatar_bake_region_names[10]!="Aux3")
        return 3;
+    const auto large_version=
+        describe_avatar_bake_evidence(4294967298ULL,4294967298ULL,partial);
+    if(large_version.find("4294967298/4294967298 OK")==
+       std::string::npos)return 11;
     const auto no_residency=audit_avatar_bake_evidence(bakes,{});
     if(no_residency.gpu_resident||no_residency.visible_body_resident||
        no_residency.server_references!=11U||no_residency.complete())

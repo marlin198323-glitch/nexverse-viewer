@@ -386,3 +386,7 @@ Siehe docs/ALPHA140_144_GPU_BAKE_PREVIEW_AND_UPSTREAM_AUDIT.md.
 ## 15.10.2026 – Alpha.145–149
 
 Identity-bound server Head/Upper/Lower, klickbare große F9 GPU Vorschau, responsive Layout und Region-/Logout-Reset. Firestorm Baked-Pixel und echter Wear/Unwear weiter OFFEN. Pi 8 C++23 und 31 Python PASS, voller GL-/GUI-Build NICHT GETESTET. Upstream main d31c0316 bleibt wegen unvollständigem Codepatchreview gesperrt; neue Live API Abfrage erhielt HTTP 403. Details: docs/ALPHA145_149_AUTH_F9_SERVER_REVIEW.md.
+
+## 16.10.2026: Alpha.150-154
+
+Original Firestorm 3-part body resource auto-discovery on Linux Mint. Original LLM GPU 7,186 triangles, 133 joints, 55 attachments loaded in isolated GUI smoke. Native NVIDIA GPU tests and all 113/113 CTest cases, 33/33 Python pass. J2C/JP2 decoder contract checked against new upstream server OpenJPEG fallback ec760cac, reviewed SHA not advanced. Inworld Avatar/Outfit/COF readback NOT yet proven. Detailed report: docs/ALPHA150_154_LINUX_MINT_FIRESTORM_GPU_BUILD.md.

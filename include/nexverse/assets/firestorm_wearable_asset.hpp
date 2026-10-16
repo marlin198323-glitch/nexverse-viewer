@@ -85,12 +85,12 @@ struct FirestormWearableParse
         first=end+1U;
     }
     if(lines.size()<7U)return fail("Truncated Firestorm wearable asset");
-    const auto integer=[](std::string_view input)->std::optional<int> {
-        if(input.empty())return std::nullopt;
+    const auto integer=[](std::string_view token)->std::optional<int> {
+        if(token.empty())return std::nullopt;
         int v{};
         const auto [end,ec]=std::from_chars(
-            input.data(),input.data()+input.size(),v);
-        if(ec!=std::errc{}||end!=input.data()+input.size())
+            token.data(),token.data()+token.size(),v);
+        if(ec!=std::errc{}||end!=token.data()+token.size())
             return std::nullopt;
         return v;
     };

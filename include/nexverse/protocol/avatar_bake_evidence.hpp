@@ -4,6 +4,7 @@
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string_view>
 #include <string>
 #include <unordered_set>
@@ -77,8 +78,8 @@ struct AvatarBakeEvidence
 // Short enough for the 95-character F9 status row, with stage/limits first.
 // Server/Inventory version equality does not prove Firestorm pixel parity.
 [[nodiscard]] inline std::string describe_avatar_bake_evidence(
-    std::uint32_t simulator_cof_version,
-    std::uint32_t inventory_cof_version,
+    std::uint64_t simulator_cof_version,
+    std::uint64_t inventory_cof_version,
     const AvatarBakeEvidence& evidence,bool live=false)
 {
     const bool versions_match=simulator_cof_version!=0U &&

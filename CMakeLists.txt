@@ -17,6 +17,10 @@ project(NexVerseViewer VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
+# Changes to VERSION require CMake reconfiguration, not merely re-linking.
+# Ninja should never report the prior alpha number after VERSION changed.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" NEXVERSE_VERSION_LABEL)
 string(STRIP "${NEXVERSE_VERSION_LABEL}" NEXVERSE_VERSION_LABEL)
 
@@ -732,6 +736,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-loader-tests)
     add_test(NAME nexverse-texture-loader-tests COMMAND nexverse-texture-loader-tests)
+
+    add_executable(nexverse-firestorm-asset-locator-tests
+        tests/firestorm_asset_locator_tests.cpp)
+    target_link_libraries(nexverse-firestorm-asset-locator-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-firestorm-asset-locator-tests)
+    add_test(NAME nexverse-firestorm-asset-locator-tests
+        COMMAND nexverse-firestorm-asset-locator-tests)
 
     add_executable(nexverse-firestorm-avatar-mesh-tests
         tests/firestorm_avatar_mesh_tests.cpp)

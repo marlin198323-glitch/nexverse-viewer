@@ -8380,16 +8380,17 @@ int Application::run(bool enable_developer_modules)
                     for(const auto& [asset_id,wearable]:gallery_decoded_wearable_assets)
                     {
                         (void)asset_id;
-                        for(const auto& [id,value]:wearable.visual_params)
+                        for(const auto& [parameter_id,value]:
+                            wearable.visual_params)
                         {
-                            if(conflicting.contains(id))continue;
-                            const auto existing=weights.find(id);
+                            if(conflicting.contains(parameter_id))continue;
+                            const auto existing=weights.find(parameter_id);
                             if(existing!=weights.end()&&existing->second!=value)
                             {
                                 weights.erase(existing);
-                                conflicting.insert(id);
+                                conflicting.insert(parameter_id);
                             }
-                            else weights.insert_or_assign(id,value);
+                            else weights.insert_or_assign(parameter_id,value);
                         }
                     }
                     // Global skin/hair/eyes are provided only by an
@@ -9510,7 +9511,9 @@ int Application::run(bool enable_developer_modules)
                          render_agent.rotation.y,
                          render_agent.rotation.z,
                          render_agent.rotation.w},
-                        true,baked_ids,self_avatar_local_id});
+                        true,baked_ids,self_avatar_local_id,
+                        {},false,protocol::AvatarMotion::idle,false,
+                        nullptr,-1.0f});
                     avatar_proxy_update.back().moving=
                         (last_reported_control_flags &
                          (protocol::control_at_pos | protocol::control_at_neg |
@@ -9582,7 +9585,9 @@ int Application::run(bool enable_developer_modules)
                         false,
                         protocol::extract_avatar_bakes(
                             avatar.texture_entry).visible_body(),
-                        avatar.local_id});
+                        avatar.local_id,
+                        {},false,protocol::AvatarMotion::idle,false,
+                        nullptr,-1.0f});
                     avatar_proxy_update.back().moving=
                         avatar.last_translation_at!=
                             std::chrono::steady_clock::time_point{} &&

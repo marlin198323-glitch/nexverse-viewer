@@ -149,15 +149,28 @@ int main()
     const std::string jp2{
         reinterpret_cast<const char*>(jp2_fixture), sizeof(jp2_fixture)};
 
-    if (!valid_fixture(decode_jpeg2000_texture(id, j2c)))
+    const auto j2c_image=decode_jpeg2000_texture(id,j2c);
+    const auto jp2_image=decode_jpeg2000_texture(id,jp2);
+    if (!valid_fixture(j2c_image))
     {
         std::cerr << "JPEG2000 raw codestream decode failed\n";
         return 5;
     }
-    if (!valid_fixture(decode_jpeg2000_texture(id, jp2)))
+    if (!valid_fixture(jp2_image))
     {
         std::cerr << "JPEG2000 JP2 image decode failed\n";
         return 6;
+    }
+    // OpenGenesisLINK server 2026-10-16 J2KDecoderModule now falls
+    // back to OpenJPEG layer boundaries after CSJ2K failure. Viewer
+    // already uses OpenJPEG for both raw J2C and boxed JP2 pixels;
+    // ensure the transport-equivalent fixture pixels remain identical.
+    if(j2c_image.image.width!=jp2_image.image.width ||
+       j2c_image.image.height!=jp2_image.image.height ||
+       j2c_image.image.pixels!=jp2_image.image.pixels)
+    {
+        std::cerr << "JPEG2000 codestream vs JP2 pixels differ\n";
+        return 24;
     }
 
     const std::string rgba_j2c{
