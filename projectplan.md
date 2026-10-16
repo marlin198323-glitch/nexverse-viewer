@@ -68,24 +68,24 @@ ohne Speichern von Kontogeheimnissen zu prüfen.
 
 ### Fünferdurchlauf Alpha.220–224 – 16.10.2026
 
-- **Alpha.220 [GETESTET]:** F3-Report mit separat am aktuellen WorldModel
+- **Alpha.220 [FERTIG]:** F3-Report mit separat am aktuellen WorldModel
   unter Mutex ausgelesenen RegionConnected/Handle/AgentIdentity-Bools,
   LLUDP-Paketzählern und CAPS-EventQueue; unabhängig von SceneReady,
   streng whitelisted ohne IDs/URLs/Passwörter; Source-NUL entfernt.
-- **Alpha.221 [GETESTET]:** F3/ESC/S und echter klickbarer DIAGNOSE-Schalter
+- **Alpha.221 [FERTIG]:** F3/ESC/S und echter klickbarer DIAGNOSE-Schalter
   auf der authentifizierten Welcome-basierten Ladeansicht vor WorldReady,
   Modal für Paket-/Region-/Agentstatus und privaten lokalen Bericht.
   16:9 bis 32:9 getestete Mausflächen und keine Klickdurchleitung.
-- **Alpha.222 [GETESTET]:** Manuelles SIMULATOR NEU VERBINDEN ausschließlich
+- **Alpha.222 [FERTIG]:** Manuelles SIMULATOR NEU VERBINDEN ausschließlich
   nach explizitem Klick, final FAILED/BEENDET alter LLUDP-Worker,
   gültiger bisheriger Region-Endpunkt, kein Stop/Handoff,
   15-s-Cooldown, ein einziger neuer authentifizierter Circuit.
   Realer Grid-Retry noch nicht E2E geprüft.
-- **Alpha.223 [GETESTET]:** Pflichtstufenbasierter Fortschritt
+- **Alpha.223 [FERTIG]:** Pflichtstufenbasierter Fortschritt
   LLUDP/Region/Agent (Terrain/CAPS/Objekte optional), Stufen-Wartezeit
   mit ab 15 s kontextbezogenen Hinweisen und strikt typisiertem
   WorldEntryStage-Feld im privaten Report.
-- **Alpha.224 [GETESTET; Pi5-CI AUSSTEHEND]:** VERSION 0.2.0-alpha.224, vollständiger
+- **Alpha.224 [FERTIG – 130/130 native C++/NVIDIA GL, 55/55 Python, Mint Headless/Xvfb/Systemicon, ARM64 Pi5 Runner 38963625356 SUCCESS]:** VERSION 0.2.0-alpha.224, vollständiger
   Linux-Mint-x64/CMake/NVIDIA-GL/Native/Python/Headless-Testlauf,
   isolierter Xvfb-Vollviewer und Taskleistenicon, Doku/Handoff,
   Commit/Push auf develop-current, ARM64 Pi5-CI.

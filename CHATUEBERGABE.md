@@ -3734,3 +3734,21 @@ typisierte begrenzte Enum-Whitelist im Report.
 Mint-GitHub-Push und Pi5-CI-Freigabe.
 Bericht: docs/ALPHA220_224_LOADING_DIAGNOSTICS_AND_MANUAL_RETRY.md.
 Echter Login, Welt-/Avatar-Pixel und Real-Retry weiterhin OFFEN.
+
+Alpha.220–224 CI-Abschluss (16.10.2026):
+Version 0.2.0-alpha.224, fünf echte Blöcke FERTIG.
+GitHub Code SHA 45f4ccc168d1eb4bcd6532e2fb21f3732c1e8eef.
+Mint x64 Full CMake/Ninja Build, 130/130 Native/NVIDIA GL CTest,
+55/55 Python, Pi5-kompatible Headless-C++23, isolierter
+Vollviewer-Xvfb-Start und echtes X11 Taskbar-Icon PASS.
+GitHub Pi5 Self-Hosted Runner pi5-ogl
+https://github.com/marlin198323-glitch/nexverse-viewer/actions/runs/38963625356
+conclusion SUCCESS, matching code SHA verified.
+F3 ist jetzt auch bei erfolgreichem Login aber noch fehlender
+WorldReady sichtbar; S speichert private Diagnose unter
+~/.local/state/opengenesislink-viewer/diagnostics/.
+Nur bei endgültigem beendetem FAILED LLUDP Worker kann über
+Klick ein neuer Versuch angefordert werden, 15s Cooldown.
+Nächster verpflichtender Fünferdurchlauf Alpha.225–229.
+Echter NexVerse-Login-Welt-/Avatar-Pixel-Nachweis und echter
+Reconnect-E2E nach wie vor nicht getestet.
