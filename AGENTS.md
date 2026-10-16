@@ -1,16 +1,20 @@
 # nexverse-viewer – Projektanweisungen
 
-**NEU UND VORRANGIG: IMMER 10 ECHTE ENTWICKLUNGSBLÖCKE PRO WEITER (Alpha.245–254 als nächstes); ÄLTERE FÜNFERREGELN SIND ÜBERHOLT.** Nach jedem Durchlauf Prozentfortschritt berechnen, GitHub/Mint/Pi5 CI validieren.
+**NEU UND VORRANGIG: IMMER 10 ECHTE ENTWICKLUNGSBLÖCKE PRO WEITER (Alpha.255–264 als nächstes); ÄLTERE FÜNFERREGELN SIND ÜBERHOLT.** Nach jedem Durchlauf Prozentfortschritt berechnen, GitHub/Mint/Pi5 CI validieren.
 
 ## VERBINDLICH: GESAMTFORTSCHRITT BEI JEDEM STATUS IN %
 
-**Bei jeder Meldung zum OGL-Projektstand, jedem Zehnerdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.244: **ca. 38 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
+**Bei jeder Meldung zum OGL-Projektstand, jedem Zehnerdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.254: **ca. 39 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
 
 ## VERBINDLICHE ZEHN-BLÖCKE-REGEL (16.10.2026)
 
 **NEUER CHAT: zuerst CHATUEBERGABE.md mit zehn verpflichtenden Entwicklungsblöcken und dem jeweils letzten Commit lesen. Bei JEDEM WEITER ohne Rückfrage alle zehn echten Blöcke inkl. Mint-Build/GitHub/Pi5-CI bearbeiten, niemals nur Plan schreiben.**
 
 Bei jedem WEITER zehn echte zusammenhängende Entwicklungsblöcke mit Code+sichtbarer UI, Tests, GitHub-Servercheck, vollständigem Mint-Build und Xvfb, GitHub-Push und Pi5-CI; Status und Block-IDs in projectplan.md nachführen. Blockiert != fertig. Keine Pi-Entwicklung, kein sichtbarer Desktop-Viewer-Start. Diese Regel gilt auch in neuen Chats.
+
+- **OpenGenesisLINK Upstream main (17.10.2026):** bf55a17524a9f3f175c56d2adeaa4d39083f446f (OGL AssetService Addon #231, 86 weitere Commits seit d8f4426), getrennte deaktivierte Serverseite; nicht ohne Auth-/API-/Security-Review in Viewer oder Produktion zwangsintegrieren. Projektplan P1 optionaler Vertrag in Alpha.255–264.
+
+- **Alpha.254 funktionale Terrain-Reparatur (17.10.2026):** Nur fehlende Terrain-RGBA-Layer bis vier Versuche mit Backoff erneut laden; erfolgreiche Layer je Materialepoch erhalten. Original-GL akzeptiert höhere Vollständigkeit in derselben Revision, verwirft Downgrades; Terrain-Draw-Metriken werden PRO FRAME reset. NVIDIA GPU-Promotion-Test, F7 Retrystatus, Self-AvatarAppearance-Paketzähler-Reset bei Regionswechsel und echte Self-Keyframe-Skin-Logs/Animations-UI. Gesamtfortschritt **39 % (vorher 38 %)**. Weiter 10 echte Code+GUI-Blöcke Alpha.255–264, Mint/Vollbuild/Xvfb/GitHub/Pi5-CI obligatorisch. Kein authentifizierter Grid-Avatar-Pixelbeweis.
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
 

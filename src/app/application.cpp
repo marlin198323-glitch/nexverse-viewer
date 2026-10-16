@@ -19,6 +19,7 @@
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
+#include "nexverse/assets/terrain_detail_retry.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/assets/gpu_staging_budget.hpp"
 #include "nexverse/assets/gpu_staging_recovery.hpp"
@@ -78,6 +79,7 @@
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
 #include "nexverse/ui/avatar_visual_truth.hpp"
+#include "nexverse/ui/terrain_recovery_status.hpp"
 #include "nexverse/render/terrain_layer_coverage.hpp"
 #include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include "nexverse/ui/world_entry_stage.hpp"
@@ -4837,6 +4839,7 @@ int Application::run(bool enable_developer_modules)
     bool self_avatar_bake_gl_logged=false;
     bool self_avatar_original_mesh_gl_logged=false;
     bool self_avatar_weighted_skin_gl_logged=false;
+    bool self_avatar_keyframe_gl_logged=false;
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic<std::uint64_t> self_appearance_serial{0U};
@@ -5930,6 +5933,8 @@ int Application::run(bool enable_developer_modules)
 
     using TerrainTextureResults =
         std::array<assets::TextureAssetResult, 4>;
+    assets::TerrainDetailRetry terrain_detail_retry;
+    render::RenderTerrainTextures terrain_cached_textures;
     std::future<TerrainTextureResults> terrain_texture_future;
     bool terrain_texture_loading = false;
     std::uint64_t terrain_texture_request_epoch = 0U;
@@ -7719,6 +7724,13 @@ int Application::run(bool enable_developer_modules)
             gallery_inventory_sync.enter(current_firestorm_epoch);
             if(animation_asset_epoch!=current_firestorm_epoch)
             {
+                // The self-appearance diagnostic is a CURRENT SIMULATOR
+                // counter; never carry events from a prior region/agent.
+                avatar_appearance_received.store(0U,std::memory_order_relaxed);
+                avatar_appearance_malformed.store(0U,std::memory_order_relaxed);
+                avatar_appearance_ignored_region.store(0U,std::memory_order_relaxed);
+                avatar_appearance_other_avatar.store(0U,std::memory_order_relaxed);
+                avatar_appearance_self_accepted.store(0U,std::memory_order_relaxed);
                 world_renderer->reset_self_avatar_visibility();
                 // Old simulator LocalIDs have no validity in the next
                 // region. A touch held during teleport must never target
@@ -7907,6 +7919,7 @@ int Application::run(bool enable_developer_modules)
                 self_avatar_bake_gl_logged=false;
                 self_avatar_original_mesh_gl_logged=false;
                 self_avatar_weighted_skin_gl_logged=false;
+                self_avatar_keyframe_gl_logged=false;
                 inventory_tree_open=false;
                 inventory_fetched_folders.clear();
                 inventory_folder_contents.clear();
@@ -9829,6 +9842,8 @@ int Application::run(bool enable_developer_modules)
                     std::numeric_limits<std::uint32_t>::max();
                 terrain_texture_request_material_revision =
                     std::numeric_limits<std::uint32_t>::max();
+                terrain_detail_retry={};
+                terrain_cached_textures={};
                 rendered_object_generation =
                     std::numeric_limits<std::uint32_t>::max();
                 rendered_object_revision =
@@ -10920,13 +10935,23 @@ int Application::run(bool enable_developer_modules)
             const std::string texture_capability =
                 scoped_get_texture_uri;
 
+            // Fresh terrain revisions invalidate cached layer bytes.
+            // An incomplete response is retried ONLY for missing slots.
+            // Previous successful layers are never discarded on failure.
+            if (terrain_materials_available &&
+                terrain_detail_retry.enter(texture_generation_current,
+                                           texture_material_revision_current))
+            {
+                terrain_cached_textures={};
+                terrain_cached_textures.generation=texture_generation_current;
+                terrain_cached_textures.material_revision=
+                    texture_material_revision_current;
+            }
             if (!terrain_texture_loading &&
                 terrain_materials_available &&
                 !texture_capability.empty() &&
-                (terrain_texture_request_generation !=
-                     texture_generation_current ||
-                 terrain_texture_request_material_revision !=
-                     texture_material_revision_current))
+                terrain_detail_retry.ready(
+                    terrain_detail_ids,std::chrono::steady_clock::now()))
             {
                 terrain_texture_request_generation =
                     texture_generation_current;
@@ -10936,32 +10961,21 @@ int Application::run(bool enable_developer_modules)
                 terrain_texture_request_epoch = material_scope.epoch();
 
                 const auto ids = terrain_detail_ids;
+                const auto missing = terrain_detail_retry.missing(ids);
                 const std::string capability = texture_capability;
+                terrain_detail_retry.dispatched(
+                    std::chrono::steady_clock::now());
 
                 terrain_texture_future = std::async(
                     std::launch::async,
-                    [transport, capability, ids]()
+                    [transport, capability, ids, missing]()
                     {
-                        TerrainTextureResults results;
+                        TerrainTextureResults results{};
                         assets::TextureAssetLoader loader{transport};
-
-                        for (std::size_t index = 0U;
-                             index < ids.size();
-                             ++index)
-                        {
-                            if (ids[index].empty() ||
-                                ids[index] ==
-                                    "00000000-0000-0000-0000-000000000000")
-                            {
-                                continue;
-                            }
-
-                            results[index] =
-                                loader.fetch_rgba(
-                                    capability,
-                                    ids[index]);
-                        }
-
+                        for (std::size_t index=0U;index<ids.size();++index)
+                            if(missing[index])
+                                results[index]=loader.fetch_rgba(
+                                    capability,ids[index]);
                         return results;
                     });
             }
@@ -10982,56 +10996,38 @@ int Application::run(bool enable_developer_modules)
                     texture_material_revision_current ==
                         terrain_texture_request_material_revision)
                 {
-                    render::RenderTerrainTextures textures;
-                    textures.generation =
-                        terrain_texture_request_generation;
-                    textures.material_revision =
-                        terrain_texture_request_material_revision;
-
-                    std::size_t loaded_count = 0U;
-                    for (std::size_t index = 0U;
-                         index < results.size();
-                         ++index)
+                    std::uint32_t new_layers=0U;
+                    for(std::size_t index=0U;index<results.size();++index)
                     {
-                        if (!results[index].success ||
-                            !results[index].image.valid())
-                        {
-                            continue;
-                        }
-
-                        textures.detail[index].width =
+                        if(!results[index].success||
+                           !results[index].image.valid())continue;
+                        terrain_cached_textures.detail[index].width=
                             results[index].image.width;
-                        textures.detail[index].height =
+                        terrain_cached_textures.detail[index].height=
                             results[index].image.height;
-                        textures.detail[index].pixels =
-                            std::move(
-                                results[index].image.pixels);
-                        ++loaded_count;
+                        terrain_cached_textures.detail[index].pixels=
+                            std::move(results[index].image.pixels);
+                        terrain_detail_retry.succeeded(index);
+                        ++new_layers;
                     }
-
-                    if (loaded_count > 0U)
+                    if(new_layers>0U)
                     {
+                        // Same material revision, now more real textures:
+                        // set_terrain_textures must accept an improved set.
                         world_renderer->set_terrain_textures(
-                            textures);
+                            terrain_cached_textures);
                         core::info(
-                            "Terrain texture assets loaded; count=" +
-                            std::to_string(loaded_count));
+                            "Terrain texture layers improved; current=" +
+                            std::to_string(
+                                terrain_detail_retry.loaded_count())+
+                            "/4; attempts="+std::to_string(
+                                terrain_detail_retry.attempts));
                     }
                     else
-                    {
-                        std::string reason;
-                        for (const auto& failed : results)
-                        {
-                            if (!failed.success && !failed.message.empty())
-                            {
-                                reason = failed.message;
-                                break;
-                            }
-                        }
                         core::warning(
-                            "Terrain texture assets unavailable: " + reason +
-                            "; color fallback remains active");
-                    }
+                            "Terrain material retry: no new valid layers; "
+                            "attempt="+std::to_string(
+                                terrain_detail_retry.attempts)+"/4");
                 }
             }
 
@@ -12334,6 +12330,15 @@ int Application::run(bool enable_developer_modules)
                     "submitted to GPU skin shader: 3 body meshes; "
                     "procedural local locomotion, server animations pending");
             }
+            if(simulation_ready&&!self_avatar_keyframe_gl_logged &&
+               render_diagnostics.self_avatar_keyframe_skin_draw_calls>0U)
+            {
+                self_avatar_keyframe_gl_logged=true;
+                core::info("Avatar SELF decoded server AnimationAsset actually "
+                    "drives Firestorm original weighted GL skin; draws="+
+                    std::to_string(
+                        render_diagnostics.self_avatar_keyframe_skin_draw_calls));
+            }
             if(simulation_ready&&!self_avatar_original_mesh_gl_logged &&
                render_diagnostics.self_avatar_anatomical_mesh_draw_calls>=3U)
             {
@@ -12497,6 +12502,14 @@ int Application::run(bool enable_developer_modules)
             avatar_diagnostic.agent_present=render_agent.present;
             avatar_diagnostic.appearance_received=
                 avatar_proof.appearance_received;
+            avatar_diagnostic.appearance_packets=
+                appearance_runtime.received;
+            avatar_diagnostic.appearance_malformed=
+                appearance_runtime.malformed;
+            avatar_diagnostic.appearance_other_avatar=
+                appearance_runtime.other_avatar;
+            avatar_diagnostic.appearance_self_accepted=
+                appearance_runtime.self_accepted;
             avatar_diagnostic.camera_valid=avatar_proof.view.valid_pose;
             avatar_diagnostic.center_in_frustum=
                 avatar_proof.view.center_in_frustum;
@@ -12635,6 +12648,13 @@ int Application::run(bool enable_developer_modules)
                     ui::describe_avatar_body_pipeline(avatar_proof);
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();
+                shell_view.terrain_recovery_status=
+                    ui::terrain_recovery_status(
+                        terrain_detail_retry,
+                        render_diagnostics.terrain_real_detail_layers,
+                        render_diagnostics.terrain_textured_draw_calls>0U||
+                        render_diagnostics.terrain_fallback_draw_calls>0U,
+                        render_diagnostics.terrain_textured_draw_calls>0U);
                 shell_view.avatar_skin_status=avatar_proof.skin_stage();
                 shell_view.mesh_quality_status=
                     ui::describe_mesh_quality(mesh_quality_evidence);

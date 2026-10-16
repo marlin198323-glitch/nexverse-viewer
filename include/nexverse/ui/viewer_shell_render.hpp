@@ -25,6 +25,7 @@ struct ViewerShellView
     std::string avatar_fragment_status;
     std::string avatar_bake_status;
     std::string avatar_animation_status;
+    std::string terrain_recovery_status;
     std::string avatar_skin_status;
     std::string mesh_quality_status;
     std::string avatar_report_notice;

@@ -21,6 +21,10 @@ struct AvatarDiagnosticReport
     bool region_handle_present=false;
     bool agent_identity_present=false;
     bool appearance_received=false;
+    std::uint32_t appearance_packets=0U;
+    std::uint32_t appearance_malformed=0U;
+    std::uint32_t appearance_other_avatar=0U;
+    std::uint32_t appearance_self_accepted=0U;
     bool camera_valid=false;
     bool center_in_frustum=false;
     bool gpu_fragment_result_known=false;

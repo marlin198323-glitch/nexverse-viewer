@@ -1100,6 +1100,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-scene-priority-feedback-tests)
     add_test(NAME nexverse-asset-scene-priority-feedback-tests COMMAND nexverse-asset-scene-priority-feedback-tests)
 
+    add_executable(nexverse-renderer-terrain-partial-upgrade-tests
+        tests/renderer_terrain_partial_upgrade_tests.cpp)
+    target_link_libraries(nexverse-renderer-terrain-partial-upgrade-tests
+        PRIVATE NexVerse::Render glfw glad::glad)
+    nexverse_enable_warnings(nexverse-renderer-terrain-partial-upgrade-tests)
+    add_test(NAME nexverse-renderer-terrain-partial-upgrade-tests
+        COMMAND nexverse-renderer-terrain-partial-upgrade-tests)
+    set_tests_properties(nexverse-renderer-terrain-partial-upgrade-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-renderer-gpu-asset-integration-tests tests/renderer_gpu_asset_integration_tests.cpp)
     target_link_libraries(nexverse-renderer-gpu-asset-integration-tests PRIVATE NexVerse::Render glfw glad::glad)
     nexverse_enable_warnings(nexverse-renderer-gpu-asset-integration-tests)
@@ -1243,6 +1253,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-mesh-quality-control-tests)
     add_test(NAME nexverse-mesh-quality-control-tests
         COMMAND nexverse-mesh-quality-control-tests)
+
+    add_executable(nexverse-terrain-recovery-status-tests
+        tests/terrain_recovery_status_tests.cpp)
+    target_link_libraries(nexverse-terrain-recovery-status-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-terrain-recovery-status-tests)
+    add_test(NAME nexverse-terrain-recovery-status-tests
+        COMMAND nexverse-terrain-recovery-status-tests)
+
+    add_executable(nexverse-terrain-detail-retry-tests
+        tests/terrain_detail_retry_tests.cpp)
+    target_link_libraries(nexverse-terrain-detail-retry-tests
+        PRIVATE NexVerse::Assets)
+    nexverse_enable_warnings(nexverse-terrain-detail-retry-tests)
+    add_test(NAME nexverse-terrain-detail-retry-tests
+        COMMAND nexverse-terrain-detail-retry-tests)
 
     add_executable(nexverse-terrain-layer-coverage-tests
         tests/terrain_layer_coverage_tests.cpp)

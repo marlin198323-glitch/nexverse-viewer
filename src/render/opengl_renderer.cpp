@@ -2883,11 +2883,17 @@ public:
     void set_terrain_textures(
         const RenderTerrainTextures& textures) override
     {
-        if (textures.generation == texture_generation_ &&
-            textures.material_revision == texture_material_revision_)
-        {
-            return;
-        }
+        const auto actual_count=static_cast<std::uint32_t>(
+            std::count_if(textures.detail.begin(),textures.detail.end(),
+                          [](const RenderImageRgba8& img)
+                          {return img.valid();}));
+        const bool same_revision=
+            textures.generation==texture_generation_ &&
+            textures.material_revision==texture_material_revision_;
+        // Important: the first partially loaded material upload does NOT
+        // finish the current revision. Allow more real layers within it;
+        // never downgrade an already better GL set.
+        if(same_revision&&actual_count<=terrain_real_detail_layers_)return;
 
         texture_generation_ = textures.generation;
         texture_material_revision_ = textures.material_revision;
@@ -3336,6 +3342,11 @@ public:
         diagnostics_.draw_calls = 0U;
         diagnostics_.triangles = 0U;
         diagnostics_.visible_objects = 0U;
+        // Terrain GL telemetry is PER FRAME just like all scene counters.
+        // A prior textured draw must not make today's fallback look loaded.
+        diagnostics_.terrain_textured_draw_calls=0U;
+        diagnostics_.terrain_fallback_draw_calls=0U;
+        diagnostics_.terrain_real_detail_layers=0U;
         diagnostics_.scene_draw_calls = 0U;
         diagnostics_.scene_mesh_draw_calls = 0U;
         diagnostics_.scene_prim_draw_calls = 0U;

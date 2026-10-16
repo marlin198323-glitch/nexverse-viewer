@@ -1,6 +1,8 @@
-NEUER VERBINDLICHER STANDARD: PRO WEITER 10 statt 5 echte Code+GUI-Blöcke, beginnend Alpha.245–254, danach Mint-Build/Tests/GitHub-Pi5-CI und gewichteter Gesamtfortschritt XX % (Start ca. 38 %). Historische Fünferangaben sind überholt.
+Aktueller Serververgleich 17.10.2026: main bf55a17524a9f3f175c56d2adeaa4d39083f446f, OGL AssetService Addon #231 (86 Commits seit d8f4426), disabled-by-default, keine automatische Viewer-/Produktionsintegration, getrennt prüfen in Alpha.255–264.
 
-VERBINDLICHER STATUS: OGL Gesamtfortschritt ca. 38 % (gewichtete Schaetzung, 17.10.2026, Alpha.244). Nach JEDEM Projektstand den XX-%-Wert nennen; Quelle docs/PROJECT_PROGRESS.json, berechnen mit python3 scripts/project-progress.py. Nach Arbeitsdurchlauf anhand echter Integrations-/Testergebnisse neu bewerten, nicht automatisch pro Release. Regel in AGENTS.md, CHATUEBERGABE.md, projectplan.md. Erlaeuterungen docs/PROJEKTFORTSCHRITT.md.
+NEUER VERBINDLICHER STANDARD: PRO WEITER 10 statt 5 echte Code+GUI-Blöcke, nächster Durchlauf Alpha.255–264, danach Mint-Build/Tests/GitHub-Pi5-CI und gewichteter Gesamtfortschritt XX % (aktuell ca. 39 %). Historische Fünferangaben sind überholt.
+
+VERBINDLICHER STATUS: OGL Gesamtfortschritt ca. 39 % (gewichtete Schaetzung, 17.10.2026, Alpha.254). Nach JEDEM Projektstand den XX-%-Wert nennen; Quelle docs/PROJECT_PROGRESS.json, berechnen mit python3 scripts/project-progress.py. Nach Arbeitsdurchlauf anhand echter Integrations-/Testergebnisse neu bewerten, nicht automatisch pro Release. Regel in AGENTS.md, CHATUEBERGABE.md, projectplan.md. Erlaeuterungen docs/PROJEKTFORTSCHRITT.md.
 
 NÄCHSTER CHAT: Bei JEDEM WEITER verbindlich **10 echte Entwicklungsblöcke** mit Code, sichtbarer Viewer-GUI, Mint Full Build, Tests, GitHub und Pi5-CI, Details zuerst in CHATUEBERGABE.md, AGENTS.md, projectplan.md. Kein ungefragter Mint-Desktop-GUI-Start; Pi nur CI.
 

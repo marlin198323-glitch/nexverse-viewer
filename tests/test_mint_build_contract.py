@@ -70,12 +70,35 @@ class MintBuildContractTests(unittest.TestCase):
                       'simulator_ip','chat_message'):
             self.assertNotIn('"'+token+'=',report)
 
+    def test_terrain_partial_retry_and_live_animation_are_integrated(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        ogl=(ROOT/"src/render/opengl_renderer.cpp").read_text()
+        modal=(ROOT/"src/ui/viewer_shell_render.cpp").read_text()
+        self.assertIn("terrain_detail_retry.ready(",app)
+        self.assertIn("terrain_detail_retry.succeeded(index)",app)
+        self.assertIn("terrain_cached_textures.detail[index]",app)
+        self.assertIn("actual_count<=terrain_real_detail_layers_",ogl)
+        self.assertIn("diagnostics_.terrain_textured_draw_calls=0U",ogl)
+        self.assertIn("self_avatar_keyframe_gl_logged",app)
+        self.assertIn("actually ",app)
+        self.assertIn("v.avatar_animation_status",modal)
+        self.assertIn("v.terrain_recovery_status",modal)
+
     def test_default_camera_closer_and_ultrawide_status_legible(self):
         camera=(ROOT/"include/nexverse/ui/camera_zoom_controls.hpp").read_text()
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("camera_zoom_default=5.5f",camera)
         self.assertIn("9.1f*scale,nexverse::ui::describe_avatar_pipeline",app)
         self.assertIn("8.7f*scale,avatar_proof.fragment_stage()",app)
+
+    def test_terrain_same_revision_retry_updates_gpu_and_welcome_unchanged(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        ogl=(ROOT/"src/render/opengl_renderer.cpp").read_text()
+        self.assertIn("terrain_detail_retry.ready(",app)
+        self.assertIn("terrain_cached_textures.detail[index]",app)
+        self.assertIn("terrain_detail_retry.succeeded(index)",app)
+        self.assertIn("actual_count<=terrain_real_detail_layers_",ogl)
+        self.assertIn("welcome_texture",app)
 
     def test_real_f2_detail_button_drives_mesh_lod_policy(self):
         app=(ROOT/"src/app/application.cpp").read_text()

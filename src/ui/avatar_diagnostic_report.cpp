@@ -37,6 +37,14 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "gpu_depth_fragments_passed="+
            std::string(yn(r.gpu_fragments_passed))+"\n"
        "visibility_stage="+evidence+"\n"
+       "appearance_packets="+
+           std::to_string(r.appearance_packets)+"\n"
+       "appearance_malformed="+
+           std::to_string(r.appearance_malformed)+"\n"
+       "appearance_other_avatar="+
+           std::to_string(r.appearance_other_avatar)+"\n"
+       "appearance_self_accepted="+
+           std::to_string(r.appearance_self_accepted)+"\n"
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"

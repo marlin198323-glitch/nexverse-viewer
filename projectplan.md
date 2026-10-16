@@ -1,8 +1,8 @@
 # NexVerse Viewer – Projektplan
 
-**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.235–244**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Regel überschreibt historische Fünferreferenzen in älteren Berichten.
+**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.255–264**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Regel überschreibt historische Fünferreferenzen in älteren Berichten.
 
-Stand: 17.10.2026 | OGL 0.2.0-alpha.244 | Gesamtfortschritt ca. 38 % (gewichtete Schätzung)
+Stand: 17.10.2026 | OGL 0.2.0-alpha.254 | Gesamtfortschritt ca. 39 % (gewichtete Schätzung)
 Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
 
@@ -10,13 +10,13 @@ Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firesto
 
 ## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
 
-**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 16.10.2026, Alpha.234).**
+**Aktueller OGL-Gesamtfortschritt: ca. 39 % (Schätzung, Stand 17.10.2026, Alpha.254).**
 
 - PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Fuenferdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
 - Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
 - Nach jedem Durchlauf die sieben Bewertungsbereiche anhand nachweislich implementierter, integrierter und getesteter Funktionen neu pruefen. Fortschritt darf auch unveraendert bleiben oder sinken. Alpha-Version und Zahl der Commits erzeugen KEINEN automatischen Zuwachs.
 - Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
-- 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
+- 39 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
 
 ## VERBINDLICHE ZEHN-BLÖCKE-REGEL – ab 16.10.2026
 
@@ -50,6 +50,53 @@ Ein Block gilt als FERTIG nur nach tatsächlicher Implementation und
 grünen Tests. Fehlende Zugänge/Hindernisse = BLOCKIERT mit
 Grund und nächstem Schritt, nie durch Fake-Tests oder bloße
 Planfortschreibung ersetzt. Grid-Avatar-E2E ist weiter offen.
+
+### Alpha.245–254 – Funktionale Terrain-Reparatur und Viewer-UI
+
+- **245 [GETESTET]:** Neuester OpenGenesisLINK Server main
+  d8f4426110379b39be7c0f45161f7c0c6b5d811e gegenüber
+  ec760cac geprüft; neuer Patch betrifft Mesh-Upload-LLSD,
+  nicht das GET Mesh des Viewers; reviewed baseline unverändert.
+  Vor Code-Freigabe Server main erneut auf bf55a17524a9
+  verglichen: 86 neue Commits für deaktiviertes,
+  separat buildbares OGL AssetService-Addon (#231).
+  Viewer-GetTexture bleibt zunächst unverändert;
+  API/Health/CAPS-Vertrag als eigener P1-Punkt
+  in Alpha.255–264 prüfen, nicht ungeprüft deployen.
+- **246 [GETESTET]:** TerrainDetailRetry mit maximal vier
+  Versuchen (2/5/15s Backoff) und sicherer Region-/Materialrevision.
+- **247 [GETESTET]:** Erfolgreiche RGBA-Layer trotz
+  fehlgeschlagener anderer Terrain-Texturen behalten;
+  nur noch fehlende Layer erneut anfordern.
+- **248 [GETESTET]:** OpenGL akzeptiert mehr gültige Layer
+  innerhalb derselben Materialrevision, verhindert
+  Downgrade und redundante GPU-Reuploads.
+- **249 [GETESTET]:** Kritischer Fehler repariert:
+  Terrain-Textur-/Fallback-Diagnose pro Frame zurücksetzen;
+  versteckter NVIDIA-GL-Test für 1/4 -> 2/4,
+  Downgrade- und Revisionswechsel.
+- **250 [GETESTET]:** Self-AvatarAppearance-Paketzähler
+  bei Regionswechsel zurücksetzen, regionale Fehler/
+  Fremd-Self-Status nur als private numerische F3-Diagnose.
+- **251 [GETESTET]:** F7-Regionsfenster zeigt
+  konkrete Nachladeversuche und reale GPU-Terrain-Layer
+  statt bloß pauschaler Erfolgsmeldung.
+- **252 [GETESTET]:** Echter Self-Server-Keyframe-GL-
+  Playback-Beginn protokolliert, sichtbarer Skinstatus
+  im Viewer-Fenster Animationen.
+- **253 [GETESTET]:** C++23/NVIDIA-OpenGL-/Python-
+  Regressionen, 10er-Regel und privacy-safe F3
+  Datenfluss; Kompatibilitätsmatrizen nachgeführt.
+- **254 [IN_ARBEIT]:** Mint-x64-Vollbuild, 3D-GPU-CTest,
+  Python, Pi5-kompatible Headless-Tests, isolierter
+  Xvfb-GUI-Smoke und Taskleistenicon, Versionsrelease,
+  GitHub-Commit/Push und erfolgreicher Pi5-CI-Beleg.
+
+**Aktueller Gesamtfortschritt: ca. 39 %** (vorher 38 %;
+gewichtete 38,65 Prozentpunkte). Echte NexVerse-Live-
+Avatar-Bakes, Terrain-Pixelvergleich und Firestorm-Parität
+bleiben ausdrücklich OFFEN.
+**Nächster verpflichtender Zehnerdurchlauf:** Alpha.255–264.
 
 ### Historischer Fünferdurchlauf Alpha.210–214
 - **Alpha.210:** Fünferregel und GitHub-/Server-Baseline [FERTIG].

@@ -210,6 +210,10 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              "  |  Parzelle: "+
              std::string(v.parcel_ready?"bereit":"nicht geladen"));
         line(7,"Eigene aktive Animationen: "+std::to_string(v.animations));
+        line(8,v.terrain_recovery_status.empty()
+             ?"Terrain-Details werden ermittelt":
+             compact(v.terrain_recovery_status,72U),
+             theme::cyan);
         line(9,"F7: Region / ESC: schliessen",theme::cyan);
     }
     else if(state.window==ViewerWindow::map)
@@ -337,6 +341,10 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              theme::text);
         line(1,"Aktive Animationen: "+std::to_string(v.animation_entries.size())+
              " / geladene Clips: "+std::to_string(v.animation_cache_size));
+        line(2,v.avatar_animation_status.empty()
+            ?"Skin: Serverclip noch nicht in GPU-Body"
+            :v.avatar_animation_status,
+            theme::cyan);
         for(std::size_t i=0U;i<std::min(
             v.animation_entries.size(),std::size_t{8U});++i)
         {

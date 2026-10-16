@@ -614,3 +614,21 @@ privatem 0600-Diagnoseexport. Weiterhin KEINE bestätigte
 vollständige Firestorm-/NexVerse-Live-Avatar-, Terrain-
 oder Serveranimations-Parität. Original-Welcome/Icon erhalten.
 Details: docs/ALPHA235_244_VISUAL_EVIDENCE.md.
+
+
+## 17.10.2026 – Alpha.245–254
+
+Echte Terrain-GetTexture-Partial-Recovery mit maximal
+vier Backoff-Versuchen pro Materialregion, kumulierte
+bereits echte RGBA-Pixel, fortschreitender OpenGL-Upload
+ohne Materialrevisionswechsel und ohne Downgrade.
+Vorher fehlerhaft kummulierte Terrain-Draw-Zähler jetzt
+pro Frame korrekt; NVIDIA-GPU-Test statt bloßer
+Netzwerkzähler. F7 Region zeigt Retry/Mesh, Self-Avatar-
+Appearance-Zähler nach Regionen getrennt, Animationen-
+Fenster und Logs zeigen echte Keyframe-Skin-Nutzung.
+Neuer OpenGenesisLINK-Server-Mesh-Upload-LLSD-Patch
+d8f4426 ist nur auf Uploads bezogen, nicht GetMesh.
+Project-Status 39 % als gewichtete Schätzung; echte
+NexVerse-Firestorm-Avatar-/Welt-Pixelparität weiterhin OFFEN.
+Siehe docs/ALPHA245_254_TERRAIN_RECOVERY_ANIMATION.md.

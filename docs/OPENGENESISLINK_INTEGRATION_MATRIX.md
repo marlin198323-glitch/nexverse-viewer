@@ -466,3 +466,45 @@ privatem 0600-Diagnoseexport. Weiterhin KEINE bestätigte
 vollständige Firestorm-/NexVerse-Live-Avatar-, Terrain-
 oder Serveranimations-Parität. Original-Welcome/Icon erhalten.
 Details: docs/ALPHA235_244_VISUAL_EVIDENCE.md.
+
+
+## 17.10.2026 – Alpha.245–254
+
+Echte Terrain-GetTexture-Partial-Recovery mit maximal
+vier Backoff-Versuchen pro Materialregion, kumulierte
+bereits echte RGBA-Pixel, fortschreitender OpenGL-Upload
+ohne Materialrevisionswechsel und ohne Downgrade.
+Vorher fehlerhaft kummulierte Terrain-Draw-Zähler jetzt
+pro Frame korrekt; NVIDIA-GPU-Test statt bloßer
+Netzwerkzähler. F7 Region zeigt Retry/Mesh, Self-Avatar-
+Appearance-Zähler nach Regionen getrennt, Animationen-
+Fenster und Logs zeigen echte Keyframe-Skin-Nutzung.
+Neuer OpenGenesisLINK-Server-Mesh-Upload-LLSD-Patch
+d8f4426 ist nur auf Uploads bezogen, nicht GetMesh.
+Project-Status 39 % als gewichtete Schätzung; echte
+NexVerse-Firestorm-Avatar-/Welt-Pixelparität weiterhin OFFEN.
+Siehe docs/ALPHA245_254_TERRAIN_RECOVERY_ANIMATION.md.
+
+## Ergänzender aktueller Upstream-Abgleich – 17.10.2026
+
+Unmittelbar vor der GitHub-Freigabe des Viewer-Alpha.254
+stand OpenGenesisLINK Server main bereits auf
+bf55a17524a9f3f175c56d2adeaa4d39083f446f:
+86 weitere Commits seit dem in Block 245 gesehenen
+d8f4426, zusammengefasst unter dem Merge
+"OGL AssetService buildable compatibility addon (#231)".
+Quelländerungen vor allem in addons/OGLAssetService
+(.NET 8), Cache, Offline-FSAssets-Migration, MariaDB-/
+PostgreSQL-Hushaudits, Redis-/Snapshot-Sicherheitsgates
+und CI. Das Addon ist disabled-by-default in der
+OpenSim-Hauptintegration. Es ist KEIN pauschaler Austausch
+der Viewer-CAPS/GetTexture/GetMesh-Schnittstelle.
+Daher separater SERVER-Addon-/API-Kompatibilitätsprüfpunkt
+im nächsten Zehnerdurchlauf, keine ungeprüfte Umschaltung,
+kein Prod-Deploy und kein Vorschub reviewed_sha.
+
+Nächster Viewer-Lauf Alpha.255–264: tatsächliche API-
+Exposition im Grid prüfen, optionales serverseitiges
+Addon nur nach autorisiertem Health/Read-Only-Vertrag
+integrieren, Firestorm-Netzwerk-/Avatar- und Weltzustände
+weiter behandeln.

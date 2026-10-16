@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
-**Gesamtfortschritt: ca. 38 % – gewichtete Schätzung.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.244 | Branch develop-current.
+**Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.**
+Stand 17.10.2026 | Viewer 0.2.0-alpha.254 | Branch develop-current.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -11,15 +11,15 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 | Bereich | Gewicht | Teilfortschritt | Beitrag |
 |---|---:|---:|---:|
 | Grid, Login, LLUDP, CAPS und Regionsverbindung | 15 % | 75 % | 11.25 Prozentpunkte |
-| 3D-Welt, Terrain, Himmel und Renderer | 20 % | 40 % | 8 Prozentpunkte |
+| 3D-Welt, Terrain, Himmel und Renderer | 20 % | 43 % | 8.6 Prozentpunkte |
 | Avatar, Server-Bakes, Outfits und Animationen | 20 % | 25 % | 5 Prozentpunkte |
-| Texturen, Meshes, LOD und Materialsystem | 15 % | 45 % | 6.75 Prozentpunkte |
+| Texturen, Meshes, LOD und Materialsystem | 15 % | 47 % | 7.05 Prozentpunkte |
 | Viewer-GUI, Menüs, Fenster und Bedienung | 15 % | 30 % | 4.5 Prozentpunkte |
 | Inventar, Kommunikation, Teleport, Bauen und weitere Firestorm-Funktionen | 10 % | 10 % | 1 Prozentpunkte |
 | Plattform-Releases, Stabilität, Sicherheit und E2E | 5 % | 25 % | 1.25 Prozentpunkte |
 
 **Formel:** Summe (Gewicht × Teilfortschritt)/100
-= **37,75 %**, gerundet **38 %**. Alle Gewichte ergeben 100 %.
+= **38,65 %**, gerundet **39 %**. Alle Gewichte ergeben 100 %.
 Teilwerte sind fachliche, anhand nachweisbarer Funktionen
 begründete Schätzungen und keine Abnahme.
 
@@ -53,7 +53,7 @@ begründete Schätzungen und keine Abnahme.
    Bakes, Outfits, Animation, vollstaendiger Welt/
    GUI und Plattform-Releases. Keine 100 % nur durch CI.
 
-**Nächster Zehnerdurchlauf:** Alpha.245–254 mit wieder fünf
+**Nächster Zehnerdurchlauf:** Alpha.255–264 mit wieder fünf
 echten Entwicklungsblöcken. **Besonders offen** sind Self-
 AvatarAppearance, vollständige Bakes/Outfits/Animationen,
 Terrain, High-LOD-Objekte, fehlende Firestorm-Funktionen
@@ -85,3 +85,14 @@ bleibt ganz vorne in CHATUEBERGABE.md, projectplan.md und
 AGENTS.md. Nächster Durchlauf Alpha.245–254.
 Gesamtfortschritt weiterhin 38 % (unverändert), da
 NexVerse-Live-Firestorm-/Bake-/Terrain-Pixelbeleg OFFEN.
+
+
+## 17.10.2026 – Alpha.245–254: 39 % statt 38 %
+
+Neuer echter Code behebt die einmalige Terrain-Materialabfrage:
+maximal vier fehlende Texturlayer-Retry-Versuche, persistente
+Erfolge bei Teilausfall und echte progressive GPU-Promotion im
+selben Materialepoch. Die OpenGL-Terrain-Zeichenaufrufe
+melden jetzt nur aktuelle Frames. +0,90 Prozentpunkte auf
+38,65 % ungerundet = 39 % gerundet; Live-E2E bleibt OFFEN.
+Naechster Zehnerdurchlauf Alpha.255–264.

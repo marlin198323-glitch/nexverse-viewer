@@ -1,18 +1,18 @@
 # CHATÜBERGABE – IM NEUEN CHAT ZUERST LESEN
 
-**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.245–254**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Zehnerregel überschreibt historische Fünferreferenzen in älteren Berichten.
+**NEUE VERBINDLICHE NUTZERANWEISUNG (16.10.2026): BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE STATT 5.** Nächster Lauf **Alpha.255–264**. In jedem Durchlauf Code UND sichtbare Oberfläche, Regressionen, kompletter Mint-Build, Commit/Push und Pi5 CI; nach jeder Arbeitsrunde den belegbaren Fortschritt in % aus docs/PROJECT_PROGRESS.json angeben. Diese aktuelle Zehnerregel überschreibt historische Fünferreferenzen in älteren Berichten.
 
 ## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
 
-**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 17.10.2026, Alpha.244).**
+**Aktueller OGL-Gesamtfortschritt: ca. 39 % (Schätzung, Stand 17.10.2026, Alpha.254).**
 
-**Nächste zehn echte Entwicklungsblöcke: Alpha.245–254.**
+**Nächste zehn echte Entwicklungsblöcke: Alpha.255–264.**
 
 - PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Zehnerdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
 - Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
 - Nach jedem Durchlauf die sieben Bewertungsbereiche anhand nachweislich implementierter, integrierter und getesteter Funktionen neu pruefen. Fortschritt darf auch unveraendert bleiben oder sinken. Alpha-Version und Zahl der Commits erzeugen KEINEN automatischen Zuwachs.
 - Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
-- 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
+- 39 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
 
 ## VERBINDLICH AB SOFORT: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE
 
@@ -21,7 +21,36 @@
 - INTERAKTIVE Entwicklung ausschließlich Linux Mint jam-MS-7D28 (Desktop Commander), Checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer nach erneuter Verifikation. Raspberry Pi 5 ist nur der pi5-ogl ARM64-CI-Runner. Kein ungefragter sichtbarer Viewerstart auf dem echten Desktop; vollständiger GUI-Smoke nur auf isoliertem Xvfb.
 - PRO DURCHLAUF: zehn fortlaufende Alpha-/Block-IDs, zusammenhängende echte Änderungen an Code UND zugehöriger sichtbarer GUI, native C++23/NVIDIA-OpenGL/Python/Headless-Regressionen, vollständiger Mint-x64-Build, Xvfb/Taskleistenicon, Dokumentation in projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, Kompatibilitätsmatrizen, GitHub-Commit/Push und erfolgreichen Pi5-ARM64-CI-Lauf nachweisen.
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
-- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Zehnergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.245–254. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Zehnerregel in projectplan.md.
+- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Zehnergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.255–264. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Zehnerregel in projectplan.md.
+
+### NEUSTER STAND – OGL ALPHA.254 – FUNKTIONALES TERRAIN-RETRY
+
+- Der verbindliche 10-Block-Lauf Alpha.245–254 beinhaltet
+  echte Terrain-Nachladungen, partielle GPU-Layer-Promotion
+  und Reparatur des früher kumulativen Terrain-Draw-Zählers;
+  F7-Regionsfenster zeigt Material-/Retry-Status.
+- Authentifizierte Self-AvatarAppearance-/Animationszähler
+  bleiben je Simulatorregion getrennt; ein Keyframe-
+  GL-Skin-Erfolg erscheint in Log und Animationsfenster.
+- **Gesamtfortschritt jetzt ca. 39 %** statt 38 %:
+  Welt-Renderer 43 %, Asset/Materialsystem 47 %,
+  38,65 gewichtete Prozentpunkte. Kein Echtraster-E2E.
+- Version 0.2.0-alpha.254. Nächster Lauf Alpha.255–264:
+  wieder 10 echte Code+GUI-Blöcke mit Mint Fullbuild,
+  GitHub-Push und erfolgreicher Pi5-ARM64-CI.
+- GitHub Featurecommit/CI aus letztem Ergebnis der
+  HEAD-/Actions-Abfrage prüfen, ältere Commits nicht
+  als aktuellen SHA verwechseln.
+- OpenGenesisLINK Server main d8f4426110379b39be7c0f45161f7c0c6b5d811e
+  neuer MeshUPLOAD-LLSD-Validierungspatch; OGL GetMesh
+  bleibt davon unverändert, reviewed SHA nicht blind erhöhen.
+- **NEUERER SERVER-HEAD beim abschließenden Abgleich:**
+  bf55a17524a9f3f175c56d2adeaa4d39083f446f,
+  86 zusätzliche Commits seit d8f4426 mit Merge
+  OGL AssetService Addon (#231), disabled-by-default.
+  Optionales Server-AssetService nur nach getrenntem
+  Capabilities-/Security-Review; nie alte Reviewed-Baseline
+  automatisch auf den neuesten SHA verschieben.
 
 ### ALPHA.244 FERTIG – BESTÄTIGTER AKTUELLER GITHUB-/CI-STAND
 
