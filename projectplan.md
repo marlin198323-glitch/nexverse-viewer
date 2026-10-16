@@ -1,10 +1,20 @@
 # NexVerse Viewer – Projektplan
 
-Stand: 13.10.2026
+Stand: 16.10.2026 | OGL 0.2.0-alpha.234 | Gesamtfortschritt ca. 38 % (gewichtete Schätzung)
 Repository: `marlin198323-glitch/nexverse-viewer`
 Ziel: Plattformübergreifender OpenGenesisLINK-Viewer mit vollständiger Firestorm-Funktionsbaseline und OpenGenesisLINK-/OpenSim-Serverkompatibilität; aktueller eigener C++23-Code unter MPL 2.0, eventuelle Firestorm-Quellcodeübernahme nur nach Lizenzprüfung.
 
 ---
+
+## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
+
+**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 16.10.2026, Alpha.234).**
+
+- PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Fuenferdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
+- Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
+- Nach jedem Durchlauf die sieben Bewertungsbereiche anhand nachweislich implementierter, integrierter und getesteter Funktionen neu pruefen. Fortschritt darf auch unveraendert bleiben oder sinken. Alpha-Version und Zahl der Commits erzeugen KEINEN automatischen Zuwachs.
+- Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
+- 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
 
 ## VERBINDLICHE FÜNF-BLÖCKE-REGEL – ab 16.10.2026
 

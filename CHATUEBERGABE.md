@@ -1,5 +1,17 @@
 # CHATÜBERGABE – IM NEUEN CHAT ZUERST LESEN
 
+## VERBINDLICHER GESAMTFORTSCHRITT – BEI JEDEM PROJEKTSTAND IN PROZENT
+
+**Aktueller OGL-Gesamtfortschritt: ca. 38 % (Schätzung, Stand 16.10.2026, Alpha.234).**
+
+**Nächste fünf echte Entwicklungsblöcke: Alpha.235–239.**
+
+- PFLICHT: Bei JEDER Statusantwort zum Projekt und nach JEDEM Entwicklungs-/Fuenferdurchlauf sowie in JEDEM neuen Chat IMMER XX % Gesamtfortschritt auffuehren; auch wenn unveraendert.
+- Einzige Bewertungsquelle docs/PROJECT_PROGRESS.json mit sieben gewichteten Funktionsbereichen (Gewichte ergeben 100 %). Berechnen und validieren: python3 scripts/project-progress.py. Details: docs/PROJEKTFORTSCHRITT.md.
+- Nach jedem Durchlauf die sieben Bewertungsbereiche anhand nachweislich implementierter, integrierter und getesteter Funktionen neu pruefen. Fortschritt darf auch unveraendert bleiben oder sinken. Alpha-Version und Zahl der Commits erzeugen KEINEN automatischen Zuwachs.
+- Bei neuem Bewertungswert JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md synchron aktualisieren und committen; AGENTS.md enthaelt die dauerhafte Regel. Keine widerspruechlichen Prozentangaben.
+- 38 % ist eine gewichtete Projektleitungs-SCHAETZUNG der Reife bis zur vollstaendigen Firestorm/OpenSim/OpenGenesisLINK-Funktionsbasis, KEIN automatischer Testabdeckungsgrad und KEIN Abnahmenachweis. Offene Self-Bakes/Animations-/Social-/Plattform-E2E bleiben Teil des Gesamtumfangs.
+
 ## VERBINDLICH AB SOFORT: BEI JEDEM WEITER FÜNF ECHTE ENTWICKLUNGSBLÖCKE
 
 - Der Nutzer verlangt ohne erneute Rückfrage **fünf zusammenhängende, tatsächlich umgesetzte und getestete Entwicklungsblöcke** bei JEDEM WEITER, auch im neuen Chat. Standard nicht auf drei oder einen Block reduzieren. Nur ausdrückliche neue Nutzeranweisung ändert den Umfang.
@@ -7,7 +19,7 @@
 - INTERAKTIVE Entwicklung ausschließlich Linux Mint jam-MS-7D28 (Desktop Commander), Checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer nach erneuter Verifikation. Raspberry Pi 5 ist nur der pi5-ogl ARM64-CI-Runner. Kein ungefragter sichtbarer Viewerstart auf dem echten Desktop; vollständiger GUI-Smoke nur auf isoliertem Xvfb.
 - PRO DURCHLAUF: fünf fortlaufende Alpha-/Block-IDs, zusammenhängende echte Änderungen an Code UND zugehöriger sichtbarer GUI, native C++23/NVIDIA-OpenGL/Python/Headless-Regressionen, vollständiger Mint-x64-Build, Xvfb/Taskleistenicon, Dokumentation in projectplan.md, AGENTS.md, CHATUEBERGABE.md, info.md, Kompatibilitätsmatrizen, GitHub-Commit/Push und erfolgreichen Pi5-ARM64-CI-Lauf nachweisen.
 - Nicht getestete Praxisfunktionen als OFFEN kennzeichnen; insbesondere echter authentifizierter NexVerse-Welt-/Avatar-/Outfit-End-to-End-Check bleibt offen. Keine Erfolge oder Commits behaupten, die nicht tatsächlich ausgeführt und geprüft wurden.
-- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION und GitHub HEAD neu feststellen. Der Durchlauf Alpha.225–229 folgt auf Alpha.224. Nicht einen alten SHA als HEAD annehmen. Detaillierte Fünferregel im projectplan.md.
+- NÄCHSTE ARBEIT BEIM START: aktuelle VERSION, GitHub HEAD, Prozentstand via scripts/project-progress.py und nächste Alpha-Fünfergruppe im jeweils NEUESTEN Status feststellen; jetzt Alpha.235–239. Nicht alte SHA/Alpha-Angaben aus historischen Abschnitten verwenden. Fünferregel in projectplan.md.
 
 ### AKTUELLER VERBINDLICHER ENTWICKLUNGSSTAND – ALPHA.234
 

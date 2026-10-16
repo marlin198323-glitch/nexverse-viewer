@@ -1,3 +1,5 @@
+VERBINDLICHER STATUS: OGL Gesamtfortschritt ca. 38 % (gewichtete Schaetzung, 16.10.2026, Alpha.234). Nach JEDEM Projektstand den XX-%-Wert nennen; Quelle docs/PROJECT_PROGRESS.json, berechnen mit python3 scripts/project-progress.py. Nach Arbeitsdurchlauf anhand echter Integrations-/Testergebnisse neu bewerten, nicht automatisch pro Release. Regel in AGENTS.md, CHATUEBERGABE.md, projectplan.md. Erlaeuterungen docs/PROJEKTFORTSCHRITT.md.
+
 NÄCHSTER CHAT: Bei JEDEM WEITER verbindlich **5 echte Entwicklungsblöcke** mit Code, sichtbarer Viewer-GUI, Mint Full Build, Tests, GitHub und Pi5-CI, Details zuerst in CHATUEBERGABE.md, AGENTS.md, projectplan.md. Kein ungefragter Mint-Desktop-GUI-Start; Pi nur CI.
 
 # OpenGenesisLINK Viewer für NexVerse – Arbeitsstand

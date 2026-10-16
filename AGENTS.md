@@ -1,5 +1,9 @@
 # nexverse-viewer – Projektanweisungen
 
+## VERBINDLICH: GESAMTFORTSCHRITT BEI JEDEM STATUS IN %
+
+**Bei jeder Meldung zum OGL-Projektstand, jedem Fuenferdurchlauf und in jedem neuen Chat IMMER den Gesamtfortschritt als XX % nennen, auch ohne Veraenderung.** Aktuell Alpha.234: **ca. 38 % gewichtete Schaetzung**. Einzige Quelle docs/PROJECT_PROGRESS.json, pruefen mit python3 scripts/project-progress.py. Bei nachgewiesenen Aenderungen JSON, docs/PROJEKTFORTSCHRITT.md, projectplan.md, CHATUEBERGABE.md und info.md gemeinsam aktualisieren. Alpha-Version oder gruene CI-Testquote sind KEIN automatischer Fertigstellungsgrad.
+
 ## VERBINDLICHE FÜNF-BLÖCKE-REGEL (16.10.2026)
 
 **NEUER CHAT: zuerst CHATUEBERGABE.md mit fünf verpflichtenden Entwicklungsblöcken und dem jeweils letzten Commit lesen. Bei JEDEM WEITER ohne Rückfrage alle fünf echten Blöcke inkl. Mint-Build/GitHub/Pi5-CI bearbeiten, niemals nur Plan schreiben.**

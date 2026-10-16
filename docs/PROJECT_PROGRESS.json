@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-16",
+  "viewer_version": "0.2.0-alpha.234",
+  "branch": "develop-current",
+  "next_five_blocks": "Alpha.235–239",
+  "assessment": "Begründete Projektleitungs-Schätzung des Funktionsumfangs zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Parität; kein linearer Zeit-/Versionszähler und keine Abnahme.",
+  "areas": [
+    {
+      "id": "connection",
+      "name": "Grid, Login, LLUDP, CAPS und Regionsverbindung",
+      "weight_pct": 15,
+      "completion_pct": 75,
+      "basis": "Realer Login/LLUDP-Handshake und SCENE_READY im Nutzerlog, EventQueue und Diagnosen; stabile Regionsübergänge noch nicht vollständig E2E belegt."
+    },
+    {
+      "id": "world",
+      "name": "3D-Welt, Terrain, Himmel und Renderer",
+      "weight_pct": 20,
+      "completion_pct": 40,
+      "basis": "Echte GL-Szenen- und Terrain-Draws; Terrain grau, Umgebung und Licht noch nicht Firestorm-paritätisch."
+    },
+    {
+      "id": "avatar",
+      "name": "Avatar, Server-Bakes, Outfits und Animationen",
+      "weight_pct": 20,
+      "completion_pct": 25,
+      "basis": "Originale Firestorm-LLM-Meshes sichtbar; aktuelles Self-AvatarAppearance fehlt, Bakes/Kleidung/Animation nicht vollständig."
+    },
+    {
+      "id": "assets",
+      "name": "Texturen, Meshes, LOD und Materialsystem",
+      "weight_pct": 15,
+      "completion_pct": 45,
+      "basis": "GetTexture/GetMesh und GPU-Streaming funktionieren, aber Low-LOD, Ersatzmeshes, Materialqualität und fehlerhafte Assets offen."
+    },
+    {
+      "id": "ui",
+      "name": "Viewer-GUI, Menüs, Fenster und Bedienung",
+      "weight_pct": 15,
+      "completion_pct": 30,
+      "basis": "Originalicon, Welcome-Seite, Login, HUD, Diagnose, Kamera und Grundmenüs vorhanden; viele Firestorm-Bedienfunktionen noch offen."
+    },
+    {
+      "id": "functions",
+      "name": "Inventar, Kommunikation, Teleport, Bauen und weitere Firestorm-Funktionen",
+      "weight_pct": 10,
+      "completion_pct": 10,
+      "basis": "Teilfunktionen und erste Oberflächen vorhanden; vollständige Bedienung, soziale Funktionen und Inworld-Aktionen vielfach unvollständig."
+    },
+    {
+      "id": "release",
+      "name": "Plattform-Releases, Stabilität, Sicherheit und E2E",
+      "weight_pct": 5,
+      "completion_pct": 25,
+      "basis": "Mint-x64-Nativbuild/NVIDIA-GL-Tests/Pi5-CI grün; Windows/macOS-Vollabdeckung und echte Grid-End-to-End-Abnahme fehlen."
+    }
+  ],
+  "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
+  "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases."
+}
