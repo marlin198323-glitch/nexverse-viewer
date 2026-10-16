@@ -17,6 +17,14 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
         self.assertIn("welcome_texture,original_body_gpu_ready,viewer_shell",app)
 
+    def test_world_hud_discloses_real_avatar_gpu_provenance(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("describe_avatar_gpu_submission(",app)
+        self.assertIn("self_avatar_anatomical_mesh_draw_calls",app)
+        self.assertIn("self_avatar_body_bake_gl_draws",app)
+        self.assertIn("Avatar GL: kein Body-Draw",
+                      (ROOT/"include/nexverse/render/avatar_gpu_submission_status.hpp").read_text())
+
     def test_host_instructions_keep_pi_runner_separate(self):
         agents=(ROOT/"AGENTS.md").read_text()
         self.assertIn("jam-MS-7D28",agents)

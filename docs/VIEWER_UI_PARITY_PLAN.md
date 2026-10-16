@@ -263,3 +263,7 @@ Original Firestorm 3-part body resource auto-discovery on Linux Mint. Original L
 ## 16.10.2026 – Alpha.155-159
 
 Original Nightly and Release Firestorm character assets all 96 byte-identical, nightly user-cache autodiscovery. Read-only F9 GPU Server-Bakes immediately visible and show 0/3..3/3 status. GL3.3 actual texture pixel readback and stale handle eviction verified on NVIDIA GPU. Login screen displays actual original body GPU-ready or fallback status. Mint full Build and native CTest 113/113, Python 34/34 PASS. Inworld Avatar/Outfit readback not verified. Upstream main ec760cac J2K fallback classified; reviewed baseline not changed. See docs/ALPHA155_159_NIGHTLY_F9_GPU_UI.md.
+
+## 16.10.2026 – Alpha.160–164 (isolierte GUI, Avatar HUD)
+
+Alle automatischen GUI-Viewer-Starttests ausschließlich Xvfb, keine sichtbaren Programme auf Nutzerdesktop. Inworld UI meldet jetzt tatsächliche Original-LLM-, Proxy- und Self-Head/Upper/Lower-Bake-Draws statt nur initialisierte Ressourcen; F9 und MIP0 wählen SelfAvatar per find_if (unabhängig von Vektor-Reihenfolge). Native x64 CTest 114/114, Python 38/38 PASS, echter Xvfb GUI-Smoke mit 133 Firestorm Joints und 7.186 Triangles PASS. Kein authentifizierter Simulator-Avatar oder echtes Wear/COF-End-to-End bestätigt. OpenGenesisLINK main ec760cac unverändert, server review bleibt offen. Siehe docs/ALPHA160_164_ISOLATED_GUI_AND_AVATAR_HUD.md.

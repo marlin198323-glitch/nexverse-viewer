@@ -73,6 +73,7 @@
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
+#include "nexverse/render/avatar_gpu_submission_status.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -2092,7 +2093,7 @@ void render_world_hud(
         card_x,
         rail_y + 154.0f * scale,
         card_w,
-        104.0f * scale,
+        124.0f * scale,
         Color{0.018f, 0.036f, 0.062f, 0.88f},
         9.0f * scale);
     renderer.text(
@@ -2128,15 +2129,29 @@ void render_world_hud(
         8.5f * scale,
         "Renderer  READY",
         theme::success);
+    // These are submissions of the authenticated session renderer.
+    // No fake "avatar visible" claim from uploaded geometry alone.
+    const auto avatar_draw_proof=
+        nexverse::render::describe_avatar_gpu_submission(
+            render_diagnostics.self_avatar_anatomical_mesh_draw_calls,
+            render_diagnostics.self_avatar_proxy_draw_calls,
+            render_diagnostics.self_avatar_body_bake_gl_draws);
     renderer.text(
         card_x + 14.0f * scale,
         rail_y + 214.0f * scale,
+        7.3f * scale,
+        avatar_draw_proof,
+        render_diagnostics.self_avatar_anatomical_mesh_draw_calls>0U
+            ? theme::cyan : theme::warning);
+    renderer.text(
+        card_x + 14.0f * scale,
+        rail_y + 234.0f * scale,
         8.5f * scale,
         "RAM  " + std::to_string(to_mib(ram_used)) + " MiB",
         theme::text_muted);
     renderer.text(
         card_x + 14.0f * scale,
-        rail_y + 234.0f * scale,
+        rail_y + 254.0f * scale,
         8.5f * scale,
         "VRAM  " + vram,
         theme::text_muted);
@@ -10638,12 +10653,17 @@ int Application::run(bool enable_developer_modules)
                             id,level,texture_gpu_mips,texture_plan_now);
                 // Current self Head/Upper/Lower get full-resolution
                 // preference. Never bypass shared VRAM admission or retry.
-                if(!avatar_proxy_update.empty()&&
-                   avatar_proxy_update.front().is_self&&active_session&&
+                // Never assume the authenticated self avatar is the
+                // first entry. Region-proxy ordering can change as remote
+                // avatar packets are received.
+                const auto mip_self=std::find_if(
+                    avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                    [](const auto& avatar){return avatar.is_self;});
+                if(mip_self!=avatar_proxy_update.end()&&active_session&&
                    active_session->agent_id==render_agent.agent_id)
                     (void)assets::pin_self_avatar_body_full_mip(
                         planned_mips,
-                        avatar_proxy_update.front().baked_texture_ids,
+                        mip_self->baked_texture_ids,
                         simulation_ready&&
                         firestorm_region_lease.matches(
                             current_firestorm_epoch));
@@ -11866,15 +11886,16 @@ int Application::run(bool enable_developer_modules)
                     // The F9 "Server-Bakes" tab is read-only and must
                     // show current textures immediately. It does NOT depend
                     // on the separate continuous Appearance diagnostics.
+                    const auto ui_self=std::find_if(
+                        avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                        [](const auto& avatar){return avatar.is_self;});
                     if(gallery_bake_preview_open&&simulation_ready&&
                        firestorm_region_lease.matches(current_firestorm_epoch)&&
-                       !avatar_proxy_update.empty()&&
-                       avatar_proxy_update.front().is_self&&
+                       ui_self!=avatar_proxy_update.end()&&
                        active_session->agent_id==render_agent.agent_id)
                     {
                         protocol::AvatarBakedTextures self_bakes{};
-                        const auto& ids=
-                            avatar_proxy_update.front().baked_texture_ids;
+                        const auto& ids=ui_self->baked_texture_ids;
                         for(std::size_t i=0U;i<ids.size();++i)
                             self_bakes.ids[i]=ids[i];
                         const auto selected=

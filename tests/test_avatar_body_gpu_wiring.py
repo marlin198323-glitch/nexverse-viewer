@@ -40,6 +40,13 @@ class AvatarBodyGpuWiring(unittest.TestCase):
         self.assertLess(guard,upload)
         self.assertIn("return false;",RENDER[guard:upload])
 
+    def test_self_avatar_selection_is_not_order_dependent(self):
+        self.assertIn("const auto mip_self=std::find_if(",APP)
+        self.assertIn("const auto ui_self=std::find_if(",APP)
+        self.assertIn("ui_self!=avatar_proxy_update.end()",APP)
+        self.assertIn("mip_self!=avatar_proxy_update.end()",APP)
+        self.assertNotIn("avatar_proxy_update.front().is_self",APP)
+
     def test_f9_real_bake_previews_do_not_fetch_assets(self):
         self.assertIn("select_avatar_bake_previews(",APP)
         self.assertIn("avatar_bake_preview_handle(",APP)

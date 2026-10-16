@@ -383,6 +383,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-outfit-bake-preview-layout-tests
         COMMAND nexverse-outfit-bake-preview-layout-tests)
 
+    add_executable(nexverse-avatar-gpu-submission-status-tests
+        tests/avatar_gpu_submission_status_tests.cpp)
+    target_link_libraries(nexverse-avatar-gpu-submission-status-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-gpu-submission-status-tests)
+    add_test(NAME nexverse-avatar-gpu-submission-status-tests
+        COMMAND nexverse-avatar-gpu-submission-status-tests)
+
     add_executable(nexverse-avatar-bake-preview-tests
         tests/avatar_bake_preview_tests.cpp)
     target_link_libraries(nexverse-avatar-bake-preview-tests

@@ -2,6 +2,8 @@
 
 ## Verbindliche OGL-Arbeitsumgebung ab 16.10.2026 (neueste Nutzeranweisung)
 
+- **Ab Alpha.164: Viewer darf bei ChatGPT-Entwicklung nie ungefragt sichtbar auf dem Mint-Desktop gestartet werden.** Native OpenGL-CTests erzeugen GLFW_VISIBLE=false Fenster; vollständige Starttests ausschließlich mit scripts/mint-isolated-gui-smoke.sh unter xvfb-run, ohne Fallback auf vorhandenes DISPLAY. Nur explizite Nutzer-Anweisung autorisiert sichtbar gestarteten Viewer. Linux-x64 CTest/GPU und Mint-Desktop bleiben primär, Pi5 nur headless CI. Siehe Alpha.160-164 Bericht.
+
 - **Primäre interaktive Entwicklungsmaschine ist wieder der Linux-Mint-PC `jam-MS-7D28`** über Remote Desktop Commander (Device-ID `3a1e9ba9-ea8a-4650-b8f7-84f8f653f20d`). Beim Start `list_devices` prüfen und ausdrücklich dieses Gerät auswählen.
 - **Alpha.159 Stand 16.10.2026:** Originale lokale Nightly-7.2.5 Firestorm Character-Dateien liegen nur im ~/.cache/nexverse-viewer/firestorm-nightly-7-2-5-81754/character, 96/96 Dateien SHA256-gleich mit Release 7.2.4. Neue Viewer-Änderungen auf Mint mit vollständigem x64 Build/NVIDIA-GPU-CTest prüfen, nach Push Pi5-CI prüfen. Authentifizierte Welt/Outfit-Tests sind offen; nicht mit Start-/Headless-Tests verwechseln.
 - **Verifizierter Mint-Checkout am 16.10.2026:** /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer, CMake debug mit /home/jam/vcpkg, RTX 4070 SUPER OpenGL 4.6. Originale Firestorm-Assets bleiben lokal, keine Binaries davon committen.
@@ -17,7 +19,9 @@
 - Firestorm-Feature-Baseline erhalten/implementieren; vor jedem relevanten Block den aktuellen OpenGenesisLINK-Server-Stand in `opengenesislink/opengenesislinkserver` prüfen. GUI/UX parallel zu Protokoll, Bewegung, Welt-/Avatar-/Meshdarstellung entwickeln.
 - Pi ARM64 eignet sich für ausgewählte Quelltext-/CMake-/Headless-Tests; vollständige Windows/macOS- und Linux-x64-GUI/GPU-Builds auf geeigneten Hostsystemen ausführen. Nicht behaupten, damit Firestorm-Parität oder GUI-E2E geprüft zu haben.
 
-# Arbeitsanweisung für KI-Entwicklung / ChatGPT (Stand 15.10.2026)
+# Historischer Pi5-Entwicklungsstand (15.10.2026, nur Archiv)
+
+Der folgende historische Abschnitt ist für interaktive OGL-Entwicklung **überholt**. Maßgeblich sind ausschließlich die neueren Mint-/GitHub-Regeln oben. Pi5 bleibt nur ARM64 CI.
 
 ## Zentrale Arbeitsumgebung
 - Raspberry Pi 5 (ARM64), Gerät in Remote Desktop Commander: `s359142.srv.nexvortex.de`.

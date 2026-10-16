@@ -5793,3 +5793,26 @@ Start lädt 133 Rig-Joints, 55 Attachment-Slots und 7186
 Original-Körperdreiecke, NexVerse-Welcome vorhanden.
 Echter Login/Avatar/COF-Inworld-Nachweis steht weiter aus.
 Bericht: docs/ALPHA155_159_NIGHTLY_F9_GPU_UI.md.
+
+## 16.10.2026 – Alpha.160–164 – Fünf Entwicklungsblöcke auf Mint
+
+160: Sichtbare Viewer-Teststarts als Problem erfasst. Native GLFW
+Renderer-Tests sind unsichtbar; vollständige Viewer-Smokes öffnen
+künftig keinesfalls automatisch das echte Desktop-Display.
+161: scripts/mint-isolated-gui-smoke.sh: nur virtueller Xvfb,
+max. 8 Sekunden mit eindeutigem Startup-Beleg, kein Display-Fallback,
+isolierte XDG-Daten, automatisches Aufräumen. Python-Fakeviewer-
+Test beweist virtuelle DISPLAY-Übertragung selbst bei DISPLAY=:776.
+Ohne Xvfb auf Pi überspringt nur die grafische Fixture sicher.
+162: Inworld-Systemstatus unterscheidet Original-LLM GL 0/3..3/3,
+Fallback-Proxy, fehlenden Draw und tatsächliche H/U/L-Bake
+GL-Draws. Source-Nachweis keine Pixel- oder Inworld-Avatar-Parität.
+163: MIP0/F9 SelfAvatar wird über find_if(is_self) gewählt, nie
+blind als erstes Element; Login-AgentUUID und Region/Epoch bleiben.
+164: Vollständiger nativer Linux-x64 Viewer-Build, 114/114 CTests
+inklusive versteckter NVIDIA GPU-Kontexte, 38/38 Python PASS.
+Echter Viewer Xvfb-Smoke inklusive Original Firestorm 133 Joints,
+7.186 Body-Dreiecke und UI init PASS, ohne Desktop-Fenster.
+Server main ec760cac unverändert, reviewed_sha nicht angehoben.
+Projektbericht: docs/ALPHA160_164_ISOLATED_GUI_AND_AVATAR_HUD.md.
+Echter Login/Welt-/Avatar-/Outfit-/COF-Inworld-Test weiterhin offen.
