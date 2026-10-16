@@ -25,6 +25,11 @@ def classify(path):
         return "SERVER_ONLY_TERRAIN_IMPORT_DATA"
     if x==".gitignore":
         return "REPOSITORY_METADATA"
+    # 2026-10-16: csj2k layer-boundary failure now retries OpenJPEG on
+    # the server. This is not a viewer wire-protocol change, but keep
+    # an explicit audit category; never auto-promote reviewed_sha.
+    if x.endswith("/texturesender/j2kdecodermodule.cs"):
+        return "SERVER_J2K_LAYER_BOUNDARY_FALLBACK_REVIEW"
     if "cross_region_chat_smoke" in x:
         return "SERVER_ONLY_LSL_CHAT_TEST"
     if "cross_region_lsl_chat" in x or "crossregionchat" in x:

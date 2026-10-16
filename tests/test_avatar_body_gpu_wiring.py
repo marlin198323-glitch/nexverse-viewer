@@ -43,7 +43,9 @@ class AvatarBodyGpuWiring(unittest.TestCase):
     def test_f9_real_bake_previews_do_not_fetch_assets(self):
         self.assertIn("select_avatar_bake_previews(",APP)
         self.assertIn("avatar_bake_preview_handle(",APP)
-        self.assertIn("gallery_appearance_live_enabled&&simulation_ready",APP)
+        self.assertIn("gallery_bake_preview_open&&simulation_ready",APP)
+        self.assertIn('"/3 GPU-Bakes geladen | nur Ansicht"',APP)
+        self.assertNotIn("if(gallery_appearance_live_enabled&&simulation_ready",APP)
         self.assertIn("Server-Bake: Head / Upper / Lower",APP)
         self.assertIn("live_body_previews",APP)
         self.assertIn("pin_self_avatar_body_full_mip(",APP)

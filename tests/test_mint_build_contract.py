@@ -10,6 +10,13 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("CMAKE_CONFIGURE_DEPENDS",cmake)
         self.assertIn('file(READ "'+chr(36)+'{CMAKE_CURRENT_SOURCE_DIR}/VERSION"',cmake)
         self.assertIn('NEXVERSE_VERSION="'+chr(36)+'{NEXVERSE_VERSION_LABEL}"',cmake)
+    def test_login_ui_truthfully_reports_original_gpu_asset_state(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("original_body_gpu_ready=true;",app)
+        self.assertIn("Avatar-Mesh: Firestorm 3/3 auf GPU bereit",app)
+        self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
+        self.assertIn("welcome_texture,original_body_gpu_ready,viewer_shell",app)
+
     def test_host_instructions_keep_pi_runner_separate(self):
         agents=(ROOT/"AGENTS.md").read_text()
         self.assertIn("jam-MS-7D28",agents)

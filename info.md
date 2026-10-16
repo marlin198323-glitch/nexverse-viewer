@@ -4165,3 +4165,24 @@ Belege: docs/ALPHA145_149_AUTH_F9_SERVER_REVIEW.md.
   retry. Earlier server compatibility review remains blocked;
   baseline SHA unchanged. Report:
   docs/ALPHA150_154_LINUX_MINT_FIRESTORM_GPU_BUILD.md.
+
+## 16.10.2026 – Alpha.155-159 – Fünf größere Linux-Mint-Blöcke
+
+155: Nightly 7.2.5 original Firestorm character-Assets lokal im
+User-Cache extrahiert. Alle 96 Dateien SHA256-gleich mit Release
+7.2.4. Cache-Nightly jetzt priorisierte Autoerkennung, nichts im GitHub.
+156: Read-only F9 Server-Bakes unmittelbar per Tab anzeigbar,
+ohne separate Appearance-Live-Diagnose; GPU-Status 0/3 bis 3/3,
+SelfAvatar/Region/Epoch-Schutz bleibt bestehen.
+157: Original OpenGL3.3-RGBA8 GPU-Bake-Readback gegen
+hochgeladene Testpixel sowie Handle-/Texture-Lifetime geprüft.
+158: OpenGenesisLINK main ec760cac J2KDecoderModule.cs
+serverseitiger CSJ2K zu OpenJPEG Retry eigens klassifiziert.
+Gesamt-Upstream-Review weiter offen; baseline SHA unverändert.
+159: Start-Login zeigt echten Firestorm-Originalbody-GPU-Status
+oder Warnung bei Ersatzgeometrie. Alpha.159, Ninja x64 FULL BUILD,
+113/113 Native CTests, 34/34 Python PASS. Isolierter 1600x900 UI-
+Start lädt 133 Rig-Joints, 55 Attachment-Slots und 7186
+Original-Körperdreiecke, NexVerse-Welcome vorhanden.
+Echter Login/Avatar/COF-Inworld-Nachweis steht weiter aus.
+Bericht: docs/ALPHA155_159_NIGHTLY_F9_GPU_UI.md.

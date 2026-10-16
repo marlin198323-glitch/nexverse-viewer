@@ -173,6 +173,29 @@ find_firestorm_avatar_character_directory()
         // blobs until third-party asset redistribution is reviewed.
         roots.emplace_back(std::filesystem::path(home)/"firestorm"/"character");
 
+        // Only inspect explicitly designated local cached character
+        // extractions. Prefer newer cached Nightly roots if present.
+        // Do not unpack archives automatically or ship third-party assets.
+        const auto cache=std::filesystem::path(home)/
+            ".cache"/"nexverse-viewer";
+        {
+            std::vector<std::filesystem::path> nightly_cache;
+            std::error_code ec;
+            std::filesystem::directory_iterator it{cache,ec};
+            const std::filesystem::directory_iterator end;
+            for(;!ec&&it!=end;it.increment(ec))
+            {
+                if(!it->is_directory(ec))continue;
+                const auto name=it->path().filename().string();
+                if(name.starts_with("firestorm-nightly-"))
+                    nightly_cache.push_back(it->path());
+            }
+            std::sort(nightly_cache.begin(),nightly_cache.end(),
+                std::greater<>{});
+            roots.insert(roots.end(),nightly_cache.begin(),
+                nightly_cache.end());
+        }
+
         // Firestorm's unpacked Linux packages are often on Desktop or
         // Schreibtisch. Look only one directory deep under these known
         // user-owned locations; never crawl arbitrary home trees or

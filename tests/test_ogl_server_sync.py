@@ -44,6 +44,8 @@ class ServerSyncTests(unittest.TestCase):
             "bin/nexverse-deutschland/regionen.csv":
                 "SERVER_ONLY_TERRAIN_IMPORT_DATA",
             ".gitignore":"REPOSITORY_METADATA",
+            "OpenSim/Region/CoreModules/Agent/TextureSender/J2KDecoderModule.cs":
+                "SERVER_J2K_LAYER_BOUNDARY_FALLBACK_REVIEW",
             "unknown/NewFeature.cs":"MANUAL_REVIEW"}
         for name,expected in cases.items():
             with self.subTest(name=name): self.assertEqual(MOD.classify(name),expected)

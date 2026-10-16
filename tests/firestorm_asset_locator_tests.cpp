@@ -49,19 +49,28 @@ int main()
     };
     create(stable);
     create(nightly);
+    const auto cache=base/".cache"/"nexverse-viewer"/
+        "firestorm-nightly-7-2-5-81754"/"character";
+    fs::create_directories(cache);
+    create(cache);
     env_set("HOME",base.string().c_str());
     env_clear("NEXVERSE_AVATAR_ASSETS");
     const auto discovered=nexverse::assets::find_firestorm_avatar_character_directory();
     int error=0;
-    if(!discovered||*discovered!=nightly)error=1;
+    if(!discovered||*discovered!=cache)error=1;
     env_set("NEXVERSE_AVATAR_ASSETS",(stable.parent_path()).string().c_str());
     const auto explicit_selected=
         nexverse::assets::find_firestorm_avatar_character_directory();
     if(!explicit_selected||*explicit_selected!=stable)error=2;
-    fs::remove(nightly/"avatar_lower_body.llm");
+    fs::remove(cache/"avatar_lower_body.llm");
     env_clear("NEXVERSE_AVATAR_ASSETS");
-    const auto fallback=nexverse::assets::find_firestorm_avatar_character_directory();
-    if(!fallback||*fallback!=stable)error=3;
+    const auto desktop_nightly=nexverse::assets::
+        find_firestorm_avatar_character_directory();
+    if(!desktop_nightly||*desktop_nightly!=nightly)error=3;
+    fs::remove(nightly/"avatar_lower_body.llm");
+    const auto fallback=nexverse::assets::
+        find_firestorm_avatar_character_directory();
+    if(!fallback||*fallback!=stable)error=4;
     if(home_before)env_set("HOME",old_home.c_str());else env_clear("HOME");
     if(assets_before)env_set("NEXVERSE_AVATAR_ASSETS",old_assets.c_str());
     else env_clear("NEXVERSE_AVATAR_ASSETS");

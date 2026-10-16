@@ -2592,8 +2592,13 @@ void render_outfit_gallery(
                 8.0f*scale);
             renderer.text(left+12.0f*scale,y+130.0f*scale,10.0f*scale,
                 "Server-Bake: Head / Upper / Lower",theme::cyan);
+            const auto resident=static_cast<std::size_t>(
+                std::count_if(server_body_bake_previews.begin(),
+                    server_body_bake_previews.end(),
+                    [](unsigned int handle){return handle!=0U;}));
             renderer.text(left+12.0f*scale,y+149.0f*scale,7.2f*scale,
-                "Nur GPU-Texturen - kein Wear/Upload",theme::warning);
+                std::to_string(resident)+"/3 GPU-Bakes geladen | nur Ansicht",
+                resident==3U?theme::cyan:theme::warning);
             static constexpr std::array<std::string_view,3U> names{
                 "Head","Upper","Lower"};
             for(std::size_t i=0U;i<names.size();++i)
@@ -2921,6 +2926,7 @@ void render_shell(
     const nexverse::core::SystemMemoryMetrics& memory_metrics,
     bool simulation_ready,
     unsigned int welcome_texture,
+    bool original_body_gpu_ready,
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open)
 {
@@ -3150,6 +3156,14 @@ void render_shell(
             login.authenticated
                 ? (circuit.state == nexverse::protocol::CircuitState::active ? theme::cyan : circuit_state_color(circuit.state))
                 : theme::text_muted);
+
+        if(!login.authenticated)
+            renderer.text(panel_x+28.0f*scale,
+                panel_y+214.0f*scale,8.4f*scale,
+                original_body_gpu_ready
+                    ?"Avatar-Mesh: Firestorm 3/3 auf GPU bereit (ohne Login)"
+                    :"Avatar-Mesh: Originaldateien fehlen; Ersatzgeometrie",
+                original_body_gpu_ready?theme::success:theme::warning);
 
         if (login.authenticated)
         {
@@ -5360,6 +5374,7 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point last_texture_telemetry{};
 
     {
+        bool original_body_gpu_ready=false;
         auto world_renderer = render::create_legacy_opengl_renderer();
         if (!world_renderer ||
             !world_renderer->initialize(window_width, window_height))
@@ -5442,10 +5457,13 @@ int Application::run(bool enable_developer_modules)
                 triangles+=geometry.indices.size()/3U;
             }
             if(uploaded==3U)
+            {
+                original_body_gpu_ready=true;
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
                     std::to_string(triangles)+
                     "; original joint-weight GPU path available, server animation pending");
+            }
             else core::warning(
                 "Firestorm avatar .llm loading incomplete; "
                 "seven-part fallback proxy remains active");
@@ -11657,7 +11675,7 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics,
                 memory_metrics,
                 simulation_ready,
-                welcome_texture,viewer_shell,
+                welcome_texture,original_body_gpu_ready,viewer_shell,
                 inventory_tree_open,outfit_gallery_open,experience_ui.open);
             if(simulation_ready)
             {
@@ -11845,7 +11863,10 @@ int Application::run(bool enable_developer_modules)
                         }
                     }
                     std::array<unsigned int,3U> live_body_previews{};
-                    if(gallery_appearance_live_enabled&&simulation_ready&&
+                    // The F9 "Server-Bakes" tab is read-only and must
+                    // show current textures immediately. It does NOT depend
+                    // on the separate continuous Appearance diagnostics.
+                    if(gallery_bake_preview_open&&simulation_ready&&
                        firestorm_region_lease.matches(current_firestorm_epoch)&&
                        !avatar_proxy_update.empty()&&
                        avatar_proxy_update.front().is_self&&

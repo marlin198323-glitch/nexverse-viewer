@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cstdint>
+#include <array>
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -167,6 +169,38 @@ int main()
                        renderer->avatar_bake_preview_handle("avatar-bake")==0U ||
                        renderer->avatar_bake_preview_handle("missing")!=0U ||
                        glGetError()!=GL_NO_ERROR)error=26;
+                    // Read back the actual GL 3.3 texture stored under
+                    // the server-like bake ID. Draw counters alone cannot
+                    // prove GPU contents, and synthetic F9 textures would
+                    // incorrectly pass a draw-only test.
+                    const GLuint baked_handle=renderer->
+                        avatar_bake_preview_handle("avatar-bake");
+                    if(!error)
+                    {
+                        GLint old_unit=0;
+                        glGetIntegerv(GL_ACTIVE_TEXTURE,&old_unit);
+                        glActiveTexture(GL_TEXTURE0);
+                        GLint old_texture=0;
+                        glGetIntegerv(GL_TEXTURE_BINDING_2D,&old_texture);
+                        glBindTexture(GL_TEXTURE_2D,baked_handle);
+                        GLint tex_width=0,tex_height=0;
+                        glGetTexLevelParameteriv(GL_TEXTURE_2D,0,
+                            GL_TEXTURE_WIDTH,&tex_width);
+                        glGetTexLevelParameteriv(GL_TEXTURE_2D,0,
+                            GL_TEXTURE_HEIGHT,&tex_height);
+                        std::array<std::uint8_t,16U> gpu_pixels{};
+                        glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,
+                            GL_UNSIGNED_BYTE,gpu_pixels.data());
+                        const GLenum readback_error=glGetError();
+                        glBindTexture(GL_TEXTURE_2D,
+                            static_cast<GLuint>(old_texture));
+                        glActiveTexture(static_cast<GLenum>(old_unit));
+                        if(tex_width!=2||tex_height!=2||
+                           readback_error!=GL_NO_ERROR||
+                           !std::equal(gpu_pixels.begin(),
+                               gpu_pixels.end(),opaque.pixels.begin()))
+                            error=37;
+                    }
                     // With installed Firestorm resource files, the GPU
                     // test also uploads the real 7,186-triangle anatomical
                     // bind-pose meshes (never a synthetic primitive proxy).
@@ -288,6 +322,8 @@ int main()
                         }
                     }
                     renderer->remove_object_texture("avatar-bake");
+                    if(glIsTexture(baked_handle)!=GL_FALSE)
+                        error=38;
                     const auto untextured=render();
                     if(untextured.avatar_anatomical_mesh_draw_calls!=3U ||
                        untextured.avatar_baked_texture_draw_calls!=0U ||
