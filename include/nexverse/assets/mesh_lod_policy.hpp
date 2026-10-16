@@ -18,7 +18,8 @@ namespace nexverse::assets
 [[nodiscard]] inline std::unordered_map<std::string, MeshLod> plan_mesh_lods(
     const std::vector<MeshDistanceSample>& samples,
     float x, float y, float z,
-    const std::unordered_map<std::string, MeshLod>& previous = {})
+    const std::unordered_map<std::string, MeshLod>& previous = {},
+    bool detailed=false)
 {
     std::unordered_map<std::string, double> distance;
     for (const auto& s : samples)
@@ -40,24 +41,33 @@ namespace nexverse::assets
     result.reserve(distance.size());
     for (const auto& [id,d] : distance)
     {
-        MeshLod lod = d < 20.0 ? MeshLod::high :
-                      d < 55.0 ? MeshLod::medium :
-                      d < 120.0 ? MeshLod::low : MeshLod::lowest;
+        // DETAIL profile uses source-provided high/medium LODs for
+        // nearby geometry, while the original BALANCED profile remains
+        // available for low-memory hardware.
+        MeshLod lod = detailed
+            ?(d < 45.0 ? MeshLod::high :
+              d < 110.0 ? MeshLod::medium :
+              d < 210.0 ? MeshLod::low : MeshLod::lowest)
+            :(d < 20.0 ? MeshLod::high :
+              d < 55.0 ? MeshLod::medium :
+              d < 120.0 ? MeshLod::low : MeshLod::lowest);
         if (const auto it=previous.find(id); it!=previous.end())
         {
             switch (it->second)
             {
             case MeshLod::high:
-                if (d < 24.0) lod = MeshLod::high;
+                if (d < (detailed?53.0:24.0)) lod = MeshLod::high;
                 break;
             case MeshLod::medium:
-                if (d >= 16.0 && d < 66.0) lod = MeshLod::medium;
+                if (d >= (detailed?38.0:16.0) &&
+                    d < (detailed?126.0:66.0)) lod = MeshLod::medium;
                 break;
             case MeshLod::low:
-                if (d >= 44.0 && d < 144.0) lod = MeshLod::low;
+                if (d >= (detailed?98.0:44.0) &&
+                    d < (detailed?238.0:144.0)) lod = MeshLod::low;
                 break;
             case MeshLod::lowest:
-                if (d >= 96.0) lod = MeshLod::lowest;
+                if (d >= (detailed?185.0:96.0)) lod = MeshLod::lowest;
                 break;
             }
         }

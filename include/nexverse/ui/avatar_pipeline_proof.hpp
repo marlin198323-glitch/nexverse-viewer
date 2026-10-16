@@ -2,6 +2,7 @@
 #pragma once
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/ui/avatar_view_evidence.hpp"
+#include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -13,6 +14,7 @@ namespace nexverse::ui
 struct AvatarPipelineProof
 {
     bool appearance_received=false;
+    AvatarAppearanceRuntime appearance_runtime{};
     bool world_ready=false;
     bool self_present=false;
     AvatarViewEvidence view{};
@@ -54,7 +56,7 @@ struct AvatarPipelineProof
     const AvatarPipelineProof& proof)
 {
     if(!proof.appearance_received)
-        return "Appearance: Paket fehlt";
+        return describe_appearance_runtime(proof.appearance_runtime,false);
     return "Server TE "+std::to_string(proof.bakes.server_references)+
         "/11 GPU "+std::to_string(proof.bakes.gpu_resident)+"/11";
 }

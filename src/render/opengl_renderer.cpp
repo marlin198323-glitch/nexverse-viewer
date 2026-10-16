@@ -8,6 +8,7 @@
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
+#include "nexverse/render/terrain_texture_readiness.hpp"
 #include "nexverse/render/material_pass.hpp"
 #include "nexverse/render/particle_motion.hpp"
 #include "nexverse/render/particle_emission.hpp"
@@ -2120,7 +2121,8 @@ void main()
     {
         vec2 uv = vWorldXY / 12.0;
         vec3 textureColor = terrainTextureColor(uv, vMaterial);
-        base = mix(textureColor, vColor, 0.12);
+        // Keep source terrain textures prominent instead of a gray wash.
+        base = mix(textureColor, vColor, 0.035);
     }
 
     if (uOverrideColor)
@@ -3494,10 +3496,10 @@ public:
                 GL_FALSE,
                 mvp.value.data());
 
-            const bool use_textures =
-                terrain_textures_ready_ &&
-                texture_generation_ == terrain_generation_ &&
-                texture_material_revision_ == terrain_material_revision_;
+            const bool use_textures=terrain_detail_gpu_ready(
+                terrain_textures_ready_,texture_generation_,
+                terrain_generation_,texture_material_revision_,
+                terrain_material_revision_);
 
             if (use_textures)
             {
@@ -3539,6 +3541,10 @@ public:
 
             diagnostics_.draw_calls += 1U;
             diagnostics_.triangles += terrain_index_count_ / 3U;
+            if(use_textures)
+                ++diagnostics_.terrain_textured_draw_calls;
+            else
+                ++diagnostics_.terrain_fallback_draw_calls;
 
             glUniform1i(
                 glGetUniformLocation(

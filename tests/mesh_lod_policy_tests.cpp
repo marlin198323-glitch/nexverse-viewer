@@ -27,6 +27,17 @@ int main()
     auto size=plan_mesh_lods({{"x",80,0,0,16}},0,0,0);
     if(size.at("x")!=MeshLod::medium) return 7; // 80/sqrt(16) = 20
     if(!plan_mesh_lods({},0,0,0,levels).empty())return 8;
+    // Elevated detail is a real policy, not a HUD-only label.
+    const auto detailed=plan_mesh_lods({
+        {"near",35,0,0,1},{"mid",75,0,0,1},
+        {"far",160,0,0,1},{"distant",260,0,0,1}},0,0,0,{},true);
+    if(detailed.at("near")!=MeshLod::high||
+       detailed.at("mid")!=MeshLod::medium||
+       detailed.at("far")!=MeshLod::low||
+       detailed.at("distant")!=MeshLod::lowest)return 9;
+    const auto kept=plan_mesh_lods({{"near",50,0,0,1}},0,0,0,
+        detailed,true);
+    if(kept.at("near")!=MeshLod::high)return 10;
     std::cout<<"Mesh LOD selection, reuse, hysteresis and limits OK\n";
     return 0;
 }

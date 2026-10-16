@@ -529,6 +529,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-view-evidence-tests
         COMMAND nexverse-avatar-view-evidence-tests)
 
+    add_executable(nexverse-avatar-appearance-runtime-tests
+        tests/avatar_appearance_runtime_tests.cpp)
+    target_link_libraries(nexverse-avatar-appearance-runtime-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-avatar-appearance-runtime-tests)
+    add_test(NAME nexverse-avatar-appearance-runtime-tests
+        COMMAND nexverse-avatar-appearance-runtime-tests)
+
     add_executable(nexverse-avatar-pipeline-proof-tests
         tests/avatar_pipeline_proof_tests.cpp)
     target_link_libraries(nexverse-avatar-pipeline-proof-tests
@@ -1211,6 +1219,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-material-pass-tests PRIVATE NexVerse::Render)
     nexverse_enable_warnings(nexverse-material-pass-tests)
     add_test(NAME nexverse-material-pass-tests COMMAND nexverse-material-pass-tests)
+
+    add_executable(nexverse-mesh-quality-control-tests
+        tests/mesh_quality_control_tests.cpp)
+    target_link_libraries(nexverse-mesh-quality-control-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-mesh-quality-control-tests)
+    add_test(NAME nexverse-mesh-quality-control-tests
+        COMMAND nexverse-mesh-quality-control-tests)
+
+    add_executable(nexverse-terrain-texture-readiness-tests
+        tests/terrain_texture_readiness_tests.cpp)
+    target_link_libraries(nexverse-terrain-texture-readiness-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-terrain-texture-readiness-tests)
+    add_test(NAME nexverse-terrain-texture-readiness-tests
+        COMMAND nexverse-terrain-texture-readiness-tests)
 
     add_executable(nexverse-terrain-mesh-tests tests/terrain_mesh_tests.cpp)
     target_link_libraries(nexverse-terrain-mesh-tests PRIVATE NexVerse::Render)

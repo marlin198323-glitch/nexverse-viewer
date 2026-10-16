@@ -77,6 +77,7 @@
 #include "nexverse/render/third_person_camera.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
 #include "nexverse/ui/avatar_pipeline_proof.hpp"
+#include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include "nexverse/ui/world_entry_stage.hpp"
 #include "nexverse/ui/asset_stream_proof.hpp"
 #include "nexverse/ui/world_hud_layout.hpp"
@@ -85,6 +86,7 @@
 #include "nexverse/ui/camera_zoom_controls.hpp"
 #include "nexverse/ui/camera_orbit_controls.hpp"
 #include "nexverse/ui/camera_avatar_focus.hpp"
+#include "nexverse/ui/mesh_quality_control.hpp"
 #include "nexverse/render/avatar_bake_preview.hpp"
 #include "nexverse/render/world_object_picker.hpp"
 #include "nexverse/ui/outfit_gallery_layout.hpp"
@@ -432,6 +434,7 @@ struct InputContext
     bool* inventory_item_detail_requested=nullptr;
     bool* simulation_ready = nullptr;
     bool* world_hud_visible=nullptr;
+    bool* mesh_quality_detailed=nullptr;
     float* camera_zoom_distance=nullptr;
     float* camera_orbit_degrees=nullptr;
     bool* avatar_report_save_requested=nullptr;
@@ -631,6 +634,19 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             return;
         }
         if(open)return; // No movement/UI input behind modal diagnostic
+    }
+    // F2 changes actual mesh LOD requests; no fake GPU-ready claim.
+    if(context&&context->mesh_quality_detailed&&
+       context->login&&context->login->authenticated&&
+       context->simulation_ready&&*context->simulation_ready&&
+       key==GLFW_KEY_F2&&action==GLFW_PRESS&&
+       !(context->viewer_shell&&context->viewer_shell->input_captured())&&
+       !(context->outfits&&*context->outfits)&&
+       !(context->inventory_open&&*context->inventory_open))
+    {
+        *context->mesh_quality_detailed=
+            !*context->mesh_quality_detailed;
+        return;
     }
     // F4 restores the actual third-person camera to a stable frontal
     // portrait of the authenticated avatar; no LLUDP or agent mutation.
@@ -1059,6 +1075,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         glfwGetWindowSize(window,&width,&height);
         double mx=0.0,my=0.0;
         glfwGetCursorPos(window,&mx,&my);
+        if(context->mesh_quality_detailed&&
+           !(context->viewer_shell&&
+             context->viewer_shell->input_captured())&&
+           nexverse::ui::hit_mesh_quality_button(width,height,mx,my))
+        {
+            *context->mesh_quality_detailed=
+                !*context->mesh_quality_detailed;
+            return;
+        }
         if(context->camera_orbit_degrees&&
            context->camera_zoom_distance&&
            !(context->viewer_shell&&
@@ -2060,7 +2085,8 @@ void render_loading_screen(
 // A real clickable button with the exact same hit rectangle as the
 // mouse callback, whether diagnostic rails are currently shown or hidden.
 void render_world_hud_toggle(UiRenderer& renderer,int width,int height,
-    bool visible,float camera_distance,float camera_orbit_degrees)
+    bool visible,float camera_distance,float camera_orbit_degrees,
+    bool detailed_meshes)
 {
     const auto r=nexverse::ui::world_hud_toggle_rect(width,height);
     renderer.rect(r.x,r.y,r.width,r.height,
@@ -2079,6 +2105,12 @@ void render_world_hud_toggle(UiRenderer& renderer,int width,int height,
     draw_button(buttons.far,"-");
     renderer.text(buttons.far.x+39.0f,buttons.far.y+7.0f,10.0f,
         nexverse::ui::camera_zoom_label(camera_distance),theme::text);
+    const auto detail=nexverse::ui::mesh_quality_button(width,height);
+    renderer.rect(detail.x,detail.y,detail.w,detail.h,
+        detailed_meshes?Color{0.022f,0.173f,0.238f,0.96f}
+                       :Color{0.028f,0.077f,0.112f,0.96f},6.0f);
+    renderer.text(detail.x+7.0f,detail.y+8.0f,9.0f,
+        detailed_meshes?"DETAIL [F2]":"SPAREN [F2]",theme::cyan);
     const auto focus=nexverse::ui::avatar_focus_button(width,height);
     renderer.rect(focus.x,focus.y,focus.w,focus.h,
         Color{0.016f,0.155f,0.247f,0.97f},6.0f);
@@ -2110,7 +2142,7 @@ void render_world_hud(
     const nexverse::ui::ViewerShellState& shell,
     bool inventory_open,bool outfit_open,bool experiences_open,
     float camera_distance,float camera_orbit_degrees,
-    unsigned int brand_texture)
+    unsigned int brand_texture,bool detailed_meshes)
 {
     const float w = static_cast<float>(std::max(width, 1));
     const float h = static_cast<float>(std::max(height, 1));
@@ -2186,7 +2218,7 @@ void render_world_hud(
 
     render_world_hud_toggle(
         renderer,width,height,true,camera_distance,
-        camera_orbit_degrees);
+        camera_orbit_degrees,detailed_meshes);
     const float chip_w = 96.0f * scale;
     const float chip_gap = 8.0f * scale;
     float chip_x = w - margin - chip_w;
@@ -2357,15 +2389,15 @@ void render_world_hud(
     // Simulator circuit and self identity can be ready even if terrain
     // LayerData is delayed. Show object reception vs REAL GL submissions.
     renderer.text(card_x+14.0f*scale,rail_y+124.0f*scale,
-        8.0f*scale,nexverse::ui::describe_terrain_progress(scene_proof),
+        9.0f*scale,nexverse::ui::describe_terrain_progress(scene_proof),
         scene_proof.terrain_available?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+149.0f*scale,
-        7.7f*scale,nexverse::ui::describe_world_draw_progress(scene_proof),
+        9.0f*scale,nexverse::ui::describe_world_draw_progress(scene_proof),
         scene_proof.world_scene_draws>0U?theme::cyan:theme::warning);
     // EventQueue advertised != EventQueue actually receiving messages.
     // Display the local CAPS lifecycle state, not a fabricated "LIVE".
     renderer.text(card_x+14.0f*scale,rail_y+174.0f*scale,
-        7.8f*scale,"CAPS "+caps.status.substr(0U,18U),
+        9.0f*scale,"CAPS "+caps.status.substr(0U,18U),
         caps.status=="CAPS LIVE"?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+198.0f*scale,
         7.5f*scale,nexverse::ui::describe_asset_stream(assets_proof),
@@ -2440,6 +2472,16 @@ void render_world_hud(
         8.5f * scale,
         "VRAM  " + vram,
         theme::text_muted);
+    renderer.text(
+        card_x+14.0f*scale,rail_y+349.0f*scale,
+        8.2f*scale,
+        render_diagnostics.terrain_textured_draw_calls>0U
+            ?"Boden: DETAIL-TEXTURE GL"
+            :render_diagnostics.terrain_fallback_draw_calls>0U
+                ?"Boden: GRAU / MATERIAL FEHLT"
+                :"Boden: kein GPU-Draw",
+        render_diagnostics.terrain_textured_draw_calls>0U
+            ?theme::cyan:theme::warning);
     }
 
     // Read-only authenticated AvatarAppearance pipeline. A server-provided
@@ -2452,21 +2494,21 @@ void render_world_hud(
     renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
         10.2f*scale,"Avatar-Pipeline",theme::text);
     renderer.text(card_x+14.0f*scale,rail_y+410.0f*scale,
-        7.6f*scale,nexverse::ui::describe_avatar_pipeline(avatar_proof),
+        9.1f*scale,nexverse::ui::describe_avatar_pipeline(avatar_proof),
         avatar_proof.appearance_received?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
-        7.6f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
+        9.1f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
         avatar_proof.body_gpu_drawn()
             ?theme::cyan:theme::warning);
     // This is a projection plus GL submission, NOT proof of pixels or
     // finished Firestorm bake. Stages distinguish missing server data.
     renderer.text(card_x+14.0f*scale,rail_y+463.0f*scale,
-        7.0f*scale,avatar_proof.view_stage(),
+        8.7f*scale,avatar_proof.view_stage(),
         avatar_proof.view.center_in_frustum&&
         avatar_proof.original_body_draws>0U
             ?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+488.0f*scale,
-        7.0f*scale,avatar_proof.fragment_stage(),
+        8.7f*scale,avatar_proof.fragment_stage(),
         avatar_proof.fragment_query_known&&
         avatar_proof.fragment_samples_passed
             ?theme::cyan:theme::warning);
@@ -3343,7 +3385,7 @@ void render_shell(
     const nexverse::ui::AvatarPipelineProof& avatar_proof,
     const nexverse::ui::AssetStreamProof& assets_proof,
     bool simulation_ready,bool world_hud_visible,float camera_distance,
-    float camera_orbit_degrees,
+    float camera_orbit_degrees,bool detailed_meshes,
     unsigned int welcome_texture,unsigned int brand_texture,
     std::string_view world_entry,
     float required_world_progress,std::string_view wait_hint,
@@ -3376,14 +3418,15 @@ void render_shell(
                 frame_metrics,render_diagnostics,memory_metrics,
                 scene_proof,avatar_proof,assets_proof,shell,
                 inventory_open,outfit_open,experiences_open,
-                camera_distance,camera_orbit_degrees,brand_texture);
+                camera_distance,camera_orbit_degrees,brand_texture,
+                detailed_meshes);
         else
         {
             // Keep all GL world drawing and separate floater windows
             // alive. Only navigation/diagnostic dashboard is hidden.
             render_world_hud_toggle(
                 renderer,width,height,false,camera_distance,
-                camera_orbit_degrees);
+                camera_orbit_degrees,detailed_meshes);
             renderer.text(16.0f,16.0f,9.0f,
                 "3D-Weltansicht | F5 fuer Navigation",theme::cyan);
             // In the fullscreen-like world focus, show a diagnostic only
@@ -4529,6 +4572,7 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point last_manual_circuit_retry{};
     std::string avatar_report_notice="S speichert einen lokalen Bericht";
     bool world_hud_visible=true;
+    bool mesh_quality_detailed=true;
     float camera_zoom_distance=nexverse::ui::camera_zoom_default;
     float camera_orbit_degrees=0.0f;
     // Exact touch surface remains per current region and only belongs to
@@ -4637,6 +4681,7 @@ int Application::run(bool enable_developer_modules)
     input_context.permission_busy=&experience_permission_busy;
     input_context.simulation_ready=&simulation_ready;
     input_context.world_hud_visible=&world_hud_visible;
+    input_context.mesh_quality_detailed=&mesh_quality_detailed;
     input_context.camera_zoom_distance=&camera_zoom_distance;
     input_context.camera_orbit_degrees=&camera_orbit_degrees;
     protocol::PacketDispatcher packet_dispatcher;
@@ -4788,6 +4833,11 @@ int Application::run(bool enable_developer_modules)
     std::atomic_uint32_t object_packets{0U};
     std::atomic_uint32_t avatar_packets{0U};
     std::atomic<std::uint64_t> self_appearance_serial{0U};
+    std::atomic_uint32_t avatar_appearance_received{0U};
+    std::atomic_uint32_t avatar_appearance_malformed{0U};
+    std::atomic_uint32_t avatar_appearance_ignored_region{0U};
+    std::atomic_uint32_t avatar_appearance_other_avatar{0U};
+    std::atomic_uint32_t avatar_appearance_self_accepted{0U};
     std::atomic_uint32_t avatar_animation_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
@@ -5438,20 +5488,32 @@ int Application::run(bool enable_developer_modules)
 
     packet_dispatcher.register_handler(
         protocol::msg_avatar_appearance,
-        [&avatar_packets, &self_appearance_serial,
-         &world_model, &world_mutex](
+        [&avatar_packets,&self_appearance_serial,
+         &avatar_appearance_received,&avatar_appearance_malformed,
+         &avatar_appearance_ignored_region,
+         &avatar_appearance_other_avatar,
+         &avatar_appearance_self_accepted,
+         &world_model,&world_mutex](
             const protocol::DecodedPacket& packet)
         {
             const auto appearance =
                 protocol::decode_avatar_appearance(packet.payload);
+            avatar_appearance_received.fetch_add(
+                1U,std::memory_order_relaxed);
             if (!appearance.has_value())
             {
+                avatar_appearance_malformed.fetch_add(
+                    1U,std::memory_order_relaxed);
                 return;
             }
 
             std::scoped_lock lock{world_mutex};
             if (!world_model.region().connected)
+            {
+                avatar_appearance_ignored_region.fetch_add(
+                    1U,std::memory_order_relaxed);
                 return;
+            }
 
             avatar_packets.fetch_add(1U, std::memory_order_relaxed);
 
@@ -5460,8 +5522,12 @@ int Application::run(bool enable_developer_modules)
                 const bool first=!world_model.self_appearance().has_value();
                 const bool accepted=world_model.apply_self_appearance(*appearance);
                 if(accepted)
+                {
                     self_appearance_serial.fetch_add(1U,
                         std::memory_order_relaxed);
+                    avatar_appearance_self_accepted.fetch_add(
+                        1U,std::memory_order_relaxed);
+                }
                 if (accepted && first)
                     core::info("AvatarAppearance SELF server readback accepted; "
                                "texture_entry_bytes="+
@@ -5475,6 +5541,8 @@ int Application::run(bool enable_developer_modules)
                 return;
             }
 
+            avatar_appearance_other_avatar.fetch_add(
+                1U,std::memory_order_relaxed);
             world::AvatarState avatar;
             avatar.id = appearance->avatar_id;
             if (const auto existing =
@@ -5709,6 +5777,7 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_pick_cpu_bytes=0U;
     constexpr std::size_t max_mesh_pick_cpu_bytes=24U*1024U*1024U;
     assets::AssetLodDwell<assets::MeshLod> mesh_lod_dwell;
+    bool mesh_last_planned_quality=true;
     assets::AssetGpuUploadGate asset_gpu_upload_gate;
     assets::AssetUploadTelemetry asset_gpu_upload_telemetry;
     assets::AssetScenePriorityFeedback mesh_priority_feedback;
@@ -11570,6 +11639,18 @@ int Application::run(bool enable_developer_modules)
             // Already-resident assets receive hysteresis so tiny movement
             // does not cause repeated GPU uploads/evictions.
             const auto mesh_plan_now = std::chrono::steady_clock::now();
+            if(mesh_last_planned_quality!=mesh_quality_detailed)
+            {
+                mesh_last_planned_quality=mesh_quality_detailed;
+                // An explicit F2 preference change must replan the desired
+                // higher/lower LOD immediately, not await stale dwell.
+                mesh_lod_dwell.reset();
+                mesh_desired_lods.clear();
+                last_mesh_residency_plan={};
+                core::info(mesh_quality_detailed
+                    ?"Mesh quality profile switched to DETAIL"
+                    :"Mesh quality profile switched to SPAREN");
+            }
             for(const auto& key:mesh_gpu_budget_recovery.ready(
                     mesh_plan_now,texture_gpu_used_bytes,
                     mesh_gpu_estimated_bytes))
@@ -11582,7 +11663,8 @@ int Application::run(bool enable_developer_modules)
                 auto planned_lods = assets::plan_mesh_lods(
                     scene_mesh_samples,
                     render_agent.position.x, render_agent.position.y,
-                    render_agent.position.z, mesh_desired_lods);
+                    render_agent.position.z,mesh_desired_lods,
+                    mesh_quality_detailed);
                 mesh_lod_dwell.prune(planned_lods);
                 for(auto& [id,lod]:planned_lods)
                     lod=mesh_lod_dwell.resolve(
@@ -12319,7 +12401,15 @@ int Application::run(bool enable_developer_modules)
             scene_proof.missing_mesh_draws=
                 render_diagnostics.scene_missing_mesh_draw_calls;
             scene_proof.camera_fallback=camera_fallback_this_frame;
+            const ui::AvatarAppearanceRuntime appearance_runtime{
+                avatar_appearance_received.load(std::memory_order_relaxed),
+                avatar_appearance_malformed.load(std::memory_order_relaxed),
+                avatar_appearance_ignored_region.load(std::memory_order_relaxed),
+                avatar_appearance_other_avatar.load(std::memory_order_relaxed),
+                avatar_appearance_self_accepted.load(std::memory_order_relaxed)
+            };
             ui::AvatarPipelineProof avatar_proof{};
+            avatar_proof.appearance_runtime=appearance_runtime;
             avatar_proof.world_ready=simulation_ready;
             avatar_proof.self_present=render_agent.present;
             avatar_proof.original_body_draws=
@@ -12470,7 +12560,8 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics,
                 memory_metrics,scene_proof,avatar_proof,assets_proof,
                 simulation_ready,world_hud_visible,camera_zoom_distance,
-                camera_orbit_degrees,welcome_texture,brand_texture,
+                camera_orbit_degrees,mesh_quality_detailed,
+                welcome_texture,brand_texture,
                 world_entry_status,
                 ui::world_entry_fraction(world_entry_stage),
                 world_entry_wait_hint,

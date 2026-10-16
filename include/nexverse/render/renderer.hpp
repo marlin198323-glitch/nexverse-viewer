@@ -324,6 +324,9 @@ struct RenderDiagnostics
     std::uint64_t visible_objects = 0U;
     // Actual per-frame glDrawElements from world-scene objects only.
     // Sky, terrain, water, UI and avatar proxies are not counted here.
+    // Actual OpenGL shader branch, not simply assets resident.
+    std::uint64_t terrain_textured_draw_calls = 0U;
+    std::uint64_t terrain_fallback_draw_calls = 0U;
     std::uint64_t scene_draw_calls = 0U;
     std::uint64_t scene_mesh_draw_calls = 0U;
     std::uint64_t scene_prim_draw_calls = 0U;

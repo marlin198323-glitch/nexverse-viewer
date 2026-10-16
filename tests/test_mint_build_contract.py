@@ -70,6 +70,23 @@ class MintBuildContractTests(unittest.TestCase):
                       'simulator_ip','chat_message'):
             self.assertNotIn('"'+token+'=',report)
 
+    def test_default_camera_closer_and_ultrawide_status_legible(self):
+        camera=(ROOT/"include/nexverse/ui/camera_zoom_controls.hpp").read_text()
+        app=(ROOT/"src/app/application.cpp").read_text()
+        self.assertIn("camera_zoom_default=5.5f",camera)
+        self.assertIn("9.1f*scale,nexverse::ui::describe_avatar_pipeline",app)
+        self.assertIn("8.7f*scale,avatar_proof.fragment_stage()",app)
+
+    def test_real_f2_detail_button_drives_mesh_lod_policy(self):
+        app=(ROOT/"src/app/application.cpp").read_text()
+        policy=(ROOT/"include/nexverse/assets/mesh_lod_policy.hpp").read_text()
+        self.assertIn("key==GLFW_KEY_F2",app)
+        self.assertIn("hit_mesh_quality_button(",app)
+        self.assertIn('"DETAIL [F2]"',app)
+        self.assertIn("mesh_quality_detailed=true",app)
+        self.assertIn("mesh_quality_detailed);",app)
+        self.assertIn("bool detailed=false",policy)
+
     def test_self_avatar_occlusion_query_and_f4_are_live(self):
         src=(ROOT/"src/app/application.cpp").read_text()
         gpu=(ROOT/"src/render/opengl_renderer.cpp").read_text()

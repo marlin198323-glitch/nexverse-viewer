@@ -4531,3 +4531,19 @@ auf FERTIG. Neuer Chat: sofort CHATUEBERGABE.md oben lesen.
 Bei nächstem WEITER wieder fünf echte Blöcke Alpha.230–234.
 Echter NexVerse-Welt-/Avatar-Pixeltest und manuelles Grid-
 Retry-E2E offen; keine falsche End-to-End-Erfolgsaussage.
+
+## 16.10.2026 – Alpha.230–234: Avatar/World-Optik und echte Mesh-Qualität
+
+230: Tatsächlich empfangenes LLUDP AvatarAppearance Self/Fremd/
+Invalid/Region beim Avatar-HUD unterscheidbar, keine UUIDs.
+231: GL Terrain-Shader-Textur- vs. Graufallback-Draw,
+Region+Materialrevision geprüft, detailreicheres Material
+und sichtbarer Bodenstatus.
+232: Echter F2 DETAIL/SPAREN-Knopf und Tastatur, reale
+High/Medium/Low LOD-Streaming-Policy mit Hysterese/Neuplanung.
+233: 5.5m statt 8m Standardkamera und F4 Fokus,
+groessere Widescreen-Texte in Avatar/CAPS/World-Status.
+234: Mint x64 Native/NVIDIA OpenGL/Python/Headless/
+Xvfb/Icon, GitHub und Pi5-CI Freigabe.
+Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
+Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.

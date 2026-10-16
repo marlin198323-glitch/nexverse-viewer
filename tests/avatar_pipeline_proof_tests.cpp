@@ -5,7 +5,8 @@ int main()
 {
     using namespace nexverse;
     ui::AvatarPipelineProof p;
-    if(ui::describe_avatar_pipeline(p)!="Appearance: Paket fehlt"||
+    if(ui::describe_avatar_pipeline(p)!=
+        "Appearance: kein Self-Paket vom Simulator"||
        ui::describe_avatar_body_pipeline(p)!="Body H:- U:- L:- | GL 0")return 1;
     if(p.view_stage()!="Avatar: Simulator wartet")return 12;
     p.world_ready=true;

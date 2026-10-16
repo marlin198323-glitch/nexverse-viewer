@@ -11,11 +11,11 @@ int main()
     z=ui::camera_zoom_adjust(z,4);
     if(z>=8.0f||z<ui::camera_zoom_min)return 1;
     z=ui::camera_zoom_adjust(z,-4);
-    if(std::abs(z-8.0f)>0.015f)return 2;
+    if(std::abs(z-ui::camera_zoom_default)>0.015f)return 2;
     if(ui::camera_zoom_adjust(8.0f,1000)>3.01f ||
        ui::camera_zoom_adjust(8.0f,-1000)<23.99f)return 3;
     const float nan=std::numeric_limits<float>::quiet_NaN();
-    if(ui::camera_zoom_adjust(nan,nan)!=8.0f)return 4;
+    if(ui::camera_zoom_adjust(nan,nan)!=ui::camera_zoom_default)return 4;
     const auto near=render::third_person_camera(
         {128,128,24},{},ui::camera_zoom_min);
     const auto far=render::third_person_camera(

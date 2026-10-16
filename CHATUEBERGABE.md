@@ -16,7 +16,7 @@
 - Mint Native/NVIDIA-GL CTest: 131/131; Python: 60/60; Pi5 Headless, isolierter Xvfb-Vollviewer und X11 Original-Icon grün.
 - CI-Bericht: https://github.com/marlin198323-glitch/nexverse-viewer/actions/runs/38965645437
 - F3-Ladediagnose: zuletzt erreichte Regionen-/Agent-/Circuit-Stufen mit Zeiten, konkrete Ursache für gesperrten Reconnect, Manueller Reconnect-Versuchszähler, privater Export nach Nutzerklick.
-- **NÄCHSTER 5-BLÖCKE-DURCHLAUF: Alpha.230–234.** Bei neuem WEITER unverzüglich alle fünf realen Arbeitsblöcke inkl. GUI/Tests/Commit/CI bearbeiten.
+- **LAUFENDER 5-BLÖCKE-DURCHLAUF: Alpha.230–234 (noch nicht nach Pi5-CI freigegeben).** Bei neuem WEITER unverzüglich alle fünf realen Arbeitsblöcke inkl. GUI/Tests/Commit/CI bearbeiten.
 - Offen: autorisierter NexVerse-Login mit realer Welt-/Avatar-GPU-Pixelbestätigung und echter LLUDP-Reconnect-Praxistest.
 
 ---
@@ -3792,3 +3792,19 @@ Privacy-/Ring-/Policy-Tests.
 GitHub commit/push und pi5-ogl CI.
 Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
 Kein noch ungetesteter Live-NexVerse-Welt-/Avatar-/LLUDP-Erfolg behauptet.
+
+## 16.10.2026 – Alpha.230–234: Avatar/World-Optik und echte Mesh-Qualität
+
+230: Tatsächlich empfangenes LLUDP AvatarAppearance Self/Fremd/
+Invalid/Region beim Avatar-HUD unterscheidbar, keine UUIDs.
+231: GL Terrain-Shader-Textur- vs. Graufallback-Draw,
+Region+Materialrevision geprüft, detailreicheres Material
+und sichtbarer Bodenstatus.
+232: Echter F2 DETAIL/SPAREN-Knopf und Tastatur, reale
+High/Medium/Low LOD-Streaming-Policy mit Hysterese/Neuplanung.
+233: 5.5m statt 8m Standardkamera und F4 Fokus,
+groessere Widescreen-Texte in Avatar/CAPS/World-Status.
+234: Mint x64 Native/NVIDIA OpenGL/Python/Headless/
+Xvfb/Icon, GitHub und Pi5-CI Freigabe.
+Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
+Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.

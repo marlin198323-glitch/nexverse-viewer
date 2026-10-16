@@ -7,10 +7,10 @@ int main()
 {
     using namespace nexverse;
     const auto focus=ui::focus_front_avatar();
-    if(focus.distance!=8.0f||focus.orbit!=180.0f)return 1;
+    if(focus.distance!=5.5f||focus.orbit!=180.0f)return 1;
     const auto pose=render::third_person_camera(
         {128,128,25},{},focus.distance,focus.orbit);
-    if(!pose.position_valid||std::abs(pose.position.x-136.0f)>0.01f||
+    if(!pose.position_valid||std::abs(pose.position.x-133.5f)>0.01f||
        pose.forward.x>=0.0f)return 2;
     for(const auto& dims: {std::pair{1100,700},
                           std::pair{1920,1080},std::pair{3440,1440}})

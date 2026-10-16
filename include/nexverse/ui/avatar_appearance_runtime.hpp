@@ -1,0 +1,33 @@
+/* This Source Code Form is subject to the Mozilla Public License, v. 2.0. */
+#pragma once
+#include <cstdint>
+#include <string>
+namespace nexverse::ui
+{
+// Strictly counters and verified current-region state, NEVER IDs or
+// untrusted text from an incoming packet.
+struct AvatarAppearanceRuntime
+{
+    std::uint32_t received=0;
+    std::uint32_t malformed=0;
+    std::uint32_t ignored_region=0;
+    std::uint32_t other_avatar=0;
+    std::uint32_t self_accepted=0;
+};
+[[nodiscard]] inline std::string describe_appearance_runtime(
+    const AvatarAppearanceRuntime& state,bool current_self)
+{
+    if(current_self)
+        return "Appearance: Self vom Server bestaetigt";
+    if(state.malformed)
+        return "Appearance: "+std::to_string(state.malformed)+
+               " ungueltige Pakete; Self fehlt";
+    if(state.ignored_region)
+        return "Appearance: Regionwechsel, Self fehlt";
+    if(state.other_avatar)
+        return "Appearance: nur fremde Avatare; Self fehlt";
+    if(state.self_accepted)
+        return "Appearance: alte Region, Self erneut ausstehend";
+    return "Appearance: kein Self-Paket vom Simulator";
+}
+}

@@ -598,3 +598,7 @@ F3 WorldEntry-Diagnose vor WorldReady, echte getrennte LLUDP/Region/Agent/CAPS-F
 ## 16.10.2026 – Alpha.225–229
 
 Fünf echte Entwicklungsblöcke pro WEITER im neuen Chat dauerhaft verbindlich; pro Session max. fünf WorldEntryStage-Enum-Werte mit Haltezeit in F3 (nur vertraulichkeitsfreie Fakten), LLUDP Retry-Grund aus tatsächlicher abgeschlossener Circuit-Worker-/Region-Endpoint-/Cooldown-Policy und privatem explizitem POSIX 0600-Diagnoseexport. Klickbarer F3-Ladestatus und Original Welcome bleiben erhalten. Kein echter NexVerse-Welt-/Avatar- oder Retry-End-to-End-Beleg. Bericht docs/ALPHA225_229_WORLD_ENTRY_TRACE_AND_RECONNECT_REASON.md.
+
+## 16.10.2026 – Alpha.230–234
+
+Self-AvatarAppearance realer LLUDP-Handler-Status, GL-Terrain-Shader Textur/Fallback-Draw sichtbar, F2 DETAIL/SPAREN steuert MeshLoD Hysterese und Prioritaet inklusive Neuplanung, Kamera auf 5.5m und groessere HUD Statusschriften. Welcome/Icon bleiben unveraendert. Echter ServerBake/Welt-Pixelbeweis weiterhin OFFEN. Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.

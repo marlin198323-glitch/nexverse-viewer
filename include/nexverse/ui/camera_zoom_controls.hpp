@@ -8,7 +8,8 @@ namespace nexverse::ui
 {
 constexpr float camera_zoom_min=3.0f;
 constexpr float camera_zoom_max=24.0f;
-constexpr float camera_zoom_default=8.0f;
+// The original 8m camera made the self avatar tiny at 3440x1440.
+constexpr float camera_zoom_default=5.5f;
 [[nodiscard]] inline float camera_zoom_adjust(
     float current,double wheel_steps) noexcept
 {

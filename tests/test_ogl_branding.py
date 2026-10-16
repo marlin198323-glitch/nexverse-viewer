@@ -29,7 +29,8 @@ class OriginalBrandingTests(unittest.TestCase):
 
     def test_same_uploaded_icon_continues_in_real_world_hud(self):
         src=(ROOT/"src/app/application.cpp").read_text()
-        self.assertIn("camera_orbit_degrees,brand_texture);",src)
+        self.assertIn("camera_orbit_degrees,brand_texture,",src)
+        self.assertIn("detailed_meshes);",src)
         self.assertIn("renderer.image(brand_texture,15.0f*scale",src)
         self.assertIn("renderer.image(brand_texture,19.0f*scale",src)
         self.assertIn("avatar_proof.view_stage()",src)
