@@ -380,6 +380,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-login-tests)
     add_test(NAME nexverse-login-tests COMMAND nexverse-login-tests)
 
+    add_executable(nexverse-avatar-skin-weight-pair-tests
+        tests/avatar_skin_weight_pair_tests.cpp)
+    target_link_libraries(nexverse-avatar-skin-weight-pair-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-skin-weight-pair-tests)
+    add_test(NAME nexverse-avatar-skin-weight-pair-tests
+        COMMAND nexverse-avatar-skin-weight-pair-tests)
+
     add_executable(nexverse-self-appearance-admission-tests
         tests/self_appearance_admission_tests.cpp)
     target_link_libraries(nexverse-self-appearance-admission-tests PRIVATE

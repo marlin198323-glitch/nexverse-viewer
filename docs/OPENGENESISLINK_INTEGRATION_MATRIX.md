@@ -1,3 +1,7 @@
+Alpha.315–324 | Viewer 0.2.0-alpha.324 | **39 %** gewichtet 38,65 %. Echtes original Firestorm LLM Skinning korrigiert: Vertexshader verwendet pro Head/Upper/Lower die tatsächliche GPU JointCount, letzter Index N-1 wird korrekt als Paar N-2/N-1 statt nicht initialisierte Folgematrix behandelt. Grenzwertprüfer im Upload, F3 zeigt tatsächliche Weight- und Clip-GL Draws. Kein Live-Grid-Outfit-/Bake-Pixel-E2E belegt. OpenGenesisLINK Server main 7c6b0cf ohne nötige Änderung, OGLAssetService disabled-by-default. Nächste **Alpha.325–334**.
+
+---
+
 Alpha.305–314: Autoritative SelfAppearance im WorldModel und realen Low158-Handler über aktiven Owner/Region, kein Trial, TextureEntry/VisualParams. Echte bestätigte Avatar-Skin wird von späteren Preview-/Teilpaketen nicht zerstört. F3-/privater Export Diagnose. Upstream OpenGenesisLINK 7c6b0cf, optionales Server-Addon disabled-by-default, echte Grid-Pixel-E2E noch OFFEN. 39 % Gesamtfortschritt. Nächste Alpha.315–324.
 
 ---

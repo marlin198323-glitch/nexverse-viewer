@@ -279,7 +279,9 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                 :v.avatar_skin_status);
             line(3,v.avatar_animation_status.empty()
                 ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status);
-            line(4,"Attachments: "+std::to_string(v.attachments));
+            line(4,"Attachments: "+std::to_string(v.attachments)+
+                 " | "+compact(v.avatar_skinning_status,56U),
+                 theme::text_muted);
             line(5,v.avatar_view_status,theme::cyan);
             line(6,v.avatar_fragment_status,theme::warning);
             line(7,v.avatar_admission_status.empty()?

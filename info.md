@@ -1,3 +1,14 @@
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) mit Code/GUI/Tests/GitHub/Pi5-CI. Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Alpha.325–334.**
+
+# Aktueller OGL Viewer 0.2.0-alpha.324 (17.10.2026)
+
+Alpha.315–324: original Firestorm Head/Upper/Lower LLM Vertex-GPU-Skinning für letzten Paletten-Joint repariert. Pro Mesh uAvatarJointCount, echter Nachbarindex N-2/N-1 mit Blend=1 statt fehlendem Matrixelement; CPU-Palette-/Weight-Grenztests, Native und ARM64 Headless. F3 zeigt echte Weighted-GL-/Clip-Draw-Zahlen. Doku docs/ALPHA315_324_AVATAR_GPU_JOINTS.md.
+
+Nächste zehn Entwicklungsblöcke Alpha.325–334. Immer zuerst neueste GitHub CHATUEBERGABE.md, Branch und Projektplan lesen; Änderungen Mint jam-MS-7D28, ARM64-CI Pi5, isoliertes Xvfb ohne interaktiven Desktop. Live NexVerse inworld Avatar/Outfit/Bake-Pixel E2E noch OFFEN, daher 39 % nicht erhöhen. OpenGenesisLINK Server main 7c6b0cf7, OGLAssetService disabled-by-default.
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Gruppe Alpha.315–324.**
 
 **Alpha.314 VERIFIED:** Featurecommit decfc90ed089ff3c7a0b8544ba6fb4907086133c; GitHub pi5-ogl ARM64 CI 39069105455 SUCCESS exakt gleicher SHA. Mint Debug x64 Vollbuild 344/344, 144/144 native C++23/NVIDIA OpenGL CTest, 113/113 Python, Pi5-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon PASS. Authentifizierter NexVerse Live-Self-Avatar-/Outfit-/Bake-Pixel-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 % gewichtet); nächste Alpha.315–324.

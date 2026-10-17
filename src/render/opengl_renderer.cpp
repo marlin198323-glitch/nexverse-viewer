@@ -6,6 +6,7 @@
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/scene_forward_visibility.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
+#include "nexverse/render/avatar_skin_weight_pair.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
@@ -1906,6 +1907,7 @@ layout (location = 2) in float aMaterial;
 layout (location = 3) in vec2 aTexCoord;
 layout (location = 4) in float aAvatarJointWeight;
 uniform bool uAvatarSkinEnabled;
+uniform int uAvatarJointCount;
 uniform mat4 uAvatarJointPalette[32];
 
 uniform mat4 uMvp;
@@ -1929,9 +1931,11 @@ void main()
     vec3 localPosition = aPosition;
     if(uAvatarSkinEnabled)
     {
-        float weight=clamp(aAvatarJointWeight,0.0,30.999);
-        int base=int(floor(weight));
-        float factor=fract(weight);
+        // Last palette index uses last two valid joints, factor 1.
+        float weight=clamp(aAvatarJointWeight,0.0,
+                           float(uAvatarJointCount-1));
+        int base=min(int(floor(weight)),uAvatarJointCount-2);
+        float factor=clamp(weight-float(base),0.0,1.0);
         vec3 p0=(uAvatarJointPalette[base]*
                  vec4(aPosition,1.0)).xyz;
         vec3 p1=(uAvatarJointPalette[base+1]*
@@ -3276,9 +3280,8 @@ public:
                            geometry.skin_weights.end(),
                   [&](float weight)
                   {
-                      return !std::isfinite(weight)||weight<0.0f||
-                          weight>=static_cast<float>(
-                              geometry.skin_palette.size());
+                      return !resolve_avatar_skin_weight(
+                          weight,geometry.skin_palette.size()).valid;
                   }))
                 return false;
         }
@@ -4391,6 +4394,10 @@ public:
                                     program_,"uAvatarJointPalette[0]"),
                                     32,GL_FALSE,matrices[0].value.data());
                         }
+                        glUniform1i(glGetUniformLocation(
+                            program_,"uAvatarJointCount"),
+                            skin_valid?static_cast<GLint>(
+                                gpu.skin_palette.size()):0);
                         glUniform1i(glGetUniformLocation(
                             program_,"uAvatarSkinEnabled"),
                             skin_valid?GL_TRUE:GL_FALSE);

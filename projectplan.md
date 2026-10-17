@@ -1,3 +1,23 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Gesamtfortschritt 39 % (38,65 %). Nächste Alpha.325–334.**
+
+## Projektplan aktuelle 10 Blöcke Alpha.315–324
+
+- 315 [GEPRÜFT] GitHub/CHATUEBERGABE/upstream OpenGenesisLINK Server-main.
+- 316 [GEPRÜFT] Original Firestorm-LLM Shader realer GPU Jointpalette letzte Bone falsch.
+- 317 [IMPLEMENTIERT] Shader uAvatarJointCount, letztes Matrixelement korrekt adressiert.
+- 318 [IMPLEMENTIERT] echte pro-Mesh Palette der drei Avatar-Bereiche an GPU übergeben.
+- 319 [IMPLEMENTIERT] korrekter Gewichtsfaktor letztes Joint statt Fract-Wert.
+- 320 [IMPLEMENTIERT] Shared CPU-Weightpair-Prüfer im Mesh-Upload, keine Invalid-Weights.
+- 321 [IMPLEMENTIERT] F3 Avatar Weight-GL und Server-Clip-GL aus tatsächlichen Draws.
+- 322 [GETESTET] eigene Native C++23 Weight-Grenztests, CTest und Pi5 Headless.
+- 323 [GETESTET] GLSL/NVIDIA-, Original-LLM-/Region-Rendering-, GUI-Source-/Python-Verträge.
+- 324 [GATES] kompletter Mint x64/NVIDIA Build, CTests, Python, Xvfb und Icon, GitHub-Push und Pi5 ARM64-CI.
+
+**Viewer 0.2.0-alpha.324**, Gesamtfortschritt **39 %**, echte Grid/Outfit/Bake-Pixel-E2E OFFEN. Doku docs/ALPHA315_324_AVATAR_GPU_JOINTS.md. Nächster Lauf **Alpha.325–334**.
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächste Alpha.315–324.**
 
 ## Aktueller 10-Block-Plan Alpha.305–314

@@ -12866,6 +12866,12 @@ int Application::run(bool enable_developer_modules)
                     ui::terrain_recovery_layers(terrain_detail_retry,
                                                  terrain_detail_ids);
                 shell_view.avatar_skin_status=avatar_proof.skin_stage();
+                shell_view.avatar_skinning_status=
+                    "Weight-GL "+std::to_string(
+                      render_diagnostics.self_avatar_weighted_skin_draw_calls)+
+                    "/3 Clip-GL "+std::to_string(
+                      render_diagnostics.self_avatar_keyframe_skin_draw_calls)+
+                    " (Live-Pixel nicht belegt)";
                 shell_view.avatar_admission_status=
                     ui::describe_self_appearance_admission(
                         appearance_runtime,avatar_proof.appearance_received);
