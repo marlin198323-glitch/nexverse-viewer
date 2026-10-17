@@ -1,3 +1,10 @@
+## 17.10.2026 / Alpha.275–284 – unabhängiger original-LLM GPU Depth-Proof
+
+- Head/Upper/Lower: drei getrennte GL_ANY_SAMPLES_PASSED-Queries (je zwei asynchrone Slots), Epoch-Tags und monotone Ergebnis-Sequenzen, OR-Gesamtergebnis statt Last-Query-Wins; null wenn originale LLM-Draws fehlen.
+- Sichtbare F3-Seiten zeigen pro Body-Part getrennt Server-TE-Referenz, GPU-Residenz, echten Original-BakeGL-Draw und GPU-Depth-Status V/0/?/-. F3 manuelle Textdiagnose enthält ausschließlich sechs Bool-Felder.
+- OpenGenesisLINK main 7c6b0cf7252189707066f09ad66c732642b27af9 – optionaler OGLAssetService-Build/Konstruktor-Fix, addon disabled-by-default; keine neue bestätigte Avatar-/CAPS-Wire-Anforderung.
+- Tests: C++/NVIDIA-GL/Mint-Xvfb-Headless/Python synthetisch. Kein echter OpenSim/NexVerse-Outfit/Avatar-End-to-End-Test. Gesamtfortschritt **39 %**, nächste Alpha.285–294.
+
 Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69eefc62cf0b9d22a1 (+2 Commits nach 8ec7ea; einzig bin/Robust.HG.OGLAsset.ini.example). Dieses vollständige Hypergrid-ROBUST-Beispiel ist EXPERIMENTAL, DISABLED BY DEFAULT und ausdrücklich nur für isoliertes Staging mit eigener DB/Assets/Secrets. Kein Laufzeit-Protokoll- oder Viewer-CAP-Wechsel, KEIN automatisches Aktivieren/Deployment.
 
 ## 17.10.2026 / Alpha.265–274 – Server-Bake-Inspektor und GetTexture-Replanung

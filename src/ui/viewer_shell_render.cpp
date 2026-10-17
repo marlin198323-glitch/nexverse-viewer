@@ -295,7 +295,9 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                      i<3U?theme::cyan:theme::text);
             line(7,compact(v.avatar_bake_visual,72U),theme::warning);
         }
-        line(8,compact(v.avatar_bake_stream_status,72U),
+        line(8,state.avatar_bake_page==0U
+                ?compact(v.avatar_depth_parts,72U)
+                :compact(v.avatar_bake_stream_status,72U),
              state.avatar_recheck_available?theme::cyan:theme::text_muted);
         r.rect(x+27.0f*sc,y+ph-93.0f*sc,176.0f*sc,41.0f*sc,
                Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);

@@ -1,3 +1,22 @@
+## AKTUELLER ZEHN-BLÖCKE-LAUF Alpha.275–284
+
+**OGL 0.2.0-alpha.284 | Gesamtfortschritt 39 % (38,65 % gewichtet, unverändert) | nächste zehn echte Blöcke Alpha.285–294.**
+
+- 275 [GEPRÜFT] Upstream main 7c6b0cf mit rein optionaler OGLAssetService-Addon-/Build-Korrektur, keine aktivierte Viewer-CAP.
+- 276 [IMPLEMENTIERT/TEST] 3 voneinander getrennte originale Head/Upper/Lower GL-Depth-Abfragen mit jeweils 2 GPU-Slots.
+- 277 [IMPLEMENTIERT/TEST] GPU Query per tatsächlichem Firestorm-LLM-glDrawElements, keine Avatar-Fallback-Proxies.
+- 278 [IMPLEMENTIERT/TEST] Ergebnisse nur asynchron nach Ready und mit aktueller Regions-Epoche.
+- 279 [IMPLEMENTIERT/TEST] Monotone Query Sequenz verhindert verspätete, ältere GPU-Frames.
+- 280 [IMPLEMENTIERT/TEST] Head/Upper/Lower-Visibility wird OR aggregiert; kein Last-Query-Wins-Fehler mehr.
+- 281 [IMPLEMENTIERT/TEST] F3 Übersicht zeigt pro Body-Part echte V/0/?/- GPU-Tiefe.
+- 282 [IMPLEMENTIERT/TEST] F3 Bake-Detailansicht trennt je Part Server-TE, GPU, Original-BakeGL und Depth.
+- 283 [IMPLEMENTIERT/TEST] Private Report-Export enthält nur drei Paar booleans Depth Known/Passed.
+- 284 [BUILD/CI] Mint x64/NVIDIA-GL Vollbuild, neuer C++23-/Pi5-Headless-/Python-Contract, isoliertes Xvfb/Systemicon sowie GitHub-Push mit Pi5 ARM64 CI.
+
+Dokumentation: docs/ALPHA275_284_AVATAR_PART_DEPTH.md. Die volle SelfAvatarAppearance-, Outfit- und NexVerse Live-Grid-Pixel-E2E-Parität bleibt OFFEN; **39 %** bleibt unverändert.
+
+---
+
 Neuester Serverreview 17.10.2026: OpenGenesisLINK main 5fcfc7f486660c8c27586e69eefc62cf0b9d22a1 (+2 Commits nach 8ec7ea; einzig bin/Robust.HG.OGLAsset.ini.example). Dieses vollständige Hypergrid-ROBUST-Beispiel ist EXPERIMENTAL, DISABLED BY DEFAULT und ausdrücklich nur für isoliertes Staging mit eigener DB/Assets/Secrets. Kein Laufzeit-Protokoll- oder Viewer-CAP-Wechsel, KEIN automatisches Aktivieren/Deployment.
 
 ## ZEHN-BLÖCKE-REGEL – LAUF Alpha.265–274 vom 17.10.2026

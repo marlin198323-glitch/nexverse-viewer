@@ -29,6 +29,8 @@ struct AvatarDiagnosticReport
     bool center_in_frustum=false;
     bool gpu_fragment_result_known=false;
     bool gpu_fragments_passed=false;
+    std::array<bool,3U> avatar_depth_known{};
+    std::array<bool,3U> avatar_depth_passed{};
     std::uint64_t original_mesh_draws=0;
     std::uint64_t proxy_draws=0;
     std::uint64_t baked_texture_draws=0;

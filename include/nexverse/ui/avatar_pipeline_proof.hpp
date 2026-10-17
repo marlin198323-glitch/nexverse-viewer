@@ -4,6 +4,7 @@
 #include "nexverse/ui/avatar_view_evidence.hpp"
 #include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include "nexverse/ui/avatar_visual_truth.hpp"
+#include "nexverse/ui/avatar_part_visibility.hpp"
 #include <array>
 #include <cstdint>
 #include <string>
@@ -25,6 +26,7 @@ struct AvatarPipelineProof
     // query of a previous frame in the SAME simulator region epoch.
     bool fragment_query_known=false;
     bool fragment_samples_passed=false;
+    AvatarPartVisibility part_visibility{};
     nexverse::protocol::AvatarBakeEvidence bakes{};
     std::uint64_t original_body_draws=0U;
     std::array<std::uint64_t,3U> body_bake_draws{};
@@ -41,9 +43,12 @@ struct AvatarPipelineProof
             return "Avatar Fragmente: keine aktive Szene";
         if(original_body_draws==0U)
             return "Avatar Fragmente: kein Original-LLM-Draw";
-        if(!fragment_query_known)
+        const bool known=part_visibility.any_known()||fragment_query_known;
+        if(!known)
             return "Avatar Fragmente: GPU-Abfrage laeuft";
-        return fragment_samples_passed
+        const bool visible=part_visibility.any_passed()||
+            (fragment_query_known&&fragment_samples_passed);
+        return visible
             ?"Avatar Fragmente: sichtbar (Depth-Test)"
             :"Avatar Fragmente: 0 (verdeckt/ausserhalb)";
     }

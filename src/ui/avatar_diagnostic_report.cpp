@@ -60,6 +60,18 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.avatar_body_bakes_gpu)+"\n"
        "avatar_body_bakes_gl="+
            std::to_string(r.avatar_body_bakes_gl)+"\n"
+       "avatar_depth_head_known="+
+           std::to_string(r.avatar_depth_known[0])+"\n"
+       "avatar_depth_head_passed="+
+           std::to_string(r.avatar_depth_passed[0])+"\n"
+       "avatar_depth_upper_known="+
+           std::to_string(r.avatar_depth_known[1])+"\n"
+       "avatar_depth_upper_passed="+
+           std::to_string(r.avatar_depth_passed[1])+"\n"
+       "avatar_depth_lower_known="+
+           std::to_string(r.avatar_depth_known[2])+"\n"
+       "avatar_depth_lower_passed="+
+           std::to_string(r.avatar_depth_passed[2])+"\n"
        "avatar_self_keyframe_draws="+
            std::to_string(r.avatar_self_keyframe_draws)+"\n"
        "avatar_self_server_motion_draws="+

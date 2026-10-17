@@ -40,9 +40,10 @@ struct AvatarBakeInspector
         out.rows[i]=std::string{nexverse::protocol::avatar_bake_region_names[i]}+
             " | "+source;
         if(i<3U)
-            out.rows[i]+=" | LLM-GL "+
+            out.rows[i]+=" | BakeGL "+
                 std::to_string(proof.appearance_received
-                    ?proof.body_bake_draws[i]:0U);
+                    ?proof.body_bake_draws[i]:0U)+
+                " | "+proof.part_visibility.stage(i);
     }
     out.summary=proof.appearance_received
         ? "Server-TE "+std::to_string(proof.bakes.server_references)+

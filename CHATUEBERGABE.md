@@ -1,3 +1,16 @@
+# Aktueller OGL Viewer Stand – Alpha.284 (17.10.2026)
+
+**ZEHN-BLÖCKE-REGEL: bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (Code und GUI, Tests, Dokumentation, GitHub-Push, Pi5-CI). Auch im neuen Chat.**
+
+**Gesamtfortschritt 39 % (38,65 % gewichtete Schätzung, unverändert).** Nächste zehn Blöcke **Alpha.285–294**, Quelle docs/PROJECT_PROGRESS.json; Fortschritt niemals automatisch aus Versionsnummern oder CI ableiten.
+
+**Alpha.275–284:** Die echte OpenGL-Sichtbarkeitsmessung der ursprünglichen Firestorm-LLM-Meshes Head/Upper/Lower hat nun drei voneinander getrennte GPU-Abfragen mit je zwei asynchronen Slots. Monotone Ergebnis-Sequenz + Region-Epochen-Guard verhindern veraltete Ergebnisse. Positive Gesamtantwort ist OR über drei Parts statt der letzte abgefragte Wert. F3 Avatar hat eine echte pro-Part-Depth-Anzeige und auf Bake-Seite getrennte Server-TE/GPU/BakeGL/Depth. Sanitärer F3-Report enthält sechs boolesche Part-Werte. Details docs/ALPHA275_284_AVATAR_PART_DEPTH.md.
+
+**Upstream:** OpenGenesisLINK main 7c6b0cf7252189707066f09ad66c732642b27af9 (OGLAssetService Build/Konstruktor/Dependencies), staging / disabled-by-default; kein Viewer-Wirevertrag. Echtes NexVerse AvatarAppearance/Outfit-Bake-Pixel-E2E weiterhin OFFEN. Entwicklungs-PC ausschließlich Mint, Pi5 ist ARM64 CI.
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) auch im neuen Chat. Nächste Gruppe Alpha.275–284. Gesamtfortschritt 39 %.**
 
 **ALPHA.274 ABGESCHLOSSEN – VERIFIED SUCCESS:** GitHub-Featurecommit 427555ab8ccb59adbbc41cd00bf576cbedc62f07; Pi5 ARM64-CI Run 38980155018 SUCCESS für exakt denselben SHA. Linux Mint x64 Vollbuild, **141/141 C++23/NVIDIA-OpenGL CTests**, **90/90 Python**, ARM64-kompatibler Headless, isolierter Xvfb-Vollviewer und originales X11 Systemicon (WM_CLASS) PASS. Gesamtfortschritt 39 % (38,65 % gewichtete Schätzung, unverändert), echter NexVerse SelfAvatarAppearance/Outfit/Bake-Pixel-E2E OFFEN. Nächster Zehnerlauf Alpha.275–284.

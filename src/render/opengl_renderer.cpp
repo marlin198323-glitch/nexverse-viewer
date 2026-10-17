@@ -2560,13 +2560,15 @@ public:
         {
             return false;
         }
-        // OpenGL 3.3 core occlusion queries; fixed-size, never more than
-        // two unresolved frames; no synchronous GPU fence in rendering.
+        // OpenGL 3.3 core, two nonblocking queries per original body
+        // mesh Head/Upper/Lower. Individual slots cannot overwrite each
+        // other's result; query results are polled without GPU fences.
         glGenQueries(static_cast<GLsizei>(
             self_avatar_visibility_queries_.size()),
             self_avatar_visibility_queries_.data());
-        if(self_avatar_visibility_queries_[0]==0U ||
-           self_avatar_visibility_queries_[1]==0U)
+        if(std::any_of(self_avatar_visibility_queries_.begin(),
+            self_avatar_visibility_queries_.end(),
+            [](GLuint id){return id==0U;}))
             return false;
 
         glGenVertexArrays(1, &particle_vao_);
@@ -3317,6 +3319,9 @@ public:
         ++self_avatar_visibility_epoch_;
         self_avatar_samples_known_=false;
         self_avatar_samples_passed_=false;
+        self_avatar_part_samples_known_.fill(false);
+        self_avatar_part_samples_passed_.fill(false);
+        self_avatar_part_resolved_sequence_.fill(0U);
         // Do not reuse unresolved query objects until the GPU reports
         // ready; their epoch tags prevent stale region results.
     }
@@ -3370,7 +3375,9 @@ public:
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
-        // Poll last-frame occlusion without GL_QUERY_RESULT stalls.
+        // Query availability is polled before GL_QUERY_RESULT to avoid
+        // stalls. Two concurrent slots per body part are versioned so
+        // an older GPU result cannot overtake a newer resolved result.
         for(std::size_t i=0U;i<self_avatar_visibility_queries_.size();++i)
         {
             if(!self_avatar_visibility_pending_[i])continue;
@@ -3382,15 +3389,32 @@ public:
             glGetQueryObjectuiv(self_avatar_visibility_queries_[i],
                 GL_QUERY_RESULT,&passed);
             self_avatar_visibility_pending_[i]=false;
+            const std::size_t part=i/2U;
             if(self_avatar_visibility_query_epoch_[i]!=
-                self_avatar_visibility_epoch_)continue;
-            self_avatar_samples_known_=true;
-            self_avatar_samples_passed_=passed!=GL_FALSE;
+               self_avatar_visibility_epoch_ ||
+               self_avatar_visibility_query_sequence_[i]<
+               self_avatar_part_resolved_sequence_[part])continue;
+            self_avatar_part_resolved_sequence_[part]=
+                self_avatar_visibility_query_sequence_[i];
+            self_avatar_part_samples_known_[part]=true;
+            self_avatar_part_samples_passed_[part]=passed!=GL_FALSE;
         }
+        self_avatar_samples_known_=std::any_of(
+            self_avatar_part_samples_known_.begin(),
+            self_avatar_part_samples_known_.end(),
+            [](bool known){return known;});
+        self_avatar_samples_passed_=std::any_of(
+            self_avatar_part_samples_passed_.begin(),
+            self_avatar_part_samples_passed_.end(),
+            [](bool visible){return visible;});
         diagnostics_.self_avatar_visible_samples_known=
             self_avatar_samples_known_;
         diagnostics_.self_avatar_visible_samples_passed=
             self_avatar_samples_passed_;
+        diagnostics_.self_avatar_part_samples_known=
+            self_avatar_part_samples_known_;
+        diagnostics_.self_avatar_part_samples_passed=
+            self_avatar_part_samples_passed_;
 
         glViewport(0, 0, width_, height_);
         glEnable(GL_DEPTH_TEST);
@@ -4334,25 +4358,9 @@ public:
                     glUniformMatrix4fv(
                         glGetUniformLocation(program_,"uModel"),
                         1,GL_FALSE,parent.value.data());
-                    // Probe actual fragments surviving the GL depth test
-                    // for the ORIGINAL three-part self body, never proxies.
-                    // Resolve on a later frame, avoiding stalls.
-                    int visibility_slot=-1;
-                    if(avatar.is_self)
-                    {
-                        for(std::size_t i=0U;
-                            i<self_avatar_visibility_queries_.size();++i)
-                            if(!self_avatar_visibility_pending_[i])
-                            {
-                                visibility_slot=static_cast<int>(i);
-                                break;
-                            }
-                        if(visibility_slot>=0)
-                            glBeginQuery(GL_ANY_SAMPLES_PASSED,
-                                self_avatar_visibility_queries_[
-                                    static_cast<std::size_t>(
-                                        visibility_slot)]);
-                    }
+                    // Query each of the three original body meshes
+                    // separately, never counting the seven-part proxy.
+                    // Only one GL_ANY_SAMPLES_PASSED can be active at once.
                     for(std::size_t slot=0U;slot<3U;++slot)
                     {
                         const auto& gpu=avatar_body_meshes_[slot];
@@ -4422,9 +4430,31 @@ public:
                         glUniform3f(glGetUniformLocation(
                             program_,"uOverrideColorValue"),
                             tint.x*shade,tint.y*shade,tint.z*shade);
+                        int visibility_slot=-1;
+                        if(avatar.is_self)
+                            for(std::size_t i=slot*2U;i<slot*2U+2U;++i)
+                                if(!self_avatar_visibility_pending_[i])
+                                {
+                                    visibility_slot=static_cast<int>(i);
+                                    break;
+                                }
+                        if(visibility_slot>=0)
+                            glBeginQuery(GL_ANY_SAMPLES_PASSED,
+                                self_avatar_visibility_queries_[
+                                    static_cast<std::size_t>(visibility_slot)]);
                         glBindVertexArray(gpu.vao);
                         glDrawElements(GL_TRIANGLES,gpu.index_count,
                                        GL_UNSIGNED_INT,nullptr);
+                        if(visibility_slot>=0)
+                        {
+                            glEndQuery(GL_ANY_SAMPLES_PASSED);
+                            const auto i=static_cast<std::size_t>(visibility_slot);
+                            self_avatar_visibility_pending_[i]=true;
+                            self_avatar_visibility_query_epoch_[i]=
+                                self_avatar_visibility_epoch_;
+                            self_avatar_visibility_query_sequence_[i]=
+                                ++self_avatar_query_sequence_;
+                        }
                         ++diagnostics_.draw_calls;
                         ++diagnostics_.avatar_anatomical_mesh_draw_calls;
                         if(avatar.is_self)
@@ -4460,14 +4490,6 @@ public:
                         }
                         diagnostics_.triangles+=static_cast<std::uint64_t>(
                             gpu.index_count/3);
-                    }
-                    if(visibility_slot>=0)
-                    {
-                        glEndQuery(GL_ANY_SAMPLES_PASSED);
-                        const auto i=static_cast<std::size_t>(visibility_slot);
-                        self_avatar_visibility_pending_[i]=true;
-                        self_avatar_visibility_query_epoch_[i]=
-                            self_avatar_visibility_epoch_;
                     }
                     glUniform1i(glGetUniformLocation(
                         program_,"uAvatarSkinEnabled"),GL_FALSE);
@@ -4620,6 +4642,8 @@ public:
                 reset_self_avatar_visibility();
             diagnostics_.self_avatar_visible_samples_known=false;
             diagnostics_.self_avatar_visible_samples_passed=false;
+            diagnostics_.self_avatar_part_samples_known.fill(false);
+            diagnostics_.self_avatar_part_samples_passed.fill(false);
         }
         refresh_vram();
     }
@@ -4632,6 +4656,9 @@ public:
                 self_avatar_visibility_queries_.data());
         self_avatar_visibility_queries_.fill(0U);
         self_avatar_visibility_pending_.fill(false);
+        self_avatar_part_samples_known_.fill(false);
+        self_avatar_part_samples_passed_.fill(false);
+        self_avatar_part_resolved_sequence_.fill(0U);
         self_avatar_samples_known_=false;
         self_avatar_samples_passed_=false;
         if (ribbon_vbo_ != 0U)
@@ -5321,9 +5348,14 @@ private:
     GpuMesh sphere_mesh_;
     GpuMesh torus_mesh_;
     std::array<GpuMesh,3U> avatar_body_meshes_{};
-    std::array<GLuint,2U> self_avatar_visibility_queries_{};
-    std::array<bool,2U> self_avatar_visibility_pending_{};
-    std::array<std::uint64_t,2U> self_avatar_visibility_query_epoch_{};
+    std::array<GLuint,6U> self_avatar_visibility_queries_{};
+    std::array<bool,6U> self_avatar_visibility_pending_{};
+    std::array<std::uint64_t,6U> self_avatar_visibility_query_epoch_{};
+    std::array<std::uint64_t,6U> self_avatar_visibility_query_sequence_{};
+    std::array<std::uint64_t,3U> self_avatar_part_resolved_sequence_{};
+    std::array<bool,3U> self_avatar_part_samples_known_{};
+    std::array<bool,3U> self_avatar_part_samples_passed_{};
+    std::uint64_t self_avatar_query_sequence_=0U;
     std::uint64_t self_avatar_visibility_epoch_=1U;
     bool self_avatar_samples_known_=false;
     bool self_avatar_samples_passed_=false;

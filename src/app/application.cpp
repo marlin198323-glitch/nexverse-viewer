@@ -12553,6 +12553,12 @@ int Application::run(bool enable_developer_modules)
             avatar_proof.self_present=render_agent.present;
             avatar_proof.original_body_draws=
                 render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
+            avatar_proof.part_visibility.original_draws=
+                avatar_proof.original_body_draws;
+            avatar_proof.part_visibility.known=
+                render_diagnostics.self_avatar_part_samples_known;
+            avatar_proof.part_visibility.passed=
+                render_diagnostics.self_avatar_part_samples_passed;
             avatar_proof.proxy_draws=
                 render_diagnostics.self_avatar_proxy_draw_calls;
             avatar_proof.fragment_query_known=
@@ -12644,6 +12650,10 @@ int Application::run(bool enable_developer_modules)
                 avatar_proof.fragment_query_known;
             avatar_diagnostic.gpu_fragments_passed=
                 avatar_proof.fragment_samples_passed;
+            avatar_diagnostic.avatar_depth_known=
+                avatar_proof.part_visibility.known;
+            avatar_diagnostic.avatar_depth_passed=
+                avatar_proof.part_visibility.passed;
             avatar_diagnostic.original_mesh_draws=
                 avatar_proof.original_body_draws;
             avatar_diagnostic.proxy_draws=avatar_proof.proxy_draws;
@@ -12778,6 +12788,8 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_bake_rows=bake_inspector.rows;
                 shell_view.avatar_bake_summary=bake_inspector.summary;
                 shell_view.avatar_bake_visual=bake_inspector.visual;
+                shell_view.avatar_depth_parts=
+                    avatar_proof.part_visibility.compact();
                 shell_view.avatar_bake_stream_status=
                     avatar_bake_stream_status;
                 shell_view.avatar_animation_status=

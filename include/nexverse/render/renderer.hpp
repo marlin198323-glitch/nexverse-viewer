@@ -362,6 +362,11 @@ struct RenderDiagnostics
     // claims when the GPU has not returned query results.
     bool self_avatar_visible_samples_known=false;
     bool self_avatar_visible_samples_passed=false;
+    // Independent previous-frame GL_ANY_SAMPLES_PASSED results for the
+    // original Head/Upper/Lower triangles. Never infer other parts
+    // from one positive result or treat a query as a bake upload.
+    std::array<bool,3U> self_avatar_part_samples_known{};
+    std::array<bool,3U> self_avatar_part_samples_passed{};
     // Actual original three Firestorm .llm body GL submissions with a baked
     // server texture bound, Head/Upper/Lower. Proxy fallback excluded.
     std::array<std::uint64_t,3U> self_avatar_body_bake_gl_draws{};

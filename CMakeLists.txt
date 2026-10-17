@@ -1262,6 +1262,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-terrain-recovery-status-tests
         COMMAND nexverse-terrain-recovery-status-tests)
 
+    add_executable(nexverse-avatar-part-visibility-tests
+        tests/avatar_part_visibility_tests.cpp)
+    target_link_libraries(nexverse-avatar-part-visibility-tests PRIVATE
+        nexverse-assets nexverse-ui)
+    nexverse_enable_warnings(nexverse-avatar-part-visibility-tests)
+    add_test(NAME nexverse-avatar-part-visibility-tests
+        COMMAND nexverse-avatar-part-visibility-tests)
+
     add_executable(nexverse-avatar-bake-recheck-tests
         tests/avatar_bake_recheck_tests.cpp)
     target_link_libraries(nexverse-avatar-bake-recheck-tests PRIVATE
