@@ -18,6 +18,7 @@
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
+#include "nexverse/assets/mesh_residency_target.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/terrain_detail_retry.hpp"
 #include "nexverse/assets/avatar_bake_recheck.hpp"
@@ -5895,7 +5896,9 @@ int Application::run(bool enable_developer_modules)
     std::vector<assets::MeshDistanceSample> scene_mesh_samples;
     assets::MeshResidencyPlan mesh_residency;
     auto last_mesh_residency_plan = std::chrono::steady_clock::time_point{};
-    constexpr std::size_t mesh_gpu_asset_budget = 256U;
+    // Adaptive count for scene-rich regions. Existing 256-MiB mesh /
+    // 384-MiB shared VRAM byte gates remain authoritative.
+    std::size_t mesh_gpu_asset_budget = 256U;
     std::unordered_set<std::string> mesh_asset_loaded_ids;
     assets::AssetRetrySchedule mesh_asset_retries;
     std::size_t mesh_retry_dispatches = 0U;
@@ -11845,6 +11848,8 @@ int Application::run(bool enable_developer_modules)
                 const assets::AssetCameraHint camera_hint{
                     view.center.x,view.center.y,view.center.z,
                     view.at.x,view.at.y,view.at.z};
+                mesh_gpu_asset_budget=assets::mesh_resident_count_target(
+                    scene_mesh_samples.size(),mesh_quality_detailed);
                 mesh_residency = assets::plan_mesh_residency(
                     scene_mesh_samples,
                     render_agent.position.x,

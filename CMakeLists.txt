@@ -1211,6 +1211,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-view-priority-tests)
     add_test(NAME nexverse-asset-view-priority-tests COMMAND nexverse-asset-view-priority-tests)
 
+    add_executable(nexverse-mesh-residency-target-tests
+        tests/mesh_residency_target_tests.cpp)
+    target_link_libraries(nexverse-mesh-residency-target-tests PRIVATE NexVerse::Assets)
+    add_test(NAME nexverse-mesh-residency-target-tests
+        COMMAND nexverse-mesh-residency-target-tests)
+
     add_executable(nexverse-mesh-residency-tests tests/mesh_residency_tests.cpp)
     target_link_libraries(nexverse-mesh-residency-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-residency-tests)

@@ -33,5 +33,12 @@ fi
 if command -v update-desktop-database >/dev/null; then
     update-desktop-database "$target_root/applications"
 fi
+# Add a distinct OGL entry to Cinnamon's grouped-window-list. Do not
+# replace or remove the user's Firestorm or other pinned launchers.
+if [[ ${XDG_CURRENT_DESKTOP:-} == *Cinnamon* ]] && command -v python3 >/dev/null; then
+    python3 "$root/scripts/pin-mint-cinnamon-launcher.py" --apply
+fi
+echo "OGL_ICON_STARTER=opengenesislink-viewer.desktop"
+echo "OGL_LAUNCH_RECOMMENDATION=Start via the OGL application menu entry for reliable taskbar grouping"
 echo "OGL_CINNAMON_DESKTOP_ICON_INSTALLED=$desktop"
 echo "OGL_TASKBAR_STARTUP_WM_CLASS=opengenesislink-viewer"
