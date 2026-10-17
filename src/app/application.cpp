@@ -672,6 +672,16 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
         *context->camera_orbit_degrees=focus.orbit;
         return;
     }
+    if(context&&context->viewer_shell&&
+       context->viewer_shell->window==nexverse::ui::ViewerWindow::avatar &&
+       context->camera_orbit_degrees&&context->camera_zoom_distance &&
+       key==GLFW_KEY_F4&&action==GLFW_PRESS)
+    {
+        const auto focus=nexverse::ui::focus_front_avatar();
+        *context->camera_zoom_distance=focus.distance;
+        *context->camera_orbit_degrees=focus.orbit;
+        return;
+    }
     // Firestorm-like world focus shortcut: the underlying 3D renderer
     // remains active; only diagnostic/navigation panels are hidden.
     if(context && context->world_hud_visible&&context->login&&
@@ -1258,6 +1268,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
             if(shell.window==nexverse::ui::ViewerWindow::avatar &&
                shell.avatar_recheck_available)
                 shell.avatar_recheck_requested=true;
+            return;
+        }
+        if(command==nexverse::ui::ViewerAction::focus_avatar_camera)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::avatar &&
+               context->camera_zoom_distance&&context->camera_orbit_degrees)
+            {
+                const auto focus=nexverse::ui::focus_front_avatar();
+                *context->camera_zoom_distance=focus.distance;
+                *context->camera_orbit_degrees=focus.orbit;
+            }
             return;
         }
         if(command==nexverse::ui::ViewerAction::save_avatar_report)

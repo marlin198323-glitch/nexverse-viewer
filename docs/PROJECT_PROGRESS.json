@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.324",
+  "viewer_version": "0.2.0-alpha.334",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.325–334",
-  "assessment": "Alpha.324: Firestorm original LLM GL vertex skinning now clamps last joint to the actual per-mesh palette, not unbound next identity joint. Per-slot GPU joint count, valid CPU weight-pair upload checker, F3 true weighted/clip GL stats, full native/Pi5 regression. Authenticated NexVerse world/avatar outfit/bake pixel evidence still open. 38.65% weighted, 39 rounded unchanged.",
+  "next_five_blocks": "Alpha.335–344",
+  "assessment": "Alpha.334: original Firestorm 7186-triangle three-part GL skinned avatar framebuffer validated via actual RGB readback: synthetic fixture 3398 changed body pixels; independent Head 234, Upper 1422, Lower 1742, three bake draws change actual pixels; texture eviction leaves zero stale pixels. No authenticated NexVerse simulator/avatar outfit bake live pixel proof. Weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.325–334",
+  "next_batch": "Alpha.335–344",
   "default_blocks_per_run": 10
 }

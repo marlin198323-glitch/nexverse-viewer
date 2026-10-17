@@ -40,14 +40,14 @@ class OriginalAvatarSkinning(unittest.TestCase):
         self.assertIn("compact(v.avatar_skinning_status",shell)
         self.assertIn("avatar_skinning_status",view)
     def test_handoff_and_progress(self):
-        self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.324")
+        self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.334")
         data=json.loads(src("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(data["viewer_version"],"0.2.0-alpha.324")
-        self.assertEqual(data["next_batch"],"Alpha.325–334")
+        self.assertEqual(data["viewer_version"],"0.2.0-alpha.334")
+        self.assertEqual(data["next_batch"],"Alpha.335–344")
         self.assertEqual(data["default_blocks_per_run"],10)
         for p in ("AGENTS.md","info.md","CHATUEBERGABE.md","projectplan.md",
                   "docs/PROJEKTFORTSCHRITT.md"):
             s=src(p)[:2000]
             self.assertIn("39 %",s)
-            self.assertIn("Alpha.325–334",s)
+            self.assertIn("Alpha.335–344",s)
 if __name__=="__main__":unittest.main()

@@ -1091,6 +1091,15 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-renderer-alpha-framebuffer-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-avatar-body-framebuffer-pixels-tests
+        tests/avatar_body_framebuffer_pixels_tests.cpp)
+    target_link_libraries(nexverse-avatar-body-framebuffer-pixels-tests
+        PRIVATE NexVerse::Render NexVerse::Assets glfw glad::glad)
+    add_test(NAME nexverse-avatar-body-framebuffer-pixels-tests
+        COMMAND nexverse-avatar-body-framebuffer-pixels-tests)
+    set_tests_properties(nexverse-avatar-body-framebuffer-pixels-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-renderer-region-transition-tests
         tests/renderer_region_transition_tests.cpp)
     target_link_libraries(nexverse-renderer-region-transition-tests

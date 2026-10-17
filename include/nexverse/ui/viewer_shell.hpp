@@ -26,7 +26,7 @@ enum class ViewerAction {
     refresh_inventory, animations, select_animation,
     chat_whisper, chat_say, chat_shout, retry_animation,
     objects, select_object, touch_press, save_avatar_report, retry_terrain,
-    cycle_avatar_bakes, recheck_avatar_bakes, disabled
+    cycle_avatar_bakes, recheck_avatar_bakes, focus_avatar_camera, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -168,18 +168,22 @@ struct ViewerShellLayout
             {
                 if(inside(x,y,panel_x+27.0f*scale,
                    panel_y+panel_h-93.0f*scale,
-                   176.0f*scale,41.0f*scale))
+                   126.0f*scale,41.0f*scale))
                     return ViewerAction::save_avatar_report;
-                if(inside(x,y,panel_x+214.0f*scale,
+                if(inside(x,y,panel_x+163.0f*scale,
                    panel_y+panel_h-93.0f*scale,
-                   166.0f*scale,41.0f*scale))
+                   126.0f*scale,41.0f*scale))
                     return ViewerAction::cycle_avatar_bakes;
-                if(inside(x,y,panel_x+393.0f*scale,
+                if(inside(x,y,panel_x+299.0f*scale,
                    panel_y+panel_h-93.0f*scale,
-                   166.0f*scale,41.0f*scale))
+                   126.0f*scale,41.0f*scale))
                     return state.avatar_recheck_available
                         ?ViewerAction::recheck_avatar_bakes
                         :ViewerAction::disabled;
+                if(inside(x,y,panel_x+435.0f*scale,
+                   panel_y+panel_h-93.0f*scale,
+                   126.0f*scale,41.0f*scale))
+                    return ViewerAction::focus_avatar_camera;
             }
             if(inside(x,y,panel_x+panel_w-56.0f*scale,
                       panel_y+10.0f*scale,46.0f*scale,36.0f*scale))

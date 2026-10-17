@@ -1,3 +1,5 @@
+ZEHN-BLÖCKE-REGEL – ALPHA.334: Bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE inkl. C++, GUI, Tests, GitHub, Pi5-CI. Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste 10 Blöcke Alpha.335–344. Original Firestorm OpenGL Framebuffer-Pixel jetzt lokal nachgewiesen: 3398 Avatar-RGB-Pixel, Kopf 234, Oberkörper 1422, Unterkörper 1742 Bake-Pixel, nach GPU-Textur-Eviction 0 veraltete Pixel. Live-NexVerse Login/Outfit/Pixels weiterhin OFFEN.
+
 Alpha.324 verifiziert: Featurecommit 4a6a3fb4aa61e768b701d9db9bebd73476764cef; Pi5 ARM64 GitHub Actions 39070404127 SUCCESS. Mint x64 346/346 Build, 145/145 native, 118/118 Python, Headless, Xvfb und X11 Icon bestanden. Live NexVerse Outfit/Avatar E2E offen. Gesamtfortschritt 39 %, naechste Alpha.325–334.
 
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) mit Code/GUI/Tests/GitHub/Pi5-CI. Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Alpha.325–334.**

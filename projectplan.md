@@ -1,3 +1,13 @@
+## Alpha.325–334 – 10 abgeschlossene Entwicklungsblöcke
+
+**0.2.0-alpha.334, 39 % (38,65 % gewichtet), nächste Alpha.335–344.**
+
+325 [GEPRÜFT] Viewer/GitHub/OpenGenesisLINK-Server-Stand; 326 [IMPLEMENTIERT] isolierter originaler Firestorm-LLM GL-Framebuffer-Test; 327 [GETESTET] 3398 echte Avatar-RGB-Pixel; 328 [GETESTET] 3398 Bake-RGB-Pixel; 329 [GETESTET] Head 234 Pixel; 330 [GETESTET] Upper 1422 Pixel; 331 [GETESTET] Lower 1742 Pixel; 332 [GETESTET] GPU-Bake-Eviction ohne stale Pixel; 333 [IMPLEMENTIERT/GETESTET] vier echte F3-Aktionen inklusive Avatar Fokus/F4; 334 [GATES] kompletter Mint GPU/x64 Build/CTest/Python/Headless/Xvfb/Icon, GitHub-Commit/Push und Pi5 SHA-CI.
+
+**Kein authentifizierter NexVerse-Grid-Avatar-/Outfit-Pixelbeweis.** Vollbericht: docs/ALPHA325_334_AVATAR_FRAMEBUFFER_PIXELS.md.
+
+ZEHN-BLÖCKE-REGEL – ALPHA.334: Bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE inkl. C++, GUI, Tests, GitHub, Pi5-CI. Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste 10 Blöcke Alpha.335–344. Original Firestorm OpenGL Framebuffer-Pixel jetzt lokal nachgewiesen: 3398 Avatar-RGB-Pixel, Kopf 234, Oberkörper 1422, Unterkörper 1742 Bake-Pixel, nach GPU-Textur-Eviction 0 veraltete Pixel. Live-NexVerse Login/Outfit/Pixels weiterhin OFFEN.
+
 Alpha.324 verifiziert: Featurecommit 4a6a3fb4aa61e768b701d9db9bebd73476764cef; Pi5 ARM64 GitHub Actions 39070404127 SUCCESS. Mint x64 346/346 Build, 145/145 native, 118/118 Python, Headless, Xvfb und X11 Icon bestanden. Live NexVerse Outfit/Avatar E2E offen. Gesamtfortschritt 39 %, naechste Alpha.325–334.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Gesamtfortschritt 39 % (38,65 %). Nächste Alpha.325–334.**

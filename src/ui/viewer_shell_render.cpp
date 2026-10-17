@@ -307,23 +307,27 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              state.avatar_recheck_available?theme::cyan:theme::text_muted);
         line(9,compact(v.avatar_handshake_status,72U),
              v.appearance_ready?theme::success:theme::warning);
-        r.rect(x+27.0f*sc,y+ph-93.0f*sc,176.0f*sc,41.0f*sc,
+        r.rect(x+27.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
                Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);
         r.text(x+36.0f*sc,y+ph-79.0f*sc,8.7f*sc,
-               "Diagnose speichern [S]",theme::cyan);
-        r.rect(x+214.0f*sc,y+ph-93.0f*sc,166.0f*sc,41.0f*sc,
+               "Bericht [S]",theme::cyan);
+        r.rect(x+163.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
                Color{0.055f,0.165f,0.235f,0.98f},7.0f*sc);
-        r.text(x+223.0f*sc,y+ph-79.0f*sc,8.8f*sc,
+        r.text(x+171.0f*sc,y+ph-79.0f*sc,8.8f*sc,
                state.avatar_bake_page==0U?"Bakes 1/2 [B]":
                state.avatar_bake_page==1U?"Bakes 2/2 [B]":
                "Uebersicht [B]",theme::cyan);
-        r.rect(x+393.0f*sc,y+ph-93.0f*sc,166.0f*sc,41.0f*sc,
+        r.rect(x+299.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
                state.avatar_recheck_available?theme::blue:
                Color{0.035f,0.054f,0.071f,0.98f},7.0f*sc);
-        r.text(x+401.0f*sc,y+ph-79.0f*sc,8.6f*sc,
+        r.text(x+306.0f*sc,y+ph-79.0f*sc,8.6f*sc,
                state.avatar_recheck_available?"Bakes pruefen [R]":
-               "Pruefung gesperrt",
+               "Pruefung aus",
                state.avatar_recheck_available?theme::text:theme::text_muted);
+        r.rect(x+435.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
+               Color{0.030f,0.151f,0.215f,0.97f},7.0f*sc);
+        r.text(x+441.0f*sc,y+ph-79.0f*sc,8.4f*sc,
+               "Avatar Fokus [F4]",theme::cyan);
         r.text(x+27.0f*sc,y+ph-24.0f*sc,8.1f*sc,
                state.status_text.empty()?
                  "Self-Serverdaten; keine Uploads / IDs / Secrets.":

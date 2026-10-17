@@ -47,7 +47,7 @@ class Alpha265AvatarBakeContracts(unittest.TestCase):
         self.assertIn("state.avatar_bake_page==1U?0U:6U",gui)
         self.assertIn("Bakes 1/2 [B]",gui)
         self.assertIn("Bakes pruefen [R]",gui)
-        self.assertIn("Pruefung gesperrt",gui)
+        self.assertIn("Pruefung aus",gui)
         self.assertIn("state.avatar_recheck_available",shell)
         self.assertIn("?ViewerAction::recheck_avatar_bakes",shell)
         self.assertIn("GLFW_KEY_B",app)
@@ -64,13 +64,13 @@ class Alpha265AvatarBakeContracts(unittest.TestCase):
 
     def test_progress_and_next_chat_consistency(self):
         progress=json.loads(source("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.324")
-        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.324")
+        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.334")
+        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.334")
         self.assertEqual(progress["default_blocks_per_run"],10)
-        self.assertEqual(progress["next_batch"],"Alpha.325–334")
+        self.assertEqual(progress["next_batch"],"Alpha.335–344")
         for name in ("CHATUEBERGABE.md","projectplan.md","info.md","AGENTS.md",
                      "docs/PROJEKTFORTSCHRITT.md"):
             with self.subTest(file=name):
                 self.assertIn("39 %",source(name)[:2400])
-                self.assertIn("Alpha.325–334",source(name)[:2400])
+                self.assertIn("Alpha.335–344",source(name)[:2400])
 if __name__=="__main__":unittest.main()

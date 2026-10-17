@@ -62,7 +62,7 @@ class MintBuildContractTests(unittest.TestCase):
         self.assertIn("ViewerAction::save_avatar_report",app)
         self.assertIn("save_avatar_diagnostic(",app)
         self.assertIn("shell_view.avatar_fragment_status=avatar_proof.fragment_stage()",app)
-        self.assertIn('"Diagnose speichern [S]"',ui)
+        self.assertIn('"Bericht [S]"',ui)
         self.assertIn("camera_valid_",query)
         self.assertIn("reset_self_avatar_visibility();",query)
         report=(ROOT/"src/ui/avatar_diagnostic_report.cpp").read_text()
