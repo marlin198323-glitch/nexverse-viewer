@@ -1,3 +1,15 @@
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) auch im neuen Chat. Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Gruppe Alpha.305–314.**
+
+# OGL Viewer aktueller Projektstand Alpha.304 (17.10.2026)
+
+**Alpha.295–304:** Die echte SSA-LLUDP-RegionHandshakeReply-Zustellung bekommt jetzt eine dedizierte und verifizierte ReliableTracker-ACK-Korrelation gegen die neueste Paket-Sequenz. Alte/duplizierte/falsche ACKs sowie vorherige Regionen zählen nicht. Auth-/Region-bewusstes F3 unterscheidet gesendet, quittiert, serverseitiges SelfAppearance tatsächlich empfangen; nach 15 Sekunden ohne Self erscheint nur eine passive Wartewarnung. Die grüne Self-UI verlangt das aktuelle authentifizierte Paket. Lokaler privater Diagnoseexport enthält nur ACK-Boolean und max. 120s numerische Wartezeit. Details docs/ALPHA295_304_SSA_ACK_READBACK.md.
+
+**Neuer Chat:** zuerst CHATUEBERGABE.md, GitHub develop-current HEAD, projectplan.md, docs/PROJECT_PROGRESS.json lesen; 10 echte Blöcke Alpha.305–314 mit echtem Code und UI, Volltests Mint x64 NVIDIA/isoliertes Xvfb, GitHub Push und Pi5 ARM64-CI. Keine unerlaubten Deploys; ohne authentifizierten Live-Grid-Test bleiben Avatar/Outfits/Bakes-E2E offen. Upstream OpenGenesisLINK Server main 7c6b0cf7252189707066f09ad66c732642b27af9 optionales OGLAssetService disabled-by-default.
+
+
+
+---
+
 **VERIFIZIERTER Alpha.294-Abschluss (17.10.2026):** Feature-Commit d4a216ead2be4b6a842e53ccbebd609ad76bb763; GitHub Pi5 ARM64-CI Run 39066916593 **SUCCESS** exakt für diesen SHA. Linux Mint x64 Fullbuild (340 Schritte), **142/142 native C++23-/NVIDIA-OpenGL-Tests**, **101/101 Python-Tests**, ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11-Originalicon/WM_CLASS **PASS**. Live-NexVerse-SelfAvatarAppearance-/Outfit-/Bake-/Pixel-E2E weiterhin OFFEN. **Gesamtfortschritt 39 %** (38,65 % gewichtet); nächste Zehnergruppe Alpha.295–304.
 
 # Aktueller Viewerstand Alpha.294 – 17.10.2026

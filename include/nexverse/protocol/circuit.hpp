@@ -39,6 +39,12 @@ struct CircuitStatus
     // True only after reliable RegionHandshakeReply datagram was accepted
     // for sending. Does not prove ACK or server AvatarAppearance delivery.
     bool self_appearance_support_sent=false;
+    // True only for an ACK matched by the reliable tracker to the LATEST
+    // RegionHandshakeReply sequence. Not a simulator AvatarAppearance.
+    bool self_appearance_support_acknowledged=false;
+    // Monotonic local timestamp of the exact reliable ACK; never
+    // store a simulator address, avatar ID, account or CAP token.
+    std::chrono::steady_clock::time_point self_appearance_ack_at{};
 };
 
 class CircuitConnection
@@ -80,5 +86,6 @@ private:
 
     LoginSession session_;
     PacketThrottle throttle_;
+    SelfAppearanceHandshakeReceipt self_appearance_receipt_;
 };
 }

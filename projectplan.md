@@ -1,3 +1,26 @@
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächste Alpha.305–314.**
+
+## Projektplan: Alpha.295–304 abgeschlossenes Implementierungspaket
+
+**Viewer 0.2.0-alpha.304 | gewichteter Reifegrad 38,65 % = 39 % | nächster Zehnerdurchlauf Alpha.305–314.**
+
+- 295 [GEPRÜFT]: aktuelle GitHub Branch-/Chatübergabe sowie OpenGenesisLINK Servermain (kein neuer Avatar-Wirevertrag).
+- 296 [IMPLEMENTIERT/TEST]: eigene aktuelle SSA-Handshake-ACK-Receipt-State-Machine mit exakter Sequenz.
+- 297 [IMPLEMENTIERT/TEST]: echte CircuitConnection prüft nur ReliableTracker-ACK der ausstehenden letzten Handshake-Antwort.
+- 298 [IMPLEMENTIERT/TEST]: Race-/Stale-/Duplicate-/New-Region-ACK-Unterdrückung, ACK bei fehlender Sendung unmöglich.
+- 299 [IMPLEMENTIERT/TEST]: monotone ACK-Zeit erst bei exakt passender verifizierter Simulatorquittung.
+- 300 [IMPLEMENTIERT/TEST]: F3 zeigt Send/ACK/Self-Empfang getrennt; Protokollstatus statt Fake-Live-Beweis.
+- 301 [IMPLEMENTIERT/TEST]: ab 15s ACK ohne Self-Paket passive, nichtmutierende Fehlstandsanzeige.
+- 302 [IMPLEMENTIERT/TEST]: UI grün nur bei aktuell authentifiziertem Self/Region-AvatarPipelineProof.
+- 303 [IMPLEMENTIERT/TEST]: 0600-Diagnose ohne Secrets mit ACK bool und max. 120s Wait, eigener Native-C++23-Test im Pi5 Headless und Python Source-Vertrag.
+- 304 [BUILD/CI]: x64 Mint Fullbuild, CTest/NVIDIA GL, Python, ARM64-kompatibles Headless, isoliertes Xvfb/Icon, GitHub Push und Pi5-ARM64-CI.
+
+Testdetails und Blockverträge: docs/ALPHA295_304_SSA_ACK_READBACK.md. **Live NexVerse Avatar/Outfit/Bake-E2E OFFEN**, nicht fälschlich als fertig markieren.
+
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächster Lauf Alpha.295–304.**
 
 ## Verbindlicher aktueller OGL-Zehnerlauf Alpha.285–294

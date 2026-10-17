@@ -171,6 +171,23 @@ int main()
        ssa.packet->payload[33U]!=0U||
        ssa.packet->payload[34U]!=0U||
        ssa.packet->payload[35U]!=0U)return 53;
+    // ACK is accepted only if the reliable tracker matched the most
+    // recently sent handshake sequence. Old-region/old-send and forged
+    // duplicates MUST NOT advertise a confirmed server reply.
+    SelfAppearanceHandshakeReceipt receipt;
+    if(receipt.note_ack(46U,true))return 55;
+    receipt.note_sent(46U);
+    if(!receipt.sent||receipt.acknowledged||
+       receipt.note_ack(46U,false)||
+       receipt.note_ack(45U,true))return 56;
+    if(!receipt.note_ack(46U,true)||!receipt.acknowledged||
+       receipt.note_ack(46U,true))return 57;
+    receipt.note_sent(48U);
+    if(receipt.acknowledged||receipt.note_ack(46U,true)||
+       !receipt.note_ack(48U,true))return 58;
+    receipt.reset();
+    if(receipt.sent||receipt.acknowledged||
+       receipt.note_ack(48U,true))return 59;
     // Explicit legacy opt-out must still serialize exactly zero.
     if(decoded_region_reply.packet->payload[32U]!=0U||
        decoded_region_reply.packet->payload[33U]!=0U)return 54;

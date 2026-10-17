@@ -113,9 +113,15 @@ bool CircuitConnection::handle_packet(
 
     for (const auto ack : acknowledgements)
     {
-        if (tracker.acknowledge(ack))
-        {
+        const bool tracker_matched=tracker.acknowledge(ack);
+        if(tracker_matched)
             ++status.acks_received;
+        if(self_appearance_receipt_.note_ack(ack,tracker_matched))
+        {
+            status.self_appearance_support_acknowledged=true;
+            status.self_appearance_ack_at=std::chrono::steady_clock::now();
+            status.message="SSA RegionHandshakeReply ACK from simulator; "
+                "own AvatarAppearance still not verified";
         }
 
         if (ack == use_circuit_sequence && !movement_sent)
@@ -175,7 +181,10 @@ bool CircuitConnection::handle_packet(
         // Explicit Firestorm/SSA negotiation: self AvatarAppearance is
         // not sent by compatible regions until bit 2 is advertised.
         // This is only a capability declaration, NOT an appearance upload.
+        self_appearance_receipt_.reset();
         status.self_appearance_support_sent=false;
+        status.self_appearance_support_acknowledged=false;
+        status.self_appearance_ack_at={};
         auto reply = encode_region_handshake_reply(
             reply_sequence,session_,ogl_region_handshake_flags);
         if (!send_reliable(
@@ -189,7 +198,8 @@ bool CircuitConnection::handle_packet(
             return false;
         }
 
-        status.self_appearance_support_sent=true;
+        self_appearance_receipt_.note_sent(reply_sequence);
+        status.self_appearance_support_sent=self_appearance_receipt_.sent;
         status.state = CircuitState::awaiting_region_ready;
         status.message =
             "RegionHandshakeReply sent: supports SELF AvatarAppearance "
@@ -213,6 +223,7 @@ CircuitStatus CircuitConnection::run(
     std::chrono::seconds startup_timeout)
 {
     CircuitStatus status;
+    self_appearance_receipt_.reset();
     const auto notify = [&]
     {
         if (on_status) on_status(status);

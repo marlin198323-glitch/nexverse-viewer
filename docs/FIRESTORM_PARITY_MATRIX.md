@@ -1,3 +1,13 @@
+## Alpha.295–304, 17.10.2026 – SelfAvatarAppearance: Reliable ACK vs echtes Serverpaket
+
+- Nur der ReliableTracker-bestätigte ACK der jüngsten SSA-RegionHandshakeReply-Sequenz wird als Simulator-ACK gezeigt; späte/duplizierte/falsche ACKs zählen nicht. Neuer RegionHandshake/Session-Start entwertet alte Receipt-Daten.
+- Original F3 Avatar-/Bake-UI unterscheidet gesendetes Bit2, bestätigtes ACK, 15s fehlendes tatsächliches Self-Paket und verifiziertes WorldModel-Self/aktuelle Region. Grüner Zustand ausschließlich aus AvatarPipelineProof mit Login/Regionsidentität.
+- Privater Diagnoseexport: ACK-Boolean und auf 120 Sekunden begrenzte lokale Wartezeit, keine UUIDs/Serveradressen/Chats.
+- OpenGenesisLINK Server main 7c6b0cf7 nur optionales OGLAssetService Buildplugin, keine aktivierte Serverschnittstelle. **39 %** Gesamtfortschritt. Nächste 10 Blöcke **Alpha.305–314**. Echter Grid-Self/Outfit/Bake-Pixelbeweis noch NOT_RUN.
+
+
+---
+
 ## Alpha.285–294 (17.10.2026) – Firestorm Original SelfAvatarAppearance Handshake
 
 - Echte CircuitConnection versendet nun RegionHandshakeReply mit SSA-Flag Bit 2 (0x00000004), bisher Flags0. Verified gegen Second Life viewer main llviewerregion.cpp / llviewerregion.h. Bits0/1 bleiben deaktiviert, kein implementierter LL-Objektcache.

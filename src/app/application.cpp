@@ -12637,6 +12637,18 @@ int Application::run(bool enable_developer_modules)
                 avatar_proof.appearance_received;
             avatar_diagnostic.self_appearance_support_sent=
                 circuit_snapshot.self_appearance_support_sent;
+            avatar_diagnostic.self_appearance_support_acknowledged=
+                circuit_snapshot.self_appearance_support_acknowledged;
+            avatar_diagnostic.self_appearance_ack_wait_seconds=
+                circuit_snapshot.self_appearance_support_acknowledged&&
+                circuit_snapshot.self_appearance_ack_at!=
+                    std::chrono::steady_clock::time_point{}
+                ?static_cast<std::uint32_t>(std::clamp(
+                    std::chrono::duration_cast<std::chrono::seconds>(
+                      std::chrono::steady_clock::now()-
+                        circuit_snapshot.self_appearance_ack_at).count(),
+                    std::int64_t{0},std::int64_t{120}))
+                :0U;
             avatar_diagnostic.appearance_packets=
                 appearance_runtime.received;
             avatar_diagnostic.appearance_malformed=
@@ -12792,12 +12804,21 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_bake_visual=bake_inspector.visual;
                 shell_view.avatar_depth_parts=
                     avatar_proof.part_visibility.compact();
+                const auto ack_wait=
+                    circuit_snapshot.self_appearance_support_acknowledged&&
+                    circuit_snapshot.self_appearance_ack_at!=
+                        std::chrono::steady_clock::time_point{}
+                    ?std::chrono::duration_cast<std::chrono::seconds>(
+                        std::chrono::steady_clock::now()-
+                            circuit_snapshot.self_appearance_ack_at)
+                    :std::chrono::seconds{0};
                 shell_view.avatar_handshake_status=
                     ui::describe_self_appearance_handshake(
                         simulation_ready&&
                         firestorm_region_lease.matches(current_firestorm_epoch),
                         circuit_snapshot.self_appearance_support_sent,
-                        avatar_proof.appearance_received);
+                        circuit_snapshot.self_appearance_support_acknowledged,
+                        avatar_proof.appearance_received,ack_wait);
                 shell_view.avatar_bake_stream_status=
                     avatar_bake_stream_status;
                 shell_view.avatar_animation_status=
@@ -12899,8 +12920,8 @@ int Application::run(bool enable_developer_modules)
                         world_model.terrain().valid_patch_count;
                     shell_view.terrain_ready=world_model.terrain().available;
                     shell_view.parcel_ready=world_model.parcel().available;
-                    shell_view.appearance_ready=
-                        world_model.self_appearance().has_value();
+                    // Do not paint old-region/unowned WorldModel data green.
+                    shell_view.appearance_ready=avatar_proof.appearance_received;
                     shell_view.animations=world_model.self_animations()
                         ?world_model.self_animations()->animations.size():0U;
                     if(viewer_shell.window==ui::ViewerWindow::animations &&

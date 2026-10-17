@@ -26,4 +26,35 @@ inline constexpr std::uint32_t ogl_region_handshake_flags =
 static_assert((ogl_region_handshake_flags&
     (region_handshake_object_cache_probes|
      region_handshake_empty_object_cache))==0U);
+
+// A packet was accepted for reliable transmission; only an ACK of that
+// particular pending wire sequence may confirm receipt by the simulator.
+// This proves neither AvatarAppearance delivery nor server bake pixels.
+struct SelfAppearanceHandshakeReceipt
+{
+    std::uint32_t sequence=0U;
+    bool sent=false;
+    bool acknowledged=false;
+    void reset() noexcept
+    {
+        sequence=0U;sent=false;acknowledged=false;
+    }
+    void note_sent(std::uint32_t outgoing_sequence) noexcept
+    {
+        reset();
+        if(outgoing_sequence!=0U)
+        {
+            sequence=outgoing_sequence;
+            sent=true;
+        }
+    }
+    [[nodiscard]] bool note_ack(std::uint32_t ack_sequence,
+                                bool pending_tracker_matched) noexcept
+    {
+        if(!sent||acknowledged||!pending_tracker_matched||
+           ack_sequence!=sequence)return false;
+        acknowledged=true;
+        return true;
+    }
+};
 }

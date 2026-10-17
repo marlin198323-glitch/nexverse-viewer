@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
-**Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.294 | Branch develop-current. Nächster Zehnerlauf Alpha.295–304.
+**Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.** **Nächster Zehnerdurchlauf Alpha.305–314.**
+Stand 17.10.2026 | Viewer 0.2.0-alpha.304 | Branch develop-current. Nächster Zehnerlauf Alpha.295–304.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -19,6 +19,8 @@ Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, G
 **Alpha.285–294:** Originaler SelfAvatarAppearance-SSA-Handshake-Blocker behoben: RegionHandshakeReply Bit2 statt bisher Flags0. Echte NexVerse-Serverantwort sowie Outfit-/Bake-Pixel-E2E bleiben OFFEN, daher **39 % (38,65 %)** unverändert. **Nächster Zehnerlauf Alpha.295–304.**
 
 **VERIFIZIERTER Alpha.294-Abschluss (17.10.2026):** Feature-Commit d4a216ead2be4b6a842e53ccbebd609ad76bb763; GitHub Pi5 ARM64-CI Run 39066916593 **SUCCESS** exakt für diesen SHA. Linux Mint x64 Fullbuild (340 Schritte), **142/142 native C++23-/NVIDIA-OpenGL-Tests**, **101/101 Python-Tests**, ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11-Originalicon/WM_CLASS **PASS**. Live-NexVerse-SelfAvatarAppearance-/Outfit-/Bake-/Pixel-E2E weiterhin OFFEN. **Gesamtfortschritt 39 %** (38,65 % gewichtet); nächste Zehnergruppe Alpha.295–304.
+
+**Alpha.295–304:** Reliable-Tracker-korrelierte echte SSA-Handshake-ACKs (keine alten/duplizierten ACKs), 15s-Warte-Status, authentifizierter Self-UI-Green-Gate und lokale min. 0600-Diagnose. Live NexVerse SelfAppearance-/Outfit-/Pixel-E2E bleibt OFFEN. **39 % (38,65 %)** unverändert, nächste Alpha.305–314.
 
 ## Gewichtete Projektbewertung
 

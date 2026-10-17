@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.294",
+  "viewer_version": "0.2.0-alpha.304",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.295–304",
-  "assessment": "Alpha.294: verified Firestorm/Second Life region handshake SSA bit2, reliable circuit sends canonical mask; separated real self AvatarAppearance reception from a handshake sent event, F3 and private diagnostic export. Live Grid outfit and avatar E2E still open, 38.65 percent weighted, 39 percent rounded unchanged.",
+  "next_five_blocks": "Alpha.305–314",
+  "assessment": "Alpha.304: actual reliable LLUDP SSA handshake ACK per latest circuit sequence with reliable-tracker verification, stale/reordered ACK protection, monotonic 15s readback absence warning and authenticated current region UI and local 0600 report. Full live NexVerse login/self-avatar/outfit/baked-pixels E2E not yet verified, weighted 38.65%, rounded 39% unchanged.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.295–304",
+  "next_batch": "Alpha.305–314",
   "default_blocks_per_run": 10
 }

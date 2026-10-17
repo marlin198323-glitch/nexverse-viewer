@@ -30,6 +30,10 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "appearance_received="+yn(r.appearance_received)+"\n"
        "region_handshake_self_appearance_bit2_sent="+
            std::string(yn(r.self_appearance_support_sent))+"\n"
+       "region_handshake_self_appearance_bit2_acked="+
+           std::string(yn(r.self_appearance_support_acknowledged))+"\n"
+       "self_appearance_reply_wait_seconds="+
+           std::to_string(r.self_appearance_ack_wait_seconds)+"\n"
        "camera_valid="+yn(r.camera_valid)+"\n"
        "avatar_center_in_frustum="+yn(r.center_in_frustum)+"\n"
        "rendered_original_llm_draws="+std::to_string(r.original_mesh_draws)+"\n"

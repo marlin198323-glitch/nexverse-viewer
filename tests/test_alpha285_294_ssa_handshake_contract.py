@@ -22,10 +22,10 @@ class SelfAppearanceHandshakeContract(unittest.TestCase):
         status=s("include/nexverse/protocol/circuit.hpp")
         ui=s("include/nexverse/ui/avatar_appearance_runtime.hpp")
         self.assertIn("status.self_appearance_support_sent=false;",circuit)
-        self.assertIn("status.self_appearance_support_sent=true;",circuit)
+        self.assertIn("status.self_appearance_support_sent=self_appearance_receipt_.sent;",circuit)
         self.assertLess(circuit.index("if (!send_reliable(",
                         circuit.index("auto reply = encode_region_handshake_reply(")),
-                        circuit.index("status.self_appearance_support_sent=true;"))
+                        circuit.index("status.self_appearance_support_sent=self_appearance_receipt_.sent;"))
         self.assertIn("bool self_appearance_support_sent=false;",status)
         self.assertIn("Self-Serverantwort fehlt",ui)
         self.assertIn("Self vom Simulator empfangen",ui)
@@ -54,13 +54,13 @@ class SelfAppearanceHandshakeContract(unittest.TestCase):
         self.assertIn("decoded_region_reply.packet->payload[32U]!=0U",test)
         self.assertIn("(ssa.packet->header.flags&packet_reliable)==0U",test)
     def test_handoff_and_percent(self):
-        self.assertEqual(s("VERSION").strip(),"0.2.0-alpha.294")
+        self.assertEqual(s("VERSION").strip(),"0.2.0-alpha.304")
         data=json.loads(s("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(data["viewer_version"],"0.2.0-alpha.294")
+        self.assertEqual(data["viewer_version"],"0.2.0-alpha.304")
         self.assertEqual(data["default_blocks_per_run"],10)
-        self.assertEqual(data["next_batch"],"Alpha.295–304")
+        self.assertEqual(data["next_batch"],"Alpha.305–314")
         for name in ("CHATUEBERGABE.md","AGENTS.md","info.md",
                      "projectplan.md","docs/PROJEKTFORTSCHRITT.md"):
             self.assertIn("39 %",s(name)[:2400])
-            self.assertIn("Alpha.295–304",s(name)[:2400])
+            self.assertIn("Alpha.305–314",s(name)[:2400])
 if __name__=="__main__": unittest.main()
