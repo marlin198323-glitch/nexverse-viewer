@@ -13,7 +13,7 @@ Viewer 0.2.0-alpha.314, gewichtet 38,65 %, gerundet 39 %.
 - 311 [IMPLEMENTIERT] F3-Avatar zeigt sichere Paket-Annahme-/Ablehnungsdiagnose.
 - 312 [IMPLEMENTIERT] privater lokaler Whitelist-Zähler für abgelehnte Trials/Teilpakete.
 - 313 [GETESTET] WorldModel/Native-C++23/Python/ARM64 Headless + GUI Contracts.
-- 314 [BUILD/CI] Mint NVIDIA/x64 full CMake/CTest, Python, Xvfb/Icon, GitHub SHA-Push und Pi5-ARM64-CI.
+- 314 [FERTIG] Mint 344/344 Fullbuild, 144/144 Native-/NVIDIA GL CTests, 113/113 Python, Headless/Xvfb/WM_CLASS/Icon PASS. GitHub Feature-SHA decfc90ed089ff3c7a0b8544ba6fb4907086133c und ARM64 Pi5 CI 39069105455 SUCCESS. Live-Grid-E2E bleibt OFFEN.
 
 Doku: docs/ALPHA305_314_AUTHORITATIVE_SELF_SKIN.md; echte NexVerse Grid Avatar-/Outfit-Pixel-E2E OFFEN.
 

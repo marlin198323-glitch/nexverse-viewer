@@ -26,6 +26,8 @@ Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, G
 
 Alpha.305–314: echte Self Low158 und WorldModel behalten bestätigte Avatar-Skin trotz Trial-/Teilpaket; F3 und private Diagnose zählen verworfene Nachrichten. NexVerse Live-Outfit-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 %), nächster Zehnerlauf **Alpha.315–324**.
 
+**Alpha.314 VERIFIED:** Featurecommit decfc90ed089ff3c7a0b8544ba6fb4907086133c; GitHub pi5-ogl ARM64 CI 39069105455 SUCCESS exakt gleicher SHA. Mint Debug x64 Vollbuild 344/344, 144/144 native C++23/NVIDIA OpenGL CTest, 113/113 Python, Pi5-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon PASS. Authentifizierter NexVerse Live-Self-Avatar-/Outfit-/Bake-Pixel-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 % gewichtet); nächste Alpha.315–324.
+
 ## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |

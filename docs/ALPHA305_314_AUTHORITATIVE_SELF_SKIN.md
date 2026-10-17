@@ -22,3 +22,7 @@
 Ein vollständiger, bestätigter Simulator-Self-Snapshot bleibt bei einem nachfolgenden unvollständigen Paket erhalten. Trial-Preview-Daten sind nicht der autoritative Avatar. Der Report zählt die abgelehnten Pakete kumulativ für die Sitzung (nicht als jeweilige Regionsepochen-Summe). Die Änderung erzeugt keine serverseitige AvatarAppearance-Nachricht und keinen Bake-Upload. Authentifizierter NexVerse Self-Avatar-/Outfit-/Bake-/Mesh-Pixel-E2E bleibt OFFEN.
 
 **Gesamtfortschritt: 39 % (38,65 % gewichtet), nächste Gruppe Alpha.315–324.**
+
+## Verifizierte Testabschlüsse
+
+**Alpha.314 VERIFIED:** Featurecommit decfc90ed089ff3c7a0b8544ba6fb4907086133c; GitHub pi5-ogl ARM64 CI 39069105455 SUCCESS exakt gleicher SHA. Mint Debug x64 Vollbuild 344/344, 144/144 native C++23/NVIDIA OpenGL CTest, 113/113 Python, Pi5-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon PASS. Authentifizierter NexVerse Live-Self-Avatar-/Outfit-/Bake-Pixel-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 % gewichtet); nächste Alpha.315–324.

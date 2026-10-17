@@ -1,5 +1,8 @@
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Gruppe Alpha.315–324.**
 
+**Alpha.314 VERIFIED:** Featurecommit decfc90ed089ff3c7a0b8544ba6fb4907086133c; GitHub pi5-ogl ARM64 CI 39069105455 SUCCESS exakt gleicher SHA. Mint Debug x64 Vollbuild 344/344, 144/144 native C++23/NVIDIA OpenGL CTest, 113/113 Python, Pi5-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon PASS. Authentifizierter NexVerse Live-Self-Avatar-/Outfit-/Bake-Pixel-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 % gewichtet); nächste Alpha.315–324.
+
+
 Aktueller OGL Viewer 0.2.0-alpha.314 | develop-current | Stand 17.10.2026.
 
 Alpha.305–314: Autoritative Self-AvatarAppearance-Pakete werden im tatsächlichen LLUDP-Handler und WorldModel gegen nachfolgende Vorschau/Trial-Pakete und fehlende TextureEntry/VisualParams abgesichert. Bereits bestätigte Skin-/Firestorm-LLM-Texture-Daten bleiben erhalten. F3 zeigt abgelehnte Trial-/Incomplete-Pakete, privater Export enthält nur numerische Whitelist-Zähler. Native/WorldModel/Python-/GPU-/Pi5-Testregressionen, GitHub commit/push, verifizierten CI-SHA. Details: docs/ALPHA305_314_AUTHORITATIVE_SELF_SKIN.md.
