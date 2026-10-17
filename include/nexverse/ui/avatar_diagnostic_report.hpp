@@ -26,6 +26,7 @@ struct AvatarDiagnosticReport
     std::uint32_t self_appearance_ack_wait_seconds=0U;
     std::uint32_t appearance_packets=0U;
     std::uint32_t appearance_malformed=0U;
+    std::uint32_t appearance_malformed_stage_code=0U;
     std::uint32_t appearance_other_avatar=0U;
     std::uint32_t appearance_self_accepted=0U;
     std::uint32_t appearance_self_trial_ignored=0U;

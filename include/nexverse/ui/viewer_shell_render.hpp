@@ -28,6 +28,7 @@ struct ViewerShellView
     std::string avatar_bake_summary;
     std::string avatar_bake_visual;
     std::string avatar_handshake_status;
+    std::string avatar_movement_status;
     std::string avatar_depth_parts;
     std::string avatar_bake_stream_status;
     std::string avatar_animation_status;

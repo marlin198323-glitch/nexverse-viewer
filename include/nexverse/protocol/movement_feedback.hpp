@@ -63,6 +63,14 @@ public:
             samples_=0U;
         }
     }
+    [[nodiscard]] const char* status() const
+    {
+        std::scoped_lock lock{mutex_};
+        if(!active_)return "WASD: kein Richtungsbefehl";
+        if(confirmed_)return "WASD: Serverposition geaendert";
+        if(stalled_reported_)return "WASD: Serverposition bleibt gleich";
+        return "WASD: Serverantwort ausstehend";
+    }
     [[nodiscard]] MovementEvidence server_position(Vec3 position,TimePoint now)
     {
         if(!std::isfinite(position.x)||!std::isfinite(position.y)||
@@ -93,7 +101,7 @@ public:
         return MovementEvidence::none;
     }
 private:
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::optional<Vec3> latest_;
     std::optional<Vec3> baseline_;
     TimePoint active_since_{};

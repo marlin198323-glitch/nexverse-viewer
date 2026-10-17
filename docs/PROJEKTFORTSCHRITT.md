@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: Bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE. Viewer 0.2.0-alpha.344, Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Alpha.345–354.**
+
+18.10.2026: Echte Firestorm-Low158 AvatarAppearance Fehlerphase sichtbar und ohne UUID/Paketdaten protokolliert; F3 enthält den fehlenden Appearance-Abschnitt und serverbasierte WASD-Positionsauswertung. Die Bewegungswarteschlange ersetzt unversendete alte WASD-Snapshots. Der authentifizierte NexVerse Outfit-Pixel- und WASD-Bewegungsnachweis bleibt OFFEN. Siehe docs/ALPHA335_344_AVATAR_MOTION_WIRE.md. Neuer Chat beginnt mit GitHub HEAD, CHATUEBERGABE.md, projectplan.md, docs/PROJECT_PROGRESS.json; Mint NVIDIA/x64- und Pi5-ARM64-Tests.
+
+---
+
 18.10.2026 LIVE-SCREENSHOT/HOTFIX: OGL-Starter bei Cinnamon separat und erhaltend angeheftet (Firestorm bleibt); adaptive GPU-Mesh-Count-Grenze 256..384 bei Detail, 256 im Sparmodus, VRAM-Byte-Limits unverändert. NexVerse-Grid-SelfAppearance fehlt weiterhin, Avatar einfarbig, WASD-Position konstant, 2 Texturen fehlgeschlagen. Details docs/LIVE_SCREENSHOT_2026-10-18_TASKBAR_MESH.md. Gesamtfortschritt 39 % (38,65 % gewichtet), nächster Zehnerlauf Alpha.335–344.
 
 ALPHA.334 VERIFIZIERT: Feature-SHA a8cbb3c7fffab019643601ee4dd7517ef6870c70; GitHub Pi5 ARM64-CI Run 39073820122 SUCCESS genau fuer diesen SHA. Mint x64 Debug Vollbuild und 146/146 Native C++23/OpenGL-Tests, 119/119 Python, Pi5-kompatibles Headless, Xvfb-GUI und Originalicon/WM_CLASS PASS. Echte Firestorm-GPU Pixel: Avatar 3398, Head 234, Upper 1422, Lower 1742, Bake 3398, Eviction 0 stale Pixel. Neues F3 Avatar-Fokus [F4]. Kein authentifiziertes Live-Grid-E2E. Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste 10 Blöcke Alpha.335–344.

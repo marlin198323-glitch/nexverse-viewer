@@ -488,8 +488,12 @@ decode_agent_movement_complete(
 [[nodiscard]] std::optional<AgentDataUpdateMessage> decode_agent_data_update(
     std::span<const std::uint8_t> payload);
 
+enum class AvatarAppearanceFailure { none, header, sender, texture_entry,
+    visual_params, appearance_data, hover, attachments };
+[[nodiscard]] const char* appearance_failure_name(AvatarAppearanceFailure v) noexcept;
 [[nodiscard]] std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
-    std::span<const std::uint8_t> payload);
+    std::span<const std::uint8_t> payload,
+    AvatarAppearanceFailure* failure=nullptr);
 
 [[nodiscard]] std::optional<IncomingLocalChat> decode_chat_from_simulator(
     std::span<const std::uint8_t> payload);

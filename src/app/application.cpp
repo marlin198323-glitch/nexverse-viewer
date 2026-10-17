@@ -4912,6 +4912,7 @@ int Application::run(bool enable_developer_modules)
     std::atomic<std::uint64_t> self_appearance_serial{0U};
     std::atomic_uint32_t avatar_appearance_received{0U};
     std::atomic_uint32_t avatar_appearance_malformed{0U};
+    std::atomic<int> avatar_appearance_failure_stage{0};
     std::atomic_uint32_t avatar_appearance_ignored_region{0U};
     std::atomic_uint32_t avatar_appearance_other_avatar{0U};
     std::atomic_uint32_t avatar_appearance_self_accepted{0U};
@@ -5569,6 +5570,7 @@ int Application::run(bool enable_developer_modules)
         protocol::msg_avatar_appearance,
         [&avatar_packets,&self_appearance_serial,
          &avatar_appearance_received,&avatar_appearance_malformed,
+         &avatar_appearance_failure_stage,
          &avatar_appearance_ignored_region,
          &avatar_appearance_other_avatar,
          &avatar_appearance_self_accepted,
@@ -5577,14 +5579,21 @@ int Application::run(bool enable_developer_modules)
          &world_model,&world_mutex](
             const protocol::DecodedPacket& packet)
         {
+            protocol::AvatarAppearanceFailure reason{};
             const auto appearance =
-                protocol::decode_avatar_appearance(packet.payload);
+                protocol::decode_avatar_appearance(packet.payload,&reason);
             avatar_appearance_received.fetch_add(
                 1U,std::memory_order_relaxed);
             if (!appearance.has_value())
             {
-                avatar_appearance_malformed.fetch_add(
+                avatar_appearance_failure_stage.store(
+                    static_cast<int>(reason),std::memory_order_relaxed);
+                const auto previous=avatar_appearance_malformed.fetch_add(
                     1U,std::memory_order_relaxed);
+                if(previous==0U)core::warning(
+                    std::string{"AvatarAppearance invalid block="}+
+                    protocol::appearance_failure_name(reason)+
+                    "; payload omitted for privacy");
                 return;
             }
 
@@ -7677,7 +7686,7 @@ int Application::run(bool enable_developer_modules)
                 auto update = movement_controller.step(
                     keys, std::chrono::duration<float>(
                         now - last_agent_update).count());
-                movement_feedback.outbound_controls(update.control_flags,now);
+                const auto queued_controls=update.control_flags;
                 agent_for_camera.rotation = update.body_rotation;
                 {
                     std::scoped_lock lock{world_mutex};
@@ -7705,7 +7714,14 @@ int Application::run(bool enable_developer_modules)
                         (movement_controller.flying()
                             ? " (flying)" : ""));
                 }
-                (void)outbound_queue.push(std::move(update));
+                if(outbound_queue.push(std::move(update)))
+                {
+                    movement_feedback.outbound_controls(queued_controls,now);
+                }
+                else
+                {
+                    core::warning("AgentUpdate not queued: queue full");
+                }
                 last_agent_update = now;
             }
 
@@ -12589,6 +12605,9 @@ int Application::run(bool enable_developer_modules)
             const ui::AvatarAppearanceRuntime appearance_runtime{
                 avatar_appearance_received.load(std::memory_order_relaxed),
                 avatar_appearance_malformed.load(std::memory_order_relaxed),
+                protocol::appearance_failure_name(static_cast<
+                    protocol::AvatarAppearanceFailure>(
+                    avatar_appearance_failure_stage.load(std::memory_order_relaxed))),
                 avatar_appearance_ignored_region.load(std::memory_order_relaxed),
                 avatar_appearance_other_avatar.load(std::memory_order_relaxed),
                 avatar_appearance_self_accepted.load(std::memory_order_relaxed),
@@ -12701,6 +12720,9 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.received;
             avatar_diagnostic.appearance_malformed=
                 appearance_runtime.malformed;
+            avatar_diagnostic.appearance_malformed_stage_code=
+                static_cast<std::uint32_t>(avatar_appearance_failure_stage.load(
+                    std::memory_order_relaxed));
             avatar_diagnostic.appearance_other_avatar=
                 appearance_runtime.other_avatar;
             avatar_diagnostic.appearance_self_accepted=
@@ -12864,6 +12886,7 @@ int Application::run(bool enable_developer_modules)
                         std::chrono::steady_clock::now()-
                             circuit_snapshot.self_appearance_ack_at)
                     :std::chrono::seconds{0};
+                shell_view.avatar_movement_status=movement_feedback.status();
                 shell_view.avatar_handshake_status=
                     ui::describe_self_appearance_handshake(
                         simulation_ready&&

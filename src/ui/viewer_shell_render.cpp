@@ -270,9 +270,10 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         if(state.avatar_bake_page==0U)
         {
             line(0,"Avatar: "+compact(v.avatar_name,50U),theme::text);
-            line(1,"Position: "+position(v.agent_position[0],
+            line(1,compact("Position: "+position(v.agent_position[0],
                                         v.agent_position[1],
-                                        v.agent_position[2]));
+                                        v.agent_position[2])+
+                                        " | "+v.avatar_movement_status,72U));
             line(2,v.avatar_skin_status.empty()
                 ?(v.appearance_ready?"Appearance: Server-Daten da":
                    "Appearance: noch nicht geladen")

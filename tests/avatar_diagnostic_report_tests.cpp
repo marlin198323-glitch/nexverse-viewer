@@ -19,6 +19,7 @@ int main()
     r.self_appearance_support_sent=true;
     r.self_appearance_support_acknowledged=true;
     r.self_appearance_ack_wait_seconds=27U;
+    r.appearance_malformed_stage_code=7U;
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.simulator_circuit_active=true;

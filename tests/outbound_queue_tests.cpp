@@ -49,6 +49,23 @@ int main()
         return 3;
     }
 
+    OutboundCommandQueue fast{2U};
+    AgentUpdateData old=movement;
+    old.control_flags=control_at_neg;
+    AgentUpdateData latest=movement;
+    latest.control_flags=control_left_pos;
+    if(!fast.push(old)||!fast.push(chat)||!fast.push(latest)||
+       fast.size()!=2U)return 12;
+    const auto reliable=fast.try_pop();
+    const auto newest=fast.try_pop();
+    if(!reliable||!newest||
+       !std::holds_alternative<LocalChatMessage>(*reliable)||
+       !std::holds_alternative<AgentUpdateData>(*newest)||
+       std::get<AgentUpdateData>(*newest).control_flags!=control_left_pos)
+       return 13;
+    // No stale AgentUpdate exists in a full reliable-only queue.
+    if(!fast.push(chat)||!fast.push(chat)||fast.push(latest))
+        return 14;
     std::cout << "Outbound command queue tests passed\n";
     return 0;
 }

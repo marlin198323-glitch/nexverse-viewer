@@ -11,6 +11,7 @@ struct AvatarAppearanceRuntime
 {
     std::uint32_t received=0;
     std::uint32_t malformed=0;
+    std::string invalid_stage;
     std::uint32_t ignored_region=0;
     std::uint32_t other_avatar=0;
     std::uint32_t self_accepted=0;
@@ -75,7 +76,7 @@ struct AvatarAppearanceRuntime
         return "Appearance: Self vom Server bestaetigt";
     if(state.malformed)
         return "Appearance: "+std::to_string(state.malformed)+
-               " ungueltige Pakete; Self fehlt";
+               " ungueltige Pakete ("+state.invalid_stage+"); Self fehlt";
     if(state.ignored_region)
         return "Appearance: Regionwechsel, Self fehlt";
     if(state.other_avatar)

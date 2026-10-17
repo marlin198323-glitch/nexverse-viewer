@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.334",
+  "viewer_version": "0.2.0-alpha.344",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.335–344",
-  "assessment": "Alpha.334: original Firestorm 7186-triangle three-part GL skinned avatar framebuffer validated via actual RGB readback: synthetic fixture 3398 changed body pixels; independent Head 234, Upper 1422, Lower 1742, three bake draws change actual pixels; texture eviction leaves zero stale pixels. No authenticated NexVerse simulator/avatar outfit bake live pixel proof. Weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.345–354",
+  "assessment": "Alpha.344: Firestorm Low158 failure stage visible without private packet; latest-only queued WASD and F3 verified server position. Live avatar outfit and WASD still unconfirmed. Weighted 38.65 percent and 39 rounded.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.335–344",
+  "next_batch": "Alpha.345–354",
   "default_blocks_per_run": 10
 }

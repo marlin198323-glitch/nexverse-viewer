@@ -47,6 +47,8 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_packets)+"\n"
        "appearance_malformed="+
            std::to_string(r.appearance_malformed)+"\n"
+       "appearance_malformed_stage_code="+
+           std::to_string(r.appearance_malformed_stage_code)+"\n"
        "appearance_other_avatar="+
            std::to_string(r.appearance_other_avatar)+"\n"
        "appearance_self_accepted="+

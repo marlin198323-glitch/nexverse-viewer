@@ -846,6 +846,20 @@ int main()
     excessive=complete_appearance;
     excessive.push_back(0x5aU);
     if(decode_avatar_appearance(excessive))return 114;
+
+    AvatarAppearanceFailure why{};
+    if(decode_avatar_appearance({},&why)||why!=AvatarAppearanceFailure::header)return 115;
+    auto broken=appearance_payload;
+    broken[17]=255;broken[18]=127;
+    if(decode_avatar_appearance(broken,&why)||why!=AvatarAppearanceFailure::texture_entry)return 116;
+    broken=appearance_payload;broken[22]=255;
+    if(decode_avatar_appearance(broken,&why)||why!=AvatarAppearanceFailure::visual_params)return 117;
+    broken=appearance_payload;broken[26]=255;
+    if(decode_avatar_appearance(broken,&why)||why!=AvatarAppearanceFailure::appearance_data)return 118;
+    if(!decode_avatar_appearance(complete_appearance,&why)||why!=AvatarAppearanceFailure::none)return 119;
+    if(decode_avatar_appearance(nan_hover,&why)||why!=AvatarAppearanceFailure::hover)return 120;
+    if(decode_avatar_appearance(excessive,&why)||why!=AvatarAppearanceFailure::attachments)return 121;
+
     auto append_u64_vec = [](std::vector<std::uint8_t>& out, std::uint64_t value)
     {
         for (unsigned int i = 0U; i < 8U; ++i)

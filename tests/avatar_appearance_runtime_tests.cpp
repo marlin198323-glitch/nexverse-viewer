@@ -14,6 +14,7 @@ int main()
     if(describe_appearance_runtime(state,false).find("Regionwechsel")==
         std::string::npos)return 3;
     state.malformed=2;
+    state.invalid_stage="attachments";
     if(describe_appearance_runtime(state,false).find("ungueltige")==
         std::string::npos)return 4;
     if(describe_appearance_runtime(state,true).find("bestaetigt")==

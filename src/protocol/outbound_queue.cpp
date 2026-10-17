@@ -17,6 +17,20 @@ OutboundCommandQueue::OutboundCommandQueue(std::size_t max_pending)
 bool OutboundCommandQueue::push(OutboundCommand command)
 {
     std::scoped_lock lock{mutex_};
+    if (std::holds_alternative<AgentUpdateData>(command))
+    {
+        // Keep at most one untransmitted movement update. Reliable
+        // commands retain order; the current directional keys win.
+        auto pending=std::find_if(queue_.begin(),queue_.end(),
+            [](const OutboundCommand& item)
+            {return std::holds_alternative<AgentUpdateData>(item);});
+        if(pending!=queue_.end())
+        {
+            queue_.erase(pending);
+            queue_.push_back(std::move(command));
+            return true;
+        }
+    }
     if (queue_.size() >= max_pending_)
     {
         return false;

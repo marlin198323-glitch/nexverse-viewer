@@ -1455,12 +1455,31 @@ std::optional<AgentDataUpdateMessage> decode_agent_data_update(
     return message;
 }
 
-std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
-    std::span<const std::uint8_t> payload)
+const char* appearance_failure_name(AvatarAppearanceFailure v) noexcept
 {
+    switch(v)
+    {
+        case AvatarAppearanceFailure::none:return "none";
+        case AvatarAppearanceFailure::header:return "header";
+        case AvatarAppearanceFailure::sender:return "sender";
+        case AvatarAppearanceFailure::texture_entry:return "texture_entry";
+        case AvatarAppearanceFailure::visual_params:return "visual_params";
+        case AvatarAppearanceFailure::appearance_data:return "appearance_data";
+        case AvatarAppearanceFailure::hover:return "hover";
+        case AvatarAppearanceFailure::attachments:return "attachments";
+    }
+    return "unknown";
+}
+
+std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
+    std::span<const std::uint8_t> payload,AvatarAppearanceFailure* failure)
+{
+    if(failure)*failure=AvatarAppearanceFailure::none;
+    const auto reject=[&](AvatarAppearanceFailure reason) -> std::optional<AvatarAppearanceMessage> {
+        if(failure)*failure=reason;return std::nullopt;};
     if (payload.size() < 16U + 1U + 2U + 1U + 1U)
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::header);
     }
 
     AvatarAppearanceMessage message;
@@ -1469,7 +1488,7 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     message.avatar_id = uuid_from_bytes(payload, offset);
     if (message.avatar_id.empty())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::sender);
     }
     offset += 16U;
 
@@ -1477,14 +1496,14 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
 
     if (offset + 2U > payload.size())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::texture_entry);
     }
 
     const std::size_t texture_size = read_le_u16(payload, offset);
     offset += 2U;
     if (offset + texture_size > payload.size())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::texture_entry);
     }
 
     message.texture_entry.assign(
@@ -1494,13 +1513,13 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
 
     if (offset >= payload.size())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::visual_params);
     }
 
     const std::size_t visual_count = payload[offset++];
     if (offset + visual_count > payload.size())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::visual_params);
     }
 
     message.visual_params.assign(
@@ -1510,14 +1529,14 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
 
     if (offset >= payload.size())
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::appearance_data);
     }
 
     const std::size_t appearance_count = payload[offset++];
     if (appearance_count > 16U ||
         appearance_count > (payload.size() - offset) / 9U)
     {
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::appearance_data);
     }
 
     message.appearance_data.reserve(appearance_count);
@@ -1541,7 +1560,7 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     const std::size_t hover_count = payload[offset++];
     if (hover_count > 16U ||
         hover_count > (payload.size() - offset) / 12U)
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::hover);
     message.hover_heights.reserve(hover_count);
     for (std::size_t index = 0U; index < hover_count; ++index)
     {
@@ -1551,22 +1570,22 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
         hover.z = read_f32(payload, offset + 8U);
         if (!std::isfinite(hover.x) || !std::isfinite(hover.y) ||
             !std::isfinite(hover.z))
-            return std::nullopt;
+            return reject(AvatarAppearanceFailure::hover);
         message.hover_heights.push_back(hover);
         offset += 12U;
     }
-    if (offset >= payload.size()) return std::nullopt;
+    if (offset >= payload.size()) return reject(AvatarAppearanceFailure::attachments);
     const std::size_t attachment_count = payload[offset++];
     if (attachment_count > 64U ||
         attachment_count != (payload.size() - offset) / 17U ||
         (payload.size() - offset) % 17U != 0U)
-        return std::nullopt;
+        return reject(AvatarAppearanceFailure::attachments);
     message.attachments.reserve(attachment_count);
     for (std::size_t index = 0U; index < attachment_count; ++index)
     {
         AvatarAttachmentData attachment;
         attachment.object_id = uuid_from_bytes(payload, offset);
-        if (attachment.object_id.empty()) return std::nullopt;
+        if (attachment.object_id.empty()) return reject(AvatarAppearanceFailure::attachments);
         offset += 16U;
         attachment.attachment_point = payload[offset++];
         message.attachments.push_back(std::move(attachment));
