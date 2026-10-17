@@ -92,6 +92,21 @@ int main()
     if(world.apply_self_appearance(std::move(wrong)))return 17;
     if(world.self_appearance()->avatar_id!=world.agent().agent_id)
         return 18;
+    // A trial/preview or partially published packet may never replace
+    // the current confirmed server baked body and visual parameters.
+    auto trial=own;
+    trial.trial=true;
+    trial.texture_entry={99U};
+    if(world.apply_self_appearance(trial)||
+       world.self_appearance()->texture_entry!=own.texture_entry)return 100;
+    auto no_texture=own;
+    no_texture.texture_entry.clear();
+    if(world.apply_self_appearance(no_texture)||
+       world.self_appearance()->texture_entry!=own.texture_entry)return 101;
+    auto no_params=own;
+    no_params.visual_params.clear();
+    if(world.apply_self_appearance(no_params)||
+       world.self_appearance()->visual_params!=own.visual_params)return 102;
 
     // Full/Compressed/Terse/Coarse updates share a pose-only WorldModel
     // method; appearance is preserved even if it arrived before pose.

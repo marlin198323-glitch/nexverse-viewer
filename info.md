@@ -1,3 +1,14 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Gesamtfortschritt 39 % (38,65 % gewichtet). Nächste Gruppe Alpha.315–324.**
+
+Aktueller OGL Viewer 0.2.0-alpha.314 | develop-current | Stand 17.10.2026.
+
+Alpha.305–314: Autoritative Self-AvatarAppearance-Pakete werden im tatsächlichen LLUDP-Handler und WorldModel gegen nachfolgende Vorschau/Trial-Pakete und fehlende TextureEntry/VisualParams abgesichert. Bereits bestätigte Skin-/Firestorm-LLM-Texture-Daten bleiben erhalten. F3 zeigt abgelehnte Trial-/Incomplete-Pakete, privater Export enthält nur numerische Whitelist-Zähler. Native/WorldModel/Python-/GPU-/Pi5-Testregressionen, GitHub commit/push, verifizierten CI-SHA. Details: docs/ALPHA305_314_AUTHORITATIVE_SELF_SKIN.md.
+
+Nächster Zehnerlauf Alpha.315–324. Neue Chats starten mit aktuellem CHATUEBERGABE.md, projectplan.md, docs/PROJECT_PROGRESS.json und GitHub-HEAD. Entwicklung nur Mint-PC, Pi5 für ARM64-CI, Xvfb isoliert. Echtes authentifiziertes NexVerse Avatar-/Outfit-/Bake-Pixel-E2E OFFEN; OpenGenesisLINK Server main 7c6b0cf7 optional OGLAssetService disabled-by-default.
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) auch im neuen Chat. Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Gruppe Alpha.305–314.**
 
 **ALPHA.304 TEST-GATES VERIFIZIERT:** Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564; Pi5 ARM64 CI Run 39068198529 **SUCCESS für exakt denselben Commit**. Mint Debug x64 Fullbuild 342/342 Schritte, **143/143 Native C++23/NVIDIA-GL CTest**, **107/107 Python**, lokaler ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon **PASS**. Authentifiziertes Live NexVerse SelfAvatarAppearance/Outfit-Bake-Pixel-E2E weiter OFFEN. **Gesamtfortschritt 39 % (38,65 % gewichtet)**. Nächster Zehnerlauf Alpha.305–314.

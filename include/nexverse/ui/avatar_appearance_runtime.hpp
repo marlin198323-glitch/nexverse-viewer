@@ -14,7 +14,23 @@ struct AvatarAppearanceRuntime
     std::uint32_t ignored_region=0;
     std::uint32_t other_avatar=0;
     std::uint32_t self_accepted=0;
+    std::uint32_t self_trial_ignored=0;
+    std::uint32_t self_incomplete_ignored=0;
 };
+// A post-login trial/incomplete simulator update is observable but
+// cannot remove a previously accepted authoritative body.
+[[nodiscard]] inline std::string describe_self_appearance_admission(
+    const AvatarAppearanceRuntime& state,bool authoritative_present)
+{
+    const auto rejected=state.self_trial_ignored+
+        state.self_incomplete_ignored;
+    if(rejected==0U)return {};
+    const auto summary="Self: "+std::to_string(state.self_trial_ignored)+
+        " Vorschau / "+std::to_string(state.self_incomplete_ignored)+
+        " unvollstaendig ignoriert";
+    return authoritative_present?summary+" (Skin erhalten)":
+        summary+" (Self weiter ausstehend)";
+}
 // ACK confirms delivery of the handshake datagram, NEVER an
 // AvatarAppearance packet. A passive 15s warning does not request any
 // further packets; simulator delivery remains authoritative.

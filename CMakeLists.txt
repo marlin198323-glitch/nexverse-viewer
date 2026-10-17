@@ -380,6 +380,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-login-tests)
     add_test(NAME nexverse-login-tests COMMAND nexverse-login-tests)
 
+    add_executable(nexverse-self-appearance-admission-tests
+        tests/self_appearance_admission_tests.cpp)
+    target_link_libraries(nexverse-self-appearance-admission-tests PRIVATE
+        NexVerse::Protocol NexVerse::UI)
+    nexverse_enable_warnings(nexverse-self-appearance-admission-tests)
+    add_test(NAME nexverse-self-appearance-admission-tests
+        COMMAND nexverse-self-appearance-admission-tests)
+
     add_executable(nexverse-self-appearance-ack-receipt-tests
         tests/self_appearance_ack_receipt_tests.cpp)
     target_link_libraries(nexverse-self-appearance-ack-receipt-tests

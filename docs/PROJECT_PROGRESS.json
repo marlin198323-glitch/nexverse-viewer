@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.304",
+  "viewer_version": "0.2.0-alpha.314",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.305–314",
-  "assessment": "Alpha.304: actual reliable LLUDP SSA handshake ACK per latest circuit sequence with reliable-tracker verification, stale/reordered ACK protection, monotonic 15s readback absence warning and authenticated current region UI and local 0600 report. Full live NexVerse login/self-avatar/outfit/baked-pixels E2E not yet verified, weighted 38.65%, rounded 39% unchanged.",
+  "next_five_blocks": "Alpha.315–324",
+  "assessment": "Alpha.314: authoritative self AvatarAppearance acceptance in productive LLUDP and WorldModel preserves valid baked body against Trial and incomplete TextureEntry/VisualParams; F3 diagnostics and native tests. Authenticated NexVerse outfit pixel E2E still missing; 38.65 percent weighted, rounded 39 unchanged.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.305–314",
+  "next_batch": "Alpha.315–324",
   "default_blocks_per_run": 10
 }

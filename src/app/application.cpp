@@ -74,6 +74,7 @@
 #include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
+#include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
@@ -4892,6 +4893,8 @@ int Application::run(bool enable_developer_modules)
     std::atomic_uint32_t avatar_appearance_ignored_region{0U};
     std::atomic_uint32_t avatar_appearance_other_avatar{0U};
     std::atomic_uint32_t avatar_appearance_self_accepted{0U};
+    std::atomic_uint32_t avatar_appearance_self_trial_ignored{0U};
+    std::atomic_uint32_t avatar_appearance_self_incomplete_ignored{0U};
     std::atomic_uint32_t avatar_animation_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
@@ -5547,6 +5550,8 @@ int Application::run(bool enable_developer_modules)
          &avatar_appearance_ignored_region,
          &avatar_appearance_other_avatar,
          &avatar_appearance_self_accepted,
+         &avatar_appearance_self_trial_ignored,
+         &avatar_appearance_self_incomplete_ignored,
          &world_model,&world_mutex](
             const protocol::DecodedPacket& packet)
         {
@@ -5573,6 +5578,21 @@ int Application::run(bool enable_developer_modules)
 
             if (appearance->avatar_id == world_model.agent().agent_id)
             {
+                const auto admission=protocol::assess_self_appearance(
+                    *appearance,world_model.agent().agent_id,
+                    world_model.region().connected);
+                if(admission==protocol::SelfAppearanceAdmission::trial_preview)
+                {
+                    avatar_appearance_self_trial_ignored.fetch_add(
+                        1U,std::memory_order_relaxed);
+                    return; // trial snapshots are not authoritative skins
+                }
+                if(!protocol::appearance_is_authoritative(admission))
+                {
+                    avatar_appearance_self_incomplete_ignored.fetch_add(
+                        1U,std::memory_order_relaxed);
+                    return; // keep last known-good TE/VisualParams on GPU
+                }
                 const bool first=!world_model.self_appearance().has_value();
                 const bool accepted=world_model.apply_self_appearance(*appearance);
                 if(accepted)
@@ -12545,7 +12565,9 @@ int Application::run(bool enable_developer_modules)
                 avatar_appearance_malformed.load(std::memory_order_relaxed),
                 avatar_appearance_ignored_region.load(std::memory_order_relaxed),
                 avatar_appearance_other_avatar.load(std::memory_order_relaxed),
-                avatar_appearance_self_accepted.load(std::memory_order_relaxed)
+                avatar_appearance_self_accepted.load(std::memory_order_relaxed),
+                avatar_appearance_self_trial_ignored.load(std::memory_order_relaxed),
+                avatar_appearance_self_incomplete_ignored.load(std::memory_order_relaxed)
             };
             ui::AvatarPipelineProof avatar_proof{};
             avatar_proof.appearance_runtime=appearance_runtime;
@@ -12657,6 +12679,10 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.other_avatar;
             avatar_diagnostic.appearance_self_accepted=
                 appearance_runtime.self_accepted;
+            avatar_diagnostic.appearance_self_trial_ignored=
+                appearance_runtime.self_trial_ignored;
+            avatar_diagnostic.appearance_self_incomplete_ignored=
+                appearance_runtime.self_incomplete_ignored;
             avatar_diagnostic.camera_valid=avatar_proof.view.valid_pose;
             avatar_diagnostic.center_in_frustum=
                 avatar_proof.view.center_in_frustum;
@@ -12840,6 +12866,9 @@ int Application::run(bool enable_developer_modules)
                     ui::terrain_recovery_layers(terrain_detail_retry,
                                                  terrain_detail_ids);
                 shell_view.avatar_skin_status=avatar_proof.skin_stage();
+                shell_view.avatar_admission_status=
+                    ui::describe_self_appearance_admission(
+                        appearance_runtime,avatar_proof.appearance_received);
                 shell_view.mesh_quality_status=
                     ui::describe_mesh_quality(mesh_quality_evidence);
                 shell_view.avatar_report_notice=avatar_report_notice;

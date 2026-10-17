@@ -19,6 +19,8 @@ int main()
     r.self_appearance_support_sent=true;
     r.self_appearance_support_acknowledged=true;
     r.self_appearance_ack_wait_seconds=27U;
+    r.appearance_self_trial_ignored=2U;
+    r.appearance_self_incomplete_ignored=3U;
     r.simulator_circuit_active=true;
     r.region_handle_present=true;
     r.agent_identity_present=false; // identity may be missing after region
@@ -43,7 +45,9 @@ int main()
     if(text.find("visibility_stage=zero_depth_fragments")==
        std::string::npos||text.find("rendered_original_llm_draws=3")==
        std::string::npos)return 1;
-    if(text.find("self_appearance_reply_wait_seconds=27")==std::string::npos||
+    if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
+       text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
+       text.find("self_appearance_reply_wait_seconds=27")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_acked=yes")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_sent=yes")==std::string::npos||
        text.find("region_connected=yes")==std::string::npos||

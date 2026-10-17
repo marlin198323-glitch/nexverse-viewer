@@ -1,3 +1,7 @@
+Alpha.305–314: Autoritative SelfAppearance im WorldModel und realen Low158-Handler über aktiven Owner/Region, kein Trial, TextureEntry/VisualParams. Echte bestätigte Avatar-Skin wird von späteren Preview-/Teilpaketen nicht zerstört. F3-/privater Export Diagnose. Upstream OpenGenesisLINK 7c6b0cf, optionales Server-Addon disabled-by-default, echte Grid-Pixel-E2E noch OFFEN. 39 % Gesamtfortschritt. Nächste Alpha.315–324.
+
+---
+
 ## Alpha.295–304, 17.10.2026 – SelfAvatarAppearance: Reliable ACK vs echtes Serverpaket
 
 - Nur der ReliableTracker-bestätigte ACK der jüngsten SSA-RegionHandshakeReply-Sequenz wird als Simulator-ACK gezeigt; späte/duplizierte/falsche ACKs zählen nicht. Neuer RegionHandshake/Session-Start entwertet alte Receipt-Daten.

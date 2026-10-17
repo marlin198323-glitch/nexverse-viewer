@@ -1,3 +1,25 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächste Alpha.315–324.**
+
+## Aktueller 10-Block-Plan Alpha.305–314
+
+Viewer 0.2.0-alpha.314, gewichtet 38,65 %, gerundet 39 %.
+
+- 305 [GEPRÜFT] Branch/CHATUEBERGABE/Upstream OpenGenesisLINK.
+- 306 [REPARIERT] Trial-/Teilpaket konnte echte Self-Avatar-Skin überschreiben.
+- 307 [IMPLEMENTIERT] aktiver Region-/Owner-/Trial-Admission-Schutz.
+- 308 [IMPLEMENTIERT] vollständige TextureEntry und VisualParams notwendig.
+- 309 [IMPLEMENTIERT] WorldModel behält bestätigte Skin bei ungeeigneter Nachfolgenachricht.
+- 310 [IMPLEMENTIERT] echter Low158-Handler verhindert Serieninkrement und Streaming solcher Pakete.
+- 311 [IMPLEMENTIERT] F3-Avatar zeigt sichere Paket-Annahme-/Ablehnungsdiagnose.
+- 312 [IMPLEMENTIERT] privater lokaler Whitelist-Zähler für abgelehnte Trials/Teilpakete.
+- 313 [GETESTET] WorldModel/Native-C++23/Python/ARM64 Headless + GUI Contracts.
+- 314 [BUILD/CI] Mint NVIDIA/x64 full CMake/CTest, Python, Xvfb/Icon, GitHub SHA-Push und Pi5-ARM64-CI.
+
+Doku: docs/ALPHA305_314_AUTHORITATIVE_SELF_SKIN.md; echte NexVerse Grid Avatar-/Outfit-Pixel-E2E OFFEN.
+
+
+---
+
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächste Alpha.305–314.**
 
 ## Projektplan: Alpha.295–304 abgeschlossenes Implementierungspaket

@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
-**Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.** **Nächster Zehnerdurchlauf Alpha.305–314.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.304 | Branch develop-current. Nächster Zehnerlauf Alpha.295–304.
+**Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.** **Nächster Zehnerlauf Alpha.315–324.** **Nächster Zehnerdurchlauf Alpha.305–314.**
+Stand 17.10.2026 | Viewer 0.2.0-alpha.314 | Branch develop-current. Nächster Zehnerlauf Alpha.295–304.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -23,6 +23,8 @@ Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, G
 **Alpha.295–304:** Reliable-Tracker-korrelierte echte SSA-Handshake-ACKs (keine alten/duplizierten ACKs), 15s-Warte-Status, authentifizierter Self-UI-Green-Gate und lokale min. 0600-Diagnose. Live NexVerse SelfAppearance-/Outfit-/Pixel-E2E bleibt OFFEN. **39 % (38,65 %)** unverändert, nächste Alpha.305–314.
 
 **ALPHA.304 TEST-GATES VERIFIZIERT:** Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564; Pi5 ARM64 CI Run 39068198529 **SUCCESS für exakt denselben Commit**. Mint Debug x64 Fullbuild 342/342 Schritte, **143/143 Native C++23/NVIDIA-GL CTest**, **107/107 Python**, lokaler ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon **PASS**. Authentifiziertes Live NexVerse SelfAvatarAppearance/Outfit-Bake-Pixel-E2E weiter OFFEN. **Gesamtfortschritt 39 % (38,65 % gewichtet)**. Nächster Zehnerlauf Alpha.305–314.
+
+Alpha.305–314: echte Self Low158 und WorldModel behalten bestätigte Avatar-Skin trotz Trial-/Teilpaket; F3 und private Diagnose zählen verworfene Nachrichten. NexVerse Live-Outfit-E2E weiter OFFEN. Gesamtfortschritt **39 %** (38,65 %), nächster Zehnerlauf **Alpha.315–324**.
 
 ## Gewichtete Projektbewertung
 

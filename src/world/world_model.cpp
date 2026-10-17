@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/protocol/self_appearance_admission.hpp"
 #include <cmath>
 
 #include <utility>
@@ -89,8 +90,12 @@ void WorldModel::set_agent_profile(AgentProfileState profile)
 bool WorldModel::apply_self_appearance(
     protocol::AvatarAppearanceMessage appearance)
 {
-    if (agent_.agent_id.empty() ||
-        appearance.avatar_id != agent_.agent_id)
+    // A newer simulator preview or an incomplete shape/TE packet may
+    // arrive after the real self body: preserve the authoritative skin.
+    // The same admission rule is used by the packet handler and model.
+    if (!protocol::appearance_is_authoritative(
+            protocol::assess_self_appearance(
+                appearance,agent_.agent_id,region_.connected)))
         return false;
     self_appearance_ = std::move(appearance);
     // Remove any erroneously cached self entity, e.g. from a

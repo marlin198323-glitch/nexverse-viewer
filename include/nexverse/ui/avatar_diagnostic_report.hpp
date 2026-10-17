@@ -28,6 +28,8 @@ struct AvatarDiagnosticReport
     std::uint32_t appearance_malformed=0U;
     std::uint32_t appearance_other_avatar=0U;
     std::uint32_t appearance_self_accepted=0U;
+    std::uint32_t appearance_self_trial_ignored=0U;
+    std::uint32_t appearance_self_incomplete_ignored=0U;
     bool camera_valid=false;
     bool center_in_frustum=false;
     bool gpu_fragment_result_known=false;

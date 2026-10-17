@@ -51,6 +51,10 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_other_avatar)+"\n"
        "appearance_self_accepted="+
            std::to_string(r.appearance_self_accepted)+"\n"
+       "appearance_self_trial_ignored="+
+           std::to_string(r.appearance_self_trial_ignored)+"\n"
+       "appearance_self_incomplete_ignored="+
+           std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"
