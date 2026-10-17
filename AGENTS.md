@@ -1,3 +1,5 @@
+Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, GitHub Pi5 ARM64-CI Run 39065802543 SUCCESS für exakt diesen SHA. Linux Mint vollständiger x64 Debug Build (340 Buildsteps), 142/142 Native-C++23/NVIDIA-GL-CTest, 95/95 Python, ARM64-kompatibler Headless, isolierter Xvfb-GUI und Original-Systemicon/WM_CLASS PASS. Authentifizierter Live-NexVerse Avatar/Outfit-Bake-E2E OFFEN. Gesamtfortschritt 39 % (38,65 % gewichtet); nächster Lauf Alpha.285–294.
+
 # Aktueller OGL Viewer Stand – Alpha.284 (17.10.2026)
 
 **ZEHN-BLÖCKE-REGEL: bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (Code und GUI, Tests, Dokumentation, GitHub-Push, Pi5-CI). Auch im neuen Chat.**

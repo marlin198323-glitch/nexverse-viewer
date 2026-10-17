@@ -15,7 +15,7 @@
 | 281 | Echte F3-Avatarübersicht zeigt Head/Upper/Lower GPU-Tiefentest je Part (V sichtbar / 0 verdeckt / ? wartend / - kein Original-LLM). | Viewer GUI |
 | 282 | F3 Bake-Seite zeigt für Head, Upper und Lower getrennt echten Server-TE, GPU-Residenz, BakeGL-Draw und individuellen Depth-Test. | Inspector Native/GUI |
 | 283 | Manuell speicherbarer datensparsamer F3-Diagnoseexport: sechs boolesche Head/Upper/Lower Depth Known/Passed-Felder, keine Session/UUID/CAPS/Chatinhalte. | Existing Export Pipeline |
-| 284 | Native C++23-Regression, Pi5-Headless-Liste, fünf Python-Source-/UI-Contracts, vollständiger Mint-x64/NVIDIA-GL-CMake-Build, Xvfb/Vollviewer/Originalicon, SHA-belegter GitHub-Push und Pi5-CI. | Gates unten verifizieren |
+| 284 | Native C++23-Regression, Pi5-Headless-Liste, fünf Python-Source-/UI-Contracts, vollständiger Mint-x64/NVIDIA-GL-CMake-Build, Xvfb/Vollviewer/Originalicon, SHA-belegter GitHub-Push und Pi5-CI. | FERTIG: Mint 142/142 Native C++/GL, 95/95 Python, Headless/Xvfb/Icon PASS; Pi5 SHA 2017b48fcc6586e00656bba01c6fe3058d0c98be CI Run 39065802543 SUCCESS |
 
 ## Grenzen
 
@@ -24,3 +24,7 @@ Dies sind **echte, aber zeitversetzte OpenGL-Depth-Test-Belege** für Original-B
 Mint x64 GPU/GUI ausschließlich im isolierten Xvfb; keine sichtbare Viewer-Aktion auf dem echten Desktop. Pi5 ARM64 Source/Native Headless, keine native GPU-Releasemessung. OpenGenesisLINK ROBUST/OGLAssetService bleibt experimental und disabled-by-default, kein ungeprüfter Live-Deploy.
 
 **39 % Gesamtfortschritt unverändert. Nächste Zehnergruppe Alpha.285–294.**
+
+## Tatsächlicher Testabschluss
+
+Feature-SHA 2017b48fcc6586e00656bba01c6fe3058d0c98be; GitHub Pi5 ARM64 Run 39065802543 SUCCESS auf exakt demselben Featurecommit. Mint x64 CMake Vollbuild 340 Schritte, 142/142 native C++23/NVIDIA GL Tests, 95/95 Python, ARM64-kompatibler Headless, isoliertes Xvfb-System und X11 Originalicon PASS. Authentifizierter Live-NexVerse Avatar-/Outfit-/Pixel-E2E bleibt ausdrücklich OFFEN; 39 % Gesamtfortschritt unverändert.

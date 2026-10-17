@@ -14,6 +14,8 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 
 **Alpha.275–284:** Drei getrennte Firestorm Original-Body OpenGL-Depth-Abfragen inkl. echter GPU-Region-/Sequence-Guards, F3-UI/Export. 39 % unverändert (38,65 %), da echtes NexVerse AvatarAppearance/Outfit-E2E weiter offen. **Nächste Zehnergruppe Alpha.285–294.**
 
+Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, GitHub Pi5 ARM64-CI Run 39065802543 SUCCESS für exakt diesen SHA. Linux Mint vollständiger x64 Debug Build (340 Buildsteps), 142/142 Native-C++23/NVIDIA-GL-CTest, 95/95 Python, ARM64-kompatibler Headless, isolierter Xvfb-GUI und Original-Systemicon/WM_CLASS PASS. Authentifizierter Live-NexVerse Avatar/Outfit-Bake-E2E OFFEN. Gesamtfortschritt 39 % (38,65 % gewichtet); nächster Lauf Alpha.285–294.
+
 ## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |

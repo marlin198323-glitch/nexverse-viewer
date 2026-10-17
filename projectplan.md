@@ -11,7 +11,7 @@
 - 281 [IMPLEMENTIERT/TEST] F3 Übersicht zeigt pro Body-Part echte V/0/?/- GPU-Tiefe.
 - 282 [IMPLEMENTIERT/TEST] F3 Bake-Detailansicht trennt je Part Server-TE, GPU, Original-BakeGL und Depth.
 - 283 [IMPLEMENTIERT/TEST] Private Report-Export enthält nur drei Paar booleans Depth Known/Passed.
-- 284 [BUILD/CI] Mint x64/NVIDIA-GL Vollbuild, neuer C++23-/Pi5-Headless-/Python-Contract, isoliertes Xvfb/Systemicon sowie GitHub-Push mit Pi5 ARM64 CI.
+- 284 [FERTIG] Mint x64 Vollbuild, 142/142 C++/NVIDIA GL, 95/95 Python, Headless und Xvfb+Icon PASS. GitHub Feature-SHA 2017b48fcc6586e00656bba01c6fe3058d0c98be, Pi5 ARM64 CI 39065802543 SUCCESS, exakter SHA; Live-Grid-E2E OFFEN.
 
 Dokumentation: docs/ALPHA275_284_AVATAR_PART_DEPTH.md. Die volle SelfAvatarAppearance-, Outfit- und NexVerse Live-Grid-Pixel-E2E-Parität bleibt OFFEN; **39 %** bleibt unverändert.
 
