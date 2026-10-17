@@ -13,7 +13,7 @@
 - 301 [IMPLEMENTIERT/TEST]: ab 15s ACK ohne Self-Paket passive, nichtmutierende Fehlstandsanzeige.
 - 302 [IMPLEMENTIERT/TEST]: UI grün nur bei aktuell authentifiziertem Self/Region-AvatarPipelineProof.
 - 303 [IMPLEMENTIERT/TEST]: 0600-Diagnose ohne Secrets mit ACK bool und max. 120s Wait, eigener Native-C++23-Test im Pi5 Headless und Python Source-Vertrag.
-- 304 [BUILD/CI]: x64 Mint Fullbuild, CTest/NVIDIA GL, Python, ARM64-kompatibles Headless, isoliertes Xvfb/Icon, GitHub Push und Pi5-ARM64-CI.
+- 304 [FERTIG]: Mint x64 Fullbuild 342/342, 143/143 native NVIDIA OpenGL CTests, 107/107 Python, Headless+Xvfb+Originalicon PASS; Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564 und Pi5 ARM64 CI Run 39068198529 SUCCESS exakt dafür. Authentifizierter Live-Grid-Avatar-/Outfit-E2E bleibt OFFEN.
 
 Testdetails und Blockverträge: docs/ALPHA295_304_SSA_ACK_READBACK.md. **Live NexVerse Avatar/Outfit/Bake-E2E OFFEN**, nicht fälschlich als fertig markieren.
 

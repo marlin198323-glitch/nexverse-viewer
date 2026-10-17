@@ -24,3 +24,7 @@ Ein zuverlässiger Handshake-ACK des Simulators ist nur eine Zustellbestätigung
 NexVerse-Grid-Login, Simulatorantwort mit SelfAvatarAppearance, sichtbare Kleidung, Outfit-/Bake-Assets und in der echten Welt sichtbare Pixel wurden hier mangels authentifizierter Live-Grid-Sitzung nicht durchgeführt. Firestorm-Parität und Production-Deployment bleiben **OFFEN**. Keine Aktivierung des experimentellen OpenGenesisLINK OGLAssetService-Serveraddons.
 
 **Gesamtfortschritt weiterhin 39 %** (38,65 % gewichtete Schätzung). Nächster verbindlicher Zehnerdurchlauf **Alpha.305–314**: reales SelfAppearance-Serverreadback mit Testaccount, Outfit-/Bake-/Avatar-Inworld-Pixelbeweis, UI-/Funktionstests.
+
+## Tatsächlich bestandene Freigabegates
+
+**ALPHA.304 TEST-GATES VERIFIZIERT:** Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564; Pi5 ARM64 CI Run 39068198529 **SUCCESS für exakt denselben Commit**. Mint Debug x64 Fullbuild 342/342 Schritte, **143/143 Native C++23/NVIDIA-GL CTest**, **107/107 Python**, lokaler ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon **PASS**. Authentifiziertes Live NexVerse SelfAvatarAppearance/Outfit-Bake-Pixel-E2E weiter OFFEN. **Gesamtfortschritt 39 % (38,65 % gewichtet)**. Nächster Zehnerlauf Alpha.305–314.

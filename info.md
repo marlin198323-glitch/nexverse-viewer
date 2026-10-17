@@ -1,5 +1,8 @@
 **ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE) auch im neuen Chat. Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Gruppe Alpha.305–314.**
 
+**ALPHA.304 TEST-GATES VERIFIZIERT:** Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564; Pi5 ARM64 CI Run 39068198529 **SUCCESS für exakt denselben Commit**. Mint Debug x64 Fullbuild 342/342 Schritte, **143/143 Native C++23/NVIDIA-GL CTest**, **107/107 Python**, lokaler ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon **PASS**. Authentifiziertes Live NexVerse SelfAvatarAppearance/Outfit-Bake-Pixel-E2E weiter OFFEN. **Gesamtfortschritt 39 % (38,65 % gewichtet)**. Nächster Zehnerlauf Alpha.305–314.
+
+
 # OGL Viewer aktueller Projektstand Alpha.304 (17.10.2026)
 
 **Alpha.295–304:** Die echte SSA-LLUDP-RegionHandshakeReply-Zustellung bekommt jetzt eine dedizierte und verifizierte ReliableTracker-ACK-Korrelation gegen die neueste Paket-Sequenz. Alte/duplizierte/falsche ACKs sowie vorherige Regionen zählen nicht. Auth-/Region-bewusstes F3 unterscheidet gesendet, quittiert, serverseitiges SelfAppearance tatsächlich empfangen; nach 15 Sekunden ohne Self erscheint nur eine passive Wartewarnung. Die grüne Self-UI verlangt das aktuelle authentifizierte Paket. Lokaler privater Diagnoseexport enthält nur ACK-Boolean und max. 120s numerische Wartezeit. Details docs/ALPHA295_304_SSA_ACK_READBACK.md.

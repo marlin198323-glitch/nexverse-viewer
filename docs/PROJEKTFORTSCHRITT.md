@@ -22,6 +22,8 @@ Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, G
 
 **Alpha.295–304:** Reliable-Tracker-korrelierte echte SSA-Handshake-ACKs (keine alten/duplizierten ACKs), 15s-Warte-Status, authentifizierter Self-UI-Green-Gate und lokale min. 0600-Diagnose. Live NexVerse SelfAppearance-/Outfit-/Pixel-E2E bleibt OFFEN. **39 % (38,65 %)** unverändert, nächste Alpha.305–314.
 
+**ALPHA.304 TEST-GATES VERIFIZIERT:** Feature-SHA a6d7942173e330b840611ac1f55c952da3cca564; Pi5 ARM64 CI Run 39068198529 **SUCCESS für exakt denselben Commit**. Mint Debug x64 Fullbuild 342/342 Schritte, **143/143 Native C++23/NVIDIA-GL CTest**, **107/107 Python**, lokaler ARM64-kompatibler Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon **PASS**. Authentifiziertes Live NexVerse SelfAvatarAppearance/Outfit-Bake-Pixel-E2E weiter OFFEN. **Gesamtfortschritt 39 % (38,65 % gewichtet)**. Nächster Zehnerlauf Alpha.305–314.
+
 ## Gewichtete Projektbewertung
 
 | Bereich | Gewicht | Teilfortschritt | Beitrag |
