@@ -13,7 +13,7 @@
 - 291 [implementiert] F3 Avatar-Fenster zeigt SSA auf Übersicht und Bake-Seiten.
 - 292 [implementiert] lokaler, privater F3-Export mit nur Boolean-Sendebeleg.
 - 293 [implementiert] native Wire-Golden-/UI-/Exporttests und sechs Python-Source-Verträge.
-- 294 [Test/CI] Mint x64/NVIDIA OpenGL, Python, Headless, Xvfb, Taskleistenicon, GitHub Push/Pi5 ARM64; SHA/Testergebnisse im Abschlussnachweis.
+- 294 [FERTIG] Mint x64 Vollbuild, 142/142 native NVIDIA-GL-Ctests, 101/101 Python, Headless und Xvfb+Originalicon PASS; GitHub Featurecommit d4a216ead2be4b6a842e53ccbebd609ad76bb763 und Pi5 ARM64 Run 39066916593 SUCCESS auf exakt diesem SHA. Echter NexVerse Live-Avatar-/Outfit-E2E OFFEN.
 
 **Wichtig:** echtem NexVerse-Grid mangelt weiterhin an geprüftem SelfAvatarAppearance-/Outfit-/Bake-Pixel-E2E-Nachweis. Serveraddon disabled-by-default, kein Produktivdeploy. Details docs/ALPHA285_294_SSA_HANDSHAKE.md.
 
