@@ -559,7 +559,7 @@ void character_callback(GLFWwindow* window, unsigned int codepoint)
     }
 }
 
-void key_callback(GLFWwindow* window, int key, int, int action, int)
+void key_callback(GLFWwindow* window, int key, int, int action, int mods)
 {
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
 
@@ -739,7 +739,8 @@ void key_callback(GLFWwindow* window, int key, int, int action, int)
             return;
         }
         if(shell.window==nexverse::ui::ViewerWindow::avatar&&
-           key==GLFW_KEY_S&&context->avatar_report_save_requested)
+           key==GLFW_KEY_S&&(mods&GLFW_MOD_CONTROL)!=0&&
+           context->avatar_report_save_requested)
         {
             *context->avatar_report_save_requested=true;
             return;
@@ -2565,8 +2566,16 @@ void render_world_hud(
         Color{0.018f,0.036f,0.062f,0.88f},9.0f*scale);
     renderer.text(card_x+14.0f*scale,rail_y+382.0f*scale,
         10.2f*scale,"Avatar-Pipeline",theme::text);
+    // Show which Firestorm Low158 field failed, even with F3 closed.
+    // Only a fixed, whitelisted parser-stage label is exposed.
+    const auto& appearance_runtime=avatar_proof.appearance_runtime;
+    const std::string appearance_status=
+        !avatar_proof.appearance_received&&appearance_runtime.malformed>0U
+        ? "Appearance "+std::to_string(appearance_runtime.malformed)+
+          " x defekt: "+appearance_runtime.invalid_stage
+        : nexverse::ui::describe_avatar_pipeline(avatar_proof);
     renderer.text(card_x+14.0f*scale,rail_y+410.0f*scale,
-        9.1f*scale,nexverse::ui::describe_avatar_pipeline(avatar_proof),
+        9.1f*scale,appearance_status,
         avatar_proof.appearance_received?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
         9.1f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
@@ -7652,14 +7661,18 @@ int Application::run(bool enable_developer_modules)
                     glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
                 const auto pressed = [&](int key)
                 {
-                    return focused && !viewer_shell.input_captured() &&
+                    return focused && !viewer_shell.movement_input_captured() &&
                            !experience_ui.open &&
                            !outfit_gallery_open&&!inventory_tree_open &&
                            glfwGetKey(window, key) == GLFW_PRESS;
                 };
                 protocol::MovementKeys keys;
                 keys.forward = pressed(GLFW_KEY_W) || pressed(GLFW_KEY_UP);
-                keys.backward = pressed(GLFW_KEY_S) ||
+                // Ctrl+S is F3's diagnostic shortcut, never a WASD step.
+                const bool ctrl_held=
+                    glfwGetKey(window,GLFW_KEY_LEFT_CONTROL)==GLFW_PRESS||
+                    glfwGetKey(window,GLFW_KEY_RIGHT_CONTROL)==GLFW_PRESS;
+                keys.backward = (!ctrl_held&&pressed(GLFW_KEY_S)) ||
                                 pressed(GLFW_KEY_DOWN);
                 keys.left = pressed(GLFW_KEY_A);
                 keys.right = pressed(GLFW_KEY_D);
@@ -12887,6 +12900,8 @@ int Application::run(bool enable_developer_modules)
                             circuit_snapshot.self_appearance_ack_at)
                     :std::chrono::seconds{0};
                 shell_view.avatar_movement_status=movement_feedback.status();
+                shell_view.avatar_udp_directional_sent=
+                    circuit_snapshot.directional_agent_updates_sent;
                 shell_view.avatar_handshake_status=
                     ui::describe_self_appearance_handshake(
                         simulation_ready&&

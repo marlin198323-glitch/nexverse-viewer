@@ -336,6 +336,19 @@ CircuitStatus CircuitConnection::run(
                         {
                             const auto packet = encode_agent_update(sequence, session_, value);
                             sent = !packet.empty() && send_datagram(socket, packet, status);
+                            if(sent)
+                            {
+                                ++status.agent_updates_sent;
+                                constexpr auto walking=control_at_pos|
+                                    control_at_neg|control_left_pos|control_left_neg;
+                                if((value.control_flags&walking)!=0U)
+                                    ++status.directional_agent_updates_sent;
+                                // Publish bounded send receipts, never claim a
+                                // reliable simulator ACK for AgentUpdate.
+                                if(status.agent_updates_sent==1U||
+                                   status.agent_updates_sent%16U==0U)
+                                    notify();
+                            }
                         }
                         else if constexpr (std::is_same_v<T, LocalChatMessage>)
                         {

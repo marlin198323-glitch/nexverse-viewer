@@ -16,7 +16,7 @@ class LoadingDiagnosticsWorkflowTests(unittest.TestCase):
         self.assertIn('context->loading_diagnostics_open&&action==GLFW_PRESS',APP)
         self.assertIn('key==GLFW_KEY_F3',APP)
         self.assertIn('key==GLFW_KEY_ESCAPE',APP)
-        self.assertIn('key==GLFW_KEY_S&&context->avatar_report_save_requested',APP)
+        self.assertIn('key==GLFW_KEY_S&&(mods&GLFW_MOD_CONTROL)!=0',APP)
 
     def test_loading_mouse_buttons_have_real_actions(self):
         for token in ('LoadingDiagAction::open','LoadingDiagAction::close',

@@ -33,6 +33,9 @@ struct CircuitStatus
     std::string message;
     std::uint32_t packets_sent = 0;
     std::uint32_t packets_received = 0;
+    // UDP socket accepted these AgentUpdate datagrams; NOT a simulator ACK.
+    std::uint32_t agent_updates_sent=0U;
+    std::uint32_t directional_agent_updates_sent=0U;
     std::uint32_t packets_resent = 0;
     std::uint32_t acks_sent = 0;
     std::uint32_t acks_received = 0;

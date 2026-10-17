@@ -269,7 +269,9 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
     {
         if(state.avatar_bake_page==0U)
         {
-            line(0,"Avatar: "+compact(v.avatar_name,50U),theme::text);
+            line(0,"Avatar: "+compact(v.avatar_name,29U)+
+                " | UDP-WASD:"+std::to_string(v.avatar_udp_directional_sent),
+                theme::text);
             line(1,compact("Position: "+position(v.agent_position[0],
                                         v.agent_position[1],
                                         v.agent_position[2])+
@@ -311,7 +313,7 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         r.rect(x+27.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
                Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);
         r.text(x+36.0f*sc,y+ph-79.0f*sc,8.7f*sc,
-               "Bericht [S]",theme::cyan);
+               "Bericht [Strg+S]",theme::cyan);
         r.rect(x+163.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
                Color{0.055f,0.165f,0.235f,0.98f},7.0f*sc);
         r.text(x+171.0f*sc,y+ph-79.0f*sc,8.8f*sc,

@@ -41,6 +41,17 @@ int main()
         if(l.hit((214.0f+104.0f*6.0f+16.0f)*sc,
                  l.height-(58.0f-12.0f)*sc,s)!=
            ViewerAction::map)return 8;
+        // F3 is non-modal: diagnostic HUD cannot freeze WASD.
+        s.window=ViewerWindow::avatar;
+        if(s.movement_input_captured())return 90;
+        s.window=ViewerWindow::region;
+        if(s.movement_input_captured())return 91;
+        s.window=ViewerWindow::chat;
+        if(!s.movement_input_captured())return 92;
+        s.window=ViewerWindow::teleport;
+        if(!s.movement_input_captured())return 93;
+        s.window=ViewerWindow::none;
+        if(s.movement_input_captured())return 94;
         s.window=ViewerWindow::avatar;
         if(l.hit(l.panel_x+75.0f*sc,
                  l.panel_y+l.panel_h-75.0f*sc,s)!=

@@ -58,11 +58,11 @@ class MintBuildContractTests(unittest.TestCase):
         ui=(ROOT/"src/ui/viewer_shell_render.cpp").read_text()
         query=(ROOT/"src/render/opengl_renderer.cpp").read_text()
         self.assertIn("key==GLFW_KEY_F3",app)
-        self.assertIn("key==GLFW_KEY_S&&context->avatar_report_save_requested",app)
+        self.assertIn("key==GLFW_KEY_S&&(mods&GLFW_MOD_CONTROL)!=0",app)
         self.assertIn("ViewerAction::save_avatar_report",app)
         self.assertIn("save_avatar_diagnostic(",app)
         self.assertIn("shell_view.avatar_fragment_status=avatar_proof.fragment_stage()",app)
-        self.assertIn('"Bericht [S]"',ui)
+        self.assertIn('"Bericht [Strg+S]"',ui)
         self.assertIn("camera_valid_",query)
         self.assertIn("reset_self_avatar_visibility();",query)
         report=(ROOT/"src/ui/avatar_diagnostic_report.cpp").read_text()
@@ -88,7 +88,7 @@ class MintBuildContractTests(unittest.TestCase):
         camera=(ROOT/"include/nexverse/ui/camera_zoom_controls.hpp").read_text()
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("camera_zoom_default=5.5f",camera)
-        self.assertIn("9.1f*scale,nexverse::ui::describe_avatar_pipeline",app)
+        self.assertIn("9.1f*scale,appearance_status",app)
         self.assertIn("8.7f*scale,avatar_proof.fragment_stage()",app)
 
     def test_terrain_same_revision_retry_updates_gpu_and_welcome_unchanged(self):

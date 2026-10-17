@@ -81,6 +81,10 @@ struct ViewerShellState
     void close() noexcept { window=ViewerWindow::none; open_menu=-1; }
     [[nodiscard]] bool input_captured() const noexcept
     {return window!=ViewerWindow::none;}
+    // World controls remain usable alongside non-editing status panels.
+    // Only text-edit windows consume WASD and arrow keys.
+    [[nodiscard]] bool movement_input_captured() const noexcept
+    {return window==ViewerWindow::chat||window==ViewerWindow::teleport;}
 };
 struct ViewerMenuItem
 {
