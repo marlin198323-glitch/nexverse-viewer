@@ -12635,6 +12635,8 @@ int Application::run(bool enable_developer_modules)
             avatar_diagnostic.agent_present=render_agent.present;
             avatar_diagnostic.appearance_received=
                 avatar_proof.appearance_received;
+            avatar_diagnostic.self_appearance_support_sent=
+                circuit_snapshot.self_appearance_support_sent;
             avatar_diagnostic.appearance_packets=
                 appearance_runtime.received;
             avatar_diagnostic.appearance_malformed=
@@ -12790,6 +12792,12 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_bake_visual=bake_inspector.visual;
                 shell_view.avatar_depth_parts=
                     avatar_proof.part_visibility.compact();
+                shell_view.avatar_handshake_status=
+                    ui::describe_self_appearance_handshake(
+                        simulation_ready&&
+                        firestorm_region_lease.matches(current_firestorm_epoch),
+                        circuit_snapshot.self_appearance_support_sent,
+                        avatar_proof.appearance_received);
                 shell_view.avatar_bake_stream_status=
                     avatar_bake_stream_status;
                 shell_view.avatar_animation_status=

@@ -1,3 +1,13 @@
+## Alpha.285–294 (17.10.2026) – Firestorm Original SelfAvatarAppearance Handshake
+
+- Echte CircuitConnection versendet nun RegionHandshakeReply mit SSA-Flag Bit 2 (0x00000004), bisher Flags0. Verified gegen Second Life viewer main llviewerregion.cpp / llviewerregion.h. Bits0/1 bleiben deaktiviert, kein implementierter LL-Objektcache.
+- F3 Avatar und Bake-Seiten zeigen getrennt lokalen, zuverlässigen SSA-Sendepfad und tatsächlich empfangene Self-Serverdaten. Kein Avatar-/Bake-Upload durch diese Änderung. Privatdiagnose enthält nur send-Bool.
+- OpenGenesisLINK Server main 7c6b0cf7 ist lediglich OGLAssetService plugin loading build fix, weiterhin disabled-by-default; kein zwingender CAP- oder Backend-Wechsel.
+- Tests: Native LLUDP-Golden-Wire, UI, Export, Mint NVIDIA GL/Python/Headless/Xvfb und Pi5-CI; Live-NexVerse-SelfAppearance-/Outfit-End-to-End OFFEN. **39 %**. Als nächstes **Alpha.295–304**.
+
+
+---
+
 ## 17.10.2026 / Alpha.275–284 – unabhängiger original-LLM GPU Depth-Proof
 
 - Head/Upper/Lower: drei getrennte GL_ANY_SAMPLES_PASSED-Queries (je zwei asynchrone Slots), Epoch-Tags und monotone Ergebnis-Sequenzen, OR-Gesamtergebnis statt Last-Query-Wins; null wenn originale LLM-Draws fehlen.

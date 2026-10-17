@@ -21,6 +21,7 @@ struct AvatarDiagnosticReport
     bool region_handle_present=false;
     bool agent_identity_present=false;
     bool appearance_received=false;
+    bool self_appearance_support_sent=false;
     std::uint32_t appearance_packets=0U;
     std::uint32_t appearance_malformed=0U;
     std::uint32_t appearance_other_avatar=0U;

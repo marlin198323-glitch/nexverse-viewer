@@ -1,3 +1,19 @@
+**ZEHN-BLÖCKE-REGEL – BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE), auch im neuen Chat. Stand 39 %; nächste Gruppe Alpha.295–304.**
+
+# Aktueller Viewerstand Alpha.294 – 17.10.2026
+
+**ZEHN-BLÖCKE-REGEL: bei JEDEM WEITER und in jedem neuen Chat 10 ECHTE ENTWICKLUNGSBLÖCKE, inklusive realem Code, sichtbarer GUI, vollständigen Tests, GitHub-Push und Pi5-CI.**
+
+**Gesamtfortschritt 39 %** (38,65 % gewichtete Schätzung, unverändert). **Nächste Zehnergruppe Alpha.295–304.** docs/PROJECT_PROGRESS.json ist maßgeblich.
+
+**Alpha.285–294:** Echten LLUDP-Handshake-Blocker gefunden und repariert: Bei RegionHandshakeReply fehlte das von Firestorm/Second Life erwartete SSA-Bit2 0x00000004. Canonical Protocol Constant, Default Encoder und produktiver Circuit senden Bit2 jetzt zuverlässig; Cache-Bits0/1 bleiben aus. Status erst nach lokalem Send-Erfolg, F3-Anzeige unterscheidet Handshake-Angebot von tatsächlichem serverseitigem Self-AvatarAppearance-Readback. Private Diagnose enthält nur Send-Bool. Keine unbelegten Live-Grid-Erfolge. Dokumentation docs/ALPHA285_294_SSA_HANDSHAKE.md.
+
+Upstream main 7c6b0cf7252189707066f09ad66c732642b27af9 nur OGLAssetService-Konstruktor/Dependencies, experimentelles Serveraddon disabled-by-default. Mint-Rechner ist Buildhost, Raspberry Pi5 ARM64 CI, isoliertes Xvfb statt echtem Desktop. Eigenavatar-/Outfit-/Bake-Pixel-E2E noch **OFFEN**.
+
+
+
+---
+
 Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, GitHub Pi5 ARM64-CI Run 39065802543 SUCCESS für exakt diesen SHA. Linux Mint vollständiger x64 Debug Build (340 Buildsteps), 142/142 Native-C++23/NVIDIA-GL-CTest, 95/95 Python, ARM64-kompatibler Headless, isolierter Xvfb-GUI und Original-Systemicon/WM_CLASS PASS. Authentifizierter Live-NexVerse Avatar/Outfit-Bake-E2E OFFEN. Gesamtfortschritt 39 % (38,65 % gewichtet); nächster Lauf Alpha.285–294.
 
 # Aktueller OGL Viewer Stand – Alpha.284 (17.10.2026)

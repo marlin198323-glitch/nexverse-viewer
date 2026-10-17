@@ -1,3 +1,25 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE. Gesamtfortschritt 39 %. Nächster Lauf Alpha.295–304.**
+
+## Verbindlicher aktueller OGL-Zehnerlauf Alpha.285–294
+
+**VERSION 0.2.0-alpha.294, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Gruppe Alpha.295–304.**
+
+- 285 [geprüft] Original Firestorm/Second Life RegionHandshake-SSA-Flag Bit2 (1<<2) und OpenGenesisLINK Server main 7c6b0cf.
+- 286 [implementiert] getrennte SSA-/Objektcache-Bits mit Compile-Time-Abgrenzung.
+- 287 [implementiert] RegionHandshakeReply Default-Flags4 und Legacy-Flags0.
+- 288 [implementiert] echter Reliable LLUDP-Circuit-Send von SSA Bit2.
+- 289 [implementiert] CircuitStatus-Sendepfad und Reset, keine behauptete Serverannahme.
+- 290 [implementiert] wahrheitsgetreuer AvatarAppearance-/SSA-Stufenstatus.
+- 291 [implementiert] F3 Avatar-Fenster zeigt SSA auf Übersicht und Bake-Seiten.
+- 292 [implementiert] lokaler, privater F3-Export mit nur Boolean-Sendebeleg.
+- 293 [implementiert] native Wire-Golden-/UI-/Exporttests und sechs Python-Source-Verträge.
+- 294 [Test/CI] Mint x64/NVIDIA OpenGL, Python, Headless, Xvfb, Taskleistenicon, GitHub Push/Pi5 ARM64; SHA/Testergebnisse im Abschlussnachweis.
+
+**Wichtig:** echtem NexVerse-Grid mangelt weiterhin an geprüftem SelfAvatarAppearance-/Outfit-/Bake-Pixel-E2E-Nachweis. Serveraddon disabled-by-default, kein Produktivdeploy. Details docs/ALPHA285_294_SSA_HANDSHAKE.md.
+
+
+---
+
 ## AKTUELLER ZEHN-BLÖCKE-LAUF Alpha.275–284
 
 **OGL 0.2.0-alpha.284 | Gesamtfortschritt 39 % (38,65 % gewichtet, unverändert) | nächste zehn echte Blöcke Alpha.285–294.**

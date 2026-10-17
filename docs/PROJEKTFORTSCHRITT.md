@@ -1,7 +1,7 @@
 # OpenGenesisLINK Viewer – verbindlicher Projektfortschritt
 
 **Gesamtfortschritt: ca. 39 % – gewichtete Schätzung.**
-Stand 17.10.2026 | Viewer 0.2.0-alpha.284 | Branch develop-current.
+Stand 17.10.2026 | Viewer 0.2.0-alpha.294 | Branch develop-current. Nächster Zehnerlauf Alpha.295–304.
 Die Prozentzahl beschreibt die geschätzte Funktionsreife
 zur vollständigen Firestorm/OpenSim/OpenGenesisLINK-Basis.
 Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
@@ -15,6 +15,8 @@ Sie ist weder Codezeilen- oder Testquote noch eine Freigabe.
 **Alpha.275–284:** Drei getrennte Firestorm Original-Body OpenGL-Depth-Abfragen inkl. echter GPU-Region-/Sequence-Guards, F3-UI/Export. 39 % unverändert (38,65 %), da echtes NexVerse AvatarAppearance/Outfit-E2E weiter offen. **Nächste Zehnergruppe Alpha.285–294.**
 
 Alpha.284 VERIFIZIERT: Featurecommit 2017b48fcc6586e00656bba01c6fe3058d0c98be, GitHub Pi5 ARM64-CI Run 39065802543 SUCCESS für exakt diesen SHA. Linux Mint vollständiger x64 Debug Build (340 Buildsteps), 142/142 Native-C++23/NVIDIA-GL-CTest, 95/95 Python, ARM64-kompatibler Headless, isolierter Xvfb-GUI und Original-Systemicon/WM_CLASS PASS. Authentifizierter Live-NexVerse Avatar/Outfit-Bake-E2E OFFEN. Gesamtfortschritt 39 % (38,65 % gewichtet); nächster Lauf Alpha.285–294.
+
+**Alpha.285–294:** Originaler SelfAvatarAppearance-SSA-Handshake-Blocker behoben: RegionHandshakeReply Bit2 statt bisher Flags0. Echte NexVerse-Serverantwort sowie Outfit-/Bake-Pixel-E2E bleiben OFFEN, daher **39 % (38,65 %)** unverändert. **Nächster Zehnerlauf Alpha.295–304.**
 
 ## Gewichtete Projektbewertung
 
@@ -63,7 +65,7 @@ begründete Schätzungen und keine Abnahme.
    Bakes, Outfits, Animation, vollstaendiger Welt/
    GUI und Plattform-Releases. Keine 100 % nur durch CI.
 
-**Nächster Zehnerdurchlauf:** Alpha.285–294 mit zehn
+**Nächster Zehnerdurchlauf:** Alpha.295–304 mit zehn
 echten Entwicklungsblöcken. **Besonders offen** sind Self-
 AvatarAppearance, vollständige Bakes/Outfits/Animationen,
 Terrain, High-LOD-Objekte, fehlende Firestorm-Funktionen

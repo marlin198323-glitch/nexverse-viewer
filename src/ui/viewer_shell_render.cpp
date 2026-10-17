@@ -299,6 +299,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                 ?compact(v.avatar_depth_parts,72U)
                 :compact(v.avatar_bake_stream_status,72U),
              state.avatar_recheck_available?theme::cyan:theme::text_muted);
+        line(9,compact(v.avatar_handshake_status,72U),
+             v.appearance_ready?theme::success:theme::warning);
         r.rect(x+27.0f*sc,y+ph-93.0f*sc,176.0f*sc,41.0f*sc,
                Color{0.040f,0.157f,0.235f,0.98f},7.0f*sc);
         r.text(x+36.0f*sc,y+ph-79.0f*sc,8.7f*sc,

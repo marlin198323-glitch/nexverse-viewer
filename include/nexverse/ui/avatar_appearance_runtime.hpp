@@ -14,6 +14,18 @@ struct AvatarAppearanceRuntime
     std::uint32_t other_avatar=0;
     std::uint32_t self_accepted=0;
 };
+// Handshake advertising alone is not receipt of an AvatarAppearance.
+[[nodiscard]] inline std::string describe_self_appearance_handshake(
+    bool region_connected,bool advertised,bool received)
+{
+    if(!region_connected)
+        return "SSA: Regionsverbindung ausstehend";
+    if(!advertised)
+        return "SSA: RegionHandshakeReply Bit 2 nicht gesendet";
+    if(received)
+        return "SSA: Bit 2 gesendet / Self vom Simulator empfangen";
+    return "SSA: Bit 2 gesendet / Self-Serverantwort fehlt";
+}
 [[nodiscard]] inline std::string describe_appearance_runtime(
     const AvatarAppearanceRuntime& state,bool current_self)
 {

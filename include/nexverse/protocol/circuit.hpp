@@ -36,6 +36,9 @@ struct CircuitStatus
     std::uint32_t packets_resent = 0;
     std::uint32_t acks_sent = 0;
     std::uint32_t acks_received = 0;
+    // True only after reliable RegionHandshakeReply datagram was accepted
+    // for sending. Does not prove ACK or server AvatarAppearance delivery.
+    bool self_appearance_support_sent=false;
 };
 
 class CircuitConnection

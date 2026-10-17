@@ -156,6 +156,25 @@ int main()
         return 12;
     }
 
+    // Golden wire: UUID(16)+session(16)+U32 LittleEndian. Firestorm
+    // RH_SUPPORTS_SELF_APPEARANCE is bit2=0x00000004; bits 0/1
+    // MUST remain zero without a real object cache.
+    if(ogl_region_handshake_flags!=4U||
+       !advertises_self_appearance(ogl_region_handshake_flags) ||
+       (ogl_region_handshake_flags&3U)!=0U)return 52;
+    const auto ssa=decode_lludp_packet(
+        encode_region_handshake_reply(46U,session));
+    if(!ssa.ok()||ssa.packet->payload.size()!=36U||
+       ssa.packet->header.message!=msg_region_handshake_reply||
+       (ssa.packet->header.flags&packet_reliable)==0U||
+       ssa.packet->payload[32U]!=4U||
+       ssa.packet->payload[33U]!=0U||
+       ssa.packet->payload[34U]!=0U||
+       ssa.packet->payload[35U]!=0U)return 53;
+    // Explicit legacy opt-out must still serialize exactly zero.
+    if(decoded_region_reply.packet->payload[32U]!=0U||
+       decoded_region_reply.packet->payload[33U]!=0U)return 54;
+
     const auto movement_complete_template =
         known_message_template(msg_agent_movement_complete);
     if (!movement_complete_template.has_value() ||

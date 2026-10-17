@@ -172,7 +172,12 @@ bool CircuitConnection::handle_packet(
     if (packet.header.message == msg_region_handshake)
     {
         const std::uint32_t reply_sequence = next_sequence++;
-        auto reply = encode_region_handshake_reply(reply_sequence, session_);
+        // Explicit Firestorm/SSA negotiation: self AvatarAppearance is
+        // not sent by compatible regions until bit 2 is advertised.
+        // This is only a capability declaration, NOT an appearance upload.
+        status.self_appearance_support_sent=false;
+        auto reply = encode_region_handshake_reply(
+            reply_sequence,session_,ogl_region_handshake_flags);
         if (!send_reliable(
                 socket,
                 tracker,
@@ -184,8 +189,11 @@ bool CircuitConnection::handle_packet(
             return false;
         }
 
+        status.self_appearance_support_sent=true;
         status.state = CircuitState::awaiting_region_ready;
-        status.message = "RegionHandshake received; reply sent";
+        status.message =
+            "RegionHandshakeReply sent: supports SELF AvatarAppearance "
+            "(SSA bit2); simulator appearance reply not yet verified";
     }
 
     if (packet.header.message == msg_agent_movement_complete)

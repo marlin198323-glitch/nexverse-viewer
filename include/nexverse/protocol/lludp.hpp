@@ -5,6 +5,7 @@
 #pragma once
 
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/region_handshake_appearance.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -175,7 +176,7 @@ private:
 [[nodiscard]] std::vector<std::uint8_t> encode_region_handshake_reply(
     std::uint32_t sequence,
     const LoginSession& session,
-    std::uint32_t flags = 0U);
+    std::uint32_t flags = ogl_region_handshake_flags);
 [[nodiscard]] std::vector<std::uint8_t> encode_complete_ping_check(
     std::uint32_t sequence,
     std::uint8_t ping_id);
