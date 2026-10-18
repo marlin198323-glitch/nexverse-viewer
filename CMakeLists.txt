@@ -945,6 +945,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-appearance-texture-integrity-tests
         COMMAND nexverse-self-appearance-texture-integrity-tests)
 
+    add_executable(nexverse-self-object-bake-fallback-tests
+        tests/self_object_bake_fallback_tests.cpp)
+    target_link_libraries(nexverse-self-object-bake-fallback-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-self-object-bake-fallback-tests)
+    add_test(NAME nexverse-self-object-bake-fallback-tests
+        COMMAND nexverse-self-object-bake-fallback-tests)
+
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
     nexverse_enable_warnings(nexverse-world-model-tests)

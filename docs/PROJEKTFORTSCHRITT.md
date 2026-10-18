@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.414, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.415–424.**
+
+18.10.2026 Alpha.405–414: Tatsächliche Self-ObjectUpdate-/Compressed-TE-Header-/Upper-/Lower-Bakes bilden eine streng geprüfte vorläufige Alternative, falls Low158-AvatarAppearance fehlt. Provenienz im F3-Panel sichtbar, Privatbericht nur numerisch; gültige Low158 Self Appearance bleibt autoritativ. Korrekte Region/Agent/Session/LocalID, rebind/Reset/placeholder, Tests. Kein authentifizierter NexVerse Outfit-/GPU-/Bewegungs-E2E-Beweis; Fortschritt weiterhin 39 %. Dokumentation docs/ALPHA405_414_SELF_OBJECT_BAKE_FALLBACK.md. Aktuelle CI erst für neuen SHA als grün markieren. Keine Produktionsinstallation. Bei WEITER Alpha.415–424.
+
+---
+
 **ALPHA.404 CI VERIFIZIERT:** Feature-SHA 19e70975376b44719a6c61989d4748bebc0b9d4d, GitHub Pi5 ARM64 Run 39135891262 SUCCESS exakt für denselben Codecommit. Mint x64 Vollbuild 363/363, Native/GL CTest 153/153, Python 159/159, ARM64-kompatibler Headless, isolierter Xvfb-Viewerstart und X11-WM_CLASS/Systemicon erfolgreich. NexVerse Live AvatarAppearance, Outfit/Bake und WASD-E2E weiterhin OFFEN. Prozentstatus 39 %; nächste Alpha.405–414.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.404, Projektfortschritt 39 % (38,65 % gewichtet), nächste Alpha.405–414.**

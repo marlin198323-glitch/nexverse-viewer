@@ -23,6 +23,8 @@ int main()
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.appearance_self_invalid_texture_ignored=2U;
+    r.self_object_bake_candidate_faces=2U;
+    r.self_object_bake_candidate_active=true;
     r.movement_queued=true;
     r.movement_socket_sent=true;
     r.movement_server_confirmed=true;
@@ -55,6 +57,8 @@ int main()
     if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
        text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
+       text.find("self_object_bake_candidate_faces=2")==std::string::npos||
+       text.find("self_object_bake_candidate_active=yes")==std::string::npos||
        text.find("self_appearance_reply_wait_seconds=27")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_acked=yes")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_sent=yes")==std::string::npos||

@@ -32,6 +32,10 @@ struct AvatarDiagnosticReport
     std::uint32_t appearance_self_trial_ignored=0U;
     std::uint32_t appearance_self_incomplete_ignored=0U;
     std::uint32_t appearance_self_invalid_texture_ignored=0U;
+    // Number of genuine non-placeholder face UUIDs reported by a
+    // current authenticated self ObjectUpdate (not Low158 verification).
+    std::uint32_t self_object_bake_candidate_faces=0U;
+    bool self_object_bake_candidate_active=false;
     // Whitelisted real socket/server movement evidence (no positions).
     bool movement_queued=false;
     bool movement_socket_sent=false;

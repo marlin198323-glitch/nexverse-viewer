@@ -7,6 +7,7 @@
 #include "nexverse/protocol/terrain_codec.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/avatar_animation.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"
 
 #include <array>
 #include <chrono>
@@ -14,6 +15,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace nexverse::world
 {
@@ -195,6 +197,15 @@ struct AgentUpdate
     bool present = false;
 };
 
+// A current simulator ObjectUpdate for the authenticated self agent can
+// carry bona fide baked TE faces even before a Low158 AvatarAppearance.
+// Strictly provisional, never an authoritative body/COF appearance.
+struct SelfAvatarObjectBakes
+{
+    std::array<std::string,3U> visible_body;
+    std::uint32_t local_id=0U;
+};
+
 struct WorldSnapshot
 {
     GridState grid;
@@ -202,6 +213,7 @@ struct WorldSnapshot
     AgentState agent;
     AgentProfileState agent_profile;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance;
+    std::optional<SelfAvatarObjectBakes> self_object_bakes;
     std::optional<protocol::AvatarAnimationMessage> self_animations;
     std::map<std::string, AvatarState, std::less<>> avatars;
     std::map<std::uint32_t, ObjectState> objects;
@@ -224,6 +236,16 @@ public:
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(
         protocol::AvatarAppearanceMessage appearance);
+    // Low158 remains authoritative; this may only rescue genuine TE bake
+    // face IDs from the region-matched self ObjectUpdate visual path.
+    [[nodiscard]] bool observe_self_object_bakes(
+        std::string_view avatar_id,std::uint64_t region_handle,
+        std::uint32_t local_id,std::span<const std::uint8_t> texture_entry);
+    [[nodiscard]] const std::optional<SelfAvatarObjectBakes>&
+        self_object_bakes() const noexcept;
+    // Never return ObjectUpdate candidate IDs while Low158 Self exists.
+    [[nodiscard]] std::array<std::string,3U>
+        self_render_bakes() const;
     // High20 AvatarAnimation is an authoritative complete per-avatar
     // animation snapshot, not a requested viewer-side Wear/Play command.
     [[nodiscard]] bool apply_avatar_animation(
@@ -269,6 +291,7 @@ private:
     AgentState agent_;
     AgentProfileState agent_profile_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
+    std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::optional<protocol::AvatarAnimationMessage> self_animations_;
     // Animation may precede ObjectUpdate. Bounded pending messages do not
     // create renderable ghost avatars and expire at region transitions.

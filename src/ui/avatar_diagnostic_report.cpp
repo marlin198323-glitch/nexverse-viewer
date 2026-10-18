@@ -59,6 +59,10 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "appearance_self_invalid_texture_ignored="+
            std::to_string(r.appearance_self_invalid_texture_ignored)+"\n"
+       "self_object_bake_candidate_faces="+
+           std::to_string(r.self_object_bake_candidate_faces)+"\n"
+       "self_object_bake_candidate_active="+
+           yn(r.self_object_bake_candidate_active)+"\n"
        "movement_queued="+yn(r.movement_queued)+"\n"
        "movement_udp_socket_sent="+yn(r.movement_socket_sent)+"\n"
        "movement_server_confirmed="+yn(r.movement_server_confirmed)+"\n"

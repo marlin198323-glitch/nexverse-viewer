@@ -5184,6 +5184,14 @@ int Application::run(bool enable_developer_modules)
                             self_avatar_region_handle = update->region_handle;
                             core::info("Avatar self local-id bound from ObjectUpdate");
                         }
+                        const bool provisional_bakes=
+                            world_model.observe_self_object_bakes(
+                                entry.id,update->region_handle,
+                                entry.local_id,entry.texture_entry);
+                        if(provisional_bakes)
+                            core::info("Self avatar ObjectUpdate TE has "
+                                       "validated provisional bake faces; "
+                                       "not proof of Low158 AvatarAppearance");
                         const world::AgentState current = world_model.agent();
                         world_model.apply_agent({
                             current.agent_id,
@@ -5279,6 +5287,14 @@ int Application::run(bool enable_developer_modules)
                             self_avatar_region_handle = update->region_handle;
                             core::info("Avatar self local-id bound from ObjectUpdateCompressed");
                         }
+                        const bool provisional_bakes=
+                            world_model.observe_self_object_bakes(
+                                entry.id,update->region_handle,
+                                entry.local_id,entry.texture_entry);
+                        if(provisional_bakes)
+                            core::info("Self avatar ObjectUpdateCompressed TE has "
+                                       "validated provisional bake faces; "
+                                       "not proof of Low158 AvatarAppearance");
                         const world::AgentState current = world_model.agent();
                         world_model.apply_agent({
                             current.agent_id,
@@ -10408,14 +10424,16 @@ int Application::run(bool enable_developer_modules)
                         self_hover=std::clamp(
                             appearance->hover_heights.front().z,-2.0f,2.0f);
                     std::array<std::string,3U> baked_ids{};
-                    if(const auto& self=world_model.self_appearance();
-                       self&&active_session&&
+                    // Current verified Low158 Self always wins. A real
+                    // self ObjectUpdate TE can only provisionally populate
+                    // these bake slots while Low158 is absent.
+                    if(active_session&&
                        protocol::self_bake_owner_is_current(
-                           self->avatar_id,active_session->agent_id,
+                           world_model.agent().agent_id,
+                           active_session->agent_id,
                            render_agent.agent_id,
                            world_model.region().connected))
-                        baked_ids=protocol::extract_avatar_bakes(
-                            self->texture_entry).visible_body();
+                        baked_ids=world_model.self_render_bakes();
                     avatar_proxy_update.push_back({
                         {render_agent.position.x,
                          render_agent.position.y,
@@ -11500,6 +11518,14 @@ int Application::run(bool enable_developer_modules)
             const auto self_bake_pending=assets::avatar_bake_ready_missing(
                 self_bake_ids,object_texture_loaded_ids,
                 object_texture_retries,texture_plan_now);
+            const bool object_bake_provisional=self_bake_authenticated&&
+                self_bake_lease&&self_bake_it!=avatar_proxy_update.end()&&
+                [&]()
+                {
+                    std::scoped_lock lock{world_mutex};
+                    return !world_model.self_appearance()&&
+                        world_model.self_object_bakes().has_value();
+                }();
             std::string avatar_bake_stream_status=
                 !self_bake_authenticated || !self_bake_lease
                     ?"Bakes: keine gueltige Self-/Regionssitzung"
@@ -11519,6 +11545,10 @@ int Application::run(bool enable_developer_modules)
                     ?"Bakes: Replan-Pause noch aktiv"
                 :"Bakes: "+std::to_string(self_bake_pending)+
                    " fehlende Layer koennen neu eingeplant werden";
+            if(object_bake_provisional)
+                avatar_bake_stream_status=
+                    "Obj-TE vorlaeufig (Self-Low158 fehlt) | "+
+                    avatar_bake_stream_status;
             viewer_shell.avatar_recheck_available=
                 avatar_bake_recheck.allowed(
                     self_bake_authenticated,self_bake_lease,
@@ -12799,6 +12829,17 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.self_incomplete_ignored;
             avatar_diagnostic.appearance_self_invalid_texture_ignored=
                 appearance_runtime.self_invalid_texture_ignored;
+            {
+                std::scoped_lock lock{world_mutex};
+                if(const auto& obj=world_model.self_object_bakes();obj)
+                {
+                    for(const auto& id:obj->visible_body)
+                        if(!id.empty())
+                            ++avatar_diagnostic.self_object_bake_candidate_faces;
+                    avatar_diagnostic.self_object_bake_candidate_active=
+                        !world_model.self_appearance().has_value();
+                }
+            }
             const auto movement_evidence=movement_feedback.snapshot();
             avatar_diagnostic.movement_queued=
                 movement_evidence.queued_direction;
