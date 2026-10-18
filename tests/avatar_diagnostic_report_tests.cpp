@@ -23,6 +23,8 @@ int main()
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.appearance_self_invalid_texture_ignored=2U;
+    r.self_attachment_block_received=true;
+    r.self_attachment_block_count=85U;
     r.movement_discontinuities=3U;
     r.movement_stale_samples_ignored=2U;
     r.movement_waiting_after_jump=true;
@@ -64,6 +66,8 @@ int main()
     if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
        text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
+       text.find("self_attachment_block_received=yes")==std::string::npos||
+       text.find("self_attachment_block_count=85")==std::string::npos||
        text.find("movement_discontinuities=3")==std::string::npos||
        text.find("movement_stale_samples_ignored=2")==std::string::npos||
        text.find("movement_waiting_after_jump=yes")==std::string::npos||

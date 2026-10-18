@@ -28,6 +28,9 @@ struct ViewerShellView
     std::string avatar_bake_summary;
     std::string avatar_bake_visual;
     std::string avatar_handshake_status;
+    // Exact Self Low158 AttachmentBlock count; inventory/render success
+    // are not implied. Never include attached item UUIDs in the HUD.
+    bool avatar_self_attachment_packet=false;
     std::string avatar_movement_status;
     std::uint32_t avatar_udp_directional_sent=0U;
     std::string avatar_depth_parts;

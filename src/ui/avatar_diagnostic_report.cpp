@@ -59,6 +59,9 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "appearance_self_invalid_texture_ignored="+
            std::to_string(r.appearance_self_invalid_texture_ignored)+"\n"
+       "self_attachment_block_received="+yn(r.self_attachment_block_received)+"\n"
+       "self_attachment_block_count="+
+           std::to_string(r.self_attachment_block_count)+"\n"
        "self_object_bake_candidate_faces="+
            std::to_string(r.self_object_bake_candidate_faces)+"\n"
        "self_object_bake_candidate_active="+

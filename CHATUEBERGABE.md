@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.444, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.445–454.**
+
+18.10.2026 Alpha.435–444: Low158-Firestorm AttachmentBlock erhält tatsächlich gültige 65+ Einträge statt ungültiger 64er Obergrenze. Byte-Grenze 255 nur Feldsyntax, 1200B LLUDP-MTU bleibt strikt! Echter synthetischer LLUDP Low158 (65 Anhänge) geht bis in den Self-WorldModel-Status. F3 beschriftet SSA-Anhänge als nur gemeldete Serverdaten ohne fälschliche Renderbehauptung. Privater numerischer Report / Xvfb GL-Panelprüfung, Native C++/Python und Pi5 CI. Echtes NexVerse Outfit, Low158/COF, WASD weiterhin NICHT live verifiziert, 39 %. Einzelheiten docs/ALPHA435_444_LOW158_ATTACHMENT_COMPATIBILITY.md. BEI WEITER Alpha.445–454: zehn echte Blöcke; GitHub/Upstream zu Beginn prüfen.
+
+---
+
 **ALPHA.434 PI5-CI ERFOLGREICH VERIFIZIERT:** Featurecommit 83c93130b64b0ec1032b864414b52e89cabb4c22; GitHub self-hosted Pi5 ARM64 Source Check Run 39139112676 SUCCESS für genau diesen SHA. Mint Linux-x64 Vollbuild 367/367, CTest 155/155 incl. GPU OpenGL, Python 180/180, ARM64-kompatibles Headless, isolierter Xvfb-Viewer und X11 Systemicon/WM_CLASS PASS. Echt eingeloggtes NexVerse Self AvatarAppearance/Outfit und reale bestätigte WASD-E2E weiterhin offen. Projektstatus 39 % (38,65 % gewichtet). Nächste zehn Blöcke Alpha.435–444.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.434, Projektstatus 39 % (38,65 % gewichtet), NÄCHSTE Alpha.435–444.**

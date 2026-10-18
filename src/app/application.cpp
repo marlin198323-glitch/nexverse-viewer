@@ -12860,6 +12860,16 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.self_invalid_texture_ignored;
             {
                 std::scoped_lock lock{world_mutex};
+                if(const auto& ap=world_model.self_appearance();
+                   ap&&login_ui.authenticated&&active_session&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   ap->avatar_id==active_session->agent_id&&
+                   world_model.region().connected)
+                {
+                    avatar_diagnostic.self_attachment_block_received=true;
+                    avatar_diagnostic.self_attachment_block_count=
+                        static_cast<std::uint32_t>(ap->attachments.size());
+                }
                 if(const auto& obj=world_model.self_object_bakes();obj)
                 {
                     for(const auto& id:obj->visible_body)
@@ -13129,6 +13139,14 @@ int Application::run(bool enable_developer_modules)
                     shell_view.agent_position={
                         agent.position.x,agent.position.y,agent.position.z};
                     shell_view.avatar_present=agent.present;
+                    if(const auto& appearance=world_model.self_appearance();
+                       appearance&&region.connected&&
+                       active_session&&
+                       appearance->avatar_id==active_session->agent_id)
+                    {
+                        shell_view.avatar_self_attachment_packet=true;
+                        shell_view.attachments=appearance->attachments.size();
+                    }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
 
@@ -13234,8 +13252,6 @@ int Application::run(bool enable_developer_modules)
                             failed_animation_clips.contains(
                               shell_view.animation_entries[
                                 viewer_shell.animation_selected].first);
-                    shell_view.attachments=world_model.self_appearance()
-                        ?world_model.self_appearance()->attachments.size():0U;
                     if(viewer_shell.window==ui::ViewerWindow::map)
                         for(const auto& [id,avatar]:world_model.avatars())
                         {

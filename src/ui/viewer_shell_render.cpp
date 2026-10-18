@@ -283,12 +283,15 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
             line(3,compact((v.avatar_animation_status.empty()
                 ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status)+
                 " | "+v.avatar_skinning_status,72U));
-            line(4,"Attachments:"+std::to_string(v.attachments)+
-                 " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
-                 " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
-                 " | >16:"+std::to_string(v.avatar_scene_deep_linksets)+
-                 " | Bone-Pose:"+std::to_string(v.avatar_bone_pose_avatars),
-                 theme::text_muted);
+            line(4,compact(
+                (v.avatar_self_attachment_packet
+                    ?"SSA-Anhaenge:"+std::to_string(v.attachments)+
+                        " nur Server, Render offen"
+                    :"SSA-Anhaenge: Serverantwort ausstehend")+
+                " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
+                " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
+                " | Bone-Pose:"+std::to_string(v.avatar_bone_pose_avatars),
+                72U),theme::text_muted);
             line(5,v.avatar_view_status,theme::cyan);
             line(6,v.avatar_fragment_status,theme::warning);
             line(7,v.avatar_admission_status.empty()?

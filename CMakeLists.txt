@@ -945,6 +945,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-viewer-shell-gl-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-avatar-appearance-large-attachment-wire-tests
+        tests/avatar_appearance_large_attachment_wire_tests.cpp)
+    target_link_libraries(nexverse-avatar-appearance-large-attachment-wire-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-avatar-appearance-large-attachment-wire-tests)
+    add_test(NAME nexverse-avatar-appearance-large-attachment-wire-tests
+        COMMAND nexverse-avatar-appearance-large-attachment-wire-tests)
+
     add_executable(nexverse-self-appearance-texture-integrity-tests
         tests/self_appearance_texture_integrity_tests.cpp)
     target_link_libraries(nexverse-self-appearance-texture-integrity-tests

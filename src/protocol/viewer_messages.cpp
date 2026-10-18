@@ -1576,8 +1576,12 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     }
     if (offset >= payload.size()) return reject(AvatarAppearanceFailure::attachments);
     const std::size_t attachment_count = payload[offset++];
-    if (attachment_count > 64U ||
-        attachment_count != (payload.size() - offset) / 17U ||
+    // Firestorm AttachmentBlock is Variable 1: its wire counter is U8,
+    // so 65..255 entries are legal (multiple attachments per attach point).
+    // An arbitrary 64-object limit dropped otherwise valid modern SSA.
+    // Exact length/17 verification prevents partial or trailing garbage.
+    // This allocates at most 255 bounded 17-byte records (<4.3 KiB).
+    if (attachment_count != (payload.size() - offset) / 17U ||
         (payload.size() - offset) % 17U != 0U)
         return reject(AvatarAppearanceFailure::attachments);
     message.attachments.reserve(attachment_count);

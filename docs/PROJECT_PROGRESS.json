@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-18",
-  "viewer_version": "0.2.0-alpha.434",
+  "viewer_version": "0.2.0-alpha.444",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.435–444",
-  "assessment": "Alpha.434 corrects movement evidence: horizontal WASD displacement >=0.25m, rather than vertical-only gravity/jump changes; >32m single-sample discontinuity resets the baseline instead of falsely confirming walking; stale/out-of-order/pre-UDP samples ignored, bounded counters, and monitor reset on Firestorm region lease change. F3 and private numeric diagnostics distinguish jump/wait/stale, across all three actual LLUDP position streams. Real authenticated NexVerse AvatarAppearance/outfit/COF/WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.445–454",
+  "assessment": "Alpha.444 removes the arbitrary 64 AttachmentBlock cap from the legitimate Firestorm Low158 Variable1 decoder while enforcing exact 17-byte records and the independent 1200-byte LLUDP MTU. The real Low158 synthetic 65-attachment datagram now flows into the authenticated Self WorldModel. F3 OpenGL rendering distinguishes server-reported attachment count from actual attached mesh drawing, private numeric reports are scoped to same agent and region. Real authenticated NexVerse AvatarAppearance/outfit/COF/WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.435–444",
+  "next_batch": "Alpha.445–454",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "83c93130b64b0ec1032b864414b52e89cabb4c22",
