@@ -1217,6 +1217,19 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-view-priority-tests)
     add_test(NAME nexverse-asset-view-priority-tests COMMAND nexverse-asset-view-priority-tests)
 
+    add_executable(nexverse-scene-deep-linkset-pixels-tests
+        tests/scene_deep_linkset_pixels_tests.cpp)
+    target_link_libraries(nexverse-scene-deep-linkset-pixels-tests
+        PRIVATE NexVerse::Render glfw glad::glad)
+    add_test(NAME nexverse-scene-deep-linkset-pixels-tests
+        COMMAND nexverse-scene-deep-linkset-pixels-tests)
+    set_tests_properties(nexverse-scene-deep-linkset-pixels-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(nexverse-scene-parent-chain-tests tests/scene_parent_chain_tests.cpp)
+    target_link_libraries(nexverse-scene-parent-chain-tests PRIVATE NexVerse::Render)
+    add_test(NAME nexverse-scene-parent-chain-tests COMMAND nexverse-scene-parent-chain-tests)
+
     add_executable(nexverse-attachment-scene-classification-tests
         tests/attachment_scene_classification_tests.cpp)
     target_link_libraries(nexverse-attachment-scene-classification-tests PRIVATE NexVerse::Render)

@@ -324,6 +324,8 @@ struct RenderDiagnostics
     std::uint64_t visible_objects = 0U;
     std::uint64_t scene_hud_linkset_excluded = 0U;
     std::uint64_t scene_invalid_parent_excluded = 0U;
+    std::uint32_t scene_max_visible_parent_depth=0U;
+    std::uint64_t scene_deep_visible_linksets=0U;
     // Actual per-frame glDrawElements from world-scene objects only.
     // Sky, terrain, water, UI and avatar proxies are not counted here.
     // Actual OpenGL shader branch, not simply assets resident.

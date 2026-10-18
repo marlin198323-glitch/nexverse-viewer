@@ -58,6 +58,8 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "appearance_self_incomplete_ignored="+
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
+       "scene_linkset_max_depth="+std::to_string(r.scene_linkset_max_depth)+"\n"
+       "scene_linkset_deep_visible="+std::to_string(r.scene_linkset_deep_visible)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"
        "terrain_real_layers="+

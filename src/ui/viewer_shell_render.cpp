@@ -280,10 +280,13 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                 ?(v.appearance_ready?"Appearance: Server-Daten da":
                    "Appearance: noch nicht geladen")
                 :v.avatar_skin_status);
-            line(3,v.avatar_animation_status.empty()
-                ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status);
-            line(4,"Attachments: "+std::to_string(v.attachments)+
-                 " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+" | "+compact(v.avatar_skinning_status,30U),
+            line(3,compact((v.avatar_animation_status.empty()
+                ?"Anim: noch keine aktuellen Daten":v.avatar_animation_status)+
+                " | "+v.avatar_skinning_status,72U));
+            line(4,"Attachments:"+std::to_string(v.attachments)+
+                 " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
+                 " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
+                 " | >16:"+std::to_string(v.avatar_scene_deep_linksets),
                  theme::text_muted);
             line(5,v.avatar_view_status,theme::cyan);
             line(6,v.avatar_fragment_status,theme::warning);

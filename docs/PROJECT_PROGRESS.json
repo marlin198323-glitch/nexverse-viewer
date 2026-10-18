@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.364",
+  "as_of": "2026-10-18",
+  "viewer_version": "0.2.0-alpha.374",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.365–374",
-  "assessment": "Alpha364: verified HUD attachment linkset ancestry culling and F3 per-frame GL HUD exclusion. No authenticated NexVerse outfit/bake or movement proof. 38.65 percent weighted; 39 percent rounded.",
+  "next_five_blocks": "Alpha.375–384",
+  "assessment": "Alpha.374 fixes an actual scene parent transform cap of 16 levels versus 128-level HUD filter. Shared bounded cycle-safe ancestry now drives both world GL model transforms and HUD culling. Real framebuffer fixture proves 21-level attachment 4729 changed RGB pixels, depth 20; HUD all 21 excluded with zero residual pixels. Live NexVerse wearables/skin/movement not yet authenticated. Weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.365–374",
+  "next_batch": "Alpha.375–384",
   "default_blocks_per_run": 10
 }

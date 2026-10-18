@@ -3353,6 +3353,8 @@ public:
         diagnostics_.visible_objects = 0U;
         diagnostics_.scene_hud_linkset_excluded=0U;
         diagnostics_.scene_invalid_parent_excluded=0U;
+        diagnostics_.scene_max_visible_parent_depth=0U;
+        diagnostics_.scene_deep_visible_linksets=0U;
         // Terrain GL telemetry is PER FRAME just like all scene counters.
         // A prior textured draw must not make today's fallback look loaded.
         diagnostics_.terrain_textured_draw_calls=0U;
@@ -3709,6 +3711,17 @@ public:
                 const Mat4 model = scene_model(index);
                 if (!scene_object_visible(model, scene_objects_[index]))
                     continue;
+                const auto ancestry=resolve_scene_parent_chain(
+                    scene_objects_,scene_object_index_,avatar_proxies_,index);
+                if(ancestry.valid)
+                {
+                    const auto depth=static_cast<std::uint32_t>(
+                        ancestry.count > 0U?ancestry.count-1U:0U);
+                    diagnostics_.scene_max_visible_parent_depth=std::max(
+                        diagnostics_.scene_max_visible_parent_depth,depth);
+                    if(depth>16U)
+                        ++diagnostics_.scene_deep_visible_linksets;
+                }
                 const float dx = model.value[12] - camera_.position.x;
                 const float dy = model.value[13] - camera_.position.y;
                 const float dz = model.value[14] - camera_.position.z;
@@ -5124,61 +5137,42 @@ private:
         glUseProgram(program_);
     }
 
-    [[nodiscard]] Mat4 scene_pose(
-        std::size_t index,
-        std::size_t depth = 0U) const
+    [[nodiscard]] Mat4 scene_pose(std::size_t index) const
     {
-        if (index >= scene_objects_.size())
+        const auto chain=resolve_scene_parent_chain(
+            scene_objects_,scene_object_index_,avatar_proxies_,index);
+        if(!chain.valid)return identity();
+
+        Mat4 pose=identity();
+        if(chain.avatar_local_id!=0U)
         {
-            return identity();
-        }
-
-        const RenderSceneObject& object =
-            scene_objects_[index];
-
-        const Mat4 local_pose = multiply(
-            translation(object.position),
-            quaternion_rotation(object.rotation));
-
-        if (object.parent_id == 0U || depth >= 16U)
-        {
-            return local_pose;
-        }
-
-        const auto found =
-            scene_object_index_.find(object.parent_id);
-        if (found == scene_object_index_.end() ||
-            found->second == index)
-        {
-            // OpenSim attachments use the avatar's simulator local-id as
-            // their root parent. The avatar is intentionally not a prim
-            // in scene_object_index_. Resolve the child through the live
-            // self/remote avatar transform to follow WASD/teleport movement.
-            // Not a skeletal attachment point yet: skeleton/rig is pending.
             if(const auto* avatar=find_attachment_avatar_parent(
-                   avatar_proxies_,object.parent_id))
+                   avatar_proxies_,chain.avatar_local_id))
             {
-                Mat4 root=multiply(
-                    translation(avatar->position),
+                pose=multiply(translation(avatar->position),
                     quaternion_rotation(avatar->rotation));
-                if(!object.object_id.empty())
-                {
-                    const auto it=avatar->attachments.find(object.object_id);
-                    if(it!=avatar->attachments.end() &&
-                       it->second<avatar_bind_rig_.available.size() &&
-                       avatar_bind_rig_.available[it->second] &&
-                       !avatar_bind_rig_.is_hud[it->second])
-                        root=multiply(root,translation(
-                            avatar_bind_rig_.attachment_offsets[it->second]));
-                }
-                return multiply(root,local_pose);
+                const auto& root=
+                    scene_objects_[chain.leaf_to_root[chain.count-1U]];
+                const auto it=avatar->attachments.find(root.object_id);
+                if(it!=avatar->attachments.end()&&
+                   it->second<avatar_bind_rig_.available.size()&&
+                   avatar_bind_rig_.available[it->second]&&
+                   !avatar_bind_rig_.is_hud[it->second])
+                    pose=multiply(pose,translation(
+                        avatar_bind_rig_.attachment_offsets[it->second]));
             }
-            return local_pose;
         }
-
-        return multiply(
-            scene_pose(found->second, depth + 1U),
-            local_pose);
+        // Parent transforms precede child transforms, in all 128 supported
+        // linkset levels. The previous 16-level recursive truncation caused
+        // valid deeper clothing/linkset prims to lose the avatar root.
+        for(std::size_t i=chain.count;i>0U;--i)
+        {
+            const auto& object=scene_objects_[chain.leaf_to_root[i-1U]];
+            pose=multiply(pose,multiply(
+                translation(object.position),
+                quaternion_rotation(object.rotation)));
+        }
+        return pose;
     }
 
     [[nodiscard]] Mat4 scene_model(

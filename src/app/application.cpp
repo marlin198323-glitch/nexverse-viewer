@@ -12764,6 +12764,10 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_draw_calls;
             avatar_diagnostic.missing_mesh_objects=
                 render_diagnostics.scene_missing_mesh_objects;
+            avatar_diagnostic.scene_linkset_max_depth=
+                render_diagnostics.scene_max_visible_parent_depth;
+            avatar_diagnostic.scene_linkset_deep_visible=
+                render_diagnostics.scene_deep_visible_linksets;
             avatar_diagnostic.terrain_real_layers=
                 render_diagnostics.terrain_real_detail_layers;
             avatar_diagnostic.terrain_textured_gl=
@@ -12893,6 +12897,10 @@ int Application::run(bool enable_developer_modules)
                     avatar_proof.part_visibility.compact();
                 shell_view.avatar_hud_world_excluded=render_diagnostics.scene_hud_linkset_excluded;
                 shell_view.avatar_invalid_parent_excluded=render_diagnostics.scene_invalid_parent_excluded;
+                shell_view.avatar_scene_max_parent_depth=
+                    render_diagnostics.scene_max_visible_parent_depth;
+                shell_view.avatar_scene_deep_linksets=
+                    render_diagnostics.scene_deep_visible_linksets;
                 const auto ack_wait=
                     circuit_snapshot.self_appearance_support_acknowledged&&
                     circuit_snapshot.self_appearance_ack_at!=
