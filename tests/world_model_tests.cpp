@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 int main()
 {
@@ -74,7 +76,22 @@ int main()
     // avatar in the list. Changing region invalidates appearance.
     nexverse::protocol::AvatarAppearanceMessage own;
     own.avatar_id=world.agent().agent_id;
-    own.texture_entry={1U,2U};
+    // A valid neutral LLTextureEntry rather than a three-byte placeholder.
+    own.texture_entry=std::vector<std::uint8_t>(16U,0x11U);
+    const std::vector<std::uint8_t> te_fields{
+        0U, // no UUID face overrides
+        255U,255U,255U,255U,0U, // default white, no color overrides
+        0U,0U,128U,63U,0U, // repeat U = 1.0
+        0U,0U,128U,63U,0U, // repeat V = 1.0
+        0U,0U,0U, // offset U and mask
+        0U,0U,0U, // offset V and mask
+        0U,0U,0U, // rotation and mask
+        0U,0U, // material
+        0U,0U, // media
+        0U,0U // glow
+    };
+    own.texture_entry.insert(own.texture_entry.end(),
+        te_fields.begin(),te_fields.end());
     own.visual_params={2U,3U,4U};
     own.hover_heights={{0.0f,0.0f,0.25f}};
     own.attachments={{"22222222-2222-2222-2222-222222222222",5U}};

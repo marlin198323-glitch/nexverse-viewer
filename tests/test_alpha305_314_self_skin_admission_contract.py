@@ -58,14 +58,14 @@ class Alpha305WorldModelContinuity(unittest.TestCase):
         for secret in ('"agent_id="','"session_id="','"capability_url="'):
             self.assertNotIn(secret,report)
     def test_next_batch_and_weighted_percentage(self):
-        self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.394")
+        self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.404")
         progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.394")
-        self.assertEqual(progress["next_batch"],"Alpha.395–404")
+        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.404")
+        self.assertEqual(progress["next_batch"],"Alpha.405–414")
         self.assertEqual(progress["default_blocks_per_run"],10)
         for file in ("CHATUEBERGABE.md","AGENTS.md","info.md",
                      "projectplan.md","docs/PROJEKTFORTSCHRITT.md"):
             head=read(file)[:1900]
             self.assertIn("39 %",head)
-            self.assertIn("Alpha.395–404",head)
+            self.assertIn("Alpha.405–414",head)
 if __name__=="__main__":unittest.main()

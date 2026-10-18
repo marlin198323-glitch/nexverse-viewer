@@ -17,6 +17,7 @@ struct AvatarAppearanceRuntime
     std::uint32_t self_accepted=0;
     std::uint32_t self_trial_ignored=0;
     std::uint32_t self_incomplete_ignored=0;
+    std::uint32_t self_invalid_texture_ignored=0;
 };
 // A post-login trial/incomplete simulator update is observable but
 // cannot remove a previously accepted authoritative body.
@@ -24,11 +25,12 @@ struct AvatarAppearanceRuntime
     const AvatarAppearanceRuntime& state,bool authoritative_present)
 {
     const auto rejected=state.self_trial_ignored+
-        state.self_incomplete_ignored;
+        state.self_incomplete_ignored+state.self_invalid_texture_ignored;
     if(rejected==0U)return {};
     const auto summary="Self: "+std::to_string(state.self_trial_ignored)+
         " Vorschau / "+std::to_string(state.self_incomplete_ignored)+
-        " unvollstaendig ignoriert";
+        " unvollstaendig / "+std::to_string(state.self_invalid_texture_ignored)+
+        " Texturblock ungueltig";
     return authoritative_present?summary+" (Skin erhalten)":
         summary+" (Self weiter ausstehend)";
 }

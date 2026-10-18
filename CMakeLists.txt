@@ -122,6 +122,7 @@ add_library(nexverse-protocol
     src/protocol/circuit.cpp
     src/protocol/packet_dispatcher.cpp
     src/protocol/viewer_messages.cpp
+    src/protocol/self_appearance_admission.cpp
     src/protocol/outbound_queue.cpp
     src/protocol/llsd.cpp
     src/protocol/terrain_codec.cpp
@@ -935,6 +936,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
         COMMAND nexverse-viewer-shell-gl-tests)
     set_tests_properties(nexverse-viewer-shell-gl-tests
         PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(nexverse-self-appearance-texture-integrity-tests
+        tests/self_appearance_texture_integrity_tests.cpp)
+    target_link_libraries(nexverse-self-appearance-texture-integrity-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-self-appearance-texture-integrity-tests)
+    add_test(NAME nexverse-self-appearance-texture-integrity-tests
+        COMMAND nexverse-self-appearance-texture-integrity-tests)
 
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)

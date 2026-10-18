@@ -39,8 +39,11 @@ int main()
         summary,true).empty())return 9;
     summary.self_trial_ignored=2U;
     summary.self_incomplete_ignored=3U;
+    summary.self_invalid_texture_ignored=4U;
     if(nexverse::ui::describe_self_appearance_admission(summary,true)
           .find("Skin erhalten")==std::string::npos)return 10;
+    if(nexverse::ui::describe_self_appearance_admission(summary,true)
+          .find("4 Texturblock ungueltig")==std::string::npos)return 13;
     if(nexverse::ui::describe_self_appearance_admission(summary,false)
           .find("Self weiter ausstehend")==std::string::npos)return 11;
     std::cout<<"Authenticated original body preserved against partial and trial SelfAvatarAppearance PASS\n";

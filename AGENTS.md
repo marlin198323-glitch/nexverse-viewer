@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.404, Projektfortschritt 39 % (38,65 % gewichtet), nächste Alpha.405–414.**
+
+18.10.2026 Alpha.395–404: Self AvatarAppearance Low158 TextureEntry wird im Paket-Handler und WorldModel mit Firestorm-Decoder validiert. Korrupte nichtleere TE verdrängen alte Skin nicht. F3 und privater numerischer Bericht zeigen fehlerhafte Texturblöcke; Regionswechsel setzt alte Self-Fehlerzähler zurück. Weiterhin kein authentifiziertes Live-NexVerse-Skin/Outfit/WASD E2E, darum Fortschritt 39 % unverändert. Dokumentation docs/ALPHA395_404_SELF_APPEARANCE_TEXTURE_INTEGRITY.md. Letzte belegte CI Alpha.394 Run 39134722480 SUCCESS. Neue CI erst für exakten SHA bestätigen. Bei WEITER Alpha.405–414.
+
+---
+
 **ALPHA.394 CI VERIFIZIERT:** Featurecommit c51dd658224604886d5a536b3bd22dfc49e83214; GitHub Pi5 ARM64 Actions Run 39134573794 SUCCESS für genau denselben SHA. Mint x64 Vollbuild 360/360, 152/152 Native C++/NVIDIA OpenGL, 152/152 Python, ARM64-kompatibles Headless, isolierter Xvfb-Vollviewer sowie X11 WM_CLASS/Icon PASS. NexVerse AvatarAppearance/Outfit/WASD Live-E2E weiterhin OFFEN. Projektstatus 39 % (38,65 % gewichtet), nächster Lauf Alpha.395–404.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.394, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.395–404.**

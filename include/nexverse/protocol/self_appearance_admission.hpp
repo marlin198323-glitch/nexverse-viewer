@@ -3,9 +3,18 @@
 
 #include "nexverse/protocol/viewer_messages.hpp"
 #include <string_view>
+#include <span>
+#include <cstdint>
 
 namespace nexverse::protocol
 {
+// Strictly parse complete Firestorm texture entries before trusting a
+// non-trial self appearance as a skin. No baked texture needs to be
+// present to pass: an authentic but unbaked appearance remains possible.
+// Implemented in the protocol library to reuse the actual TE decoder.
+[[nodiscard]] bool valid_self_appearance_texture_entry(
+    std::span<const std::uint8_t> texture_entry);
+
 // The simulator can send preview/trial and partial appearance snapshots.
 // Those must NOT replace an already-authoritative self avatar and
 // thereby blank real baked skin or weighted body parameters.

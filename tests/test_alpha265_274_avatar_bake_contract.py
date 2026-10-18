@@ -64,13 +64,13 @@ class Alpha265AvatarBakeContracts(unittest.TestCase):
 
     def test_progress_and_next_chat_consistency(self):
         progress=json.loads(source("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.394")
-        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.394")
+        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.404")
+        self.assertEqual(progress["viewer_version"],"0.2.0-alpha.404")
         self.assertEqual(progress["default_blocks_per_run"],10)
-        self.assertEqual(progress["next_batch"],"Alpha.395–404")
+        self.assertEqual(progress["next_batch"],"Alpha.405–414")
         for name in ("CHATUEBERGABE.md","projectplan.md","info.md","AGENTS.md",
                      "docs/PROJEKTFORTSCHRITT.md"):
             with self.subTest(file=name):
                 self.assertIn("39 %",source(name)[:2400])
-                self.assertIn("Alpha.395–404",source(name)[:2400])
+                self.assertIn("Alpha.405–414",source(name)[:2400])
 if __name__=="__main__":unittest.main()

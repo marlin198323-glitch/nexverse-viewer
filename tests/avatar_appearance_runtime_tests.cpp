@@ -42,6 +42,12 @@ int main()
     if(describe_self_appearance_handshake(true,true,true,true,
          std::chrono::seconds{100}).find("empfangen")==std::string::npos)
         return 15;
+    AvatarAppearanceRuntime invalid_te{};
+    invalid_te.self_invalid_texture_ignored=2U;
+    if(describe_self_appearance_admission(invalid_te,false).find(
+           "2 Texturblock ungueltig")==std::string::npos)return 16;
+    if(describe_self_appearance_admission(invalid_te,true).find(
+           "Skin erhalten")==std::string::npos)return 17;
     std::cout<<"Authenticated appearance reception stages are truthful and identity-free PASS\n";
     return 0;
 }

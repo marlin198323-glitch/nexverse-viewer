@@ -4927,6 +4927,7 @@ int Application::run(bool enable_developer_modules)
     std::atomic_uint32_t avatar_appearance_self_accepted{0U};
     std::atomic_uint32_t avatar_appearance_self_trial_ignored{0U};
     std::atomic_uint32_t avatar_appearance_self_incomplete_ignored{0U};
+    std::atomic_uint32_t avatar_appearance_self_invalid_texture_ignored{0U};
     std::atomic_uint32_t avatar_animation_packets{0U};
     std::atomic_bool coarse_avatar_live_logged{false};
     std::atomic_bool full_object_live_logged{false};
@@ -5607,6 +5608,7 @@ int Application::run(bool enable_developer_modules)
          &avatar_appearance_self_accepted,
          &avatar_appearance_self_trial_ignored,
          &avatar_appearance_self_incomplete_ignored,
+         &avatar_appearance_self_invalid_texture_ignored,
          &world_model,&world_mutex](
             const protocol::DecodedPacket& packet)
         {
@@ -5654,6 +5656,19 @@ int Application::run(bool enable_developer_modules)
                     avatar_appearance_self_incomplete_ignored.fetch_add(
                         1U,std::memory_order_relaxed);
                     return; // keep last known-good TE/VisualParams on GPU
+                }
+                // An incomplete or corrupt TextureEntry must NEVER
+                // evict a previously accepted server skin. This is a
+                // stricter gate than the nonempty wire-level block check.
+                if(!protocol::valid_self_appearance_texture_entry(
+                       appearance->texture_entry))
+                {
+                    avatar_appearance_self_invalid_texture_ignored.fetch_add(
+                        1U,std::memory_order_relaxed);
+                    core::warning("AvatarAppearance SELF TextureEntry rejected "
+                                  "by shared Firestorm parser; previous skin "
+                                  "preserved; payload omitted");
+                    return;
                 }
                 const bool first=!world_model.self_appearance().has_value();
                 const bool accepted=world_model.apply_self_appearance(*appearance);
@@ -7882,6 +7897,10 @@ int Application::run(bool enable_developer_modules)
                 avatar_appearance_ignored_region.store(0U,std::memory_order_relaxed);
                 avatar_appearance_other_avatar.store(0U,std::memory_order_relaxed);
                 avatar_appearance_self_accepted.store(0U,std::memory_order_relaxed);
+                avatar_appearance_self_trial_ignored.store(0U,std::memory_order_relaxed);
+                avatar_appearance_self_incomplete_ignored.store(0U,std::memory_order_relaxed);
+                avatar_appearance_self_invalid_texture_ignored.store(0U,std::memory_order_relaxed);
+                avatar_appearance_failure_stage.store(0,std::memory_order_relaxed);
                 world_renderer->reset_self_avatar_visibility();
                 // Old simulator LocalIDs have no validity in the next
                 // region. A touch held during teleport must never target
@@ -12658,7 +12677,8 @@ int Application::run(bool enable_developer_modules)
                 avatar_appearance_other_avatar.load(std::memory_order_relaxed),
                 avatar_appearance_self_accepted.load(std::memory_order_relaxed),
                 avatar_appearance_self_trial_ignored.load(std::memory_order_relaxed),
-                avatar_appearance_self_incomplete_ignored.load(std::memory_order_relaxed)
+                avatar_appearance_self_incomplete_ignored.load(std::memory_order_relaxed),
+                avatar_appearance_self_invalid_texture_ignored.load(std::memory_order_relaxed)
             };
             ui::AvatarPipelineProof avatar_proof{};
             avatar_proof.appearance_runtime=appearance_runtime;
@@ -12777,6 +12797,8 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.self_trial_ignored;
             avatar_diagnostic.appearance_self_incomplete_ignored=
                 appearance_runtime.self_incomplete_ignored;
+            avatar_diagnostic.appearance_self_invalid_texture_ignored=
+                appearance_runtime.self_invalid_texture_ignored;
             const auto movement_evidence=movement_feedback.snapshot();
             avatar_diagnostic.movement_queued=
                 movement_evidence.queued_direction;

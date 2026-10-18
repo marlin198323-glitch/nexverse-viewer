@@ -31,6 +31,7 @@ struct AvatarDiagnosticReport
     std::uint32_t appearance_self_accepted=0U;
     std::uint32_t appearance_self_trial_ignored=0U;
     std::uint32_t appearance_self_incomplete_ignored=0U;
+    std::uint32_t appearance_self_invalid_texture_ignored=0U;
     // Whitelisted real socket/server movement evidence (no positions).
     bool movement_queued=false;
     bool movement_socket_sent=false;

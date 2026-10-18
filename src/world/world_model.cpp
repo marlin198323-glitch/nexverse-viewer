@@ -95,7 +95,8 @@ bool WorldModel::apply_self_appearance(
     // The same admission rule is used by the packet handler and model.
     if (!protocol::appearance_is_authoritative(
             protocol::assess_self_appearance(
-                appearance,agent_.agent_id,region_.connected)))
+                appearance,agent_.agent_id,region_.connected)) ||
+        !protocol::valid_self_appearance_texture_entry(appearance.texture_entry))
         return false;
     self_appearance_ = std::move(appearance);
     // Remove any erroneously cached self entity, e.g. from a
