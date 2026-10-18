@@ -1,5 +1,8 @@
 ## Alpha.365–374 – bearbeitete zehn Entwicklungsblöcke
 
+Alpha.374 CI VERIFIZIERT: Featurecommit dc7a7e7114154adaa444ded5ade9e5dfb97f1dce; GitHub Pi5-ARM64-Run 39131738405 SUCCESS exakt für denselben SHA. Mint Debug x64 Vollbuild 358/358, 151/151 native NVIDIA/OpenGL CTests, 140/140 Python, ARM64-kompatibler Headless, isolierter Xvfb Viewerstart und X11 Systemicon/WM_CLASS PASS. Echte 21-Level Avatar-Linkset-Framebuffer-Pixel 4729, 21 HUD-Prim-Ausschlüsse, keine verbliebenen HUD-Pixel; F3 zeigt reale Linktiefe. Echter NexVerse AvatarAppearance/Outfit-/WASD-End-to-End weiterhin OFFEN. Projektstatus 39 % (38,65 % gewichtet); nächster Lauf Alpha.375–384.
+
+
 - **365 [GEPRÜFT]** GitHub HEAD/Handoff/OpenGenesisLINK Server-main.
 - **366 [GEPRÜFT]** produktiver 16-vs-128 Parent-Tiefenfehler im Renderer.
 - **367 [IMPLEMENTIERT]** gemeinsam genutzte zyklen-/grenzsichere 128-Level `SceneParentChain`.
