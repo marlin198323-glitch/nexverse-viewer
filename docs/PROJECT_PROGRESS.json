@@ -61,9 +61,9 @@
   "next_batch": "Alpha.445–454",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "83c93130b64b0ec1032b864414b52e89cabb4c22",
-    "run_id": 39139112676,
+    "tested_sha": "3bb183def3c0ef618173f705c635d6a87127c53d",
+    "run_id": 39140161516,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless C++23 and Python; not ARM GPU"
+    "scope": "Pi5 ARM64 C++23 headless and Python; native GUI/OpenGL only validated on Mint x64"
   }
 }
