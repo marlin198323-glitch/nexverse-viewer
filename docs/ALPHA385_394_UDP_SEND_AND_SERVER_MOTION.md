@@ -1,3 +1,5 @@
+**ALPHA.394 CI VERIFIZIERT:** Featurecommit c51dd658224604886d5a536b3bd22dfc49e83214; GitHub Pi5 ARM64 Actions Run 39134573794 SUCCESS für genau denselben SHA. Mint x64 Vollbuild 360/360, 152/152 Native C++/NVIDIA OpenGL, 152/152 Python, ARM64-kompatibles Headless, isolierter Xvfb-Vollviewer sowie X11 WM_CLASS/Icon PASS. NexVerse AvatarAppearance/Outfit/WASD Live-E2E weiterhin OFFEN. Projektstatus 39 % (38,65 % gewichtet), nächster Lauf Alpha.395–404.
+
 # Alpha.385–394 – echte WASD-UDP-Sendebestätigung und Serverpositionsquellen
 
 18.10.2026 | develop-current | Version 0.2.0-alpha.394 | **39 % (38,65 % gewichtet, unverändert)**
