@@ -1217,6 +1217,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-asset-view-priority-tests)
     add_test(NAME nexverse-asset-view-priority-tests COMMAND nexverse-asset-view-priority-tests)
 
+    add_executable(nexverse-attachment-scene-classification-tests
+        tests/attachment_scene_classification_tests.cpp)
+    target_link_libraries(nexverse-attachment-scene-classification-tests PRIVATE NexVerse::Render)
+    add_test(NAME nexverse-attachment-scene-classification-tests
+        COMMAND nexverse-attachment-scene-classification-tests)
+
     add_executable(nexverse-mesh-residency-target-tests
         tests/mesh_residency_target_tests.cpp)
     target_link_libraries(nexverse-mesh-residency-target-tests PRIVATE NexVerse::Assets)
