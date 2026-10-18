@@ -1,3 +1,5 @@
+**ALPHA.404 CI VERIFIZIERT:** Feature-SHA 19e70975376b44719a6c61989d4748bebc0b9d4d, GitHub Pi5 ARM64 Run 39135891262 SUCCESS exakt für denselben Codecommit. Mint x64 Vollbuild 363/363, Native/GL CTest 153/153, Python 159/159, ARM64-kompatibler Headless, isolierter Xvfb-Viewerstart und X11-WM_CLASS/Systemicon erfolgreich. NexVerse Live AvatarAppearance, Outfit/Bake und WASD-E2E weiterhin OFFEN. Prozentstatus 39 %; nächste Alpha.405–414.
+
 # Alpha.395–404 – Self AvatarAppearance-Texturintegrität und Regionsdiagnose
 
 18.10.2026 | develop-current | Version 0.2.0-alpha.404 | Projektfortschritt 39 % (38,65 % gewichtet).
