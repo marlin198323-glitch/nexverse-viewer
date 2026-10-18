@@ -8,6 +8,7 @@
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_skin_weight_pair.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
+#include "nexverse/render/attachment_scene_classification.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
 #include "nexverse/render/material_pass.hpp"
@@ -3693,24 +3694,10 @@ public:
             visible_objects.reserve(scene_objects_.size());
             for (std::size_t index = 0U; index < scene_objects_.size(); ++index)
             {
-                // Firestorm HUD points (31-38) must never draw as world
-                // objects at avatar coordinates. A proper HUD renderer is
-                // a separate UI phase; do not leak an offscreen HUD here.
-                const auto& entity=scene_objects_[index];
-                bool hud=false;
-                if(!entity.object_id.empty() && entity.parent_id!=0U)
-                {
-                    if(const auto* avatar=find_attachment_avatar_parent(
-                           avatar_proxies_,entity.parent_id))
-                    {
-                        const auto attached=avatar->attachments.find(
-                            entity.object_id);
-                        if(attached!=avatar->attachments.end() &&
-                           attached->second<avatar_bind_rig_.is_hud.size())
-                            hud=avatar_bind_rig_.is_hud[attached->second];
-                    }
-                }
-                if(hud)continue;
+                const auto attachment_class=classify_attachment_scene(
+                    scene_objects_,scene_object_index_,avatar_proxies_,
+                    avatar_bind_rig_,index);
+                if(attachment_class!=AttachmentSceneKind::world)continue;
                 const Mat4 model = scene_model(index);
                 if (!scene_object_visible(model, scene_objects_[index]))
                     continue;
