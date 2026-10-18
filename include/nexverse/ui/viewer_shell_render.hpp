@@ -31,6 +31,8 @@ struct ViewerShellView
     std::string avatar_movement_status;
     std::uint32_t avatar_udp_directional_sent=0U;
     std::string avatar_depth_parts;
+    std::uint64_t avatar_hud_world_excluded=0U;
+    std::uint64_t avatar_invalid_parent_excluded=0U;
     std::string avatar_bake_stream_status;
     std::string avatar_animation_status;
     std::string terrain_recovery_status;
