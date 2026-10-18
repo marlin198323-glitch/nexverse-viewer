@@ -61,9 +61,9 @@
   "next_batch": "Alpha.425–434",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "08fa7ad14c3b95a97c2712751eba26dab384b716",
-    "run_id": 39137250919,
+    "tested_sha": "74b1839b7ecdad43f80f7405638a7c1433dddf44",
+    "run_id": 39138145169,
     "conclusion": "success",
-    "scope": "ARM64 source/headless C++23 and Python; no native ARM GPU build"
+    "scope": "ARM64 native headless C++23 + Python; not ARM GPU"
   }
 }
