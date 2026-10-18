@@ -16,6 +16,9 @@ namespace nexverse::ui
 struct AvatarPipelineProof
 {
     bool appearance_received=false;
+    // Authenticated self ObjectUpdate TE can supply genuine baked faces,
+    // but this flag is NOT evidence of a Low158 AvatarAppearance packet.
+    bool provisional_object_bakes=false;
     AvatarAppearanceRuntime appearance_runtime{};
     AvatarVisualTruth visual_truth{};
     bool world_ready=false;
@@ -54,11 +57,22 @@ struct AvatarPipelineProof
     }
     [[nodiscard]] std::string skin_stage() const
     {
+        if(provisional_object_bakes && !appearance_received)
+            return "Skin: Obj-TE vorlaeufig GPU "+
+                std::to_string(bakes.visible_body_resident)+
+                "/3 (Low158 fehlt)";
         return describe_avatar_skin_truth(visual_truth);
     }
     [[nodiscard]] std::string animation_stage() const
     {
         return describe_avatar_animation_truth(visual_truth);
+    }
+    [[nodiscard]] bool provisional_body_gpu_submitted() const noexcept
+    {
+        return !appearance_received && provisional_object_bakes &&
+            bakes.visible_body_resident==3U && original_body_draws>=3U &&
+            body_bake_draws[0]>0U && body_bake_draws[1]>0U &&
+            body_bake_draws[2]>0U;
     }
     [[nodiscard]] bool body_gpu_drawn() const noexcept
     {
@@ -71,21 +85,30 @@ struct AvatarPipelineProof
     const AvatarPipelineProof& proof)
 {
     if(!proof.appearance_received)
+    {
+        if(proof.provisional_object_bakes)
+            return "Obj-TE vorlaeufig "+
+                std::to_string(proof.bakes.server_references)+
+                "/3 GPU "+std::to_string(proof.bakes.gpu_resident)+
+                "/3 (Low158 fehlt)";
         return describe_appearance_runtime(proof.appearance_runtime,false);
+    }
     return "Server TE "+std::to_string(proof.bakes.server_references)+
         "/11 GPU "+std::to_string(proof.bakes.gpu_resident)+"/11";
 }
 [[nodiscard]] inline std::string describe_avatar_body_pipeline(
     const AvatarPipelineProof& proof)
 {
-    if(!proof.appearance_received)
+    if(!proof.appearance_received && !proof.provisional_object_bakes)
         return "Body H:- U:- L:- | GL 0";
     const auto s=[](nexverse::protocol::AvatarBakeTextureState state)->char {
         return nexverse::protocol::avatar_bake_state_symbol(state);
     };
     const auto baked=proof.body_bake_draws[0]+
         proof.body_bake_draws[1]+proof.body_bake_draws[2];
-    return "H:"+std::string(1,s(proof.bakes.regions[0]))+
+    return std::string(proof.provisional_object_bakes&&!proof.appearance_received?
+            "ObjTE ":"")+
+        "H:"+std::string(1,s(proof.bakes.regions[0]))+
         " U:"+std::string(1,s(proof.bakes.regions[1]))+
         " L:"+std::string(1,s(proof.bakes.regions[2]))+
         " | LLM "+std::to_string(proof.original_body_draws)+

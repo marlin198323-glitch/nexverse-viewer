@@ -36,6 +36,10 @@ struct AvatarDiagnosticReport
     // current authenticated self ObjectUpdate (not Low158 verification).
     std::uint32_t self_object_bake_candidate_faces=0U;
     bool self_object_bake_candidate_active=false;
+    std::uint32_t self_object_bake_candidate_gpu_resident=0U;
+    std::uint32_t self_object_bake_candidate_bake_gl_draws=0U;
+    bool self_object_bake_candidate_depth_known=false;
+    bool self_object_bake_candidate_depth_visible=false;
     // Whitelisted real socket/server movement evidence (no positions).
     bool movement_queued=false;
     bool movement_socket_sent=false;

@@ -576,6 +576,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-visual-truth-tests
         COMMAND nexverse-avatar-visual-truth-tests)
 
+    add_executable(nexverse-avatar-provisional-bake-ui-tests
+        tests/avatar_provisional_bake_ui_tests.cpp)
+    target_link_libraries(nexverse-avatar-provisional-bake-ui-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-avatar-provisional-bake-ui-tests)
+    add_test(NAME nexverse-avatar-provisional-bake-ui-tests
+        COMMAND nexverse-avatar-provisional-bake-ui-tests)
+
     add_executable(nexverse-avatar-pipeline-proof-tests
         tests/avatar_pipeline_proof_tests.cpp)
     target_link_libraries(nexverse-avatar-pipeline-proof-tests

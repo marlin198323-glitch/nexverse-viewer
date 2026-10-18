@@ -35,6 +35,17 @@ void WorldModel::set_grid(GridState grid)
 
 void WorldModel::apply_region(const RegionUpdate& update)
 {
+    // A region can be replaced without begin_region_transition during
+    // direct model integration. Never carry self skin/animation/object
+    // candidates across handles, even if session credentials remain.
+    if((region_.handle!=0U && region_.handle!=update.handle) ||
+       (region_.connected && !update.connected))
+    {
+        self_appearance_.reset();
+        self_object_bakes_.reset();
+        self_animations_.reset();
+        pending_avatar_animations_.clear();
+    }
     region_.handle = update.handle;
     region_.name = update.name;
     region_.agent_position = update.agent_position;
@@ -77,11 +88,18 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
 
 void WorldModel::apply_agent(const AgentUpdate& update)
 {
-    // Reauthentication into a different identity invalidates provisional
-    // baked asset references even when the region handle is unchanged.
+    // Both provisional and authoritative self appearances are tied to
+    // the authenticated AGENT + SESSION, not merely the region handle.
+    // Full ObjectUpdate calls apply_agent repeatedly with the same keys.
     if(agent_.agent_id!=update.agent_id ||
        agent_.session_id!=update.session_id)
+    {
         self_object_bakes_.reset();
+        self_appearance_.reset();
+        self_animations_.reset();
+        pending_avatar_animations_.clear();
+        agent_profile_ = {};
+    }
     agent_.agent_id = update.agent_id;
     agent_.session_id = update.session_id;
     agent_.position = update.position;

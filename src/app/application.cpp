@@ -12773,6 +12773,21 @@ int Application::run(bool enable_developer_modules)
                         static_cast<std::uint32_t>(
                             avatar_proof.bakes.visible_body_resident);
                 }
+                else if(const auto& candidate=world_model.self_object_bakes();
+                        candidate &&world_model.region().connected)
+                {
+                    // Current region + agent/session gates already held.
+                    // Report real provisional TE asset-residency and actual
+                    // GL submissions, never invent Low158/COF confirmation.
+                    protocol::AvatarBakedTextures candidate_bakes{};
+                    for(std::size_t i=0U;i<3U;++i)
+                        candidate_bakes.ids[i]=candidate->visible_body[i];
+                    avatar_proof.provisional_object_bakes=true;
+                    avatar_proof.bakes=protocol::audit_avatar_bake_evidence(
+                        candidate_bakes,object_texture_loaded_ids);
+                    avatar_proof.body_bake_draws=
+                        render_diagnostics.self_avatar_body_bake_gl_draws;
+                }
             }
             // Read only renderer-authentic CURRENT-REGION asset UUIDs.
             // No GetTexture/GetMesh requests are made by HUD diagnostics.
@@ -12839,6 +12854,24 @@ int Application::run(bool enable_developer_modules)
                     avatar_diagnostic.self_object_bake_candidate_active=
                         !world_model.self_appearance().has_value();
                 }
+            }
+            if(avatar_proof.provisional_object_bakes &&
+               !avatar_proof.appearance_received)
+            {
+                avatar_diagnostic.self_object_bake_candidate_gpu_resident=
+                    static_cast<std::uint32_t>(
+                        avatar_proof.bakes.visible_body_resident);
+                // Real native GL draws; source not promoted to Low158.
+                avatar_diagnostic.self_object_bake_candidate_bake_gl_draws=
+                    static_cast<std::uint32_t>(
+                        avatar_proof.body_bake_draws[0]+
+                        avatar_proof.body_bake_draws[1]+
+                        avatar_proof.body_bake_draws[2]);
+                avatar_diagnostic.self_object_bake_candidate_depth_known=
+                    avatar_proof.fragment_query_known;
+                avatar_diagnostic.self_object_bake_candidate_depth_visible=
+                    avatar_proof.fragment_query_known&&
+                    avatar_proof.fragment_samples_passed;
             }
             const auto movement_evidence=movement_feedback.snapshot();
             avatar_diagnostic.movement_queued=

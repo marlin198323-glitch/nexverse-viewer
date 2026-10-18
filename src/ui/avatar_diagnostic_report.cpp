@@ -63,6 +63,14 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.self_object_bake_candidate_faces)+"\n"
        "self_object_bake_candidate_active="+
            yn(r.self_object_bake_candidate_active)+"\n"
+       "self_object_bake_candidate_gpu_resident="+
+           std::to_string(r.self_object_bake_candidate_gpu_resident)+"\n"
+       "self_object_bake_candidate_bake_gl_draws="+
+           std::to_string(r.self_object_bake_candidate_bake_gl_draws)+"\n"
+       "self_object_bake_candidate_depth_known="+
+           yn(r.self_object_bake_candidate_depth_known)+"\n"
+       "self_object_bake_candidate_depth_visible="+
+           yn(r.self_object_bake_candidate_depth_visible)+"\n"
        "movement_queued="+yn(r.movement_queued)+"\n"
        "movement_udp_socket_sent="+yn(r.movement_socket_sent)+"\n"
        "movement_server_confirmed="+yn(r.movement_server_confirmed)+"\n"

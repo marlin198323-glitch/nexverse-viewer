@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL Version 0.2.0-alpha.424, Projektfortschritt 39 % (38,65 % gewichtet); NÄCHSTE Alpha.425–434.**
+
+18.10.2026: Alpha.415–424 – Reauth/Agentwechsel/Sessionwechsel/Regionswechsel/Disconnect invalidieren bisherige Self-Low158- und vorläufige ObjectUpdate-Skin-Daten sicher. F3/F9 führen nun vorläufige, tatsächlich vom Simulator gemeldete ObjectTE-Body-Bakes mit realen GPU-Residenz-, Original-GL- und Depth-Nachweisen getrennt von authentisch bestätigtem Low158. Native C++/GL, Python, Pi5-kompatible Headless, isoliertes Xvfb/Icon und Pi5-CI nach exaktem Commit. Keine authentifizierte NexVerse Avatar-/Outfit-/WASD-End-to-End-Abnahme. Fortschritt deshalb 39 % unverändert. Vollständige Dokumentation docs/ALPHA415_424_AUTH_AVATAR_SOURCE_PROOF.md. BEI WEITER Alpha.425–434, immer ZEHN reale Entwicklungsschritte.
+
+---
+
 **ALPHA.414 CI ERFOLGREICH VERIFIZIERT:** Featurecommit 08fa7ad14c3b95a97c2712751eba26dab384b716; GitHub Self-hosted Pi5 ARM64 Source Check Run 39137250919 = SUCCESS exakt für diesen SHA. Mint x64 365/365, native NVIDIA/OpenGL CTest 154/154, Python 165/165, Pi5-kompatibles Headless, isolierter Xvfb-Firestorm-Viewer, Original-X11-Systemicon/WM_CLASS PASS. Vollständiger eigener Avatar/Outfit/COF, echtes NexVerse-WASD und alle Firestorm-Menüs weiterhin NICHT live nachgewiesen; Fortschritt 39 % (38,65 % gewichtet). Bei WEITER Alpha.415–424.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.414, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.415–424.**

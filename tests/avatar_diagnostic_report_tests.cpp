@@ -25,6 +25,10 @@ int main()
     r.appearance_self_invalid_texture_ignored=2U;
     r.self_object_bake_candidate_faces=2U;
     r.self_object_bake_candidate_active=true;
+    r.self_object_bake_candidate_gpu_resident=2U;
+    r.self_object_bake_candidate_bake_gl_draws=2U;
+    r.self_object_bake_candidate_depth_known=true;
+    r.self_object_bake_candidate_depth_visible=false;
     r.movement_queued=true;
     r.movement_socket_sent=true;
     r.movement_server_confirmed=true;
@@ -59,6 +63,10 @@ int main()
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
        text.find("self_object_bake_candidate_faces=2")==std::string::npos||
        text.find("self_object_bake_candidate_active=yes")==std::string::npos||
+       text.find("self_object_bake_candidate_gpu_resident=2")==std::string::npos||
+       text.find("self_object_bake_candidate_bake_gl_draws=2")==std::string::npos||
+       text.find("self_object_bake_candidate_depth_known=yes")==std::string::npos||
+       text.find("self_object_bake_candidate_depth_visible=no")==std::string::npos||
        text.find("self_appearance_reply_wait_seconds=27")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_acked=yes")==std::string::npos||
        text.find("region_handshake_self_appearance_bit2_sent=yes")==std::string::npos||

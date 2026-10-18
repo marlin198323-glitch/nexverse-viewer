@@ -101,7 +101,8 @@ int main()
     // Authenticated self with different session is not the same visual
     // lifetime, even on same simulator region.
     w.apply_agent({avatar_id,"ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});
-    if(w.self_object_bakes())return 14;
+    if(w.self_object_bakes()||w.self_appearance()||w.self_animations())
+        return 14;
     auto transferred=model();
     if(!transferred.observe_self_object_bakes(avatar_id,region,51U,head_te))
         return 15;
@@ -111,6 +112,37 @@ int main()
     if(transferred.self_object_bakes()||
        transferred.self_render_bakes()!=std::array<std::string,3U>{})
         return 16;
+    // A matching region, but a new authenticated agent, also invalidates
+    // the previous user's authoritative Low158 appearance.
+    auto reauth=model();
+    auto old=authoritative;
+    if(!reauth.apply_self_appearance(old))return 19;
+    reauth.apply_agent({"99999999-2222-3333-4444-555555555555",
+        session_id,{},{},true});
+    if(reauth.self_appearance()||reauth.self_object_bakes()||
+       reauth.self_render_bakes()!=std::array<std::string,3U>{})
+        return 20;
+    // Unchanged agent/session pose feedback preserves valid self skin.
+    reauth.apply_agent({avatar_id,session_id,{},{},true});
+    if(!reauth.apply_self_appearance(old))return 21;
+    reauth.apply_agent({avatar_id,session_id,{0.5f,0.5f,0.0f},{},true});
+    if(!reauth.self_appearance())return 22;
+    // A changed region via apply_region (without begin_transition)
+    // must also invalidate both appearance provenance paths.
+    reauth.apply_region({region+3U,"Different",{},"127.0.0.1",
+        9001U,"","",0U,0U,0U,13U,0.0f,"",256U,256U,true});
+    if(reauth.self_appearance()||reauth.self_object_bakes())return 23;
+    // The same region can disconnect without a formal teleport event.
+    // A successful reconnect must not inherit the previous skin.
+    auto disconnected=model();
+    if(!disconnected.observe_self_object_bakes(
+            avatar_id,region,51U,head_te))return 24;
+    if(!disconnected.apply_self_appearance(old))return 25;
+    disconnected.apply_region({region,"Disconnected",{},
+        "127.0.0.1",9000U,"","",0U,0U,0U,13U,0.0f,"",
+        256U,256U,false});
+    if(disconnected.self_appearance()||disconnected.self_object_bakes())
+        return 26;
     // An apparently valid skin from another user is never accepted.
     auto wrong=model();
     wrong.apply_agent({"another",session_id,{},{},true});
