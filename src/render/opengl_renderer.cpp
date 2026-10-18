@@ -3355,6 +3355,7 @@ public:
         diagnostics_.scene_invalid_parent_excluded=0U;
         diagnostics_.scene_max_visible_parent_depth=0U;
         diagnostics_.scene_deep_visible_linksets=0U;
+        diagnostics_.scene_bone_pose_avatars=0U;
         // Terrain GL telemetry is PER FRAME just like all scene counters.
         // A prior textured draw must not make today's fallback look loaded.
         diagnostics_.terrain_textured_draw_calls=0U;
@@ -3432,6 +3433,47 @@ public:
 
     void render_world(double time_seconds) override
     {
+        // Frame-local cache: all objects in one linkset use the same
+        // corresponding avatar joint pose as the body's GPU skinning.
+        // Cleared even when the renderer is not initialized/region changes.
+        attachment_joint_poses_.clear();
+        if (std::isfinite(time_seconds))
+        {
+            for(const auto& avatar:avatar_proxies_)
+            {
+                if(avatar.local_id==0U || avatar.attachments.empty())continue;
+                bool needs_pose=false;
+                for(const auto& [object_id,slot]:avatar.attachments)
+                {
+                    (void)object_id;
+                    if(slot<avatar_bind_rig_.available.size() &&
+                       avatar_bind_rig_.available[slot] &&
+                       !avatar_bind_rig_.is_hud[slot] &&
+                       avatar_bind_rig_.attachment_joint_plus_one[slot]>0U)
+                    {needs_pose=true;break;}
+                }
+                if(!needs_pose)continue;
+                const auto motion=avatar.motion!=
+                    nexverse::protocol::AvatarMotion::idle
+                        ? avatar.motion
+                        : (avatar.moving
+                            ? nexverse::protocol::AvatarMotion::walk
+                            : nexverse::protocol::AvatarMotion::idle);
+                const double clip_seconds=
+                    avatar.keyframe_clip &&
+                    avatar.keyframe_elapsed_seconds>=0.0f
+                        ?static_cast<double>(avatar.keyframe_elapsed_seconds)
+                        :time_seconds;
+                auto pose=avatar_joint_deformations(
+                    avatar_bind_rig_,motion,clip_seconds,
+                    avatar.keyframe_clip.get());
+                if(!pose.empty())
+                    attachment_joint_poses_.emplace(
+                        avatar.local_id,std::move(pose));
+            }
+        }
+        diagnostics_.scene_bone_pose_avatars=
+            static_cast<std::uint32_t>(attachment_joint_poses_.size());
         if (program_ == 0U || sky_program_ == 0U)
         {
             return;
@@ -5158,8 +5200,29 @@ private:
                    it->second<avatar_bind_rig_.available.size()&&
                    avatar_bind_rig_.available[it->second]&&
                    !avatar_bind_rig_.is_hud[it->second])
-                    pose=multiply(pose,translation(
-                        avatar_bind_rig_.attachment_offsets[it->second]));
+                {
+                    const auto slot=it->second;
+                    bool animated=false;
+                    const auto joint=avatar_bind_rig_.
+                        attachment_joint_plus_one[slot];
+                    const auto frames=attachment_joint_poses_.find(
+                        avatar->local_id);
+                    if(joint>0U&&frames!=attachment_joint_poses_.end()&&
+                       static_cast<std::size_t>(joint-1U)<
+                           frames->second.size())
+                    {
+                        pose=multiply(pose,multiply(
+                            frames->second[joint-1U],
+                            translation(avatar_bind_rig_.
+                                attachment_local_offsets[slot])));
+                        animated=true;
+                    }
+                    // Virtual mRoot, absent clips/bones and legacy rigs
+                    // remain at the unchanged original bind offset.
+                    if(!animated)
+                        pose=multiply(pose,translation(
+                            avatar_bind_rig_.attachment_offsets[slot]));
+                }
             }
         }
         // Parent transforms precede child transforms, in all 128 supported
@@ -5401,6 +5464,10 @@ private:
     std::unordered_map<std::string, bool> object_texture_alpha_;
     RenderVec3 test_anchor_;
     RenderDiagnostics diagnostics_;
+    // Cleared and recomputed each render_world frame; bounded by 64 avatar
+    // proxies and 256 joints, contains no network IDs or persisted data.
+    std::unordered_map<std::uint32_t,std::vector<Mat4>>
+        attachment_joint_poses_;
 };
 
 std::unique_ptr<Renderer> create_legacy_opengl_renderer()

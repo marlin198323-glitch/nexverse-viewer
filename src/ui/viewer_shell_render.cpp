@@ -286,7 +286,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
             line(4,"Attachments:"+std::to_string(v.attachments)+
                  " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
                  " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
-                 " | >16:"+std::to_string(v.avatar_scene_deep_linksets),
+                 " | >16:"+std::to_string(v.avatar_scene_deep_linksets)+
+                 " | Bone-Pose:"+std::to_string(v.avatar_bone_pose_avatars),
                  theme::text_muted);
             line(5,v.avatar_view_status,theme::cyan);
             line(6,v.avatar_fragment_status,theme::warning);

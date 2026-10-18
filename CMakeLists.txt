@@ -1226,6 +1226,15 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-scene-deep-linkset-pixels-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-scene-animated-attachment-pixels-tests
+        tests/scene_animated_attachment_pixels_tests.cpp)
+    target_link_libraries(nexverse-scene-animated-attachment-pixels-tests
+        PRIVATE NexVerse::Render glfw glad::glad)
+    add_test(NAME nexverse-scene-animated-attachment-pixels-tests
+        COMMAND nexverse-scene-animated-attachment-pixels-tests)
+    set_tests_properties(nexverse-scene-animated-attachment-pixels-tests
+        PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(nexverse-scene-parent-chain-tests tests/scene_parent_chain_tests.cpp)
     target_link_libraries(nexverse-scene-parent-chain-tests PRIVATE NexVerse::Render)
     add_test(NAME nexverse-scene-parent-chain-tests COMMAND nexverse-scene-parent-chain-tests)

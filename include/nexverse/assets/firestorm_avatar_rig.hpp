@@ -26,6 +26,10 @@ struct FirestormAvatarRig
     std::vector<FirestormAvatarJoint> joints;
     // The official attachment slot mapping from avatar_lad.xml.
     std::array<std::array<float,3>,64U> attachment_bind_offsets{};
+    // Firestorm avatar_lad.xml local joint offsets; index+1 is zero
+    // for virtual root/HUD frames, never an invented skeleton bone.
+    std::array<std::array<float,3>,64U> attachment_local_offsets{};
+    std::array<std::uint16_t,64U> attachment_joint_plus_one{};
     std::array<bool,64U> attachment_available{};
     std::array<bool,64U> attachment_is_hud{};
     std::size_t attachment_count=0U;

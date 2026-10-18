@@ -113,6 +113,17 @@ std::optional<FirestormAvatarRig> load_firestorm_avatar_rig(
                 offset[component]+=joint[component];
         }
         rig.attachment_bind_offsets[id]=offset;
+        // Retain joint-local position separately from bind-world offset,
+        // so animated attachments follow the same joint as the skinned body.
+        if(parent!=indices.end())
+        {
+            const auto joint_index=parent->second;
+            rig.attachment_joint_plus_one[id]=
+                static_cast<std::uint16_t>(joint_index+1U);
+            for(std::size_t component=0U;component<3U;++component)
+                rig.attachment_local_offsets[id][component]=
+                    offset[component]-rig.joints[joint_index].bind_world[component];
+        }
         rig.attachment_available[id]=true;
         ++rig.attachment_count;
     }

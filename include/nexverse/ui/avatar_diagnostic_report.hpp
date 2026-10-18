@@ -44,6 +44,7 @@ struct AvatarDiagnosticReport
     std::uint64_t missing_mesh_objects=0;
     std::uint32_t scene_linkset_max_depth=0U;
     std::uint64_t scene_linkset_deep_visible=0U;
+    std::uint32_t scene_bone_pose_avatars=0U;
     // Whitelisted CURRENT-FRAME rendering facts, not server strings.
     std::uint32_t terrain_real_layers=0U;
     bool terrain_textured_gl=false;

@@ -60,6 +60,7 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "scene_linkset_max_depth="+std::to_string(r.scene_linkset_max_depth)+"\n"
        "scene_linkset_deep_visible="+std::to_string(r.scene_linkset_deep_visible)+"\n"
+       "scene_bone_pose_avatars="+std::to_string(r.scene_bone_pose_avatars)+"\n"
        "world_missing_mesh_objects="+
            std::to_string(r.missing_mesh_objects)+"\n"
        "terrain_real_layers="+

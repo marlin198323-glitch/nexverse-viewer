@@ -26,7 +26,10 @@ int main()
        !rig->attachment_is_hud[31U] ||
        !rig->attachment_is_hud[38U] ||
        rig->attachment_is_hud[40U] ||
-       rig->attachment_bind_offsets[1U][2U]<1.0f)
+       rig->attachment_bind_offsets[1U][2U]<1.0f ||
+       rig->attachment_joint_plus_one[1U]==0U ||
+       rig->attachment_joint_plus_one[31U]!=0U ||
+       rig->attachment_joint_plus_one[40U]!=0U)
     {
         std::cerr<<"Official Firestorm skeleton/attachment rig parse failed\n";
         return 13;

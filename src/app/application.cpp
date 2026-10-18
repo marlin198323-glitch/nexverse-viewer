@@ -6132,9 +6132,9 @@ int Application::run(bool enable_developer_modules)
             return 13;
         }
 
-        // Bind the original Firestorm 133-joint rest hierarchy and 55
-        // attachment slot positions. This is skeletal attachment-point
-        // positioning, not yet driven by in-world animations.
+        // Firestorm bind joints and attachment slots, plus joint-local
+        // offsets for attachment transforms driven by rendered animation.
+        // Actual server animation clips remain subject to verified assets.
         if(const auto dir=assets::find_firestorm_avatar_character_directory();
             dir)
         {
@@ -6152,6 +6152,11 @@ int Application::run(bool enable_developer_modules)
                     const auto& offset=rig->attachment_bind_offsets[i];
                     bound.attachment_offsets[i]={
                         offset[0],offset[1],offset[2]};
+                    const auto& local=rig->attachment_local_offsets[i];
+                    bound.attachment_local_offsets[i]={
+                        local[0],local[1],local[2]};
+                    bound.attachment_joint_plus_one[i]=
+                        rig->attachment_joint_plus_one[i];
                     bound.available[i]=rig->attachment_available[i];
                     bound.is_hud[i]=rig->attachment_is_hud[i];
                 }
@@ -12768,6 +12773,8 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.scene_max_visible_parent_depth;
             avatar_diagnostic.scene_linkset_deep_visible=
                 render_diagnostics.scene_deep_visible_linksets;
+            avatar_diagnostic.scene_bone_pose_avatars=
+                render_diagnostics.scene_bone_pose_avatars;
             avatar_diagnostic.terrain_real_layers=
                 render_diagnostics.terrain_real_detail_layers;
             avatar_diagnostic.terrain_textured_gl=
@@ -12901,6 +12908,8 @@ int Application::run(bool enable_developer_modules)
                     render_diagnostics.scene_max_visible_parent_depth;
                 shell_view.avatar_scene_deep_linksets=
                     render_diagnostics.scene_deep_visible_linksets;
+                shell_view.avatar_bone_pose_avatars=
+                    render_diagnostics.scene_bone_pose_avatars;
                 const auto ack_wait=
                     circuit_snapshot.self_appearance_support_acknowledged&&
                     circuit_snapshot.self_appearance_ack_at!=

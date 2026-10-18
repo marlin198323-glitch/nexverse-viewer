@@ -35,6 +35,7 @@ struct ViewerShellView
     std::uint64_t avatar_invalid_parent_excluded=0U;
     std::uint32_t avatar_scene_max_parent_depth=0U;
     std::uint64_t avatar_scene_deep_linksets=0U;
+    std::uint32_t avatar_bone_pose_avatars=0U;
     std::string avatar_bake_stream_status;
     std::string avatar_animation_status;
     std::string terrain_recovery_status;

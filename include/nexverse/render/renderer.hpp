@@ -244,6 +244,8 @@ struct RenderAvatarBindRig
     };
     std::vector<Joint> joints;
     std::array<RenderVec3,64U> attachment_offsets{};
+    std::array<RenderVec3,64U> attachment_local_offsets{};
+    std::array<std::uint16_t,64U> attachment_joint_plus_one{};
     std::array<bool,64U> available{};
     std::array<bool,64U> is_hud{};
 };
@@ -326,6 +328,7 @@ struct RenderDiagnostics
     std::uint64_t scene_invalid_parent_excluded = 0U;
     std::uint32_t scene_max_visible_parent_depth=0U;
     std::uint64_t scene_deep_visible_linksets=0U;
+    std::uint32_t scene_bone_pose_avatars=0U; // frame-local actual joint matrices
     // Actual per-frame glDrawElements from world-scene objects only.
     // Sky, terrain, water, UI and avatar proxies are not counted here.
     // Actual OpenGL shader branch, not simply assets resident.
