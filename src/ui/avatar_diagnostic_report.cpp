@@ -79,6 +79,11 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.movement_server_samples)+"\n"
        "movement_server_source_code="+
            std::to_string(r.movement_source_code)+"\n"
+       "movement_discontinuities="+
+           std::to_string(r.movement_discontinuities)+"\n"
+       "movement_stale_samples_ignored="+
+           std::to_string(r.movement_stale_samples_ignored)+"\n"
+       "movement_waiting_after_jump="+yn(r.movement_waiting_after_jump)+"\n"
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "scene_linkset_max_depth="+std::to_string(r.scene_linkset_max_depth)+"\n"
        "scene_linkset_deep_visible="+std::to_string(r.scene_linkset_deep_visible)+"\n"

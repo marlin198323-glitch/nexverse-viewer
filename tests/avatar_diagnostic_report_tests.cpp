@@ -23,6 +23,9 @@ int main()
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.appearance_self_invalid_texture_ignored=2U;
+    r.movement_discontinuities=3U;
+    r.movement_stale_samples_ignored=2U;
+    r.movement_waiting_after_jump=true;
     r.self_object_bake_candidate_faces=2U;
     r.self_object_bake_candidate_active=true;
     r.self_object_bake_candidate_gpu_resident=2U;
@@ -61,6 +64,9 @@ int main()
     if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
        text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
+       text.find("movement_discontinuities=3")==std::string::npos||
+       text.find("movement_stale_samples_ignored=2")==std::string::npos||
+       text.find("movement_waiting_after_jump=yes")==std::string::npos||
        text.find("self_object_bake_candidate_faces=2")==std::string::npos||
        text.find("self_object_bake_candidate_active=yes")==std::string::npos||
        text.find("self_object_bake_candidate_gpu_resident=2")==std::string::npos||

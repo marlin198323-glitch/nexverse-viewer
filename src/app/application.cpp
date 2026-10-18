@@ -5210,6 +5210,9 @@ int Application::run(bool enable_developer_modules)
                         else if(evidence==protocol::MovementEvidence::server_position_stalled)
                             core::warning("WASD still stationary across "
                                           "ObjectUpdate self-position samples");
+                        else if(evidence==protocol::MovementEvidence::server_position_discontinuity)
+                            core::info("WASD ObjectUpdate position jump excluded "
+                                       "from movement proof; new baseline");
                         continue;
                     }
 
@@ -5311,6 +5314,9 @@ int Application::run(bool enable_developer_modules)
                         else if(evidence==protocol::MovementEvidence::server_position_stalled)
                             core::warning("WASD still stationary across "
                                           "compressed self-position samples");
+                        else if(evidence==protocol::MovementEvidence::server_position_discontinuity)
+                            core::info("WASD compressed position jump excluded "
+                                       "from proof; new baseline");
                         continue;
                     }
 
@@ -5439,6 +5445,9 @@ int Application::run(bool enable_developer_modules)
                         if(evidence==protocol::MovementEvidence::server_position_changed)
                             core::info("Avatar motion VERIFIED: simulator self-position changed "
                                        "after WASD input (>=0.25m); appearance not verified");
+                        else if(evidence==protocol::MovementEvidence::server_position_discontinuity)
+                            core::info("WASD Terse position jump/teleport "
+                                       "excluded from motion proof");
                         else if(evidence==protocol::MovementEvidence::server_position_stalled)
                             core::warning("Avatar motion NOT VERIFIED: directional AgentUpdate "
                                           "sent, but 3+ server position samples remained "
@@ -7906,6 +7915,11 @@ int Application::run(bool enable_developer_modules)
             gallery_inventory_sync.enter(current_firestorm_epoch);
             if(animation_asset_epoch!=current_firestorm_epoch)
             {
+                // Server positions, a pending socket send and movement
+                // proof are all scoped to the same region lease. A
+                // teleport changes coordinates discontinuously; never
+                // count that movement as a successful WASD response.
+                movement_feedback.reset();
                 // The self-appearance diagnostic is a CURRENT SIMULATOR
                 // counter; never carry events from a prior region/agent.
                 avatar_appearance_received.store(0U,std::memory_order_relaxed);
@@ -12886,6 +12900,12 @@ int Application::run(bool enable_developer_modules)
                 movement_evidence.server_samples;
             avatar_diagnostic.movement_source_code=
                 static_cast<std::uint32_t>(movement_evidence.confirmed_source);
+            avatar_diagnostic.movement_discontinuities=
+                movement_evidence.discontinuities;
+            avatar_diagnostic.movement_stale_samples_ignored=
+                movement_evidence.stale_samples_ignored;
+            avatar_diagnostic.movement_waiting_after_jump=
+                movement_evidence.awaiting_after_discontinuity;
             avatar_diagnostic.camera_valid=avatar_proof.view.valid_pose;
             avatar_diagnostic.center_in_frustum=
                 avatar_proof.view.center_in_frustum;

@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.434, Projektstatus 39 % (38,65 % gewichtet), NÄCHSTE Alpha.435–444.**
+
+18.10.2026 Alpha.425–434: WASD-Rückmeldungen verwenden nur echte horizontale >=0,25m Positionsänderungen nach Socket-Send; vertikale Gravitationskorrekturen und >=32m Einzel-Positionssprünge sind keine Bewegungserfolge. Positionssprung setzt Vergleichsbaseline/Uhr neu, stale/zeitlich alte Samples ignoriert, alle Regionlease-Bewegungsbelege zurückgesetzt. F3 und privater Bericht erfassen Gründe ohne Koordinaten oder IDs. Native C++/Python/GL, Pi5 ARM64 und isolierte GUI/Icon-Prüfung. Fortgang docs/ALPHA425_434_WASD_DISCONTINUITY_GUARDS.md. Reales NexVerse AvatarAppearance/Outfit/WASD weiterhin offen, 39 %. BEI WEITER Alpha.435–444, immer zehn reale Blöcke. Aktuelle CI nur für exakt bestätigten SHA als grün notieren.
+
+---
+
 **ALPHA.424 PI5-CI VERIFIZIERT:** Featurecommit 74b1839b7ecdad43f80f7405638a7c1433dddf44, selfhosted Raspberry Pi5 ARM64 GitHub Run 39138145169 SUCCESS exakt für diesen SHA. Mint x64 Build 367/367, Native/NVIDIA-GL 155/155, Python 172/172, Pi5-kompatible Headless, isoliertes Xvfb und X11 Systemicon erfolgreich. Low158/COF, reale NexVerse-Avatar-/Outfit-Skins und serverbestätigte WASD-E2E bleiben OFFEN. Projektstand 39 % (38,65 % gewichtet). Nächste Alpha.425–434.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL Version 0.2.0-alpha.424, Projektfortschritt 39 % (38,65 % gewichtet); NÄCHSTE Alpha.425–434.**

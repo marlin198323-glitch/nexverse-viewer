@@ -67,5 +67,71 @@ int main()
         MovementEvidence::server_position_changed)return 15;
     if(std::string_view(monitor.status()).find("Compressed")==
        std::string_view::npos)return 16;
+    // A gravity snap, jump, or terrain height correction is not a
+    // horizontal WASD response; previously >=0.25m Z counted falsely.
+    monitor.reset();
+    (void)monitor.server_position({30,40,4},now+50s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+50s);
+    if(monitor.server_position({30,40,6.5f},now+51s)!=MovementEvidence::none||
+       monitor.server_position({30,40,6.5f},now+52s)!=MovementEvidence::none||
+       monitor.server_position({30,40,6.5f},now+55s)!=
+           MovementEvidence::server_position_stalled)return 17;
+    if(monitor.snapshot().server_confirmed)return 18;
+    if(monitor.server_position({30.30f,40,6.5f},now+56s)!=
+       MovementEvidence::server_position_changed)return 19;
+
+    // Teleport-like discontinuities invalidate the old baseline,
+    // rather than fabricating motion confirmation or false stall.
+    monitor.reset();
+    (void)monitor.server_position({0,0,0},now+100s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+100s);
+    if(monitor.server_position({100,100,5},now+101s)!=
+       MovementEvidence::server_position_discontinuity)return 20;
+    if(monitor.snapshot().server_confirmed ||
+       monitor.snapshot().discontinuities!=1U ||
+       monitor.snapshot().server_samples!=0U ||
+       !monitor.snapshot().awaiting_after_discontinuity ||
+       std::string_view(monitor.status()).find("Positionssprung/Teleport")==
+           std::string_view::npos)return 21;
+    if(monitor.server_position({100,100,5},now+102s)!=
+       MovementEvidence::none)return 22;
+    if(monitor.server_position({100.4f,100,5},now+103s,
+        MovementPositionSource::compressed_object)!=
+       MovementEvidence::server_position_changed)return 23;
+    if(!monitor.snapshot().server_confirmed ||
+       monitor.snapshot().awaiting_after_discontinuity ||
+       monitor.snapshot().confirmed_source!=
+           MovementPositionSource::compressed_object)return 24;
+
+    // Ignore server observations explicitly timestamped before a socket
+    // send and out-of-order server samples without advancing baseline.
+    monitor.reset();
+    (void)monitor.server_position({3,4,5},now+200s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+201s);
+    if(monitor.server_position({4,4,5},now+200s)!=
+       MovementEvidence::none||
+       monitor.snapshot().stale_samples_ignored!=1U ||
+       monitor.snapshot().server_samples!=0U)return 25;
+    if(monitor.server_position({3.4f,4,5},now+202s)!=
+       MovementEvidence::server_position_changed)return 26;
+    if(monitor.server_position({50,50,5},now+201s)!=
+       MovementEvidence::none||
+       monitor.snapshot().stale_samples_ignored!=2U)return 27;
+
+    // Unsent enqueued controls cannot start a timeout or confirm a
+    // simulator response even when large positions arrive.
+    monitor.reset();
+    (void)monitor.server_position({0,0,0},now+250s);
+    monitor.queued_controls(control_at_pos);
+    (void)monitor.server_position({10,10,0},now+260s);
+    if(monitor.snapshot().socket_direction_sent||
+       monitor.snapshot().server_confirmed||
+       monitor.snapshot().discontinuities!=0U)return 28;
+    monitor.queued_controls(0U);
+    if(monitor.snapshot().awaiting_after_discontinuity)return 29;
+
     std::cout<<"OGL movement server readback and truthful F3 statuses PASS\n";
 }

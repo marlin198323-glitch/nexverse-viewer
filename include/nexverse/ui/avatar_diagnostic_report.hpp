@@ -47,6 +47,9 @@ struct AvatarDiagnosticReport
     bool movement_server_stalled=false;
     std::uint32_t movement_server_samples=0U;
     std::uint32_t movement_source_code=0U;
+    std::uint32_t movement_discontinuities=0U;
+    std::uint32_t movement_stale_samples_ignored=0U;
+    bool movement_waiting_after_jump=false;
     bool camera_valid=false;
     bool center_in_frustum=false;
     bool gpu_fragment_result_known=false;

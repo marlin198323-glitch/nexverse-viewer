@@ -102,27 +102,30 @@ int main()
     if(feedback.server_position({10.0f,20.0f,30.0f},
                                 t+std::chrono::seconds{5})!=
        MovementEvidence::none)return 11;
-    feedback.outbound_controls(control_at_pos,t);
-    for(int i=1;i<=2;++i)
+    // Use monotonic arrivals: a turn-only simulator sample was observed
+    // at +5s, so the subsequent WASD send cannot predate it. This guards
+    // against a test fixture falsely simulating time travel on the wire.
+    feedback.outbound_controls(control_at_pos,t+std::chrono::seconds{6});
+    for(int i=7;i<=8;++i)
         if(feedback.server_position({10.0f,20.0f,30.0f},
                       t+std::chrono::seconds{i})!=MovementEvidence::none)
             return 12;
     if(feedback.server_position({10.0f,20.0f,30.0f},
-               t+std::chrono::seconds{5})!=
+               t+std::chrono::seconds{11})!=
        MovementEvidence::server_position_stalled)return 13;
     if(feedback.server_position({10.0f,20.0f,30.0f},
-               t+std::chrono::seconds{6})!=MovementEvidence::none)
+               t+std::chrono::seconds{12})!=MovementEvidence::none)
         return 14; // stalled report deduplicated
     if(feedback.server_position({10.0f,20.3f,30.0f},
-               t+std::chrono::seconds{7})!=
+               t+std::chrono::seconds{13})!=
        MovementEvidence::server_position_changed)return 15;
     if(feedback.server_position({10.0f,20.6f,30.0f},
-               t+std::chrono::seconds{8})!=MovementEvidence::none)
+               t+std::chrono::seconds{14})!=MovementEvidence::none)
         return 16; // confirmed report deduplicated
-    feedback.outbound_controls(0U,t+std::chrono::seconds{9});
-    feedback.outbound_controls(control_at_pos,t+std::chrono::seconds{10});
+    feedback.outbound_controls(0U,t+std::chrono::seconds{15});
+    feedback.outbound_controls(control_at_pos,t+std::chrono::seconds{16});
     if(feedback.server_position({10.3f,20.6f,30.0f},
-               t+std::chrono::seconds{11})!=
+               t+std::chrono::seconds{17})!=
        MovementEvidence::server_position_changed)return 17;
     feedback.reset();
     if(feedback.server_position({20.0f,20.0f,30.0f},

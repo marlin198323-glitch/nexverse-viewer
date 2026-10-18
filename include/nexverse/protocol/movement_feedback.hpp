@@ -18,7 +18,8 @@ namespace nexverse::protocol
 // never predicts or changes the WorldModel's authoritative position.
 enum class MovementEvidence
 {
-    none, server_position_changed, server_position_stalled
+    none, server_position_changed, server_position_stalled,
+    server_position_discontinuity
 };
 // OpenSim may send the self pose through multiple LLUDP families;
 // each is an actual simulator position, NOT a predicted camera location.
@@ -33,6 +34,9 @@ struct MovementFeedbackSnapshot
     bool server_confirmed=false;
     bool server_stalled=false;
     std::uint32_t server_samples=0U;
+    std::uint32_t discontinuities=0U;
+    std::uint32_t stale_samples_ignored=0U;
+    bool awaiting_after_discontinuity=false;
     MovementPositionSource confirmed_source=MovementPositionSource::improved_terse;
 };
 class MovementFeedbackMonitor
@@ -44,6 +48,10 @@ public:
         std::scoped_lock lock{mutex_};
         latest_.reset();
         baseline_.reset();
+        last_sample_at_.reset();
+        discontinuities_=0U;
+        stale_samples_ignored_=0U;
+        awaiting_after_discontinuity_=false;
         active_=false;
         confirmed_=false;
         stalled_reported_=false;
@@ -73,6 +81,7 @@ public:
             baseline_=latest_;
             confirmed_=false;
             stalled_reported_=false;
+            awaiting_after_discontinuity_=false;
             samples_=0U;
         }
         else if(!requested && active_)clear_motion_locked();
@@ -81,7 +90,8 @@ public:
     {
         std::scoped_lock lock{mutex_};
         return {queued_direction_,active_,confirmed_,stalled_reported_,
-                samples_,confirmed_source_};
+                samples_,discontinuities_,stale_samples_ignored_,
+                awaiting_after_discontinuity_,confirmed_source_};
     }
     [[nodiscard]] const char* status() const
     {
@@ -103,6 +113,8 @@ public:
             }
         }
         if(stalled_reported_)return "WASD: Serverposition bleibt gleich";
+        if(awaiting_after_discontinuity_)
+            return "WASD: Positionssprung/Teleport, neue Serverantwort ausstehend";
         return "WASD: Serverantwort ausstehend";
     }
     [[nodiscard]] MovementEvidence server_position(
@@ -113,19 +125,54 @@ public:
            !std::isfinite(position.z))
             return MovementEvidence::none;
         std::scoped_lock lock{mutex_};
+        // Out-of-order or pre-send position observations must not confirm
+        // an input sent later. Keep the last valid baseline unchanged.
+        if((last_sample_at_&&now<*last_sample_at_)||
+           (active_&&now<active_since_))
+        {
+            if(stale_samples_ignored_!=UINT32_MAX)++stale_samples_ignored_;
+            return MovementEvidence::none;
+        }
+        // Abrupt location transfers (including teleport) are not evidence
+        // of walking. Detect between successive server position samples,
+        // independently of the original motion-start baseline.
+        if(active_&&latest_)
+        {
+            const float dx=position.x-latest_->x;
+            const float dy=position.y-latest_->y;
+            const float dz=position.z-latest_->z;
+            const float step_sq=dx*dx+dy*dy+dz*dz;
+            constexpr float teleport_like_sq=32.0f*32.0f;
+            if(!std::isfinite(step_sq)||step_sq>=teleport_like_sq)
+            {
+                latest_=position;
+                last_sample_at_=now;
+                baseline_=position;
+                active_since_=now;
+                confirmed_=false;
+                stalled_reported_=false;
+                awaiting_after_discontinuity_=true;
+                samples_=0U;
+                if(discontinuities_!=UINT32_MAX)++discontinuities_;
+                return MovementEvidence::server_position_discontinuity;
+            }
+        }
         latest_=position;
+        last_sample_at_=now;
         if(!active_)return MovementEvidence::none;
         if(!baseline_)baseline_=position;
-        ++samples_;
+        if(samples_!=UINT32_MAX)++samples_;
         const float dx=position.x-baseline_->x;
         const float dy=position.y-baseline_->y;
-        const float dz=position.z-baseline_->z;
-        // Prevent a single quantization tick from claiming real movement.
-        const float distance_squared=dx*dx+dy*dy+dz*dz;
+        // WASD left/right/forward/backward is horizontal. Vertical-only
+        // terrain corrections, jumps or gravity do not confirm WASD.
+        // Preserve 0.25m horizontal displacement threshold.
+        const float distance_squared=dx*dx+dy*dy;
         if(std::isfinite(distance_squared)&&distance_squared>=0.0625f)
         {
             if(confirmed_)return MovementEvidence::none;
             confirmed_=true;
+            awaiting_after_discontinuity_=false;
             confirmed_source_=source;
             return MovementEvidence::server_position_changed;
         }
@@ -153,12 +200,17 @@ private:
         confirmed_=false;
         stalled_reported_=false;
         samples_=0U;
+        awaiting_after_discontinuity_=false;
     }
     mutable std::mutex mutex_;
     std::optional<Vec3> latest_;
     std::optional<Vec3> baseline_;
+    std::optional<TimePoint> last_sample_at_;
     TimePoint active_since_{};
     std::uint32_t samples_=0U;
+    std::uint32_t discontinuities_=0U;
+    std::uint32_t stale_samples_ignored_=0U;
+    bool awaiting_after_discontinuity_=false;
     bool active_=false;
     bool queued_signals_seen_=false;
     bool queued_direction_=false;
