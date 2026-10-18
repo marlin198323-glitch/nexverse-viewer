@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-17",
-  "viewer_version": "0.2.0-alpha.354",
+  "viewer_version": "0.2.0-alpha.364",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.355–364",
-  "assessment": "Alpha.354: fixed real movement suppression when F3 avatar diagnostics open; Ctrl+S report no longer conflicts with walking backward. Actual UDP AgentUpdate send counters published in F3, strictly no simulator-ACK claim; malformed Firestorm AvatarAppearance failure stage displayed in always-visible right rail. Authenticated NexVerse own skin and server movement not proven. Weighted 38.65%, rounded 39%.",
+  "next_five_blocks": "Alpha.365–374",
+  "assessment": "Alpha364: verified HUD attachment linkset ancestry culling and F3 per-frame GL HUD exclusion. No authenticated NexVerse outfit/bake or movement proof. 38.65 percent weighted; 39 percent rounded.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.355–364",
+  "next_batch": "Alpha.365–374",
   "default_blocks_per_run": 10
 }

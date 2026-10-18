@@ -12891,6 +12891,8 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_bake_visual=bake_inspector.visual;
                 shell_view.avatar_depth_parts=
                     avatar_proof.part_visibility.compact();
+                shell_view.avatar_hud_world_excluded=render_diagnostics.scene_hud_linkset_excluded;
+                shell_view.avatar_invalid_parent_excluded=render_diagnostics.scene_invalid_parent_excluded;
                 const auto ack_wait=
                     circuit_snapshot.self_appearance_support_acknowledged&&
                     circuit_snapshot.self_appearance_ack_at!=
