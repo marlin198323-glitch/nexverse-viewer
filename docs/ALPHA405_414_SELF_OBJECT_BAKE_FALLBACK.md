@@ -1,3 +1,5 @@
+**ALPHA.414 CI ERFOLGREICH VERIFIZIERT:** Featurecommit 08fa7ad14c3b95a97c2712751eba26dab384b716; GitHub Self-hosted Pi5 ARM64 Source Check Run 39137250919 = SUCCESS exakt für diesen SHA. Mint x64 365/365, native NVIDIA/OpenGL CTest 154/154, Python 165/165, Pi5-kompatibles Headless, isolierter Xvfb-Firestorm-Viewer, Original-X11-Systemicon/WM_CLASS PASS. Vollständiger eigener Avatar/Outfit/COF, echtes NexVerse-WASD und alle Firestorm-Menüs weiterhin NICHT live nachgewiesen; Fortschritt 39 % (38,65 % gewichtet). Bei WEITER Alpha.415–424.
+
 # Alpha.405–414 – Selbstavatar-Texturen aus echten Simulator-ObjectUpdates
 
 18.10.2026 | develop-current | Version 0.2.0-alpha.414 | Gesamtstand 39 % (38,65 % gewichtet).

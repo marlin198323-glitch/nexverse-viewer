@@ -59,5 +59,11 @@
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
   "next_batch": "Alpha.415–424",
-  "default_blocks_per_run": 10
+  "default_blocks_per_run": 10,
+  "last_verified_pi5_ci": {
+    "tested_sha": "08fa7ad14c3b95a97c2712751eba26dab384b716",
+    "run_id": 39137250919,
+    "conclusion": "success",
+    "scope": "ARM64 source/headless C++23 and Python; no native ARM GPU build"
+  }
 }
