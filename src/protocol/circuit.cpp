@@ -220,7 +220,8 @@ CircuitStatus CircuitConnection::run(
     StatusCallback on_status,
     PacketCallback on_packet,
     OutboundCommandQueue* outbound,
-    std::chrono::seconds startup_timeout)
+    std::chrono::seconds startup_timeout,
+    AgentUpdateSentCallback on_agent_update_sent)
 {
     CircuitStatus status;
     self_appearance_receipt_.reset();
@@ -339,6 +340,8 @@ CircuitStatus CircuitConnection::run(
                             if(sent)
                             {
                                 ++status.agent_updates_sent;
+                                if(on_agent_update_sent)
+                                    on_agent_update_sent(value.control_flags);
                                 constexpr auto walking=control_at_pos|
                                     control_at_neg|control_left_pos|control_left_neg;
                                 if((value.control_flags&walking)!=0U)

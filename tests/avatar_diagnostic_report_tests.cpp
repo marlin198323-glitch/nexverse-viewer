@@ -22,6 +22,11 @@ int main()
     r.appearance_malformed_stage_code=7U;
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
+    r.movement_queued=true;
+    r.movement_socket_sent=true;
+    r.movement_server_confirmed=true;
+    r.movement_server_samples=3U;
+    r.movement_source_code=2U;
     r.simulator_circuit_active=true;
     r.region_handle_present=true;
     r.agent_identity_present=false; // identity may be missing after region
@@ -53,6 +58,10 @@ int main()
        text.find("region_handshake_self_appearance_bit2_sent=yes")==std::string::npos||
        text.find("region_connected=yes")==std::string::npos||
        text.find("identity_pair_present=no")==std::string::npos||
+       text.find("movement_udp_socket_sent=yes")==std::string::npos||
+       text.find("movement_server_confirmed=yes")==std::string::npos||
+       text.find("movement_server_samples=3")==std::string::npos||
+       text.find("movement_server_source_code=2")==std::string::npos||
        text.find("terrain_packets=11")==std::string::npos||
        text.find("object_packets=27")==std::string::npos||
        text.find("world_entry_stage=agent_position")==std::string::npos||

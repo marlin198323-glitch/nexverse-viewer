@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-18",
-  "viewer_version": "0.2.0-alpha.384",
+  "viewer_version": "0.2.0-alpha.394",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.385–394",
-  "assessment": "Alpha.384 links OpenSim attachment linksets to the same per-frame posed Firestorm skeleton matrices used for actual GPU avatar body skinning. Verified local NVIDIA OpenGL attachment movement: 1108 changed RGB object pixels after removing time-varying sky, static-bone fallback 0 drift, HUD 0 residual world pixels. Actual authenticated NexVerse Self-AvatarAppearance, outfit bake, and server-confirmed WASD still open. Weighted estimate remains 38.65 percent (rounded 39).",
+  "next_five_blocks": "Alpha.395–404",
+  "assessment": "Alpha.394 corrects false pre-send WASD evidence: queued controls no longer start simulator stall timers, only actual successful LLUDP AgentUpdate socket sends do. Verified self positions from Terse, ObjectUpdate and Compressed events are accepted. F3 and private whitelisted diagnostics distinguish queue/UDP/server states. Real authenticated NexVerse AvatarAppearance/outfit/bake/WASD end-to-end still open and unverified. Weighted estimate 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,6 +58,6 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.385–394",
+  "next_batch": "Alpha.395–404",
   "default_blocks_per_run": 10
 }

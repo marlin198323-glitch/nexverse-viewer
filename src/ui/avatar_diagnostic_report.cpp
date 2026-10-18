@@ -57,6 +57,14 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_self_trial_ignored)+"\n"
        "appearance_self_incomplete_ignored="+
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
+       "movement_queued="+yn(r.movement_queued)+"\n"
+       "movement_udp_socket_sent="+yn(r.movement_socket_sent)+"\n"
+       "movement_server_confirmed="+yn(r.movement_server_confirmed)+"\n"
+       "movement_server_stalled="+yn(r.movement_server_stalled)+"\n"
+       "movement_server_samples="+
+           std::to_string(r.movement_server_samples)+"\n"
+       "movement_server_source_code="+
+           std::to_string(r.movement_source_code)+"\n"
        "world_scene_draws="+std::to_string(r.objects_drawn)+"\n"
        "scene_linkset_max_depth="+std::to_string(r.scene_linkset_max_depth)+"\n"
        "scene_linkset_deep_visible="+std::to_string(r.scene_linkset_deep_visible)+"\n"

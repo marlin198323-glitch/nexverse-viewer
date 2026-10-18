@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.394, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.395–404.**
+
+18.10.2026 Alpha.385–394: Bewegungsfeedback erst nach tatsächlichem erfolgreichem UDP-AgentUpdate, wartende Queue im F3 sichtbar, alternative echte regionale Self-Positionspakete (Terse/Full/Compressed), numerischer Whitelist-Privatbericht. Alpha.384 CI SHA 719db3f Pi5 Run 39133684078 SUCCESS. Keine real authentifizierte NexVerse AvatarAppearance/Outfit/Bake- und WASD-E2E belegt, deshalb 39 % unverändert. Details: docs/ALPHA385_394_UDP_SEND_AND_SERVER_MOTION.md. Mint x64 + Pi5 ARM64 CI, kein unerlaubtes Deployment. Bei WEITER Alpha.395–404.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.384, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.385–394.**
 
 18.10.2026: Alpha.375–384 – Firestorm avatar_lad.xml Attachment-Slots besitzen jetzt Gelenk-IDs und lokale Offsets, originaler Avatar-Keyframe-/Procedural-Pose-Transform folgt dynamisch auch getragenen Prim-Linksets statt starrer Bind-Position. Echte NVIDIA OpenGL Framebuffer-Fixture: 1.108 geänderte Pixel, kein Bone-Fallback-Drift, HUD weiterhin 0 Pixel. F3 und privater whitelisted Report mit Bone-Pose-Anzahl, alte Funktionen bleiben. Echter NexVerse Live AvatarAppearance/Outfit/Bake/Bewegung weiter NICHT BELEGT; gewichteter Fortschritt bleibt 39 %. docs/ALPHA375_384_ANIMATED_ATTACHMENT_BONES.md. Branch develop-current, Mint Build und Pi5 ARM64 CI, niemals unfreigegebenes Deployment. Nächste Alpha.385–394.

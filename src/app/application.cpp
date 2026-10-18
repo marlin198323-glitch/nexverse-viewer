@@ -5143,6 +5143,7 @@ int Application::run(bool enable_developer_modules)
          &full_object_live_logged,
          &self_avatar_local_id,
          &self_avatar_region_handle,
+         &movement_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -5189,6 +5190,17 @@ int Application::run(bool enable_developer_modules)
                             entry.position,
                             entry.rotation,
                             current.present});
+                        // Full ObjectUpdate is also an actual simulator
+                        // self position; terse updates are not guaranteed.
+                        const auto evidence=movement_feedback.server_position(
+                            entry.position,std::chrono::steady_clock::now(),
+                            protocol::MovementPositionSource::full_object);
+                        if(evidence==protocol::MovementEvidence::server_position_changed)
+                            core::info("Avatar movement VERIFIED from ObjectUpdate "
+                                       "after real UDP AgentUpdate send; >=0.25m");
+                        else if(evidence==protocol::MovementEvidence::server_position_stalled)
+                            core::warning("WASD still stationary across "
+                                          "ObjectUpdate self-position samples");
                         continue;
                     }
 
@@ -5225,6 +5237,7 @@ int Application::run(bool enable_developer_modules)
          &compressed_object_live_logged,
          &self_avatar_local_id,
          &self_avatar_region_handle,
+         &movement_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -5272,6 +5285,15 @@ int Application::run(bool enable_developer_modules)
                             entry.position,
                             entry.rotation,
                             current.present});
+                        const auto evidence=movement_feedback.server_position(
+                            entry.position,std::chrono::steady_clock::now(),
+                            protocol::MovementPositionSource::compressed_object);
+                        if(evidence==protocol::MovementEvidence::server_position_changed)
+                            core::info("Avatar movement VERIFIED from compressed "
+                                       "self ObjectUpdate after UDP send; >=0.25m");
+                        else if(evidence==protocol::MovementEvidence::server_position_stalled)
+                            core::warning("WASD still stationary across "
+                                          "compressed self-position samples");
                         continue;
                     }
 
@@ -5961,7 +5983,7 @@ int Application::run(bool enable_developer_modules)
                                  &circuit_mutex,
                                  &circuit_status,
                                  &packet_dispatcher,
-                                 &outbound_queue,
+                                 &outbound_queue,&movement_feedback,
                                  &world_model,&world_mutex]() mutable
                                 {
                                     protocol::CircuitStatus final_status;
@@ -6014,7 +6036,13 @@ int Application::run(bool enable_developer_modules)
                                                 }
                                                 (void)packet_dispatcher.dispatch(packet);
                                             },
-                                            &outbound_queue);
+                                            &outbound_queue,
+                                            std::chrono::seconds{15},
+                                            [&movement_feedback](std::uint32_t flags)
+                                            {
+                                                movement_feedback.outbound_controls(
+                                                    flags,std::chrono::steady_clock::now());
+                                            });
 
                                         if (circuit_stop.load() ||
                                             final_status.state != protocol::CircuitState::failed)
@@ -7734,7 +7762,7 @@ int Application::run(bool enable_developer_modules)
                 }
                 if(outbound_queue.push(std::move(update)))
                 {
-                    movement_feedback.outbound_controls(queued_controls,now);
+                    movement_feedback.queued_controls(queued_controls);
                 }
                 else
                 {
@@ -12749,6 +12777,19 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.self_trial_ignored;
             avatar_diagnostic.appearance_self_incomplete_ignored=
                 appearance_runtime.self_incomplete_ignored;
+            const auto movement_evidence=movement_feedback.snapshot();
+            avatar_diagnostic.movement_queued=
+                movement_evidence.queued_direction;
+            avatar_diagnostic.movement_socket_sent=
+                movement_evidence.socket_direction_sent;
+            avatar_diagnostic.movement_server_confirmed=
+                movement_evidence.server_confirmed;
+            avatar_diagnostic.movement_server_stalled=
+                movement_evidence.server_stalled;
+            avatar_diagnostic.movement_server_samples=
+                movement_evidence.server_samples;
+            avatar_diagnostic.movement_source_code=
+                static_cast<std::uint32_t>(movement_evidence.confirmed_source);
             avatar_diagnostic.camera_valid=avatar_proof.view.valid_pose;
             avatar_diagnostic.center_in_frustum=
                 avatar_proof.view.center_in_frustum;

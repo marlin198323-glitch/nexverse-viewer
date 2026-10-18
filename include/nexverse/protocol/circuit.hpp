@@ -57,13 +57,17 @@ public:
 
     using StatusCallback = std::function<void(const CircuitStatus&)>;
     using PacketCallback = std::function<void(const DecodedPacket&)>;
+    // Called only after a real UDP socket successfully sends AgentUpdate.
+    // Non-reliable UDP has no server ACK. Flags only, no agent identifiers.
+    using AgentUpdateSentCallback = std::function<void(std::uint32_t)>;
 
     [[nodiscard]] CircuitStatus run(
         std::atomic_bool& stop_requested,
         StatusCallback on_status = {},
         PacketCallback on_packet = {},
         OutboundCommandQueue* outbound = nullptr,
-        std::chrono::seconds startup_timeout = std::chrono::seconds{15});
+        std::chrono::seconds startup_timeout = std::chrono::seconds{15},
+        AgentUpdateSentCallback on_agent_update_sent = {});
 
 private:
     [[nodiscard]] bool send_datagram(
