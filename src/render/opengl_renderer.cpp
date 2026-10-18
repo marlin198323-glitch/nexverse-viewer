@@ -3351,6 +3351,8 @@ public:
         diagnostics_.draw_calls = 0U;
         diagnostics_.triangles = 0U;
         diagnostics_.visible_objects = 0U;
+        diagnostics_.scene_hud_linkset_excluded=0U;
+        diagnostics_.scene_invalid_parent_excluded=0U;
         // Terrain GL telemetry is PER FRAME just like all scene counters.
         // A prior textured draw must not make today's fallback look loaded.
         diagnostics_.terrain_textured_draw_calls=0U;
@@ -3697,7 +3699,13 @@ public:
                 const auto attachment_class=classify_attachment_scene(
                     scene_objects_,scene_object_index_,avatar_proxies_,
                     avatar_bind_rig_,index);
-                if(attachment_class!=AttachmentSceneKind::world)continue;
+                if(attachment_class!=AttachmentSceneKind::world)
+                {
+                    if(attachment_class==AttachmentSceneKind::hud)
+                        ++diagnostics_.scene_hud_linkset_excluded;
+                    else ++diagnostics_.scene_invalid_parent_excluded;
+                    continue;
+                }
                 const Mat4 model = scene_model(index);
                 if (!scene_object_visible(model, scene_objects_[index]))
                     continue;
