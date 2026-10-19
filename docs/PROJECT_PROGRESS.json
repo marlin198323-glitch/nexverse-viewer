@@ -75,5 +75,16 @@
     "github_ci_run": 39283789898,
     "github_ci_status_at_record": "queued",
     "ci_success_verified": false
+  },
+  "alpha464_feature_sha": "320abed60c759ec09e7d4950d85a3e4a46fac3c1",
+  "alpha464_pi5_test": {
+    "source_sha": "320abed60c759ec09e7d4950d85a3e4a46fac3c1",
+    "headless_result": "pass",
+    "python_tests": 200,
+    "python_skipped": 1,
+    "github_ci_run": 39286040685,
+    "github_ci_status_at_record": "queued",
+    "ci_success_verified": false,
+    "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   }
 }
