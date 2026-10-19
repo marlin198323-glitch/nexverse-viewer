@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.514, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.515–524.**
+
+19.10.2026 Alpha.505–514: Authentifizierte eigene Head/Upper/Lower-Bake-Änderungen planen jetzt sofort die ECHTE bestehende GetTexture/GPU-Residency-Queue neu (nicht erst mit allgemeinem 750-ms-Timer). Region-/Agentlease/Epoch schützen vor fremden Quellen, identische Body-IDs vermeiden Wiederholungen, entfernte Bakes führen wieder zur VRAM-Eviction. Drei echte Body-IDs verdrängen unter kleinem GPU-Slotbudget alte Texturen; wegfallende Faces machen Weltmaterial wieder möglich. HTTP-Pacing/Retry/VRAM-Schutz bleiben vollständig erhalten. F3 unterscheidet vorläufige Objektquelle bei fehlender und partieller Low158. Keine COF-/Wear-Mutation, kein neuer authentifizierter Grid-GPU-/Outfit-/WASD-End-to-End-Beleg, Status weiterhin 39 %. Details docs/ALPHA505_514_AVATAR_BAKE_EVENT_REPLAN.md. Bei WEITER Alpha.515–524 zehn echte Blöcke. Kein produktives Viewer-Update.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.504, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.505–514.**
 
 **ALPHA.504 Pi5-CI EXAKT BESTÄTIGT:** GitHub Actions Run 39294296008 ist COMPLETED SUCCESS für Feature-SHA 7e8651bc04c47605652f58786fbc9b559e47f343. Mint x64 373/373 Build, 158/158 native C++/OpenGL, 230/230 Python, Headless C++23/Python, Xvfb GUI-Start und X11 Systemicon/WM_CLASS erfolgreich. Pi5-Lauf prüft ARM64 Headless C++ und Python, **nicht** Pi5 GPU/GUI und keinen NexVerse-Live-Login. Neuer Source-Fallback: echte Low158-Bake-ID gewinnt je Face; nur fehlende Faces aus Session/Region/LocalID-authentifiziertem ObjectUpdate vorläufig ergänzen, F3 zeigt GPU/Quelle getrennt. Kein endgültiger Outfit-/COF-/Skin-/WASD-Livebeweis; 39 %. Nächste 10 Blöcke Alpha.505–514, keine produktive Bereitstellung.

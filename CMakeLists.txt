@@ -1392,6 +1392,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-part-visibility-tests
         COMMAND nexverse-avatar-part-visibility-tests)
 
+    add_executable(nexverse-avatar-bake-source-refresh-tests
+        tests/avatar_bake_source_refresh_tests.cpp)
+    target_link_libraries(nexverse-avatar-bake-source-refresh-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-avatar-bake-source-refresh-tests)
+    add_test(NAME nexverse-avatar-bake-source-refresh-tests
+        COMMAND nexverse-avatar-bake-source-refresh-tests)
+
     add_executable(nexverse-avatar-bake-recheck-tests
         tests/avatar_bake_recheck_tests.cpp)
     target_link_libraries(nexverse-avatar-bake-recheck-tests PRIVATE

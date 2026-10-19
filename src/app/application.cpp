@@ -22,6 +22,7 @@
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/terrain_detail_retry.hpp"
 #include "nexverse/assets/avatar_bake_recheck.hpp"
+#include "nexverse/assets/avatar_bake_source_refresh.hpp"
 #include "nexverse/ui/avatar_bake_inspector.hpp"
 #include "nexverse/assets/asset_gpu_budget.hpp"
 #include "nexverse/assets/gpu_staging_budget.hpp"
@@ -6154,6 +6155,7 @@ int Application::run(bool enable_developer_modules)
         std::array<assets::TextureAssetResult, 4>;
     assets::TerrainDetailRetry terrain_detail_retry;
     assets::AvatarBakeRecheck avatar_bake_recheck;
+    assets::AvatarBakeSourceRefresh avatar_bake_source_refresh;
     render::RenderTerrainTextures terrain_cached_textures;
     std::future<TerrainTextureResults> terrain_texture_future;
     bool terrain_texture_loading = false;
@@ -11577,17 +11579,41 @@ int Application::run(bool enable_developer_modules)
                 active_session->agent_id==render_agent.agent_id;
             const bool self_bake_lease=
                 firestorm_region_lease.matches(current_firestorm_epoch);
+            // New or removed self Low158/ObjectUpdate body TE references
+            // must invalidate the old residency plan immediately. The
+            // existing HTTP pacing, VRAM admission and failure backoff
+            // remain unchanged; this only schedules the next planner pass.
+            const bool self_bake_source_changed=
+                avatar_bake_source_refresh.observe(
+                    material_scope.epoch(),self_bake_authenticated,
+                    self_bake_lease,self_bake_ids);
+            if(self_bake_source_changed)
+            {
+                const auto ref_count=std::count_if(
+                    self_bake_ids.begin(),self_bake_ids.end(),
+                    [](const auto& id){return !id.empty();});
+                // Do not log private asset UUIDs or session tokens.
+                core::info("Self Body TE changed; scheduling immediate "
+                           "GetTexture residency refresh; body_refs="+
+                           std::to_string(ref_count));
+            }
             const auto self_bake_pending=assets::avatar_bake_ready_missing(
                 self_bake_ids,object_texture_loaded_ids,
                 object_texture_retries,texture_plan_now);
-            const bool object_bake_provisional=self_bake_authenticated&&
-                self_bake_lease&&self_bake_it!=avatar_proxy_update.end()&&
-                [&]()
-                {
-                    std::scoped_lock lock{world_mutex};
-                    return !world_model.self_appearance()&&
-                        world_model.self_object_bakes().has_value();
-                }();
+            const auto object_bake_provenance=self_bake_authenticated&&
+                self_bake_lease&&self_bake_it!=avatar_proxy_update.end()
+                ?[&]()
+                 {
+                     std::scoped_lock lock{world_mutex};
+                     const auto source=world_model.self_bake_selection();
+                     const bool from_object=
+                         source.from_object_update[0]||
+                         source.from_object_update[1]||
+                         source.from_object_update[2];
+                     return std::pair{from_object,
+                                     world_model.self_appearance().has_value()};
+                 }()
+                :std::pair{false,false};
             std::string avatar_bake_stream_status=
                 !self_bake_authenticated || !self_bake_lease
                     ?"Bakes: keine gueltige Self-/Regionssitzung"
@@ -11607,9 +11633,11 @@ int Application::run(bool enable_developer_modules)
                     ?"Bakes: Replan-Pause noch aktiv"
                 :"Bakes: "+std::to_string(self_bake_pending)+
                    " fehlende Layer koennen neu eingeplant werden";
-            if(object_bake_provisional)
+            if(object_bake_provenance.first)
                 avatar_bake_stream_status=
-                    "Obj-TE vorlaeufig (Self-Low158 fehlt) | "+
+                    (object_bake_provenance.second
+                        ?"Obj-TE vorlaeufig (Low158 Teil-Bakes) | "
+                        :"Obj-TE vorlaeufig (Self-Low158 fehlt) | ")+
                     avatar_bake_stream_status;
             viewer_shell.avatar_recheck_available=
                 avatar_bake_recheck.allowed(
@@ -11648,7 +11676,7 @@ int Application::run(bool enable_developer_modules)
                 core::info("GetTexture staging retry eligible; "
                     "current residency permits re-evaluation");
             }
-            if (scene_objects_changed ||
+            if (self_bake_source_changed || scene_objects_changed ||
                 texture_plan_now-last_texture_residency_plan >=
                     std::chrono::milliseconds{750})
             {
