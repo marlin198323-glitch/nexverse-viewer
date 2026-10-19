@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.464, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.465–474.**
+
+19.10.2026 Alpha.455–464: Legacy Low382-Simulator-Wearables werden read-only mit CurrentOutfitFolder und aktueller FetchInventory2-Originalitem-Liste verglichen (ItemID/AssetID/Typ). Fehlende, abweichende, doppelte und Null-Items werden getrennt gezählt. F9 Outfit-Fenster zeigt Originalserver-Datenabgleich bei Agent/Session/RegionLease/COF-Folder/COF-Version; kein automatisch getragenes Outfit behauptet, kein AgentSetAppearance. Native C++/Python/GL, ARM64 Headless, Xvfb, GitHub und Dokumentation. NexVerse Avatar/Outfit/COF/WASD E2E weiterhin nicht live verifiziert: 39 %. Details docs/ALPHA455_464_LEGACY_WEARABLE_COF_COMPARISON.md. BEI WEITER zehn Blöcke Alpha.465–474; CI nur wenn genau geprüfter Feature-SHA erfolgreich. Kein Produktionsupdate.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE. Alpha.455–464, Fortschritt 39 %.**
 
 **ALPHA.454 PRÜFSTAND 19.10.2026:** Feature-SHA 9360106596ac437f97fbc626909eb9d4361a223a: Mint Linux-x64 Build 371/371; native C++/OpenGL 157/157; Python 193/193; Xvfb, X11 Taskleistenicon PASS. Raspberry Pi5 hat EXAKT diesen GitHub-SHA in separatem Test-Checkout mit pi5-headless-tests.sh bestanden: OGL_PI5_NATIVE_HEADLESS_OK, 193 Python-Tests (ein unterstützter Skip). GitHub Actions Pi5 Run 39283789898 noch QUEUED (KEIN CI SUCCESS behaupten). Kein GUI-/GPU-Livebuild am Pi, keine echte authentifizierte NexVerse Avatar/COF/WASD-Session. Projektfortschritt 39 %, nächster Zehnerblock Alpha.455–464. Repo-Hauptentwicklung auf GitHub, kein Produktionsdeploy.

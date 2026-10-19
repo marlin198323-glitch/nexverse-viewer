@@ -105,6 +105,7 @@
 #include "nexverse/protocol/firestorm_cof_unlink_consent.hpp"
 #include "nexverse/protocol/firestorm_appearance_verification.hpp"
 #include "nexverse/protocol/firestorm_wearable_slots.hpp"
+#include "nexverse/protocol/legacy_wearables_cof_audit.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
@@ -2699,6 +2700,7 @@ void render_outfit_gallery(
     std::string_view appearance_status,
     nexverse::protocol::CofAppearancePhase appearance_phase,
     std::string_view wearable_status,
+    std::string_view legacy_cof_status,
     const nexverse::protocol::FirestormWearableSlots& wearable_slots,
     bool wearable_slots_visible,
     std::string_view wearable_asset_status,
@@ -3078,6 +3080,9 @@ void render_outfit_gallery(
         renderer.text(bx+7.0f*scale,y+115.0f*scale,7.7f*scale,
             bake_preview_open?"Outfit [B]":"Server-Bakes [B]",theme::cyan);
     }
+    renderer.text(x+22.0f*scale,y+ph-216.0f*scale,
+                  7.7f*scale,std::string(legacy_cof_status).substr(0U,99U),
+                  theme::warning);
     renderer.text(x+22.0f*scale,y+ph-200.0f*scale,
                   7.8f*scale,
                   "TexLayer: "+std::string(texlayer_status).substr(0U,90U),
@@ -13397,6 +13402,41 @@ int Application::run(bool enable_developer_modules)
                                     world_renderer->avatar_bake_preview_handle(
                                         selected.ids[i]);
                     }
+                    // Real legacy Low382 is compared only with a freshly
+                    // fetched COF and its server-authenticated original
+                    // items for the CURRENT region, account and COF version.
+                    // This cannot prove worn clothing without server bakes.
+                    std::string legacy_cof_status=
+                        "Legacy/COF: Simulator-Wearables ausstehend";
+                    if(simulation_ready&&login_ui.authenticated&&
+                       firestorm_region_lease.matches(current_firestorm_epoch))
+                    {
+                        std::scoped_lock lock{world_mutex};
+                        const auto& agent=world_model.agent();
+                        const auto& region=world_model.region();
+                        const auto& worn=world_model.self_wearables();
+                        const bool correct_self=active_session&&region.connected&&
+                            agent.agent_id==active_session->agent_id&&
+                            agent.session_id==active_session->session_id&&
+                            worn&&worn->agent_id==agent.agent_id&&
+                            worn->session_id==agent.session_id;
+                        const auto& cof_folder=caps_snapshot.current_outfit_folder;
+                        const auto linked=caps_snapshot.outfit_folder_items.find(
+                            cof_folder);
+                        const auto version=gallery_inventory_sync.versions().find(
+                            cof_folder);
+                        const bool original_scope=gallery_wearables_visible&&
+                            gallery_wearables_fetch_epoch==current_firestorm_epoch&&
+                            gallery_wearables_fetch_cof==cof_folder&&
+                            version!=gallery_inventory_sync.versions().end()&&
+                            version->second==gallery_wearables_fetch_version&&
+                            linked!=caps_snapshot.outfit_folder_items.end();
+                        legacy_cof_status=protocol::compare_legacy_wearables_cof(
+                            correct_self?&*worn:nullptr,
+                            original_scope?&linked->second:nullptr,
+                            original_scope?&gallery_wearable_originals:nullptr)
+                            .label();
+                    }
                     render_outfit_gallery(renderer,window_width,window_height,
                         protocol::outfits_from_login_skeleton(
                             active_session->inventory_skeleton),
@@ -13417,7 +13457,7 @@ int Application::run(bool enable_developer_modules)
                                 ?gallery_appearance_verifier.status()
                                 :gallery_appearance_snapshot_status,
                         gallery_appearance_verifier.phase(),
-                        gallery_wearables_status,
+                        gallery_wearables_status,legacy_cof_status,
                         gallery_wearables_snapshot,gallery_wearables_visible,
                         gallery_asset_status,
                         gallery_decoded_wearable_assets.size(),

@@ -945,6 +945,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     set_tests_properties(nexverse-viewer-shell-gl-tests
         PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(nexverse-legacy-wearables-cof-audit-tests
+        tests/legacy_wearables_cof_audit_tests.cpp)
+    target_link_libraries(nexverse-legacy-wearables-cof-audit-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-legacy-wearables-cof-audit-tests)
+    add_test(NAME nexverse-legacy-wearables-cof-audit-tests
+        COMMAND nexverse-legacy-wearables-cof-audit-tests)
+
     add_executable(nexverse-agent-wearables-readback-tests
         tests/agent_wearables_readback_tests.cpp)
     target_link_libraries(nexverse-agent-wearables-readback-tests
