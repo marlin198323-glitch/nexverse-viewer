@@ -41,6 +41,9 @@ struct TextureAssetResult
     AssetFailure failure = AssetFailure::none;
     AssetCacheLookup disk_lookup = AssetCacheLookup::not_checked;
     bool network_requested = false;
+    // Only a genuine successful fresh reread after a malformed J2C
+    // transfer; not inferred from an ordinary cache hit or PNG fallback.
+    bool recovered_j2c_transfer=false;
     bool cancelled_before_download = false;
 };
 

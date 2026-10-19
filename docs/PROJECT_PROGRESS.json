@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-19",
-  "viewer_version": "0.2.0-alpha.514",
+  "viewer_version": "0.2.0-alpha.524",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.515–524",
-  "assessment": "Alpha.514 adds an immediate existing texture residency replan when actual selected authenticated Head/Upper/Lower body bake TextureEntry IDs change, instead of waiting for the generic 750ms/scene-object tick. The epoch/lease/authentication gated source observer deduplicates repeats, ignores null and placeholder IDs, and triggers old texture eviction when a source is removed. Native C++ integrations validate new body priority, VRAM budget, old GPU eviction and released capacity for particles; GetTexture pacing, retries and staging remain intact. F3 distinguishes provisional ObjectUpdate source with absent versus partial Low158. Authenticated live NexVerse avatar/skin, outfit/COF, attachments and simulator-confirmed WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.525–534",
+  "assessment": "Alpha.524 responds to a real Oct 18 NexVerse GetTexture OpenJPEG tile-part-size-versus-codestream failure: one bounded fresh x-j2c GET is allowed only for a recognized J2C with the exact tile-part length corruption. Real successfully redecoded RGBA is admitted, repeated corrupt/missing/unknown formats retain failure and existing retry schedule. OpenGL framebuffer regression draws three independently colored original Firestorm .llm Head/Upper/Lower body bake textures, separately swaps Upper and evicts Head with per-face truthful GPU draw counters. F3 shows fresh J2C transfer recoveries only after actual successful GPU upload, scoped to the current material epoch and without asset IDs. Authentic live NexVerse own skin/outfit/COF, attachments and simulator-confirmed WASD end-to-end still open/unverified; weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.515–524",
+  "next_batch": "Alpha.525–534",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "bcc02ddd046bc4133aa8f5b5875996452077835c",

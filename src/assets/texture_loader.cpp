@@ -251,7 +251,44 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
             result.message = "GetTexture x-j2c fallback succeeded";
             return result;
         }
-        j2c_failure = AssetFailure::invalid;
+        // Some OpenGenesisLINK simulator/proxy transfers returned an
+        // otherwise recognized J2C header but a truncated tile-part.
+        // A single fresh capped GET can recover a TRANSIENT partial
+        // transfer; corrupted persistent assets must still fail.
+        // Never relax OpenJPEG's bounds or fabricate damaged pixels.
+        const bool truncated_tile =
+            j2c_response.body.size() >= 12U &&
+            static_cast<unsigned char>(j2c_response.body[0])==0xffU &&
+            static_cast<unsigned char>(j2c_response.body[1])==0x4fU &&
+            result.message.find(
+                "Tile part length size inconsistent with stream length")!=
+                    std::string::npos;
+        if(truncated_tile)
+        {
+            const auto fresh=transport_->get(
+                j2c_uri,max_texture_download_bytes,
+                connect_timeout,total_timeout);
+            if(fresh.ok())
+            {
+                auto retry=decode_jpeg2000_texture(
+                    texture_id,fresh.body);
+                if(retry.success)
+                {
+                    retry.recovered_j2c_transfer=true;
+                    retry.message="GetTexture x-j2c fresh retry succeeded";
+                    return retry;
+                }
+                result.message += "; retry: "+retry.message;
+            }
+            else
+            {
+                const auto retry_failure=classify_http_asset_failure(fresh);
+                j2c_failure=merge_asset_failure(j2c_failure,retry_failure);
+                result.message += "; retry HTTP: "+
+                    (fresh.error.empty()?std::string{"failed"}:fresh.error);
+            }
+        }
+        j2c_failure=merge_asset_failure(j2c_failure,AssetFailure::invalid);
         result.message = "png: " + png_error +
                          "; x-j2c decode: " + result.message;
     }

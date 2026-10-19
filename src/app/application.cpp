@@ -6216,6 +6216,7 @@ int Application::run(bool enable_developer_modules)
     std::chrono::steady_clock::time_point texture_request_started{};
     std::size_t texture_cache_hits = 0U;
     std::size_t texture_http_loads = 0U;
+    std::size_t texture_recovered_j2c_transfers=0U;
     std::size_t texture_disk_misses = 0U;
     std::size_t texture_disk_corrupt = 0U;
     std::size_t texture_disk_io_errors = 0U;
@@ -10073,6 +10074,7 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_retries.enter(material_scope.epoch());
+                texture_recovered_j2c_transfers=0U;
                 texture_desired_mips.clear();
                 texture_gpu_mips.clear();
                 texture_lod_dwell.reset();
@@ -11507,6 +11509,8 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
+                        if(result.recovered_j2c_transfer)
+                            ++texture_recovered_j2c_transfers;
                         object_texture_retries.success(object_texture_loading_id);
                         (void)texture_cpu_reuse_history.uploaded(
                             object_texture_loading_id,material_scope.epoch(),
@@ -13218,7 +13222,11 @@ int Application::run(bool enable_developer_modules)
                         circuit_snapshot.self_appearance_support_acknowledged,
                         avatar_proof.appearance_received,ack_wait);
                 shell_view.avatar_bake_stream_status=
-                    avatar_bake_stream_status;
+                    (texture_recovered_j2c_transfers>0U
+                        ?"J2C-Retry gerettet: "+
+                            std::to_string(texture_recovered_j2c_transfers)+
+                            " | "
+                        :std::string{})+avatar_bake_stream_status;
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();
                 viewer_shell.terrain_retry_available=

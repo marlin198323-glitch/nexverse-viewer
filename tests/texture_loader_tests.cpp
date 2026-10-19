@@ -20,11 +20,15 @@ public:
         png_missing,
         png_invalid,
         both_missing,
-        both_unavailable
+        both_unavailable,
+        first_j2c_truncated_then_valid,
+        always_j2c_truncated,
+        j2c_non_tile_corruption
     };
     Mode mode = Mode::png_ok;
     std::string body;
     std::vector<std::string> requests;
+    std::size_t j2c_requests=0U;
 
     nexverse::net::HttpResponse get(
         std::string_view url,
@@ -37,6 +41,10 @@ public:
             return {503,{}, "HTTP server returned status 503"};
         if (url.find("format=png") != std::string_view::npos)
         {
+            if (mode == Mode::first_j2c_truncated_then_valid ||
+                mode == Mode::always_j2c_truncated ||
+                mode == Mode::j2c_non_tile_corruption)
+                return {200,"This is not PNG",{}};
             if (mode == Mode::png_missing || mode == Mode::both_missing)
                 return {404, {}, "HTTP server returned status 404"};
             if (mode == Mode::png_invalid)
@@ -45,8 +53,26 @@ public:
         }
         if (url.find("format=x-j2c") != std::string_view::npos)
         {
+            ++j2c_requests;
+            if((mode==Mode::first_j2c_truncated_then_valid&&
+                j2c_requests==1U)||
+                mode==Mode::always_j2c_truncated)
+            {
+                std::string bad{
+                    reinterpret_cast<const char*>(j2c_fixture),
+                    sizeof(j2c_fixture)};
+                // Genuine codestream SOC/SOT present but Psot claims
+                // a tile-part larger than the received server transfer.
+                const auto sot=bad.find(
+                    std::string{"\xff\x90\x00\x0a",4U});
+                if(sot!=std::string::npos && sot+10U<=bad.size())
+                    bad[sot+9U]=static_cast<char>(0x7f);
+                return {200,std::move(bad),{}};
+            }
             if (mode == Mode::both_missing)
                 return {404, {}, "HTTP server returned status 404"};
+            if(mode == Mode::j2c_non_tile_corruption)
+                return {200, "not a jpeg2000 frame", {}};
             return {200, {
                 reinterpret_cast<const char*>(j2c_fixture),
                 sizeof(j2c_fixture)}, {}};
@@ -209,7 +235,37 @@ int main()
     }
 
     transport->requests.clear();
-    transport->mode = MockTransport::Mode::both_missing;
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::first_j2c_truncated_then_valid;
+    const auto recovered=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!valid_fixture(recovered)||transport->requests.size()!=3U||
+       transport->j2c_requests!=2U||!recovered.recovered_j2c_transfer||
+       recovered.message.find("fresh retry succeeded")==std::string::npos)
+        return 25;
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::always_j2c_truncated;
+    const auto unrecoverable=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(unrecoverable.success||unrecoverable.recovered_j2c_transfer||
+       transport->requests.size()!=3U||transport->j2c_requests!=2U||
+       unrecoverable.message.find("retry:")==std::string::npos||
+       unrecoverable.failure!=AssetFailure::invalid)
+        return 26;
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::j2c_non_tile_corruption;
+    const auto invalid_format=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(invalid_format.success||invalid_format.recovered_j2c_transfer||
+       transport->requests.size()!=2U||
+       transport->j2c_requests!=1U ||
+       invalid_format.failure!=AssetFailure::invalid)
+        return 27;
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::both_missing;
     const auto missing = loader.fetch_rgba("https://caps.example/GetTexture/", id);
     if (missing.success ||
         missing.failure != AssetFailure::missing ||

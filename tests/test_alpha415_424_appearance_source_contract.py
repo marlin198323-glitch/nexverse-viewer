@@ -51,12 +51,12 @@ class AvatarSourceProvenance(unittest.TestCase):
                  "disconnected.apply_region","disconnected.self_appearance()"):
    self.assertIn(needle,native2)
  def test_handoff(self):
-  self.assertEqual(text("VERSION").strip(),"0.2.0-alpha.514")
+  self.assertEqual(text("VERSION").strip(),"0.2.0-alpha.524")
   d=json.loads(text("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.514")
-  self.assertEqual(d["next_batch"],"Alpha.515–524")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.524")
+  self.assertEqual(d["next_batch"],"Alpha.525–534")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.515–524",text(f)[:1200])
+   self.assertIn("Alpha.525–534",text(f)[:1200])
 if __name__=="__main__":unittest.main()

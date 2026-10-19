@@ -87,6 +87,66 @@ int main()
       std::cout<<"BODY_PART_BAKE_PIXELS_"<<slot<<"="<<count<<"\n";
       if(count<25)error=10+static_cast<int>(slot);
     }
+    // Three DIFFERENT server-baked RGBA textures must reach the
+    // original head/upper/lower Firestorm .llm UVs independently.
+    // Prior tests used just one shared flat green texture.
+    const std::array<std::string,3U> bake_ids{
+        "head-bake-live","upper-bake-live","lower-bake-live"};
+    for(std::size_t slot=0U;slot<3U && !error;++slot)
+    {
+        render::RenderImageRgba8 paint{
+            4,4,std::vector<std::uint8_t>(64,255)};
+        for(std::size_t i=0U;i<paint.pixels.size();i+=4)
+        {
+            paint.pixels[i+0]=(slot==0U?240U:20U);
+            paint.pixels[i+1]=(slot==1U?240U:20U);
+            paint.pixels[i+2]=(slot==2U?240U:20U);
+        }
+        if(!renderer->set_object_texture(bake_ids[slot],paint))
+            error=14+static_cast<int>(slot);
+    }
+    if(!error)
+    {
+        self.baked_texture_ids=bake_ids;
+        renderer->set_avatar_proxies({self});
+        const auto three_independent=draw();
+        const auto native_draw=renderer->diagnostics();
+        const auto independent_pixels=difference(plain,three_independent);
+        std::cout<<"THREE_INDEPENDENT_FIRESTORM_BAKE_PIXELS="
+                 <<independent_pixels<<"\n";
+        if(independent_pixels<100U ||
+           native_draw.self_avatar_body_bake_gl_draws!=
+              (std::array<std::uint64_t,3>{1U,1U,1U}))
+            error=17;
+        // Replacing only Upper must NOT accidentally rebind Head/Lower
+        // to a stale slot-4 GL texture from the previous draw.
+        render::RenderImageRgba8 upper_replacement{
+            4,4,std::vector<std::uint8_t>(64,255)};
+        for(std::size_t i=0U;i<upper_replacement.pixels.size();i+=4)
+        {
+            upper_replacement.pixels[i]=240U;
+            upper_replacement.pixels[i+1]=240U;
+            upper_replacement.pixels[i+2]=30U;
+        }
+        if(!renderer->set_object_texture("upper-replacement",
+                                        upper_replacement))
+            error=18;
+        self.baked_texture_ids[1]="upper-replacement";
+        renderer->set_avatar_proxies({self});
+        const auto changed_upper=draw();
+        if(difference(three_independent,changed_upper)<20U)
+            error=19;
+        renderer->remove_object_texture("head-bake-live");
+        renderer->set_avatar_proxies({self});
+        const auto head_evicted=draw();
+        if(difference(head_evicted,changed_upper)<20U ||
+           renderer->diagnostics().self_avatar_body_bake_gl_draws!=
+              (std::array<std::uint64_t,3>{0U,1U,1U}))
+            error=20;
+        renderer->remove_object_texture("upper-bake-live");
+        renderer->remove_object_texture("upper-replacement");
+        renderer->remove_object_texture("lower-bake-live");
+    }
     self.baked_texture_ids={"fixture-bake","fixture-bake","fixture-bake"};
     renderer->set_avatar_proxies({self});
     if(!error)
