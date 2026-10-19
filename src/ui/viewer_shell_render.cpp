@@ -339,6 +339,13 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                Color{0.030f,0.151f,0.215f,0.97f},7.0f*sc);
         r.text(x+441.0f*sc,y+ph-79.0f*sc,8.4f*sc,
                "Avatar Fokus [F4]",theme::cyan);
+        if(pw>=715.0f*sc)
+        {
+            r.rect(x+571.0f*sc,y+ph-93.0f*sc,126.0f*sc,41.0f*sc,
+                   Color{0.025f,0.142f,0.172f,0.98f},7.0f*sc);
+            r.text(x+578.0f*sc,y+ph-79.0f*sc,8.2f*sc,
+                   "Outfit [O]",theme::cyan);
+        }
         r.text(x+27.0f*sc,y+ph-24.0f*sc,8.1f*sc,
                state.status_text.empty()?
                  "Self-Serverdaten; keine Uploads / IDs / Secrets.":

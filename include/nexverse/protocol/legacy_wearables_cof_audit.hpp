@@ -35,12 +35,16 @@ struct LegacyWearableCofAudit
             return "Legacy/COF: Simulator-Wearables ausstehend";
         if(!cof_originals_available)
             return "Legacy/COF: Originalinventar nicht verifiziert";
-        return "Legacy/COF: Item/Asset/Typ "+std::to_string(
-            exact_item_asset_type)+"/"+std::to_string(cof_wearables)+
-            " | Differenz "+std::to_string(mismatched_asset_or_type+
-                not_in_cof+cof_not_in_legacy)+
-            " | offen "+std::to_string(unresolved_cof_links)+
-            " (kein Wear-Beweis)";
+        // Keep the explicit non-proof notice inside the actual 99-char
+        // F9 floater clipping budget, even with malformed 255-entry data.
+        return "Legacy/COF: "+std::to_string(exact_item_asset_type)+
+            "/"+std::to_string(cof_wearables)+
+            " passend | A:"+std::to_string(mismatched_asset_or_type)+
+            " F:"+std::to_string(cof_not_in_legacy)+
+            " Z:"+std::to_string(not_in_cof)+
+            " D:"+std::to_string(duplicate_legacy_items)+
+            " O:"+std::to_string(unresolved_cof_links)+
+            " | kein Wear-Beweis";
     }
 };
 [[nodiscard]] inline LegacyWearableCofAudit compare_legacy_wearables_cof(

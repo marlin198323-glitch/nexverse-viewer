@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.474, Projektstand 39 % (38,65 % gewichtet), NÄCHSTE Alpha.475–484.**
+
+19.10.2026 Alpha.465–474: F3-Avatarfenster hat jetzt echte Outfit-Schaltfläche [O] sowie O-Tastaturkürzel zum vorhandenen F9-Outfit-Floater, inkl. echtem Hit-Test und kompaktem responsivem Layout. Low382/COF-Diagnose zeigt nun getrennt anders, fehlend, zusätzlich, doppelt und offene Einträge und schneidet den Text 'kein Wear-Beweis' nicht ab. FetchInventory2-Originalitems zusätzlich an AgentID gebunden, kein Cross-Login-COF-Readback. Native C++/OpenGL, Python, Headless Pi5 ARM64, Xvfb, Systemicon, GitHub. Noch immer KEIN authentifiziertes NexVerse Avatar-/Outfit-/GPU-/WASD-E2E – Fortschritt 39 %. Details docs/ALPHA465_474_F3_F9_OUTFIT_NAVIGATION.md. Bei WEITER exakt zehn Blöcke Alpha.475–484, zuerst Commit/Upstream/CIs prüfen. Kein Produktivdeployment.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Alpha.465–474, Projektfortschritt 39 %.**
 
 **ALPHA.464 QUELLSTAND GEPRÜFT 19.10.2026:** Feature-SHA 320abed60c759ec09e7d4950d85a3e4a46fac3c1 auf GitHub gepusht. Linux Mint x64 Build 373/373, native C++/OpenGL CTest 158/158, Python 200/200, ARM64-kompatibles Headless, isoliertes Xvfb und X11-Icon/WM_CLASS PASS. Auf ECHTEM Pi5 wurde exakt Feature-SHA 320abed60c759ec09e7d4950d85a3e4a46fac3c1 direkt per SSH aus dem Repository getestet: PI_ARM64_HEADLESS_EXIT=0, OGL_PI5_NATIVE_HEADLESS_OK, 200 Python-Tests OK (1 unterstützter Skip). GitHub Actions Run 39286040685 ist aktuell QUEUED, NICHT SUCCESS. Kein Arm-GPU/GUI-Test oder authentifizierter NexVerse-Avatar-/Outfit-/WASD-End-to-End-Beleg. Dokumentation und Testresultate nach GitHub; keine Produktion. Nächste zehn Blöcke Alpha.465–474; 39 %.

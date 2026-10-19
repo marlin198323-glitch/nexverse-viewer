@@ -726,6 +726,21 @@ void key_callback(GLFWwindow* window, int key, int, int action, int mods)
             return;
         }
         if(shell.window==nexverse::ui::ViewerWindow::avatar&&
+           key==GLFW_KEY_O&&context->outfits)
+        {
+            // Same actual F9 overlay as the main Outfits toolbar action.
+            // The switch is navigation only, never a wear mutation.
+            shell.close();
+            *context->outfits=true;
+            if(context->outfit_selection)
+                *context->outfit_selection=0U;
+            if(context->inventory_open)
+                *context->inventory_open=false;
+            if(context->experience)
+                context->experience->close();
+            return;
+        }
+        if(shell.window==nexverse::ui::ViewerWindow::avatar&&
            key==GLFW_KEY_B)
         {
             shell.avatar_bake_page=static_cast<std::uint8_t>(
@@ -5863,6 +5878,9 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t gallery_wearables_fetch_epoch=0U;
     std::uint64_t gallery_wearables_fetch_version=0U;
     std::string gallery_wearables_fetch_cof;
+    // Bind fetched COF originals to the login that actually requested
+    // them, even if a later session reuses the same region epoch/folder.
+    std::string gallery_wearables_fetch_owner;
     bool gallery_wearables_requested=false;
     input_context.outfit_wearable_check_requested=&gallery_wearables_requested;
     std::string gallery_wearables_status=
@@ -7995,6 +8013,7 @@ int Application::run(bool enable_developer_modules)
                 gallery_wearables_snapshot={};
                 gallery_wearables_visible=false;
                 gallery_wearable_originals.clear();
+                gallery_wearables_fetch_owner.clear();
                 gallery_wearable_asset_requested=false;
                 gallery_asset_pending.clear();
                 gallery_decoded_wearable_assets.clear();
@@ -8782,7 +8801,8 @@ int Application::run(bool enable_developer_modules)
                     const auto v=versions.find(gallery_wearables_fetch_cof);
                     const auto all=caps_state.outfit_folder_items.find(
                         gallery_wearables_fetch_cof);
-                    if(fetched.valid&&
+                    if(fetched.valid&&active_session&&
+                       active_session->agent_id==gallery_wearables_fetch_owner&&
                        firestorm_region_lease.matches(
                            gallery_wearables_fetch_epoch)&&
                        v!=versions.end()&&
@@ -8861,6 +8881,7 @@ int Application::run(bool enable_developer_modules)
                         gallery_asset_status="Originalitems: Assetdaten noch offen";
                         clear_gallery_local_texture_previews();
                         gallery_wearables_fetch_cof=id;
+                        gallery_wearables_fetch_owner=active_session->agent_id;
                         gallery_wearables_fetch_epoch=current_firestorm_epoch;
                         gallery_wearables_fetch_version=v->second;
                         gallery_wearables_status=
@@ -13426,6 +13447,8 @@ int Application::run(bool enable_developer_modules)
                         const auto version=gallery_inventory_sync.versions().find(
                             cof_folder);
                         const bool original_scope=gallery_wearables_visible&&
+                            active_session&&
+                            gallery_wearables_fetch_owner==active_session->agent_id&&
                             gallery_wearables_fetch_epoch==current_firestorm_epoch&&
                             gallery_wearables_fetch_cof==cof_folder&&
                             version!=gallery_inventory_sync.versions().end()&&

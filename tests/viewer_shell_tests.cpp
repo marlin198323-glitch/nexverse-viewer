@@ -11,6 +11,17 @@ int main()
     const std::array<std::array<int,2>,3> viewports{{
         {{1100,700}},{{1920,1080}},{{3440,1440}}
     }};
+    // The F3->F9 button is hidden if the status panel is too narrow,
+    // rather than showing an off-window clickable region.
+    {
+        const ViewerShellLayout narrow{480,420};
+        ViewerShellState small{};
+        small.window=ViewerWindow::avatar;
+        if(narrow.panel_w>=715.0f*narrow.scale)return 96;
+        if(narrow.hit(narrow.panel_x+630.0f*narrow.scale,
+            narrow.panel_y+narrow.panel_h-75.0f*narrow.scale,
+            small)==ViewerAction::outfits)return 97;
+    }
     for(const auto& wh:viewports)
     {
         const ViewerShellLayout l{wh[0],wh[1]};
@@ -70,6 +81,10 @@ int main()
         if(l.hit(l.panel_x+495.0f*sc,
                  l.panel_y+l.panel_h-75.0f*sc,s)!=
            ViewerAction::focus_avatar_camera)return 58;
+        if(l.panel_w>=715.0f*sc &&
+           l.hit(l.panel_x+630.0f*sc,
+                 l.panel_y+l.panel_h-75.0f*sc,s)!=
+           ViewerAction::outfits)return 95;
         if(l.hit(l.panel_x+l.panel_w-35.0f*sc,
                  l.panel_y+25.0f*sc,s)!=ViewerAction::close)return 54;
         if(window_for_action(ViewerAction::avatar)!=

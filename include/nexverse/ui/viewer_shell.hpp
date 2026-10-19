@@ -188,6 +188,13 @@ struct ViewerShellLayout
                    panel_y+panel_h-93.0f*scale,
                    126.0f*scale,41.0f*scale))
                     return ViewerAction::focus_avatar_camera;
+                // F3 status links to the actual read-only F9 inventory
+                // floater, not a decorative button or automatic wear.
+                if(panel_w>=715.0f*scale&&
+                   inside(x,y,panel_x+571.0f*scale,
+                   panel_y+panel_h-93.0f*scale,
+                   126.0f*scale,41.0f*scale))
+                    return ViewerAction::outfits;
             }
             if(inside(x,y,panel_x+panel_w-56.0f*scale,
                       panel_y+10.0f*scale,46.0f*scale,36.0f*scale))
