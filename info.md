@@ -1,5 +1,9 @@
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.504, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.505–514.**
 
+**ALPHA.504 Pi5-CI EXAKT BESTÄTIGT:** GitHub Actions Run 39294296008 ist COMPLETED SUCCESS für Feature-SHA 7e8651bc04c47605652f58786fbc9b559e47f343. Mint x64 373/373 Build, 158/158 native C++/OpenGL, 230/230 Python, Headless C++23/Python, Xvfb GUI-Start und X11 Systemicon/WM_CLASS erfolgreich. Pi5-Lauf prüft ARM64 Headless C++ und Python, **nicht** Pi5 GPU/GUI und keinen NexVerse-Live-Login. Neuer Source-Fallback: echte Low158-Bake-ID gewinnt je Face; nur fehlende Faces aus Session/Region/LocalID-authentifiziertem ObjectUpdate vorläufig ergänzen, F3 zeigt GPU/Quelle getrennt. Kein endgültiger Outfit-/COF-/Skin-/WASD-Livebeweis; 39 %. Nächste 10 Blöcke Alpha.505–514, keine produktive Bereitstellung.
+
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.504, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.505–514.**
+
 19.10.2026 Alpha.495–504: Renderlücke behoben: Self Low158 ohne einzelne Bake Head/Upper/Lower IDs unterdrückte auch echte eigene ObjectUpdate TE-Bakes. Jetzt pro Face Low158 bevorzugen, ausschließlich fehlende Faces aus aktueller selbstauthentifizierter ObjectUpdate-TE provisorisch ergänzen. Reale Render-Auswahl integriert; F3 nennt GPU geladen/fehlt aus der provisorischen Quelle, getrennt von autoritativer Low158-/COF-Evidenz. Konflikt-UUIDs, Self-LocalID- und Agentwechsel nativ geprüft. Keine Outfit-Writes. Keine neue NexVerse Avatar-/Outfit-/GPU-/WASD-E2E-Bestätigung; weiterhin 39 %. Details docs/ALPHA495_504_SELF_BAKE_FACE_FALLBACK.md. Nächste zehn Blöcke Alpha.505–514, GitHub/Upstream/CI zuerst, kein Produktivdeployment.
 
 ---
