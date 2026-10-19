@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.494, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.495–504.**
+
+**ALPHA.494 Pi5 ARM64 CI VERIFIZIERT:** Entwicklungs-SHA 754339d420eb689dc977a0c7a3b5be52b3b9af21 wurde mit GitHub Self-hosted Pi5 Source Check Run 39292283612 = COMPLETED SUCCESS exakt auf diesem Quellstand geprüft. Mint Linux-x64 Build 373/373 PASS, Native C++/OpenGL 158/158 PASS, Python 223/223 PASS, isolierter GUI-Xvfb PASS, Headless C++23/Python PASS, X11 Taskleistenicon/WM_CLASS PASS. CI Pi5 baut keine native GUI oder GPU. Neues serverformatiges synthetisches Low158 mit drei Body-Bake-TE-Overrides erreicht Self-WorldModel/Streamingpriorität; F3 und privater Bericht melden fehlende Bake-IDs unabhängig von GPU-Darstellung. Tatsächlicher authentifizierter NexVerse Self-/COF-/Outfit-/WASD-End-to-End noch nicht belegt. Projekt 39 %; nächster Zehnerblock Alpha.495–504; kein Produktionsdeployment.
+
 # Alpha.485–494 – verifizierbare Self-Low158-Körperbakes und Avatar-F3-Fehlertrennung
 
 19.10.2026 | Branch develop-current | 0.2.0-alpha.494 | Projektfortschritt 39 % (38,65 % gewichtet).
