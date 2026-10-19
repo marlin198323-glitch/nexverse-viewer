@@ -1471,6 +1471,46 @@ const char* appearance_failure_name(AvatarAppearanceFailure v) noexcept
     return "unknown";
 }
 
+std::vector<std::uint8_t> encode_agent_wearables_request(
+    std::uint32_t sequence,const LoginSession& session)
+{
+    std::vector<std::uint8_t> payload;
+    if(!append_uuid(payload,session.agent_id)||
+       !append_uuid(payload,session.session_id))return {};
+    // Legacy Low381: AgentData (AgentID,SessionID) only. Read-only.
+    return encode_packet(packet_reliable,sequence,
+                         msg_agent_wearables_request,payload);
+}
+
+std::optional<AgentWearablesUpdateMessage>
+decode_agent_wearables_update(std::span<const std::uint8_t> payload)
+{
+    // Original Low382: AgentID UUID, SessionID UUID, SerialNum U32,
+    // Variable U8 WearableData of (ItemID UUID,AssetID UUID,Type U8).
+    constexpr std::size_t header_size=16U+16U+4U+1U;
+    constexpr std::size_t item_size=16U+16U+1U;
+    if(payload.size()<header_size)return std::nullopt;
+    const std::size_t count=payload[36U];
+    if(payload.size()!=header_size+count*item_size)
+        return std::nullopt;
+    AgentWearablesUpdateMessage result;
+    result.agent_id=uuid_from_bytes(payload,0U);
+    result.session_id=uuid_from_bytes(payload,16U);
+    result.serial=read_le_u32(payload,32U);
+    result.wearables.reserve(count);
+    for(std::size_t i=0U;i<count;++i)
+    {
+        const std::size_t offset=header_size+i*item_size;
+        AgentWearableEntry entry;
+        entry.item_id=uuid_from_bytes(payload,offset);
+        entry.asset_id=uuid_from_bytes(payload,offset+16U);
+        entry.wearable_type=payload[offset+32U];
+        if(entry.wearable_type>16U)return std::nullopt;
+        result.wearables.push_back(std::move(entry));
+    }
+    return result;
+}
+
 std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     std::span<const std::uint8_t> payload,AvatarAppearanceFailure* failure)
 {

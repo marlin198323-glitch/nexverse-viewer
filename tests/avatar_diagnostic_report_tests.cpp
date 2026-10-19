@@ -23,6 +23,11 @@ int main()
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.appearance_self_invalid_texture_ignored=2U;
+    r.wearables_read_request_sent=true;
+    r.wearables_legacy_update_received=true;
+    r.wearables_legacy_items=17U;
+    r.wearables_legacy_assets=14U;
+    r.wearables_legacy_serial=8U;
     r.self_attachment_block_received=true;
     r.self_attachment_block_count=85U;
     r.movement_discontinuities=3U;
@@ -66,6 +71,11 @@ int main()
     if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
        text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
+       text.find("wearables_read_request_sent=yes")==std::string::npos||
+       text.find("wearables_legacy_update_received=yes")==std::string::npos||
+       text.find("wearables_legacy_items=17")==std::string::npos||
+       text.find("wearables_legacy_assets=14")==std::string::npos||
+       text.find("wearables_legacy_serial=8")==std::string::npos||
        text.find("self_attachment_block_received=yes")==std::string::npos||
        text.find("self_attachment_block_count=85")==std::string::npos||
        text.find("movement_discontinuities=3")==std::string::npos||

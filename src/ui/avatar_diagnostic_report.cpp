@@ -59,6 +59,15 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "appearance_self_invalid_texture_ignored="+
            std::to_string(r.appearance_self_invalid_texture_ignored)+"\n"
+       "wearables_read_request_sent="+yn(r.wearables_read_request_sent)+"\n"
+       "wearables_legacy_update_received="+
+           yn(r.wearables_legacy_update_received)+"\n"
+       "wearables_legacy_items="+
+           std::to_string(r.wearables_legacy_items)+"\n"
+       "wearables_legacy_assets="+
+           std::to_string(r.wearables_legacy_assets)+"\n"
+       "wearables_legacy_serial="+
+           std::to_string(r.wearables_legacy_serial)+"\n"
        "self_attachment_block_received="+yn(r.self_attachment_block_received)+"\n"
        "self_attachment_block_count="+
            std::to_string(r.self_attachment_block_count)+"\n"

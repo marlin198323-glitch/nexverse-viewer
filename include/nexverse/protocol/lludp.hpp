@@ -60,6 +60,9 @@ inline constexpr MessageId msg_region_handshake{MessageFrequency::low, 148U};
 inline constexpr MessageId msg_region_handshake_reply{MessageFrequency::low, 149U};
 inline constexpr MessageId msg_avatar_appearance{MessageFrequency::low, 158U};
 inline constexpr MessageId msg_agent_set_appearance{MessageFrequency::low,84U};
+// Original Linden/Firestorm legacy read-only initial wearables handshake.
+inline constexpr MessageId msg_agent_wearables_request{MessageFrequency::low,381U};
+inline constexpr MessageId msg_agent_wearables_update{MessageFrequency::low,382U};
 inline constexpr MessageId msg_agent_is_now_wearing{MessageFrequency::low,383U};
 inline constexpr MessageId msg_complete_agent_movement{MessageFrequency::low, 249U};
 inline constexpr MessageId msg_agent_data_update{MessageFrequency::low, 387U};

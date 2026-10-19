@@ -213,6 +213,7 @@ struct WorldSnapshot
     AgentState agent;
     AgentProfileState agent_profile;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance;
+    std::optional<protocol::AgentWearablesUpdateMessage> self_wearables;
     std::optional<SelfAvatarObjectBakes> self_object_bakes;
     std::optional<protocol::AvatarAnimationMessage> self_animations;
     std::map<std::string, AvatarState, std::less<>> avatars;
@@ -236,6 +237,11 @@ public:
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(
         protocol::AvatarAppearanceMessage appearance);
+    // Read-only legacy wearable references (no wear/set-appearance writes).
+    [[nodiscard]] bool apply_self_wearables(
+        protocol::AgentWearablesUpdateMessage update);
+    [[nodiscard]] const std::optional<protocol::AgentWearablesUpdateMessage>&
+        self_wearables() const noexcept;
     // Low158 remains authoritative; this may only rescue genuine TE bake
     // face IDs from the region-matched self ObjectUpdate visual path.
     [[nodiscard]] bool observe_self_object_bakes(
@@ -291,6 +297,7 @@ private:
     AgentState agent_;
     AgentProfileState agent_profile_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
+    std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::optional<protocol::AvatarAnimationMessage> self_animations_;
     // Animation may precede ObjectUpdate. Bounded pending messages do not

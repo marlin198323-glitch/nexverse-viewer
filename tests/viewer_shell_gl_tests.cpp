@@ -70,12 +70,14 @@ int main()
             {
                 state.window=ViewerWindow::avatar;
                 state.avatar_bake_page=0U;
+                view.avatar_wearables_status="Wearables: Legacy 13/17 Assets (COF offen)";
                 view.avatar_self_attachment_packet=true;
                 view.attachments=85U;
                 render_viewer_shell(renderer,1280,800,state,view);
                 if(glGetError()!=GL_NO_ERROR)error=6;
                 view.avatar_self_attachment_packet=false;
                 view.attachments=0U;
+                view.avatar_wearables_status="Wearables: Legacy-Antwort ausstehend";
                 render_viewer_shell(renderer,1280,800,state,view);
                 if(glGetError()!=GL_NO_ERROR)error=7;
             }

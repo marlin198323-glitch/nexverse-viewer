@@ -485,6 +485,26 @@ decode_agent_movement_complete(
 [[nodiscard]] std::optional<ParcelPropertiesMessage> decode_parcel_properties(
     std::span<const std::uint8_t> payload);
 
+// Legacy AgentWearablesUpdate Low382; read-only evidence, NOT an outfit
+// change, and not a guarantee of COF or baked texture readiness.
+struct AgentWearableEntry
+{
+    std::string item_id;
+    std::string asset_id;
+    std::uint8_t wearable_type=0U;
+};
+struct AgentWearablesUpdateMessage
+{
+    std::string agent_id;
+    std::string session_id;
+    std::uint32_t serial=0U;
+    std::vector<AgentWearableEntry> wearables;
+};
+[[nodiscard]] std::vector<std::uint8_t> encode_agent_wearables_request(
+    std::uint32_t sequence,const LoginSession& session);
+[[nodiscard]] std::optional<AgentWearablesUpdateMessage>
+    decode_agent_wearables_update(std::span<const std::uint8_t> payload);
+
 [[nodiscard]] std::optional<AgentDataUpdateMessage> decode_agent_data_update(
     std::span<const std::uint8_t> payload);
 

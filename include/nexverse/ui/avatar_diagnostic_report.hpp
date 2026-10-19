@@ -32,6 +32,11 @@ struct AvatarDiagnosticReport
     std::uint32_t appearance_self_trial_ignored=0U;
     std::uint32_t appearance_self_incomplete_ignored=0U;
     std::uint32_t appearance_self_invalid_texture_ignored=0U;
+    bool wearables_read_request_sent=false;
+    bool wearables_legacy_update_received=false;
+    std::uint32_t wearables_legacy_items=0U;
+    std::uint32_t wearables_legacy_assets=0U;
+    std::uint32_t wearables_legacy_serial=0U;
     bool self_attachment_block_received=false;
     std::uint32_t self_attachment_block_count=0U;
     // Number of genuine non-placeholder face UUIDs reported by a

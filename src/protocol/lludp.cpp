@@ -159,7 +159,7 @@ bool PacketThrottle::consume(
 
 std::optional<MessageTemplateEntry> known_message_template(MessageId id)
 {
-    constexpr std::array<MessageTemplateEntry, 23> entries{
+    constexpr std::array<MessageTemplateEntry, 25> entries{
         MessageTemplateEntry{msg_start_ping_check, "StartPingCheck", false},
         MessageTemplateEntry{msg_complete_ping_check, "CompletePingCheck", false},
         MessageTemplateEntry{msg_layer_data, "LayerData", false},
@@ -176,6 +176,8 @@ std::optional<MessageTemplateEntry> known_message_template(MessageId id)
         MessageTemplateEntry{msg_avatar_appearance, "AvatarAppearance", false},
         MessageTemplateEntry{msg_agent_is_now_wearing, "AgentIsNowWearing", true},
         MessageTemplateEntry{msg_agent_set_appearance, "AgentSetAppearance", true},
+        MessageTemplateEntry{msg_agent_wearables_request, "AgentWearablesRequest", true},
+        MessageTemplateEntry{msg_agent_wearables_update, "AgentWearablesUpdate", true},
         MessageTemplateEntry{msg_complete_agent_movement, "CompleteAgentMovement", true},
         MessageTemplateEntry{msg_agent_movement_complete, "AgentMovementComplete", false},
         MessageTemplateEntry{msg_agent_data_update, "AgentDataUpdate", false},

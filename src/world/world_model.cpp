@@ -17,6 +17,7 @@ void WorldModel::reset()
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
+    self_wearables_.reset();
     self_object_bakes_.reset();
     self_animations_.reset();
     pending_avatar_animations_.clear();
@@ -42,6 +43,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
        (region_.connected && !update.connected))
     {
         self_appearance_.reset();
+        self_wearables_.reset();
         self_object_bakes_.reset();
         self_animations_.reset();
         pending_avatar_animations_.clear();
@@ -75,6 +77,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     parcel_ = {};
     environment_ = {};
     self_appearance_.reset();
+    self_wearables_.reset();
     self_object_bakes_.reset();
     self_animations_.reset();
     pending_avatar_animations_.clear();
@@ -96,6 +99,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     {
         self_object_bakes_.reset();
         self_appearance_.reset();
+        self_wearables_.reset();
         self_animations_.reset();
         pending_avatar_animations_.clear();
         agent_profile_ = {};
@@ -128,6 +132,27 @@ bool WorldModel::apply_self_appearance(
     // pre-login appearance update; the self render path uses agent_.
     avatars_.erase(agent_.agent_id);
     return true;
+}
+
+bool WorldModel::apply_self_wearables(
+    protocol::AgentWearablesUpdateMessage update)
+{
+    if(!region_.connected||agent_.agent_id.empty()||
+       agent_.session_id.empty()||
+       update.agent_id!=agent_.agent_id||
+       update.session_id!=agent_.session_id)return false;
+    // Never replace newer simulator readback with a late retransmit;
+    // historical Low382 SerialNum is monotonic per login session.
+    if(self_wearables_&&update.serial<=self_wearables_->serial)
+        return false;
+    self_wearables_=std::move(update);
+    return true;
+}
+
+const std::optional<protocol::AgentWearablesUpdateMessage>&
+WorldModel::self_wearables() const noexcept
+{
+    return self_wearables_;
 }
 
 bool WorldModel::observe_self_object_bakes(
@@ -385,6 +410,7 @@ WorldSnapshot WorldModel::snapshot() const
     value.agent = agent_;
     value.agent_profile = agent_profile_;
     value.self_appearance = self_appearance_;
+    value.self_wearables = self_wearables_;
     value.self_object_bakes = self_object_bakes_;
     value.self_animations = self_animations_;
     value.avatars = avatars_;

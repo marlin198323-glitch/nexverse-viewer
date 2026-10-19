@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/protocol/circuit.hpp"
+#include "nexverse/protocol/viewer_messages.hpp"
 
 #include <algorithm>
 #include <thread>
@@ -210,6 +211,21 @@ bool CircuitConnection::handle_packet(
     {
         status.state = CircuitState::active;
         status.message = "LLUDP circuit active; AgentMovementComplete received";
+        // Send exactly one authenticated, read-only legacy wearables
+        // request per circuit. No AgentIsNowWearing or AgentSetAppearance
+        // mutation; the reply can be a legacy dummy on modern OpenSim.
+        if(!wearables_initial_requested_)
+        {
+            const auto request_sequence=next_sequence++;
+            auto request=encode_agent_wearables_request(
+                request_sequence,session_);
+            if(request.empty()||
+               !send_reliable(socket,tracker,std::move(request),
+                              request_sequence,status))
+                return false;
+            wearables_initial_requested_=true;
+            status.wearables_read_request_sent=true;
+        }
     }
 
     return true;
@@ -225,6 +241,7 @@ CircuitStatus CircuitConnection::run(
 {
     CircuitStatus status;
     self_appearance_receipt_.reset();
+    wearables_initial_requested_=false;
     const auto notify = [&]
     {
         if (on_status) on_status(status);

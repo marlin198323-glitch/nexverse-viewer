@@ -294,11 +294,12 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                 72U),theme::text_muted);
             line(5,v.avatar_view_status,theme::cyan);
             line(6,v.avatar_fragment_status,theme::warning);
-            line(7,v.avatar_admission_status.empty()?
-                "Server-Bakes: "+v.avatar_bake_status:
-                v.avatar_admission_status,
-                v.avatar_admission_status.empty()?
-                    theme::text_muted:theme::warning);
+            line(7,compact(
+                v.avatar_wearables_status+
+                (v.avatar_admission_status.empty()
+                    ?" | Bakes: "+v.avatar_bake_status
+                    :" | "+v.avatar_admission_status),72U),
+                theme::warning);
         }
         else
         {

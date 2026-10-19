@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE. OGL 0.2.0-alpha.454, Projektfortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.455–464.**
+
+19.10.2026 Alpha.445–454: Firestorm Legacy WearablesRequest Low381 bei echtem AgentMovementComplete 1x pro authentifiziertem Circuit READ-ONLY; Low382 WearablesUpdate mit 0..16 WearableType, SerialNum, strikter AgentID/SessionID/Regionprüfung und Last-Serial-Abweisung. Reauth/Regionreset behebt Legacy-Referenz-Leak. F3 unterscheidet Anfrage, alte Legacy-Antwort und reine AssetID-Zahl mit COF OFFEN; privater Report anonym numerisch. C++ echte synthetische LLUDP-Pakettests, OpenGL-F3, Python, ARM64 Headless und Pi5 GitHub CI. Kein automatisches Wear/Unwear, AgentSetAppearance oder Fake-Bake. Echtes NexVerse Avatar/Outfit/COF/WASD weiterhin NICHT live bewiesen: Stand 39 %. Details docs/ALPHA445_454_AUTH_LEGACY_WEARABLE_READBACK.md. Nächste 10 Blöcke Alpha.455–464; CI nur für exakt verifizierten Feature-SHA grün. Kein Produktionsupdate.
+
+---
+
 **ALPHA.444 Pi5-CI VERIFIZIERT:** Featurecommit 3bb183def3c0ef618173f705c635d6a87127c53d, GitHub Self-hosted Raspberry Pi5 ARM64 Source Check Run 39140161516 = SUCCESS exakt für diesen SHA. Mint x64 Build 369/369, CTest incl. real GL 156/156, Python 186/186, ARM64-kompatibles Headless, isolierter Xvfb-Viewer, echtes X11 Icon und WM_CLASS PASS. Kein eigener NexVerse Live-Avatar/Outfit/WASD E2E nachgewiesen; Projektfortschritt 39 % (38,65 % gewichtet), nächste Alpha.445–454.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.444, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.445–454.**

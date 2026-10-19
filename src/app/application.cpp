@@ -5736,6 +5736,25 @@ int Application::run(bool enable_developer_modules)
             world_model.upsert_avatar(std::move(avatar));
         });
 
+    // Legacy Low382: authenticated readback of actual worn item/asset
+    // references. Not proof of COF completeness, bakes or rendered outfit.
+    packet_dispatcher.register_handler(
+        protocol::msg_agent_wearables_update,
+        [&world_model,&world_mutex](const protocol::DecodedPacket& packet)
+        {
+            const auto update=protocol::decode_agent_wearables_update(
+                packet.payload);
+            if(!update)return;
+            std::scoped_lock lock{world_mutex};
+            const bool initial=!world_model.self_wearables().has_value();
+            if(!world_model.apply_self_wearables(*update))return;
+            if(initial)
+                core::info("Authenticated legacy AgentWearablesUpdate "
+                           "Low382 accepted (read only): entries="+
+                           std::to_string(update->wearables.size())+
+                           "; not proof of current COF or body bakes");
+        });
+
     packet_dispatcher.register_handler(
         protocol::msg_agent_data_update,
         [&avatar_packets, &world_model, &world_mutex](
@@ -12827,6 +12846,8 @@ int Application::run(bool enable_developer_modules)
             avatar_diagnostic.agent_present=render_agent.present;
             avatar_diagnostic.appearance_received=
                 avatar_proof.appearance_received;
+            avatar_diagnostic.wearables_read_request_sent=
+                circuit_snapshot.wearables_read_request_sent;
             avatar_diagnostic.self_appearance_support_sent=
                 circuit_snapshot.self_appearance_support_sent;
             avatar_diagnostic.self_appearance_support_acknowledged=
@@ -12860,6 +12881,22 @@ int Application::run(bool enable_developer_modules)
                 appearance_runtime.self_invalid_texture_ignored;
             {
                 std::scoped_lock lock{world_mutex};
+                if(const auto& worn=world_model.self_wearables();
+                   worn&&active_session&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   worn->agent_id==active_session->agent_id&&
+                   worn->session_id==active_session->session_id&&
+                   world_model.region().connected)
+                {
+                    avatar_diagnostic.wearables_legacy_update_received=true;
+                    avatar_diagnostic.wearables_legacy_items=
+                        static_cast<std::uint32_t>(worn->wearables.size());
+                    avatar_diagnostic.wearables_legacy_serial=worn->serial;
+                    for(const auto& item:worn->wearables)
+                        if(item.asset_id!=
+                           "00000000-0000-0000-0000-000000000000")
+                            ++avatar_diagnostic.wearables_legacy_assets;
+                }
                 if(const auto& ap=world_model.self_appearance();
                    ap&&login_ui.authenticated&&active_session&&
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
@@ -13125,6 +13162,10 @@ int Application::run(bool enable_developer_modules)
                 shell_view.avatar_admission_status=
                     ui::describe_self_appearance_admission(
                         appearance_runtime,avatar_proof.appearance_received);
+                shell_view.avatar_wearables_status=
+                    circuit_snapshot.wearables_read_request_sent
+                    ?"Wearables: Legacy-Antwort ausstehend"
+                    :"Wearables: Anfrage ausstehend";
                 shell_view.mesh_quality_status=
                     ui::describe_mesh_quality(mesh_quality_evidence);
                 shell_view.avatar_report_notice=avatar_report_notice;
@@ -13134,6 +13175,22 @@ int Application::run(bool enable_developer_modules)
                     const auto& agent=world_model.agent();
                     shell_view.region_name=region.name;
                     shell_view.region_connected=region.connected;
+                    if(const auto& worn=world_model.self_wearables();
+                       worn&&region.connected&&active_session&&
+                       firestorm_region_lease.matches(current_firestorm_epoch)&&
+                       worn->agent_id==active_session->agent_id&&
+                       worn->session_id==active_session->session_id)
+                    {
+                        std::size_t with_assets=0U;
+                        for(const auto& item:worn->wearables)
+                            if(item.asset_id!=
+                               "00000000-0000-0000-0000-000000000000")
+                                ++with_assets;
+                        shell_view.avatar_wearables_status=
+                            "Wearables: Legacy "+std::to_string(with_assets)+
+                            "/"+std::to_string(worn->wearables.size())+
+                            " Assets (COF offen)";
+                    }
                     shell_view.region_width=region.size_x;
                     shell_view.region_height=region.size_y;
                     shell_view.agent_position={

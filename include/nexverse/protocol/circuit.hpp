@@ -42,6 +42,8 @@ struct CircuitStatus
     // True only after reliable RegionHandshakeReply datagram was accepted
     // for sending. Does not prove ACK or server AvatarAppearance delivery.
     bool self_appearance_support_sent=false;
+    // Legacy Low381 read-only bootstrap (socket-send, not ACK/reply).
+    bool wearables_read_request_sent=false;
     // True only for an ACK matched by the reliable tracker to the LATEST
     // RegionHandshakeReply sequence. Not a simulator AvatarAppearance.
     bool self_appearance_support_acknowledged=false;
@@ -94,5 +96,6 @@ private:
     LoginSession session_;
     PacketThrottle throttle_;
     SelfAppearanceHandshakeReceipt self_appearance_receipt_;
+    bool wearables_initial_requested_=false;
 };
 }
