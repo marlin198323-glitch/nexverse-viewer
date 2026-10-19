@@ -1,5 +1,6 @@
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
+#include "nexverse/protocol/turn_readback.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -57,7 +58,8 @@ int main()
     k.turn_left = true;
     auto left = c.step(k, 0.2f);
     if ((left.control_flags & control_turn_left) == 0U ||
-        (left.control_flags & control_yaw_neg) == 0U ||
+        (left.control_flags & control_yaw_pos) == 0U ||
+        (left.control_flags & (control_yaw_neg|control_turn_right))!=0U ||
         left.body_rotation.z <= 0.0f ||
         std::abs(left.body_rotation.z * left.body_rotation.z +
                  left.body_rotation.w * left.body_rotation.w - 1.0f) > 0.0001f ||
@@ -66,6 +68,71 @@ int main()
         std::cerr << "Left rotation quaternion / control flags incorrect\n";
         return 6;
     }
+    k={};
+    k.turn_right=true;
+    const auto right=c.step(k,0.4f);
+    if((right.control_flags&(control_turn_right|control_yaw_neg))!=
+       (control_turn_right|control_yaw_neg)||
+       (right.control_flags&(control_turn_left|control_yaw_pos))!=0U||
+       right.body_rotation.z>=left.body_rotation.z)return 20;
+    // Opposing turn keys may not emit both yaw signs. There is no
+    // unambiguous server rotation request in that case.
+    k.turn_left=true;
+    const auto opposite=c.step(k,0.15f);
+    if((opposite.control_flags&
+        (control_yaw_pos|control_yaw_neg|
+         control_turn_left|control_turn_right))!=0U)return 21;
+    // OpenGenesisLINK Server ScenePresence: the ACTUAL LLUDP High 4
+    // AgentUpdate must pair TURN_LEFT/YAW_POS and TURN_RIGHT/YAW_NEG.
+    // Decode wire bytes at the fixed message_template ControlFlags
+    // offset, rather than only inspecting the input Controller result.
+    LoginSession session;
+    session.agent_id="11111111-2222-3333-4444-555555555555";
+    session.session_id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    auto server_control_bits=[&](const AgentUpdateData& action)
+    {
+        const auto wire=decode_lludp_packet(
+            encode_agent_update(52U,session,action));
+        if(!wire.ok()||
+           wire.packet->header.message!=msg_agent_update||
+           wire.packet->payload.size()!=114U)return std::uint32_t{0U};
+        const auto& bytes=wire.packet->payload;
+        return static_cast<std::uint32_t>(bytes[109])|
+            static_cast<std::uint32_t>(bytes[110])<<8U|
+            static_cast<std::uint32_t>(bytes[111])<<16U|
+            static_cast<std::uint32_t>(bytes[112])<<24U;
+    };
+    if(server_control_bits(left)!=(control_turn_left|control_yaw_pos)||
+       server_control_bits(right)!=(control_turn_right|control_yaw_neg)||
+       server_control_bits(opposite)!=0U)return 22;
+    c.reset();
+    k={};
+    k.toggle_fly=true;
+    const auto enabled=c.step(k,0.1f);
+    if((server_control_bits(enabled)&control_fly)==0U)return 23;
+    k={};
+    k.turn_left=true;
+    const auto flying_left=c.step(k,0.1f);
+    if(server_control_bits(flying_left)!=
+       (control_fly|control_turn_left|control_yaw_pos))return 24;
+    k={};
+    k.turn_right=true;
+    const auto flying_right=c.step(k,0.1f);
+    if(server_control_bits(flying_right)!=
+       (control_fly|control_turn_right|control_yaw_neg))return 25;
+    c.reset();
+    k={};k.forward=true;k.backward=true;
+    const auto cancel_forward=c.step(k,0.1f);
+    if((server_control_bits(cancel_forward)&
+       (control_at_pos|control_at_neg))!=0U)return 26;
+    k={};k.left=true;k.right=true;
+    const auto cancel_strafe=c.step(k,0.1f);
+    if((server_control_bits(cancel_strafe)&
+       (control_left_pos|control_left_neg))!=0U)return 27;
+    k={};k.forward=true;k.left=true;
+    const auto diagonal=c.step(k,0.1f);
+    if(server_control_bits(diagonal)!=(control_at_pos|control_left_pos))
+        return 28;
     k = {};
     k.jump = true;
     k.descend = true;
@@ -136,6 +203,40 @@ int main()
     if(feedback.server_position({20.0f,20.0f,30.0f},
                t+std::chrono::seconds{40})!=MovementEvidence::none)
         return 19; // opposing controls cancel
+    // Real turn evidence is not a queued key or local quaternion.
+    TurnReadbackMonitor turn;
+    auto server_heading=[](float radians)->Quaternion
+    {
+        return {0.0f,0.0f,std::sin(radians*0.5f),
+                std::cos(radians*0.5f)};
+    };
+    if(turn.observe_server_rotation(server_heading(0.0f),t))return 29;
+    turn.outbound_controls(control_turn_left|control_yaw_pos,t+std::chrono::seconds{1});
+    if(turn.server_confirmed()||
+       turn.observe_server_rotation(server_heading(-0.4f),t+std::chrono::seconds{2})||
+       turn.server_confirmed())return 30;
+    if(!turn.observe_server_rotation(server_heading(0.3f),t+std::chrono::seconds{3})||
+       !turn.server_confirmed())return 31;
+    if(turn.observe_server_rotation(server_heading(0.5f),t+std::chrono::seconds{4}))return 32;
+    turn.outbound_controls(0U,t+std::chrono::seconds{5});
+    if(turn.server_confirmed()||turn.turn_active())return 33;
+    turn.outbound_controls(control_turn_right|control_yaw_neg,t+std::chrono::seconds{6});
+    if(turn.observe_server_rotation(server_heading(0.6f),t+std::chrono::seconds{5})||
+       turn.server_confirmed())return 34;
+    if(!turn.observe_server_rotation(server_heading(-0.5f),t+std::chrono::seconds{7})||
+       !turn.server_confirmed())return 35;
+    turn.reset();
+    if(turn.server_confirmed()||turn.turn_active()||
+       turn.observe_server_rotation(server_heading(2.0f),t+std::chrono::seconds{8}))return 36;
+    turn.reset(); // new region: no pre-send simulator rotation
+    turn.outbound_controls(control_turn_left|control_yaw_pos,t+std::chrono::seconds{9});
+    if(turn.observe_server_rotation({NAN,0.0f,0.0f,1.0f},t+std::chrono::seconds{10})||
+       turn.observe_server_rotation({0.0f,0.0f,0.0f,0.0f},t+std::chrono::seconds{10})||
+       turn.server_confirmed())return 37;
+    if(turn.observe_server_rotation(server_heading(1.4f),t+std::chrono::seconds{11})||
+       turn.server_confirmed())return 38; // initial baseline only
+    if(!turn.observe_server_rotation(server_heading(1.7f),t+std::chrono::seconds{12}))
+        return 39;
     std::cout << "Avatar controls and rotation tests passed\n";
     return 0;
 }

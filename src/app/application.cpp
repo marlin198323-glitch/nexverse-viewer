@@ -74,6 +74,7 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
+#include "nexverse/protocol/turn_readback.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
@@ -4764,6 +4765,7 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t self_avatar_region_handle = 0U;
     std::chrono::steady_clock::time_point last_self_movement_log{};
     protocol::MovementFeedbackMonitor movement_feedback;
+    protocol::TurnReadbackMonitor turn_feedback;
     bool simulation_ready = false;
     input_context.viewer_shell=&viewer_shell;
     input_context.avatar_report_save_requested=&avatar_report_save_requested;
@@ -5166,6 +5168,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_local_id,
          &self_avatar_region_handle,
          &movement_feedback,
+         &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -5222,6 +5225,10 @@ int Application::run(bool enable_developer_modules)
                             current.present});
                         // Full ObjectUpdate is also an actual simulator
                         // self position; terse updates are not guaranteed.
+                        if(turn_feedback.observe_server_rotation(
+                               entry.rotation,std::chrono::steady_clock::now()))
+                            core::info("Avatar turn VERIFIED by real self "
+                                       "ObjectUpdate rotation after UDP send");
                         const auto evidence=movement_feedback.server_position(
                             entry.position,std::chrono::steady_clock::now(),
                             protocol::MovementPositionSource::full_object);
@@ -5271,6 +5278,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_local_id,
          &self_avatar_region_handle,
          &movement_feedback,
+         &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -5326,6 +5334,10 @@ int Application::run(bool enable_developer_modules)
                             entry.position,
                             entry.rotation,
                             current.present});
+                        if(turn_feedback.observe_server_rotation(
+                               entry.rotation,std::chrono::steady_clock::now()))
+                            core::info("Avatar turn VERIFIED by real self "
+                                       "compressed ObjectUpdate rotation");
                         const auto evidence=movement_feedback.server_position(
                             entry.position,std::chrono::steady_clock::now(),
                             protocol::MovementPositionSource::compressed_object);
@@ -5425,6 +5437,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_region_handle,
          &last_self_movement_log,
          &movement_feedback,
+         &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
         {
@@ -5461,6 +5474,10 @@ int Application::run(bool enable_developer_modules)
                             current.agent_id, current.session_id,
                             update.position, update.rotation, current.present});
                         const auto now = std::chrono::steady_clock::now();
+                        if(turn_feedback.observe_server_rotation(
+                               update.rotation,now))
+                            core::info("Avatar turn VERIFIED by real self "
+                                       "ImprovedTerseObjectUpdate rotation");
                         const auto evidence=movement_feedback.server_position(
                             update.position,now);
                         if(evidence==protocol::MovementEvidence::server_position_changed)
@@ -6070,6 +6087,7 @@ int Application::run(bool enable_developer_modules)
                                  &circuit_status,
                                  &packet_dispatcher,
                                  &outbound_queue,&movement_feedback,
+                                 &turn_feedback,
                                  &world_model,&world_mutex]() mutable
                                 {
                                     protocol::CircuitStatus final_status;
@@ -6124,10 +6142,15 @@ int Application::run(bool enable_developer_modules)
                                             },
                                             &outbound_queue,
                                             std::chrono::seconds{15},
-                                            [&movement_feedback](std::uint32_t flags)
+                                            [&movement_feedback,
+                                             &turn_feedback](std::uint32_t flags)
                                             {
+                                                const auto sent_at=
+                                                    std::chrono::steady_clock::now();
                                                 movement_feedback.outbound_controls(
-                                                    flags,std::chrono::steady_clock::now());
+                                                    flags,sent_at);
+                                                turn_feedback.outbound_controls(
+                                                    flags,sent_at);
                                             });
 
                                         if (circuit_stop.load() ||
@@ -6840,6 +6863,7 @@ int Application::run(bool enable_developer_modules)
                         login_ui.authenticated = true;
                         movement_controller.reset();
                         movement_feedback.reset();
+                        turn_feedback.reset();
                         movement_heading_initialized = false;
                         last_reported_control_flags = 0U;
                         {
@@ -7605,6 +7629,7 @@ int Application::run(bool enable_developer_modules)
                         outbound_queue.clear();
                         movement_controller.reset();
                         movement_feedback.reset();
+                        turn_feedback.reset();
                         movement_heading_initialized=false;
                         last_reported_control_flags=0U;
                         {
@@ -7673,6 +7698,7 @@ int Application::run(bool enable_developer_modules)
                     outbound_queue.clear();
                     movement_controller.reset();
                     movement_feedback.reset();
+                        turn_feedback.reset();
                     movement_heading_initialized=false;
                     last_reported_control_flags=0U;
                     protocol::LoginSession retry_session=*active_session;
@@ -7968,6 +7994,7 @@ int Application::run(bool enable_developer_modules)
                 // teleport changes coordinates discontinuously; never
                 // count that movement as a successful WASD response.
                 movement_feedback.reset();
+                        turn_feedback.reset();
                 // The self-appearance diagnostic is a CURRENT SIMULATOR
                 // counter; never carry events from a prior region/agent.
                 avatar_appearance_received.store(0U,std::memory_order_relaxed);
@@ -13211,7 +13238,12 @@ int Application::run(bool enable_developer_modules)
                         std::chrono::steady_clock::now()-
                             circuit_snapshot.self_appearance_ack_at)
                     :std::chrono::seconds{0};
-                shell_view.avatar_movement_status=movement_feedback.status();
+                // Only real server-origin self quaternions can confirm
+                // a turn; a local yaw or UDP send is not confirmation.
+                shell_view.avatar_movement_status=
+                    turn_feedback.turn_active()
+                        ?turn_feedback.status()
+                        :movement_feedback.status();
                 shell_view.avatar_udp_directional_sent=
                     circuit_snapshot.directional_agent_updates_sent;
                 shell_view.avatar_handshake_status=

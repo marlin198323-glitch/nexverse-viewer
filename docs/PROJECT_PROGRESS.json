@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-19",
-  "viewer_version": "0.2.0-alpha.524",
+  "viewer_version": "0.2.0-alpha.534",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.525–534",
-  "assessment": "Alpha.524 responds to a real Oct 18 NexVerse GetTexture OpenJPEG tile-part-size-versus-codestream failure: one bounded fresh x-j2c GET is allowed only for a recognized J2C with the exact tile-part length corruption. Real successfully redecoded RGBA is admitted, repeated corrupt/missing/unknown formats retain failure and existing retry schedule. OpenGL framebuffer regression draws three independently colored original Firestorm .llm Head/Upper/Lower body bake textures, separately swaps Upper and evicts Head with per-face truthful GPU draw counters. F3 shows fresh J2C transfer recoveries only after actual successful GPU upload, scoped to the current material epoch and without asset IDs. Authentic live NexVerse own skin/outfit/COF, attachments and simulator-confirmed WASD end-to-end still open/unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.535–544",
+  "assessment": "Alpha.534 fixes a confirmed OpenGenesisLINK server control semantics mismatch: server current main 6e446b9 ScenePresence.cs requires TURN_LEFT+YAW_POS, TURN_RIGHT+YAW_NEG while OGL previously sent opposite yaw bits. Native 114-byte High4 LLUDP AgentUpdate tests verify corrected flags, flight and diagonal/opposing key normalization. New mutex-protected TurnReadbackMonitor recognizes a direction-matched >=5-degree REAL simulator self rotation from Full, Compressed or ImprovedTerse packets only after a successful socket send, never on queued/local quaternion, with login/logout/region reset and F3 pending/confirmed status. Real authenticated NexVerse avatar/COF/skin/attachments and simulator-confirmed WASD entire end-to-end still open/unverified, weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.525–534",
+  "next_batch": "Alpha.535–544",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "899f53ee7e13f5a410433e221c51b780d8485b63",
