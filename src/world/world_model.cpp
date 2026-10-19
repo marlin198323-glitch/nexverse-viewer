@@ -187,13 +187,31 @@ WorldModel::self_object_bakes() const noexcept
     return self_object_bakes_;
 }
 
+SelfRenderBakeSelection WorldModel::self_bake_selection() const
+{
+    SelfRenderBakeSelection out;
+    if(!region_.connected||agent_.agent_id.empty()||
+       agent_.session_id.empty())return out;
+    if(self_appearance_)
+    {
+        out.ids=protocol::extract_avatar_bakes(
+            self_appearance_->texture_entry).visible_body();
+        for(std::size_t i=0U;i<out.ids.size();++i)
+            out.from_low158[i]=!out.ids[i].empty();
+    }
+    if(self_object_bakes_)
+        for(std::size_t i=0U;i<out.ids.size();++i)
+            if(out.ids[i].empty()&&!self_object_bakes_->visible_body[i].empty())
+            {
+                out.ids[i]=self_object_bakes_->visible_body[i];
+                out.from_object_update[i]=true;
+            }
+    return out;
+}
+
 std::array<std::string,3U> WorldModel::self_render_bakes() const
 {
-    if(self_appearance_)
-        return protocol::extract_avatar_bakes(
-            self_appearance_->texture_entry).visible_body();
-    if(self_object_bakes_)return self_object_bakes_->visible_body;
-    return {};
+    return self_bake_selection().ids;
 }
 
 bool WorldModel::apply_avatar_animation(

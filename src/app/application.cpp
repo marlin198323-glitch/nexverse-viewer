@@ -12825,6 +12825,17 @@ int Application::run(bool enable_developer_modules)
                     avatar_proof.bakes=protocol::audit_avatar_bake_evidence(
                         protocol::extract_avatar_bakes(packet->texture_entry),
                         object_texture_loaded_ids);
+                    const auto selection=world_model.self_bake_selection();
+                    protocol::AvatarBakedTextures fallback{};
+                    for(std::size_t i=0U;i<3U;++i)
+                        if(selection.from_object_update[i])
+                        {
+                            avatar_proof.object_fallback_faces[i]=true;
+                            fallback.ids[i]=selection.ids[i];
+                        }
+                    avatar_proof.object_fallback_bakes=
+                        protocol::audit_avatar_bake_evidence(
+                            fallback,object_texture_loaded_ids);
                     avatar_proof.body_bake_draws=
                         render_diagnostics.self_avatar_body_bake_gl_draws;
                     for(std::size_t slot=0U;slot<3U;++slot)
@@ -12955,8 +12966,11 @@ int Application::run(bool enable_developer_modules)
                     for(const auto& id:obj->visible_body)
                         if(!id.empty())
                             ++avatar_diagnostic.self_object_bake_candidate_faces;
+                    const auto source=world_model.self_bake_selection();
                     avatar_diagnostic.self_object_bake_candidate_active=
-                        !world_model.self_appearance().has_value();
+                        source.from_object_update[0]||
+                        source.from_object_update[1]||
+                        source.from_object_update[2];
                 }
             }
             if(avatar_proof.provisional_object_bakes &&

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-19",
-  "viewer_version": "0.2.0-alpha.494",
+  "viewer_version": "0.2.0-alpha.504",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.495–504",
-  "assessment": "Alpha.494 adds verified source-to-streaming linkage for synthetic but authentic-format zero-coded legacy OpenGenesisLINK Low158 with three distinct actual Firestorm baked TE face overrides. Full decode to current authenticated self WorldModel and extract_avatar_bakes produces Head/Upper/Lower refs; real texture priority and GPU residency plan prioritize those IDs; cross-login invalidates source. Private current-session diagnostic reports identity-free per-body ref presence and aggregate 11 refs, while F3 distinguishes zero or partial authoritative server refs from later GPU/render failures. Authenticated live NexVerse avatar, full COF/outfit/GPU visibility and simulator-confirmed WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.505–514",
+  "assessment": "Alpha.504 fixes a genuine missing-self-bake selection gap: previously accepted Low158 suppressed ALL authenticated self ObjectUpdate face IDs even for missing Head, Upper and Lower slots. Per-face selection now preserves each existing authoritative Low158 slot and supplements only absent ones from the current self ObjectUpdate scoped by agent, session, region and local ID. The actual renderer uses selected IDs, and F3 labels the explicitly provisional source with separate current GPU evidence, never asserting COF or worn skin completion. Native tests cover conflicting head UUIDs, gaps, local ID invalidation and session changes. Authenticated live NexVerse skin, outfit/COF, attachments and WASD end-to-end still open/unverified. Weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.495–504",
+  "next_batch": "Alpha.505–514",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "754339d420eb689dc977a0c7a3b5be52b3b9af21",

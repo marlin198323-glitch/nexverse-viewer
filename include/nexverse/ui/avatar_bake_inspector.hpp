@@ -45,6 +45,17 @@ struct AvatarBakeInspector
         }
         out.rows[i]=std::string{nexverse::protocol::avatar_bake_region_names[i]}+
             " | "+source;
+        if(i<3U&&proof.appearance_received&&
+           proof.object_fallback_faces[i])
+        {
+            const auto provisional_state=proof.object_fallback_bakes.regions[i];
+            out.rows[i]=""+std::string{
+                nexverse::protocol::avatar_bake_region_names[i]}+
+                (provisional_state==
+                    nexverse::protocol::AvatarBakeTextureState::gpu_resident
+                    ?" | Obj-TE vorlaeufig / GPU geladen"
+                    :" | Obj-TE vorlaeufig / GPU fehlt");
+        }
         if(i<3U)
             out.rows[i]+=" | BakeGL "+
                 std::to_string(source_available
@@ -76,6 +87,10 @@ struct AvatarBakeInspector
     }
     else if(!proof.appearance_received)
         out.visual="Self-AvatarAppearance fehlt: Bake-GL NICHT belegt";
+    else if(proof.object_fallback_faces[0]||
+            proof.object_fallback_faces[1]||
+            proof.object_fallback_faces[2])
+        out.visual="Self Low158 lueckenhaft: Obj-TE Body provisorisch (kein COF-Beweis)";
     else if(proof.bakes.regions[0]==
                 nexverse::protocol::AvatarBakeTextureState::missing&&
             proof.bakes.regions[1]==

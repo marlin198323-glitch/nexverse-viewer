@@ -205,6 +205,15 @@ struct SelfAvatarObjectBakes
     std::array<std::string,3U> visible_body;
     std::uint32_t local_id=0U;
 };
+// Per-face precedence: a real Low158 face is NEVER replaced. A still-current
+// self ObjectUpdate face can be shown provisionally only where Low158 lacks
+// an asset ID. These flags are not proof of a worn COF or visible GPU pixels.
+struct SelfRenderBakeSelection
+{
+    std::array<std::string,3U> ids{};
+    std::array<bool,3U> from_low158{};
+    std::array<bool,3U> from_object_update{};
+};
 
 struct WorldSnapshot
 {
@@ -249,7 +258,9 @@ public:
         std::uint32_t local_id,std::span<const std::uint8_t> texture_entry);
     [[nodiscard]] const std::optional<SelfAvatarObjectBakes>&
         self_object_bakes() const noexcept;
-    // Never return ObjectUpdate candidate IDs while Low158 Self exists.
+    // Low158 always wins PER FACE; valid self ObjectUpdate may fill only
+    // missing body faces with explicitly provisional server references.
+    [[nodiscard]] SelfRenderBakeSelection self_bake_selection() const;
     [[nodiscard]] std::array<std::string,3U>
         self_render_bakes() const;
     // High20 AvatarAnimation is an authoritative complete per-avatar

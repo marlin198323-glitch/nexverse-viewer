@@ -75,6 +75,19 @@ int main()
     proof.fragment_query_known=true;proof.fragment_samples_passed=true;
     if(ui::inspect_avatar_bakes(proof).visual.find("sichtbare Depth")==
        std::string::npos)return 13;
+    proof.object_fallback_faces[1]=true;
+    protocol::AvatarBakedTextures provisional{};
+    provisional.ids[1]="upper";
+    proof.object_fallback_bakes=protocol::audit_avatar_bake_evidence(
+        provisional,{"upper"});
+    const auto mixed_display=ui::inspect_avatar_bakes(proof);
+    if(mixed_display.rows[1].find("Obj-TE vorlaeufig / GPU geladen")==
+           std::string::npos||
+       mixed_display.visual.find("Obj-TE Body provisorisch")==
+           std::string::npos||
+       proof.skin_stage().find("Obj-TE vorlaeufig")==std::string::npos)
+        return 18;
+    proof.object_fallback_faces={};
     proof.appearance_received=false;
     if(ui::inspect_avatar_bakes(proof).rows[0].find("GPU geladen")!=
        std::string::npos)return 14;

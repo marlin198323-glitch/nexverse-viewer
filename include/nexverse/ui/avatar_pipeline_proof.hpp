@@ -19,6 +19,10 @@ struct AvatarPipelineProof
     // Authenticated self ObjectUpdate TE can supply genuine baked faces,
     // but this flag is NOT evidence of a Low158 AvatarAppearance packet.
     bool provisional_object_bakes=false;
+    // Low158 owns all provided faces; gaps may use authenticated current
+    // ObjectUpdate IDs for rendering, never for Low158/COF validation.
+    std::array<bool,3U> object_fallback_faces{};
+    nexverse::protocol::AvatarBakeEvidence object_fallback_bakes{};
     AvatarAppearanceRuntime appearance_runtime{};
     AvatarVisualTruth visual_truth{};
     bool world_ready=false;
@@ -57,6 +61,10 @@ struct AvatarPipelineProof
     }
     [[nodiscard]] std::string skin_stage() const
     {
+        if(appearance_received &&
+           (object_fallback_faces[0]||object_fallback_faces[1]||
+            object_fallback_faces[2]))
+            return "Skin: Low158 Teil-Bakes / Obj-TE vorlaeufig";
         if(provisional_object_bakes && !appearance_received)
             return "Skin: Obj-TE vorlaeufig GPU "+
                 std::to_string(bakes.visible_body_resident)+

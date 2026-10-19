@@ -94,10 +94,46 @@ int main()
     authoritative.avatar_id=avatar_id;
     authoritative.texture_entry=tex(false); // valid, no actual bakes
     authoritative.visual_params={125U,126U};
-    if(!w.apply_self_appearance(authoritative)||!w.self_render_bakes()[0].empty()||
-       !w.self_render_bakes()[1].empty()||!w.self_object_bakes())return 12;
+    if(!w.apply_self_appearance(authoritative)||
+       w.self_render_bakes()!=fallback || !w.self_object_bakes())return 12;
+    const auto provisional_after_low158=w.self_bake_selection();
+    if(!provisional_after_low158.from_object_update[0]||
+       !provisional_after_low158.from_object_update[1]||
+       provisional_after_low158.from_low158[0])return 27;
     if(!w.observe_self_object_bakes(avatar_id,region,53U,head_te)||
-       !w.self_render_bakes()[0].empty())return 13;
+       w.self_render_bakes()!=fallback)return 13;
+    // A later Low158 Head reference beats an old ObjectUpdate Head,
+    // while a missing Low158 Upper may still use the real provisional TE.
+    auto mixed=authoritative;
+    mixed.texture_entry=tex(true,true); // placeholder only, no valid head
+    if(!w.apply_self_appearance(mixed)||
+       w.self_render_bakes()!=fallback)return 28;
+    mixed.texture_entry=head_te; // actual Head+Upper from Low158
+    if(!w.apply_self_appearance(mixed)||
+       w.self_bake_selection().from_object_update[0]||
+       !w.self_bake_selection().from_low158[0]||
+       !w.self_bake_selection().from_low158[1])return 29;
+    // Important conflicting-source regression: the authoritative
+    // Low158 Head differs from the provisional ObjectUpdate Head.
+    // Incomplete Low158 Upper is filled but its Head cannot be replaced.
+    auto one_head=head_te;
+    one_head.erase(one_head.begin()+34,one_head.begin()+52);
+    for(std::size_t k=18U;k<34U;++k)one_head[k]=0x44U;
+    mixed.texture_entry=one_head;
+    if(!w.apply_self_appearance(mixed))return 30;
+    const auto selected=w.self_bake_selection();
+    if(selected.ids[0]!="44444444-4444-4444-4444-444444444444"||
+       selected.ids[1]!="22222222-2222-2222-2222-222222222222"||
+       !selected.from_low158[0]||
+       !selected.from_object_update[1]||
+       selected.from_object_update[0]||selected.from_low158[1])
+        return 31;
+    // New LocalID without a valid TE evicts only provisional leftovers,
+    // while keeping the unmodified Low158 Head.
+    if(w.observe_self_object_bakes(avatar_id,region,54U,{})||
+       w.self_bake_selection().from_object_update[1]||
+       !w.self_bake_selection().ids[1].empty()||
+       w.self_bake_selection().ids[0]!=selected.ids[0])return 32;
     // Authenticated self with different session is not the same visual
     // lifetime, even on same simulator region.
     w.apply_agent({avatar_id,"ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});
