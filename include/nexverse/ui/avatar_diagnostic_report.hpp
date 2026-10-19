@@ -37,6 +37,12 @@ struct AvatarDiagnosticReport
     std::uint32_t wearables_legacy_items=0U;
     std::uint32_t wearables_legacy_assets=0U;
     std::uint32_t wearables_legacy_serial=0U;
+    // Genuine authenticated Self Low158 TextureEntry bake UUID counters,
+    // distinct from local GPU residency or ObjectUpdate provisional IDs.
+    bool self_low158_texture_entry_received=false;
+    std::uint32_t self_low158_valid_bake_refs=0U;
+    std::uint32_t self_low158_body_bake_refs=0U;
+    std::array<bool,3U> self_low158_head_upper_lower_refs{};
     bool self_attachment_block_received=false;
     std::uint32_t self_attachment_block_count=0U;
     // Number of genuine non-placeholder face UUIDs reported by a

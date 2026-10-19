@@ -12932,6 +12932,19 @@ int Application::run(bool enable_developer_modules)
                    ap->avatar_id==active_session->agent_id&&
                    world_model.region().connected)
                 {
+                    const auto bakes=protocol::extract_avatar_bakes(
+                        ap->texture_entry);
+                    avatar_diagnostic.self_low158_texture_entry_received=true;
+                    avatar_diagnostic.self_low158_valid_bake_refs=
+                        static_cast<std::uint32_t>(bakes.valid_count());
+                    const auto body=bakes.visible_body();
+                    for(std::size_t i=0U;i<body.size();++i)
+                    {
+                        const bool valid=!body[i].empty();
+                        avatar_diagnostic.self_low158_head_upper_lower_refs[i]=valid;
+                        if(valid)
+                            ++avatar_diagnostic.self_low158_body_bake_refs;
+                    }
                     avatar_diagnostic.self_attachment_block_received=
                         ap->attachment_block_present;
                     avatar_diagnostic.self_attachment_block_count=

@@ -76,6 +76,20 @@ struct AvatarBakeInspector
     }
     else if(!proof.appearance_received)
         out.visual="Self-AvatarAppearance fehlt: Bake-GL NICHT belegt";
+    else if(proof.bakes.regions[0]==
+                nexverse::protocol::AvatarBakeTextureState::missing&&
+            proof.bakes.regions[1]==
+                nexverse::protocol::AvatarBakeTextureState::missing&&
+            proof.bakes.regions[2]==
+                nexverse::protocol::AvatarBakeTextureState::missing)
+        out.visual="Self Low158 da, Server liefert keine Body-Bake-IDs";
+    else if(proof.bakes.regions[0]==
+                nexverse::protocol::AvatarBakeTextureState::missing||
+            proof.bakes.regions[1]==
+                nexverse::protocol::AvatarBakeTextureState::missing||
+            proof.bakes.regions[2]==
+                nexverse::protocol::AvatarBakeTextureState::missing)
+        out.visual="Self Low158: Body-Bake-IDs noch unvollstaendig";
     else if(!proof.body_gpu_drawn())
         out.visual="Original Head/Upper/Lower BakeGL noch unvollstaendig";
     else if(!proof.fragment_query_known)

@@ -28,6 +28,10 @@ int main()
     r.wearables_legacy_items=17U;
     r.wearables_legacy_assets=14U;
     r.wearables_legacy_serial=8U;
+    r.self_low158_texture_entry_received=true;
+    r.self_low158_valid_bake_refs=8U;
+    r.self_low158_body_bake_refs=2U;
+    r.self_low158_head_upper_lower_refs={true,true,false};
     r.self_attachment_block_received=true;
     r.self_attachment_block_count=85U;
     r.movement_discontinuities=3U;
@@ -76,6 +80,12 @@ int main()
        text.find("wearables_legacy_items=17")==std::string::npos||
        text.find("wearables_legacy_assets=14")==std::string::npos||
        text.find("wearables_legacy_serial=8")==std::string::npos||
+       text.find("self_low158_texture_entry_received=yes")==std::string::npos||
+       text.find("self_low158_valid_bake_refs=8")==std::string::npos||
+       text.find("self_low158_body_bake_refs=2")==std::string::npos||
+       text.find("self_low158_head_ref=yes")==std::string::npos||
+       text.find("self_low158_upper_ref=yes")==std::string::npos||
+       text.find("self_low158_lower_ref=no")==std::string::npos||
        text.find("self_attachment_block_received=yes")==std::string::npos||
        text.find("self_attachment_block_count=85")==std::string::npos||
        text.find("movement_discontinuities=3")==std::string::npos||

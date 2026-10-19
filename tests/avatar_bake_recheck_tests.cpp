@@ -48,6 +48,17 @@ int main()
     proof.world_ready=true;
     proof.self_present=true;
     proof.appearance_received=true;
+    // A valid Low158 without bake UUIDs is a different blocker from
+    // an actual GPU/renderer failure. F3 must state the server gap.
+    if(ui::inspect_avatar_bakes(proof).visual.find(
+           "keine Body-Bake-IDs")==std::string::npos)return 16;
+    protocol::AvatarBakedTextures partial_server{};
+    partial_server.ids[0]="head";
+    proof.bakes=protocol::audit_avatar_bake_evidence(
+        partial_server,{});
+    if(ui::inspect_avatar_bakes(proof).visual.find(
+           "Body-Bake-IDs noch unvollstaendig")==std::string::npos)
+        return 17;
     protocol::AvatarBakedTextures bakes{};
     bakes.ids[0]="head";bakes.ids[1]="upper";bakes.ids[2]="lower";
     proof.bakes=protocol::audit_avatar_bake_evidence(bakes,{"head","lower"});

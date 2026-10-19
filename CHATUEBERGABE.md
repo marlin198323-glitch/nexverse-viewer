@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.494, Projektfortschritt 39 % (38,65 % gewichtet). NÄCHSTE Alpha.495–504.**
+
+19.10.2026 Alpha.485–494: Alpha.484 echte OpenGenesisLINK Low158-Legacy-Decodierung durch neue vollständige serverformatige Testkette mit Head/Upper/Lower UUID-Face-Overrides (Firestorm 8,9,10), zuverlässigem zerocodiertem LLUDP, TE-Parser, authentifiziertem Self-WorldModel, Streamingpriorität und GPU-Asset-Residency-Plan erweitert. Agentwechsel invalidiert alle drei. F3 unterscheidet keine oder teilweise Server-Bake-IDs von vorhandenen Bake-IDs bei noch fehlenden GPU-Draws. Privater Diagnosebericht zeigt aktuelle Self-Low158-Head-/Upper-/Lower-Bake-Referenzen nur als Zähler/Bools, keine UUIDs. Live Grid/GPU-Avatar/Outfit/WASD noch NICHT verifiziert: Fortschritt 39 %. Siehe docs/ALPHA485_494_LOW158_BODY_BAKE_SOURCE_AND_F3.md. Bei WEITER Alpha.495–504 genau zehn echte Blöcke. Branch develop-current, GitHub SHAs und Upstream prüfen, kein Produktionsdeploy.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Nächste Alpha.485–494, 39 %.**
 
 **ALPHA.484 PI5 ARM64 CI EXAKT VERIFIZIERT:** Feature-SHA 4afbfbbbc670bacc32b949ee4e1295f8b5b1f4eb, GitHub Actions self-hosted Pi5 Run 39290341106 = completed SUCCESS für exakt diesen SHA. Linux Mint x64 Vollbuild 373/373, Native/GL 158/158, Python 215/215, Headless-native PASS, Xvfb isolierter GUI-Start und X11 Taskleistenicon PASS. Der Pi5-CI umfasst ARM64 C++23 Headless und Python, keinen echten ARM GPU- oder autorisierten NexVerse-Live-Login. Sehr wichtiger echte Upstream Low158 Decoderfix: AppearanceHover 1 ohne AttachmentBlock muss akzeptiert werden. Echte Welt/Avatar mit COF-Bakes/Outfit und WASD nach Release erneut prüfen. Fortschritt 39 % (38,65 % gewichtet), kein produktives Deployment.

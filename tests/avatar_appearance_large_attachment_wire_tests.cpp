@@ -4,6 +4,9 @@
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/protocol/avatar_bakes.hpp"
+#include "nexverse/assets/avatar_bake_stream_priority.hpp"
+#include "nexverse/assets/texture_residency.hpp"
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -38,6 +41,30 @@ std::vector<std::uint8_t> entry()
         0U,0U // glow
     };
     te.insert(te.end(),fields.begin(),fields.end());
+    return te;
+}
+// Actual OpenSim GetBakesBytes TE can report independently sourced
+// head/upper/lower baked IDs. Exercise the full parser's bitfield
+// overrides, not fabricated static UUIDs inside the streaming planner.
+std::vector<std::uint8_t> baked_entry()
+{
+    const auto plain=entry();
+    std::vector<std::uint8_t> te(plain.begin(),plain.begin()+16U);
+    const std::array<const char*,3U> ids{
+        "11111111-1111-1111-1111-111111111111",
+        "22222222-2222-2222-2222-222222222222",
+        "33333333-3333-3333-3333-333333333333"
+    };
+    const std::array<std::uint8_t,3U> face_masks{0x82U,0x84U,0x88U};
+    for(std::size_t i=0U;i<ids.size();++i)
+    {
+        te.push_back(face_masks[i]);te.push_back(0U);
+        const auto bytes=protocol::uuid_to_bytes(ids[i]);
+        if(!bytes)return {};
+        te.insert(te.end(),bytes->begin(),bytes->end());
+    }
+    te.push_back(0U); // end texture UUID overrides
+    te.insert(te.end(),plain.begin()+17,plain.end());
     return te;
 }
 std::vector<std::uint8_t> datagram(std::string_view avatar,
@@ -75,14 +102,14 @@ std::vector<std::uint8_t> datagram(std::string_view avatar,
 // AppearanceData count=0, AppearanceHover count=1 + 3 floats,
 // and NO AttachmentBlock counter. Real server marks it ZeroCoded.
 std::vector<std::uint8_t> upstream_legacy_hover_packet(
-    std::string_view agent)
+    std::string_view agent,bool three_body_bakes=false)
 {
     std::vector<std::uint8_t> p;
     const auto id=protocol::uuid_to_bytes(agent);
     if(!id)return {};
     p.insert(p.end(),id->begin(),id->end());
     p.push_back(0U); // trial = false
-    const auto te=entry();
+    const auto te=three_body_bakes?baked_entry():entry();
     p.push_back(static_cast<std::uint8_t>(te.size()&255U));
     p.push_back(static_cast<std::uint8_t>(te.size()>>8U));
     p.insert(p.end(),te.begin(),te.end());
@@ -154,6 +181,41 @@ int main()
     auto upstream_foreign=decode(upstream_legacy_hover_packet(other));
     if(!upstream_foreign||w.apply_self_appearance(*upstream_foreign)||
        w.self_appearance()->avatar_id!=self)return 32;
+    // The three baked body UUIDs now survive the actual OpenGenesisLINK
+    // header/zero-coding/Low158/TE parse/authoritative-self pipeline,
+    // and are the FIRST assets retained by the real streaming planner.
+    auto with_body=make_world();
+    const auto baked_wire=upstream_legacy_hover_packet(self,true);
+    const auto baked_low158=decode(baked_wire);
+    if(!baked_low158||baked_low158->attachment_block_present||
+       !protocol::valid_self_appearance_texture_entry(
+           baked_low158->texture_entry)||
+       !with_body.apply_self_appearance(*baked_low158))return 33;
+    const auto refs=protocol::extract_avatar_bakes(
+        with_body.self_appearance()->texture_entry);
+    const auto body=with_body.self_render_bakes();
+    if(refs.valid_count()!=3U||body!=refs.visible_body()||
+       body[0]!="11111111-1111-1111-1111-111111111111"||
+       body[1]!="22222222-2222-2222-2222-222222222222"||
+       body[2]!="33333333-3333-3333-3333-333333333333")return 34;
+    const auto priority=assets::prioritize_avatar_body_bakes(
+        {{true,body,0.0f,0.0f,0.0f}},0.0f,0.0f,0.0f);
+    const auto residency=assets::plan_texture_residency(
+        {"particle"}, {"object"}, {"stale-body"},5U,priority);
+    if(priority.size()!=3U||
+       priority[0]!=body[0]||priority[1]!=body[1]||
+       priority[2]!=body[2]||
+       residency.preferred_ids.size()!=5U||
+       residency.preferred_ids[0]!=body[0]||
+       residency.preferred_ids[1]!=body[1]||
+       residency.preferred_ids[2]!=body[2]||
+       residency.desired_ids.contains("stale-body")||
+       residency.eviction_ids.size()!=1U)return 35;
+    // Switching the authenticated user erases all three server refs.
+    with_body.apply_agent({other,session,{},{},true});
+    if(with_body.self_appearance()||
+       with_body.self_render_bakes()!=std::array<std::string,3U>{})
+        return 36;
     const auto small=decode(datagram(self,1U));
     if(!small||small->attachments.size()!=1U||
        !small->attachment_block_present||

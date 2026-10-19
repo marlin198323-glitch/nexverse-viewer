@@ -68,6 +68,15 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.wearables_legacy_assets)+"\n"
        "wearables_legacy_serial="+
            std::to_string(r.wearables_legacy_serial)+"\n"
+       "self_low158_texture_entry_received="+
+           yn(r.self_low158_texture_entry_received)+"\n"
+       "self_low158_valid_bake_refs="+
+           std::to_string(r.self_low158_valid_bake_refs)+"\n"
+       "self_low158_body_bake_refs="+
+           std::to_string(r.self_low158_body_bake_refs)+"\n"
+       "self_low158_head_ref="+yn(r.self_low158_head_upper_lower_refs[0])+"\n"
+       "self_low158_upper_ref="+yn(r.self_low158_head_upper_lower_refs[1])+"\n"
+       "self_low158_lower_ref="+yn(r.self_low158_head_upper_lower_refs[2])+"\n"
        "self_attachment_block_received="+yn(r.self_attachment_block_received)+"\n"
        "self_attachment_block_count="+
            std::to_string(r.self_attachment_block_count)+"\n"
