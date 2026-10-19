@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Nächste Alpha.485–494, 39 %.**
+
+**ALPHA.484 PI5 ARM64 CI EXAKT VERIFIZIERT:** Feature-SHA 4afbfbbbc670bacc32b949ee4e1295f8b5b1f4eb, GitHub Actions self-hosted Pi5 Run 39290341106 = completed SUCCESS für exakt diesen SHA. Linux Mint x64 Vollbuild 373/373, Native/GL 158/158, Python 215/215, Headless-native PASS, Xvfb isolierter GUI-Start und X11 Taskleistenicon PASS. Der Pi5-CI umfasst ARM64 C++23 Headless und Python, keinen echten ARM GPU- oder autorisierten NexVerse-Live-Login. Sehr wichtiger echte Upstream Low158 Decoderfix: AppearanceHover 1 ohne AttachmentBlock muss akzeptiert werden. Echte Welt/Avatar mit COF-Bakes/Outfit und WASD nach Release erneut prüfen. Fortschritt 39 % (38,65 % gewichtet), kein produktives Deployment.
+
 # Alpha.475–484 – echter OpenGenesisLINK Low158-Server-Skinfix
 
 19.10.2026 | develop-current | 0.2.0-alpha.484 | Projektfortschritt 39 % (38,65 % gewichtet).
