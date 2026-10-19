@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). NÄCHSTE Alpha.515–524, 39 %.**
+
+**ALPHA.514 Pi5 ARM64-CI VERIFIZIERT:** GitHub Actions Run 39296348575 = COMPLETED SUCCESS exakt für Feature-SHA bcc02ddd046bc4133aa8f5b5875996452077835c. Mint x64 Build 375/375 PASS, native C++/OpenGL CTest 159/159 PASS, Python 237/237 PASS, ARM64-kompatibles Headless, isolierter Xvfb-Viewer und X11 WM_CLASS/Systemicon PASS. Pi5 prüft native ARM64 Headless C++23 + Python, keine native Pi5 GPU/GUI und keinen NexVerse-Live-Login. Authentifizierte Body-Bake-ID-Änderungen führen jetzt ohne 750-ms-Verzögerung zur EXISTIERENDEN GPU-Residency-Neuplanung, einschließlich Eviction alter Bakes; HTTP Retry/Backoff/VRAM-Budget bleibt unberührt. Keine neue bestätigte sichtbare NexVerse Skin/Kleidung/COF/Attachments/WASD, deshalb 39 % (38,65 % gewichtet). Nächste 10 Blöcke Alpha.515–524. Kein Produktionsupdate.
+
 # Alpha.505–514 – sichere sofortige Avatar-Bake-Textur-Neuplanung
 
 19.10.2026 | develop-current | Version 0.2.0-alpha.514 | Projektfortschritt 39 % (38,65 % gewichtet)
