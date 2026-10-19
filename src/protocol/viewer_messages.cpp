@@ -1614,8 +1614,15 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
         message.hover_heights.push_back(hover);
         offset += 12U;
     }
-    if (offset >= payload.size()) return reject(AvatarAppearanceFailure::attachments);
+    // Verified OpenGenesisLINK server main (Oct 19 2026):
+    // LLClientView.SendAppearance emits one AppearanceHover vector but
+    // DOES NOT serialize AttachmentBlock. Old OGL treated the legitimate
+    // end-of-message as corruption, losing all self/remote appearances.
+    // Accept only complete hover data here; truncated hover is rejected
+    // above. Modern senders may still supply an explicit block count.
+    if (offset == payload.size()) return message;
     const std::size_t attachment_count = payload[offset++];
+    message.attachment_block_present=true;
     // Firestorm AttachmentBlock is Variable 1: its wire counter is U8,
     // so 65..255 entries are legal (multiple attachments per attach point).
     // An arbitrary 64-object limit dropped otherwise valid modern SSA.

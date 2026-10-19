@@ -409,6 +409,9 @@ struct AvatarAppearanceMessage
     // AppearanceHover Variable (LLVector3) then AttachmentBlock Variable
     // (LLUUID + U8 attachment point). Legacy OpenSim senders may omit tail.
     std::vector<Vec3> hover_heights;
+    // A missing legacy AttachmentBlock differs from an explicit zero
+    // modern block. Neither implies rendered attachment meshes.
+    bool attachment_block_present=false;
     std::vector<AvatarAttachmentData> attachments;
 };
 

@@ -5732,6 +5732,9 @@ int Application::run(bool enable_developer_modules)
                                std::to_string(appearance->visual_params.size())+
                                "; attachment_blocks="+
                                std::to_string(appearance->attachments.size())+
+                               (appearance->attachment_block_present
+                                    ?"; modern_attachment_block=present"
+                                    :"; legacy_attachment_block=omitted")+
                                "; original weighted body rig used when installed; "
                                "morphs/COF not verified");
                 return;
@@ -12929,7 +12932,8 @@ int Application::run(bool enable_developer_modules)
                    ap->avatar_id==active_session->agent_id&&
                    world_model.region().connected)
                 {
-                    avatar_diagnostic.self_attachment_block_received=true;
+                    avatar_diagnostic.self_attachment_block_received=
+                        ap->attachment_block_present;
                     avatar_diagnostic.self_attachment_block_count=
                         static_cast<std::uint32_t>(ap->attachments.size());
                 }
@@ -13227,7 +13231,8 @@ int Application::run(bool enable_developer_modules)
                        active_session&&
                        appearance->avatar_id==active_session->agent_id)
                     {
-                        shell_view.avatar_self_attachment_packet=true;
+                        shell_view.avatar_self_attachment_packet=
+                            appearance->attachment_block_present;
                         shell_view.attachments=appearance->attachments.size();
                     }
                     shell_view.objects=world_model.objects().size();

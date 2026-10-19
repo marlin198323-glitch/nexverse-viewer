@@ -70,6 +70,47 @@ std::vector<std::uint8_t> datagram(std::string_view avatar,
         protocol::packet_reliable,serial,protocol::msg_avatar_appearance,
         payload);
 }
+// Exact OpenGenesisLINK main LLClientView.SendAppearance Low158 layout:
+// AvatarID, IsTrial, TE Variable2, VisualParams Variable1,
+// AppearanceData count=0, AppearanceHover count=1 + 3 floats,
+// and NO AttachmentBlock counter. Real server marks it ZeroCoded.
+std::vector<std::uint8_t> upstream_legacy_hover_packet(
+    std::string_view agent)
+{
+    std::vector<std::uint8_t> p;
+    const auto id=protocol::uuid_to_bytes(agent);
+    if(!id)return {};
+    p.insert(p.end(),id->begin(),id->end());
+    p.push_back(0U); // trial = false
+    const auto te=entry();
+    p.push_back(static_cast<std::uint8_t>(te.size()&255U));
+    p.push_back(static_cast<std::uint8_t>(te.size()>>8U));
+    p.insert(p.end(),te.begin(),te.end());
+    p.insert(p.end(),{3U,120U,121U,122U}); // actual visualparams
+    p.push_back(0U); // appearance-data count=0
+    p.push_back(1U); // hover count=1
+    le32(p,0U);le32(p,0U);le32(p,0x3e800000U); // hover Z=0.25
+    const auto plain=protocol::encode_packet(
+        protocol::packet_reliable,32U,protocol::msg_avatar_appearance,p);
+    // The actual OpenGenesisLINK server sets both reliable and
+    // zerocoded bit; encode wire zero runs after the six header bytes.
+    std::vector<std::uint8_t> wire(plain.begin(),plain.begin()+6);
+    wire[0]=static_cast<std::uint8_t>(
+        protocol::packet_reliable|protocol::packet_zerocoded);
+    for(std::size_t i=6U;i<plain.size();)
+    {
+        if(plain[i]!=0U)
+        {
+            wire.push_back(plain[i++]);
+            continue;
+        }
+        const auto begin=i;
+        while(i<plain.size()&&plain[i]==0U&&i-begin<255U)++i;
+        wire.push_back(0U);
+        wire.push_back(static_cast<std::uint8_t>(i-begin));
+    }
+    return wire;
+}
 std::optional<protocol::AvatarAppearanceMessage> decode(
     const std::vector<std::uint8_t>& message,
     protocol::AvatarAppearanceFailure* fail=nullptr)
@@ -94,8 +135,28 @@ int main()
     const auto te=entry();
     if(!protocol::valid_self_appearance_texture_entry(te))return 1;
     auto w=make_world();
+    const auto upstream_wire=upstream_legacy_hover_packet(self);
+    const auto server_frame=protocol::decode_lludp_packet(upstream_wire);
+    const auto legacy=decode(upstream_wire);
+    if(!server_frame.ok()||!legacy||
+       server_frame.packet->header.message!=protocol::msg_avatar_appearance||
+       (server_frame.packet->header.flags&protocol::packet_zerocoded)==0U||
+       legacy->trial||!legacy->appearance_data.empty()||
+       legacy->hover_heights.size()!=1U||
+       legacy->hover_heights.front().z!=0.25f||
+       legacy->attachment_block_present||!legacy->attachments.empty()||
+       !w.apply_self_appearance(*legacy)||
+       w.self_appearance()->attachment_block_present)
+        return 30;
+    auto upstream_truncated=upstream_wire;
+    upstream_truncated.pop_back();
+    if(decode(upstream_truncated))return 31;
+    auto upstream_foreign=decode(upstream_legacy_hover_packet(other));
+    if(!upstream_foreign||w.apply_self_appearance(*upstream_foreign)||
+       w.self_appearance()->avatar_id!=self)return 32;
     const auto small=decode(datagram(self,1U));
     if(!small||small->attachments.size()!=1U||
+       !small->attachment_block_present||
        !w.apply_self_appearance(*small))return 2;
     // Previously hard-coded 64-object cutoff broke authentic 65+ object
     // modern packets (multiple attachments per avatar attach point).

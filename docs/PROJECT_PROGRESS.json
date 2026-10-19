@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-19",
-  "viewer_version": "0.2.0-alpha.474",
+  "viewer_version": "0.2.0-alpha.484",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.475–484",
-  "assessment": "Alpha.474 adds actual clickable and keyboard-driven navigation from F3 authenticated avatar proof to the existing F9 outfit gallery; responsive click/hit guard prevents invisible buttons on narrow viewports. The read-only legacy Low382 versus original COF audit now reports distinct mismatch/missing/extra/duplicate/unresolved counters within the 99-character F9 text limit, preserving the explicit no-wear-proof disclaimer. FetchInventory2 original items are bound to the authenticated owner as well as region epoch, COF folder and version. Authenticated NexVerse Self AvatarAppearance, rendered skin/outfit/COF and actual WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.485–494",
+  "assessment": "Alpha.484 fixes a confirmed actual OpenGenesisLINK Server main 293d1d6 compatibility defect: LLClientView.SendAppearance Low158 sends AppearanceHover count=1 without any AttachmentBlock count. The old Viewer wrongly rejected this legitimate self appearance as invalid attachments. Decoder now correctly accepts full legacy hover-only packets, preserving modern strict attachment parsing and truncated-hover rejection. Authenticated self WorldModel tested using real-format reliable zerocoded Low158 bytes and verified valid skin TE; F3/OpenGL and anonymous diagnostics distinguish absent legacy block from explicit modern block. Authentic live NexVerse avatar/outfit/COF/bakes and simulator-confirmed WASD end-to-end still open and unverified; weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.475–484",
+  "next_batch": "Alpha.485–494",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "a0785f24d77d9c8699ebb80ac27f02489b8b81e2",

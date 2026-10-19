@@ -28,7 +28,8 @@ class Low158Attachments(unittest.TestCase):
   app=read("src/app/application.cpp")
   view=read("src/ui/viewer_shell_render.cpp")
   hdr=read("include/nexverse/ui/viewer_shell_render.hpp")
-  self.assertIn("shell_view.avatar_self_attachment_packet=true;",app)
+  self.assertIn("shell_view.avatar_self_attachment_packet=",app)
+  self.assertIn("appearance->attachment_block_present;",app)
   self.assertIn("appearance->avatar_id==active_session->agent_id",app)
   self.assertIn("shell_view.attachments=appearance->attachments.size();",app)
   self.assertIn("SSA-Anhaenge:",view)
@@ -45,13 +46,13 @@ class Low158Attachments(unittest.TestCase):
   self.assertIn("view.attachments=85U",cpp)
   self.assertIn("view.avatar_self_attachment_packet=false",cpp)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.474")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.484")
   meta=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.474")
-  self.assertEqual(meta["next_batch"],"Alpha.475–484")
+  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.484")
+  self.assertEqual(meta["next_batch"],"Alpha.485–494")
   self.assertEqual(meta["default_blocks_per_run"],10)
   self.assertIn("still open",meta["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.475–484",read(f)[:1200])
+   self.assertIn("Alpha.485–494",read(f)[:1200])
 if __name__=="__main__":unittest.main()

@@ -824,6 +824,24 @@ int main()
     const auto empty_appearance=decode_avatar_appearance(empty_tail);
     if(!empty_appearance || !empty_appearance->attachments.empty() ||
        !empty_appearance->hover_heights.empty())return 108;
+    // This is the real OpenGenesisLINK server main LLClientView
+    // SendAppearance layout: 0 AppearanceData, hover=1, NO attachment
+    // count byte. It must not be discarded as an invalid message.
+    auto server_legacy_hover=appearance_payload;
+    server_legacy_hover.push_back(1U);
+    append_u32_vec(server_legacy_hover,0U);
+    append_u32_vec(server_legacy_hover,0U);
+    append_u32_vec(server_legacy_hover,0x3e800000U);
+    const auto legacy_hover=decode_avatar_appearance(server_legacy_hover);
+    if(!legacy_hover||legacy_hover->hover_heights.size()!=1U||
+       legacy_hover->hover_heights.front().z!=0.25f||
+       legacy_hover->attachment_block_present||
+       !legacy_hover->attachments.empty())return 132;
+    if(!modern->attachment_block_present||
+       !empty_appearance->attachment_block_present)return 133;
+    auto truncated_hover=server_legacy_hover;
+    truncated_hover.pop_back();
+    if(decode_avatar_appearance(truncated_hover))return 134;
     auto truncated=complete_appearance;
     truncated.pop_back();
     if(decode_avatar_appearance(truncated))return 109;

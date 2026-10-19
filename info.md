@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.484, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.485–494.**
+
+19.10.2026 Alpha.475–484: WICHTIGER REALER OPENGENESISLINK-SERVERFEHLER IN OGL BEHOBEN. Server-main 293d1d6 LLClientView.SendAppearance sendet Self-Low158 mit AppearanceHover(1), aber KEIN AttachmentBlock-Feld. Alter Viewer verweigerte diese gültige Serverantwort als malformed attachments und verlor reale Skin. Jetzt vollständig geparstes Legacy Hover ohne Anhangblock akzeptiert; moderne Anhänge und abgeschnittene Daten streng geprüft. Eigenes Flag attachment_block_present trennt Legacy ohne Block von modern mit explizitem 0; F3/privater Diagnosebericht/Logs zeigen korrekten Status. Native reliable+zerocoded Serverformat Low158 -> LLUDP -> Self WorldModel erfolgreich, Native C++/GL/Python/Headless, Xvfb, Icon und Pi5 CI. Echtes NexVerse Avatar/Outfit/COF/GPU/WASD weiterhin NICHT neu live verifiziert, Status 39 %. Dokumentation docs/ALPHA475_484_OPENGENESISLINK_REAL_LOW158_LEGACY_WIRE.md. Nächste zehn Blöcke Alpha.485–494. Bei WEITER GitHub Branch/CI und Server upstream zuerst prüfen, keine Produktionsbereitstellung.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). Alpha.475–484, Fortschritt 39 %.**
 
 **ALPHA.474 PI5 ARM64 CI VERIFIZIERT:** GitHub Run 39288055994 = completed SUCCESS fuer EXACT Feature-SHA a0785f24d77d9c8699ebb80ac27f02489b8b81e2. Mint x64 Build 373/373, native/OpenGL CTest 158/158, Python 207/207, ARM64-kompatibles Headless, isolierter Xvfb-Viewer sowie echtes X11 Taskleistenicon/WM_CLASS PASS. Offizieller Pi5-Lauf nur Headless C++23/Python, KEIN Pi5-OpenGL-GUI-Build. Kein echter authentifizierter NexVerse-Self-Skin-/Outfit-/COF-/WASD-End-to-End-Nachweis, Projektfortschritt weiter 39 % (38,65 % gewichtet). Naechste 10 Bloecke Alpha.475–484. Kein automatisches Produktionsupdate.

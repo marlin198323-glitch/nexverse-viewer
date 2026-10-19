@@ -77,9 +77,16 @@ int main()
                 if(glGetError()!=GL_NO_ERROR)error=6;
                 view.avatar_self_attachment_packet=false;
                 view.attachments=0U;
+                // Authenticated legacy Low158 has a skin but no
+                // AttachmentBlock byte. Keep this real F3 state visible
+                // and distinct from a missing AvatarAppearance packet.
+                view.appearance_ready=true;
                 view.avatar_wearables_status="Wearables: Legacy-Antwort ausstehend";
                 render_viewer_shell(renderer,1280,800,state,view);
                 if(glGetError()!=GL_NO_ERROR)error=7;
+                view.appearance_ready=false;
+                render_viewer_shell(renderer,1280,800,state,view);
+                if(glGetError()!=GL_NO_ERROR)error=8;
             }
             if(!error)
             {
