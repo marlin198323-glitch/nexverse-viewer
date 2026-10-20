@@ -14,7 +14,10 @@ class RealAttachmentSource(unittest.TestCase):
   s=read("src/app/application.cpp")
   self.assertIn("object.state=entry.state;",s)
   self.assertIn("object.parent_id = entry.parent_id;",s)
-  self.assertIn("object.parent_id = existing->second.parent_id;",s)
+  # Since Alpha.564 a 64-byte compressed header cannot inherit
+  # another UUID's parent; only an exact current UUID can update it.
+  self.assertIn("world_model.apply_object_compressed_partial(entry)",s)
+  self.assertIn("object.parent_id = entry.parent_id;",s)
   self.assertIn("std::uint8_t state=0U;",read("include/nexverse/world/world_model.hpp"))
  def test_attachment_nibbles_and_current_sim_parent(self):
   s=read("include/nexverse/world/attachment_state.hpp")
@@ -46,13 +49,13 @@ class RealAttachmentSource(unittest.TestCase):
   self.assertIn('"self_object_attachment_roots="+',d)
   self.assertNotIn("self_object_attachment_uuid=",d)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.554")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.564")
   j=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.554")
-  self.assertEqual(j["next_batch"],"Alpha.555–564")
+  self.assertEqual(j["viewer_version"],"0.2.0-alpha.564")
+  self.assertEqual(j["next_batch"],"Alpha.565–574")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.555–564",read(f)[:1600])
+   self.assertIn("Alpha.565–574",read(f)[:1600])
 if __name__=="__main__":unittest.main()

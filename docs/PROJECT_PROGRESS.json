@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-20",
-  "viewer_version": "0.2.0-alpha.554",
+  "viewer_version": "0.2.0-alpha.564",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.555–564",
-  "assessment": "Alpha.554 fixes actual High9 ImprovedTerseObjectUpdate corruption: the old OGL dispatcher overwrote full non-avatar ObjectStates with pose-only placeholders, clearing real OpenGenesisLINK AttachmentPoint State, parsed TextureEntry and mesh metadata, and introducing unknown UUID-less phantom prims. A new region- and identity-gated WorldModel::apply_object_terse mutates only current recognized prim position and rotation, rejects unknown/stale/invalid/nonfinite/zero quaternion, prevents duplicate scene revisions and keeps parent, attachment, mesh, material and texture. Native regression proves all original fields survive, invalid/unknown packets are harmless; actual GL framebuffer pixels of a Firestorm skeleton attachment change following the preserved real WorldModel terse pose. Authenticated real NexVerse self avatar skin/outfit/COF and simulator-confirmed WASD end-to-end still open and unverified, weighted 38.65 percent (39 rounded).",
+  "next_five_blocks": "Alpha.565–574",
+  "assessment": "Alpha.564 fixes a genuine CompressedObjectUpdate 64-byte partial-header bug. OGL formerly inserted unknown phantom prims and could transplant old parent/attachment/mesh/TextureEntry to a newly allocated different UUID sharing the previous LocalID. A new active-region WorldModel apply_object_compressed_partial requires exact existing LocalID+UUID+PCode and validated finite pose, updates only State and transform, preserves parent, mesh, all GPU texture source metadata. State=0 correctly detaches. Real 64-byte compressed packet decoded then integrated with current WorldModel in C++ tests, with foreign-UUID negative check; Firestorm animated OpenGL attachment framebuffer changes when partial source pose moves. Upstream OpenGenesisLINK main 95c2133 changed only Hypergrid stats API. Authenticated real NexVerse skin/COF/outfit and simulator-confirmed WASD end-to-end still open/unverified, weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.555–564",
+  "next_batch": "Alpha.565–574",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "6e85be50e84e685f3049bf90dc6834746ea468c9",

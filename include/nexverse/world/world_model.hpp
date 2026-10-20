@@ -282,6 +282,11 @@ public:
     // erase preexisting shape, attachment point, materials and meshes.
     [[nodiscard]] bool apply_object_terse(
         std::uint32_t local_id,Vec3 position,Quaternion rotation);
+    // Compressed ObjectData may have only the first 64 bytes. Such a packet
+    // MUST match an existing prim by BOTH LocalID and UUID before it can
+    // update State/pose; missing mesh/TE/ParentID are never fabricated.
+    [[nodiscard]] bool apply_object_compressed_partial(
+        const protocol::ObjectUpdateCompressedEntry& partial);
     void remove_object(std::uint32_t local_id);
     void set_terrain(TerrainState terrain);
     void set_terrain_materials(TerrainMaterials materials);

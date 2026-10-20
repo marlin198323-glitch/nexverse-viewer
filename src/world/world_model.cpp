@@ -350,6 +350,44 @@ bool WorldModel::apply_object_terse(
     return true;
 }
 
+bool WorldModel::apply_object_compressed_partial(
+    const protocol::ObjectUpdateCompressedEntry& partial)
+{
+    if(!region_.connected || partial.has_complete_prim_data ||
+       partial.local_id==0U || partial.id.empty() ||
+       partial.pcode!=protocol::pcode_prim)
+        return false;
+    const auto it=objects_.find(partial.local_id);
+    // LocalIDs may be recycled after KillObject. Never graft the previous
+    // mesh/TE/attachment ParentID onto a *different* UUID.
+    if(it==objects_.end()||it->second.id!=partial.id||
+       it->second.pcode!=partial.pcode)return false;
+    const auto finite=[](float v){return std::isfinite(v);};
+    const auto& pos=partial.position;
+    const auto& q=partial.rotation;
+    if(!finite(pos.x)||!finite(pos.y)||!finite(pos.z)||
+       !finite(q.x)||!finite(q.y)||!finite(q.z)||!finite(q.w))
+        return false;
+    const double norm=double(q.x)*q.x+double(q.y)*q.y+
+        double(q.z)*q.z+double(q.w)*q.w;
+    if(!std::isfinite(norm)||norm<0.25||norm>4.0)
+        return false;
+    auto& current=it->second;
+    if(current.state==partial.state &&
+       current.position.x==pos.x&&current.position.y==pos.y&&
+       current.position.z==pos.z&&current.rotation.x==q.x&&
+       current.rotation.y==q.y&&current.rotation.z==q.z&&
+       current.rotation.w==q.w)
+        return false;
+    // A partial compressed packet DOES carry a fresh State byte, which
+    // can signal an attachment-point change or detachment (state=0).
+    current.state=partial.state;
+    current.position=pos;
+    current.rotation=q;
+    ++object_revision_;
+    return true;
+}
+
 void WorldModel::remove_object(std::uint32_t local_id)
 {
     if (objects_.erase(local_id) > 0U)

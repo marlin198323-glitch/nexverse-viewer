@@ -140,6 +140,26 @@ int main()
         std::cout<<"TERSE_ATTACHMENT_WORLD_MODEL_GPU_PIXELS="
                  <<actual_terse_gpu_pixels<<"\n";
         if(actual_terse_gpu_pixels<40U)failure=13;
+        // The 64-byte ObjectUpdateCompressed header is ALSO pose/State-
+        // only. A current UUID-matched header must keep its avatar
+        // attachment and change genuine framebuffer pixels.
+        nexverse::protocol::ObjectUpdateCompressedEntry partial{};
+        partial.id="sleeve";
+        partial.local_id=200U;
+        partial.pcode=nexverse::protocol::pcode_prim;
+        partial.state=0x10U;
+        partial.position={0.0f,-0.8f,0.0f};
+        partial.rotation={0.0f,0.0f,0.0f,1.0f};
+        if(!region_objects.apply_object_compressed_partial(partial)||
+           nexverse::world::infer_avatar_attachment_points(
+               region_objects.objects(),avatar.local_id).at("sleeve")!=1U)
+            failure=14;
+        attached.position={partial.position.x,partial.position.y,partial.position.z};
+        const auto compressed_pixels=normalized_object(0.22);
+        const auto compressed_delta=differences(moved_pose,compressed_pixels);
+        std::cout<<"PARTIAL_COMPRESSED_ATTACHMENT_GL_PIXELS="
+                 <<compressed_delta<<"\n";
+        if(compressed_delta<40U)failure=15;
         attached.position={0.0f,0.0f,0.0f};
         // Without a verified skeleton binding the same worn object stays
         // at its legacy bind offset, even as the provisional avatar walks.
