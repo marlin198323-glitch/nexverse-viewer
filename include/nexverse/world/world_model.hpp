@@ -277,6 +277,11 @@ public:
                                  Quaternion rotation,std::uint32_t local_id);
     void remove_avatar(const std::string& id);
     void upsert_object(ObjectState object);
+    // A High9 ImprovedTerseObjectUpdate has ONLY pose, never an object
+    // identity or a complete TextureEntry. Do not create phantom prims or
+    // erase preexisting shape, attachment point, materials and meshes.
+    [[nodiscard]] bool apply_object_terse(
+        std::uint32_t local_id,Vec3 position,Quaternion rotation);
     void remove_object(std::uint32_t local_id);
     void set_terrain(TerrainState terrain);
     void set_terrain_materials(TerrainMaterials materials);

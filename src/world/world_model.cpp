@@ -315,6 +315,41 @@ void WorldModel::upsert_object(ObjectState object)
     ++object_revision_;
 }
 
+bool WorldModel::apply_object_terse(
+    std::uint32_t local_id,Vec3 position,Quaternion rotation)
+{
+    if(!region_.connected || local_id==0U)return false;
+    const auto it=objects_.find(local_id);
+    // Terse packets never establish a prim's UUID, parent, material or
+    // sculpt asset. Wait for a FULL/COMPRESSED ObjectUpdate.
+    if(it==objects_.end()||it->second.pcode!=protocol::pcode_prim||
+       it->second.id.empty())return false;
+    const auto finite=[](float v){return std::isfinite(v);};
+    if(!finite(position.x)||!finite(position.y)||!finite(position.z)||
+       !finite(rotation.x)||!finite(rotation.y)||
+       !finite(rotation.z)||!finite(rotation.w))
+        return false;
+    const double norm=double(rotation.x)*rotation.x+
+        double(rotation.y)*rotation.y+
+        double(rotation.z)*rotation.z+
+        double(rotation.w)*rotation.w;
+    if(!std::isfinite(norm)||norm<0.25||norm>4.0)
+        return false;
+    auto& current=it->second;
+    if(current.position.x==position.x&&
+       current.position.y==position.y&&
+       current.position.z==position.z&&
+       current.rotation.x==rotation.x&&
+       current.rotation.y==rotation.y&&
+       current.rotation.z==rotation.z&&
+       current.rotation.w==rotation.w)
+        return false; // duplicate Terse does not reupload scene
+    current.position=position;
+    current.rotation=rotation;
+    ++object_revision_;
+    return true;
+}
+
 void WorldModel::remove_object(std::uint32_t local_id)
 {
     if (objects_.erase(local_id) > 0U)

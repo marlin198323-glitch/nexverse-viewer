@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-20",
-  "viewer_version": "0.2.0-alpha.544",
+  "viewer_version": "0.2.0-alpha.554",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.545–554",
-  "assessment": "Alpha.544 integrates real OpenGenesisLINK server legacy body attachments without the absent low158 AttachmentBlock. Current server LLClientView encodes AttachmentPoint nibble-swapped in Full ObjectUpdate.State and Compressed ObjectData.State; OGL had skipped these. Full and compressed parsers now preserve State through current-region WorldModel. Only current Avatar LocalID matching root Prim ParentID and valid Firestorm slots 1-55 produce a provisional real server object attachment, preserving explicit Low158 points for self/remote rig rendering and HUD exclusion. Native packet, GL framebuffer animated attachments, HUD classification and UUID-free F3 diagnostics test the path. Authenticated live NexVerse own avatar, COF clothing and WASD end-to-end still open/unverified; weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.555–564",
+  "assessment": "Alpha.554 fixes actual High9 ImprovedTerseObjectUpdate corruption: the old OGL dispatcher overwrote full non-avatar ObjectStates with pose-only placeholders, clearing real OpenGenesisLINK AttachmentPoint State, parsed TextureEntry and mesh metadata, and introducing unknown UUID-less phantom prims. A new region- and identity-gated WorldModel::apply_object_terse mutates only current recognized prim position and rotation, rejects unknown/stale/invalid/nonfinite/zero quaternion, prevents duplicate scene revisions and keeps parent, attachment, mesh, material and texture. Native regression proves all original fields survive, invalid/unknown packets are harmless; actual GL framebuffer pixels of a Firestorm skeleton attachment change following the preserved real WorldModel terse pose. Authenticated real NexVerse self avatar skin/outfit/COF and simulator-confirmed WASD end-to-end still open and unverified, weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.545–554",
+  "next_batch": "Alpha.555–564",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "8a8c0b3d1415bdca3d05eedd47a88f4e20db7360",

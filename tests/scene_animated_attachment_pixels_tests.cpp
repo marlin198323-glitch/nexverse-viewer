@@ -51,11 +51,17 @@ int main()
         root.local_id=200U;root.id="sleeve";
         root.pcode=nexverse::protocol::pcode_prim;
         root.parent_id=51U;root.state=0x10U;
-        std::map<std::uint32_t,nexverse::world::ObjectState> region_objects;
-        region_objects.emplace(root.local_id,root);
+        nexverse::world::WorldModel region_objects;
+        region_objects.apply_region({
+            0x0000010000000200ULL,"NexVerse",{128.0f,128.0f,25.0f},
+            "127.0.0.1",9000U,"https://caps.example/seed",
+            "aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",0x10U,0U,0U,
+            13U,20.0f,"OpenGenesisLINK Test",256U,256U,true});
+        root.rotation={0.0f,0.0f,0.0f,1.0f};
+        region_objects.upsert_object(root);
         const auto inferred=
             nexverse::world::infer_avatar_attachment_points(
-                region_objects,avatar.local_id);
+                region_objects.objects(),avatar.local_id);
         avatar.attachments.insert(inferred.begin(),inferred.end());
         if(avatar.attachments.size()!=1U||
            avatar.attachments.at("sleeve")!=1U)failure=11;
@@ -116,6 +122,25 @@ int main()
         std::cout<<"JOINT_ATTACHMENT_POSED_RGB_PIXELS="<<changed
                  <<" BONE_POSE_AVATARS="<<count<<"\n";
         if(changed<40U||count!=1U)failure=3;
+        // ImprovedTerse now modifies ONLY the same live root prim pose.
+        // The Firestorm animated shoulder must remain attached, and a
+        // changed server prim offset must actually move GPU pixels.
+        const auto old_pose=normalized_object(0.22);
+        if(!region_objects.apply_object_terse(
+               200U,{0.0f,0.8f,0.0f},
+               {0.0f,0.0f,0.0f,1.0f})||
+           nexverse::world::infer_avatar_attachment_points(
+               region_objects.objects(),avatar.local_id)
+               .at("sleeve")!=1U)
+            failure=12;
+        const auto& new_pos=region_objects.objects().at(200U).position;
+        attached.position={new_pos.x,new_pos.y,new_pos.z};
+        const auto moved_pose=normalized_object(0.22);
+        const auto actual_terse_gpu_pixels=differences(old_pose,moved_pose);
+        std::cout<<"TERSE_ATTACHMENT_WORLD_MODEL_GPU_PIXELS="
+                 <<actual_terse_gpu_pixels<<"\n";
+        if(actual_terse_gpu_pixels<40U)failure=13;
+        attached.position={0.0f,0.0f,0.0f};
         // Without a verified skeleton binding the same worn object stays
         // at its legacy bind offset, even as the provisional avatar walks.
         rig.attachment_joint_plus_one[1U]=0U;

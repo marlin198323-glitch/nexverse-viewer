@@ -5518,30 +5518,11 @@ int Application::run(bool enable_developer_modules)
                     continue;
                 }
 
-                world::ObjectState object;
-                object.local_id = update.local_id;
-                object.position = update.position;
-                object.rotation = update.rotation;
-
-                if (const auto existing = world_model.objects().find(update.local_id);
-                    existing != world_model.objects().end())
-                {
-                    object.id = existing->second.id;
-                    object.pcode = existing->second.pcode;
-                    object.parent_id = existing->second.parent_id;
-                    object.scale = existing->second.scale;
-                    object.shape = existing->second.shape;
-                    object.sculpt_asset_id = existing->second.sculpt_asset_id;
-                    object.sculpt_type = existing->second.sculpt_type;
-                    object.point_light = existing->second.point_light;
-                    object.particle_system = existing->second.particle_system;
-                    object.texture_entry =
-                        existing->second.texture_entry;
-                    object.default_texture =
-                        existing->second.default_texture;
-                }
-
-                world_model.upsert_object(std::move(object));
+                // High9 is pose-only. Replacing a full prim here used to
+                // erase state (attachment point) and parsed TextureEntry.
+                // Unknown local IDs wait for a full or compressed packet.
+                (void)world_model.apply_object_terse(
+                    update.local_id,update.position,update.rotation);
             }
         });
 
