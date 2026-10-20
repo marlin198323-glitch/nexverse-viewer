@@ -61,10 +61,10 @@
   "next_batch": "Alpha.555–564",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "8a8c0b3d1415bdca3d05eedd47a88f4e20db7360",
-    "run_id": 39455400291,
+    "tested_sha": "6e85be50e84e685f3049bf90dc6834746ea468c9",
+    "run_id": 39457621156,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 source/native headless C++23 plus Python. Mint x64 full GUI/OpenGL separately."
+    "scope": "Pi5 ARM64 native C++23 headless and Python; full GUI/OpenGL verified separately on Mint x64"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {

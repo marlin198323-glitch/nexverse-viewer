@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.554, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.555–564.**
+
+**ALPHA.554 PI5 ARM64 CI EXAKT VERIFIZIERT:** GitHub Actions Run 39457621156 = COMPLETED SUCCESS, Pi5 Headless-Job 118748503752, für Feature-SHA 6e85be50e84e685f3049bf90dc6834746ea468c9. Mint x64 vollständiger Build 379/379, native C++/OpenGL 161/161 PASS, Python 266/266 PASS, ARM64-kompatibles Headless, isolierter Xvfb Viewer und X11 Systemicon/WM_CLASS PASS. ECHTE High9 ImprovedTerse-Pose löscht nicht mehr AttachmentState, geparsten TextureEntry, Material/Mesh/ParentID; unbekannte Objekte werden nicht als Phantomprim erstellt. Original Firestorm-Rig gl-Framebuffer-Test belegt veränderte Pixel bei solcher Bewegung. Pi5-CI ist ausschließlich ARM64 C++23 Headless/Python, keine Pi5-GUI und kein auth Live-NexVerse. Avatar-Skin/COF/Outfit/Bewegung im realen NexVerse-Grid noch NICHT aktuell end-to-end bestätigt; Fortschritt 39 %. Nächste zehn Blöcke Alpha.555–564, kein Produktionsdeploy.
+
 # Alpha.545–554 – ImprovedTerse verliert keine Avatar-Anhangpunkte und TextureEntries mehr
 
 20.10.2026 | develop-current | Version 0.2.0-alpha.554 | Status 39 % (38,65 % gewichtet)
