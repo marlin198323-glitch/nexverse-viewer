@@ -13321,6 +13321,7 @@ int Application::run(bool enable_developer_modules)
                     const auto& agent=world_model.agent();
                     shell_view.region_name=region.name;
                     shell_view.region_connected=region.connected;
+                    shell_view.region_generation=region.generation;
                     if(const auto& worn=world_model.self_wearables();
                        worn&&region.connected&&active_session&&
                        firestorm_region_lease.matches(current_firestorm_epoch)&&

@@ -52,13 +52,13 @@ class LiveAttachmentPrecedence(unittest.TestCase):
   self.assertIn("world_model.self_bake_selection()",src)
   self.assertIn("gallery_cof_batch.status()",src)
  def test_version_and_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.584")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.594")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.584")
-  self.assertEqual(p["next_batch"],"Alpha.585–594")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.594")
+  self.assertEqual(p["next_batch"],"Alpha.595–604")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
              "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.585–594",read(fn)[:1800])
+   self.assertIn("Alpha.595–604",read(fn)[:1800])
 if __name__=="__main__":unittest.main()

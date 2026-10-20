@@ -196,7 +196,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
     {
         line(0,"Name: "+compact(v.region_name,55U),theme::text);
         line(1,std::string("Simulator: ")+
-             (v.region_connected?"verbunden":"nicht verbunden"),
+             (v.region_connected?"verbunden":"nicht verbunden")+
+             " | Szene-Epoch: "+std::to_string(v.region_generation),
              v.region_connected?theme::success:theme::warning);
         line(2,"Eigene Position: "+position(v.agent_position[0],
                                             v.agent_position[1],

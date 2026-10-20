@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-20",
-  "viewer_version": "0.2.0-alpha.584",
+  "viewer_version": "0.2.0-alpha.594",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.585–594",
-  "assessment": "Alpha.584 fixes actual stale self avatar skin on a valid current full ObjectUpdate TextureEntry with no genuine bake faces. Previously a prior provisional ObjectUpdate skin was kept even after all-placeholder/all-default TE withdrawal. The new strict TE parser differentiates valid explicit withdrawal from missing or malformed compressed headers, which do not destroy a good last source. Authenticated Low158 bake references remain authoritative per face. A scoped count of real withdrawals is shown in F3 and privacy-safe diagnostics, reset by agent/session/region. Native TE and actual Firestorm original body OpenGL framebuffer tests verify that references can be removed while the previous texture is still resident on GPU, yielding no old-skinned pixels and zero bake draws; later valid sources restore rendering. Real authenticated NexVerse skin/COF/outfit/attachments and simulator-confirmed WASD end-to-end still open/unverified, weighted 38.65 percent (rounded 39).",
+  "next_five_blocks": "Alpha.595–604",
+  "assessment": "Alpha.594 fixes a confirmed world lifetime gap: direct WorldModel apply_region on changed simulator handle or circuit connected->disconnected previously removed own skin only while leaving old region avatars, prim meshes/attachments, terrain, parcels and environment in the render scene. A new region-scoped invalidation removes all regional data, increments object revision and region generation, resets stale self agent presence. Same-connected RegionHandshake/AgentMovementComplete preserves scene and repeated disconnect polling is idempotent. An authenticated different agent or session also invalidates old regional world data, preventing cross-user avatar mesh and attachment reuse. Native full lifecycle tests cover disconnect, reconnect, direct teleport and re-auth, F7 renders actual scene epoch, verified on Linux OpenGL. Upstream OpenGenesisLINK main 3f49996 adds HG/portal IM handling only. Authenticated live NexVerse own skin, COF outfit, attachments and simulator-confirmed WASD still open/unverified, weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.585–594",
+  "next_batch": "Alpha.595–604",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "9b97aca5615a6942c4ca4521b86f46029fd9ad08",

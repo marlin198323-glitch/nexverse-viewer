@@ -30,6 +30,7 @@ int main()
             view.avatar_name="NexVerse Test";
             view.region_name="Testregion";
             view.region_connected=true;
+            view.region_generation=7U;
             view.terrain_ready=true;
             view.parcel_ready=true;
             view.avatar_present=true;

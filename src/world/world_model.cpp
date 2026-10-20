@@ -37,12 +37,26 @@ void WorldModel::set_grid(GridState grid)
 
 void WorldModel::apply_region(const RegionUpdate& update)
 {
-    // A region can be replaced without begin_region_transition during
-    // direct model integration. Never carry self skin/animation/object
-    // candidates across handles, even if session credentials remain.
-    if((region_.handle!=0U && region_.handle!=update.handle) ||
-       (region_.connected && !update.connected))
+    // apply_region() also runs on RegionHandshake, AgentMovementComplete
+    // and circuit connect/disconnect. A *same connected region* refresh
+    // MUST preserve the scene. An actual handle change or loss of circuit
+    // readiness, however, invalidates ALL regional prims and avatars;
+    // clearing only our self appearance left ghost meshes, attachments,
+    // old terrain and cached particles visible after the disconnect.
+    const bool leave_region =
+        (region_.handle!=0U && region_.handle!=update.handle) ||
+        (region_.connected && !update.connected);
+    if(leave_region)
     {
+        avatars_.clear();
+        objects_.clear();
+        ++object_revision_; // force current scene to become empty
+        terrain_={};
+        parcel_={};
+        environment_={};
+        agent_.present=false;
+        if(region_.handle!=0U)
+            ++region_.generation; // direct transitions invalidate lease
         self_appearance_.reset();
         self_wearables_.reset();
         self_object_bakes_.reset();
@@ -100,6 +114,22 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     if(agent_.agent_id!=update.agent_id ||
        agent_.session_id!=update.session_id)
     {
+        // This object can be reused after re-authentication without
+        // WorldModel::reset(). Region LocalIDs, appearance/COF, prim mesh
+        // UUIDs and remote avatars are scoped to the *prior* login.
+        // The first assignment from a fresh model is harmless.
+        const bool replacing_identity=
+            !agent_.agent_id.empty() || !agent_.session_id.empty();
+        if(replacing_identity)
+        {
+            avatars_.clear();
+            objects_.clear();
+            ++object_revision_;
+            terrain_={};
+            parcel_={};
+            environment_={};
+            ++region_.generation;
+        }
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
         self_appearance_.reset();

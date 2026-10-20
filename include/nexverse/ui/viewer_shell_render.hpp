@@ -17,6 +17,8 @@ struct ViewerShellView
     std::string region_name;
     std::string avatar_name;
     bool region_connected=false;
+    // WorldModel region generation, not a claimed authenticated GPU scene.
+    std::uint32_t region_generation=0U;
     bool terrain_ready=false;
     bool parcel_ready=false;
     bool avatar_present=false;

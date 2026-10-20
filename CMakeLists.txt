@@ -985,6 +985,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-object-bake-fallback-tests
         COMMAND nexverse-self-object-bake-fallback-tests)
 
+    add_executable(nexverse-world-direct-region-invalidation-tests
+        tests/world_direct_region_invalidation_tests.cpp)
+    target_link_libraries(nexverse-world-direct-region-invalidation-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-world-direct-region-invalidation-tests)
+    add_test(NAME nexverse-world-direct-region-invalidation-tests
+        COMMAND nexverse-world-direct-region-invalidation-tests)
+
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
     nexverse_enable_warnings(nexverse-world-model-tests)

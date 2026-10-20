@@ -36,11 +36,11 @@ class AnimatedAttachmentContract(unittest.TestCase):
    self.assertIn(mark,gl)
   self.assertIn("nexverse-scene-animated-attachment-pixels-tests",src("CMakeLists.txt"))
  def test_next_batch_and_remaining_live_e2e(self):
-  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.584")
+  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.594")
   progress=json.loads(src("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(progress["next_batch"],"Alpha.585–594")
+  self.assertEqual(progress["next_batch"],"Alpha.595–604")
   self.assertEqual(progress["default_blocks_per_run"],10)
   self.assertIn("still open",progress["assessment"])
   for p in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md"):
-   self.assertIn("Alpha.585–594",src(p)[:1000])
+   self.assertIn("Alpha.595–604",src(p)[:1000])
 if __name__=="__main__":unittest.main()
