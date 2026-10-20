@@ -35,6 +35,9 @@ int main()
     r.self_attachment_block_received=true;
     r.self_attachment_block_count=85U;
     r.self_object_attachment_roots=3U;
+    r.self_attachment_effective_bindings=4U;
+    r.self_attachment_pending_low158=1U;
+    r.self_attachment_stale_low158=2U;
     r.movement_discontinuities=3U;
     r.movement_stale_samples_ignored=2U;
     r.movement_waiting_after_jump=true;
@@ -90,6 +93,9 @@ int main()
        text.find("self_attachment_block_received=yes")==std::string::npos||
        text.find("self_attachment_block_count=85")==std::string::npos||
        text.find("self_object_attachment_roots=3")==std::string::npos||
+       text.find("self_attachment_effective_bindings=4")==std::string::npos||
+       text.find("self_attachment_pending_low158=1")==std::string::npos||
+       text.find("self_attachment_stale_low158=2")==std::string::npos||
        text.find("movement_discontinuities=3")==std::string::npos||
        text.find("movement_stale_samples_ignored=2")==std::string::npos||
        text.find("movement_waiting_after_jump=yes")==std::string::npos||

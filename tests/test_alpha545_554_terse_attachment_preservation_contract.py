@@ -67,13 +67,13 @@ class TerseAttachmentPreservation(unittest.TestCase):
   self.assertIn("object.state=entry.state;",s)
   self.assertIn("object.parsed_texture_entry =",s)
  def test_next_batch_docs(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.564")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.574")
   s=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(s["viewer_version"],"0.2.0-alpha.564")
-  self.assertEqual(s["next_batch"],"Alpha.565–574")
+  self.assertEqual(s["viewer_version"],"0.2.0-alpha.574")
+  self.assertEqual(s["next_batch"],"Alpha.575–584")
   self.assertEqual(s["default_blocks_per_run"],10)
   self.assertIn("still open",s["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.565–574",read(f)[:1700])
+   self.assertIn("Alpha.575–584",read(f)[:1700])
 if __name__=="__main__":unittest.main()

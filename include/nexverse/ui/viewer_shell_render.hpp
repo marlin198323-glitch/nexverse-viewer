@@ -35,6 +35,10 @@ struct ViewerShellView
     // Current simulator prim State/ParentID attachment roots, not
     // Low158 AttachmentBlock and not proof of a GPU-visible outfit.
     std::uint32_t avatar_object_attachment_roots=0U;
+    // Attachment mapping != downloaded mesh, GPU residency or worn COF.
+    std::uint32_t avatar_attachment_effective_bindings=0U;
+    std::uint32_t avatar_attachment_pending_low158=0U;
+    std::uint32_t avatar_attachment_stale_low158=0U;
     std::string avatar_movement_status;
     std::uint32_t avatar_udp_directional_sent=0U;
     std::string avatar_depth_parts;

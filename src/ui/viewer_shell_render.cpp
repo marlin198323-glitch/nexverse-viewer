@@ -292,6 +292,12 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                         :"SSA-Anhaenge: Serverantwort ausstehend"))+
                 " | Obj-Anhaenge:"+std::to_string(
                     v.avatar_object_attachment_roots)+
+                " | Bind:"+std::to_string(
+                    v.avatar_attachment_effective_bindings)+
+                " | Offen:"+std::to_string(
+                    v.avatar_attachment_pending_low158)+
+                " | Alt:"+std::to_string(
+                    v.avatar_attachment_stale_low158)+
                 " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
                 " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
                 " | Bone-Pose:"+std::to_string(v.avatar_bone_pose_avatars),

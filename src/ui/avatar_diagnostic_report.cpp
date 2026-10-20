@@ -82,6 +82,12 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.self_attachment_block_count)+"\n"
        "self_object_attachment_roots="+
            std::to_string(r.self_object_attachment_roots)+"\n"
+       "self_attachment_effective_bindings="+
+           std::to_string(r.self_attachment_effective_bindings)+"\n"
+       "self_attachment_pending_low158="+
+           std::to_string(r.self_attachment_pending_low158)+"\n"
+       "self_attachment_stale_low158="+
+           std::to_string(r.self_attachment_stale_low158)+"\n"
        "self_object_bake_candidate_faces="+
            std::to_string(r.self_object_bake_candidate_faces)+"\n"
        "self_object_bake_candidate_active="+

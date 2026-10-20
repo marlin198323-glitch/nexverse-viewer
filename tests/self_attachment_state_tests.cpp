@@ -37,13 +37,29 @@ int main()
     if(!world::infer_avatar_attachment_points(objects,0U).empty()||
        !world::infer_avatar_attachment_points(objects,901U).empty())
        return 3;
+    // Low158 was captured before the latest ObjectUpdate. A recent
+    // real prim State must override the old appearance point, otherwise
+    // attachments remain on old bones or fail to detach.
+    std::map<std::string,std::uint8_t,std::less<>> low158{
+        {"sleeve",31U}, // wrong old HUD state; current prim says shoulder
+        {"hud",1U},     // wrong old shoulder; current prim says HUD
+        {"world",1U},   // real prim is not attached to this avatar
+        {"unrelated",1U}, // actually belongs to avatar 88
+        {"unknown",1U}, // current object has invalid slot
+        {"none",1U},    // current object State=0 (detached)
+        {"pending",5U}, // true Low158 entry; prim not loaded yet
+    };
+    auto merged=world::reconcile_avatar_attachments(objects,51U,low158);
+    if(merged.points.size()!=3U||
+       merged.points.at("sleeve")!=1U||
+       merged.points.at("hud")!=31U||
+       merged.points.at("pending")!=5U||
+       merged.pending_appearance_points!=1U||
+       merged.stale_appearance_points!=4U||
+       merged.current_object_points!=2U)return 4;
     render::RenderAvatarProxy avatar{};
     avatar.local_id=51U;
-    avatar.attachments.emplace("sleeve",1U); // explicit Low158 wins
-    for(const auto& [id,point]:selected)
-        avatar.attachments.emplace(id,point);
-    if(avatar.attachments.at("sleeve")!=1U||
-       avatar.attachments.at("hud")!=31U)return 4;
+    avatar.attachments.insert(merged.points.begin(),merged.points.end());
     render::RenderAvatarBindRig rig{};
     rig.available[1U]=true;rig.available[31U]=true;
     rig.is_hud[31U]=true;
@@ -68,5 +84,22 @@ int main()
     objects.erase(200U);
     selected=world::infer_avatar_attachment_points(objects,51U);
     if(selected.contains("hud")||selected.size()!=1U)return 6;
+    // With the prim gone the old Low158 entry is only pending, not
+    // GPU-confirmed. A matching object with new State changes to HUD.
+    merged=world::reconcile_avatar_attachments(objects,51U,low158);
+    if(merged.points.at("hud")!=1U||
+       merged.pending_appearance_points!=2U)return 7;
+    objects.at(100U).state=0xF1U;
+    merged=world::reconcile_avatar_attachments(objects,51U,low158);
+    if(merged.points.at("sleeve")!=31U)return 8;
+    objects.at(100U).state=0U;
+    merged=world::reconcile_avatar_attachments(objects,51U,low158);
+    if(merged.points.contains("sleeve"))return 9;
+    objects.at(100U).parent_id=88U;
+    objects.at(100U).state=0x10U;
+    merged=world::reconcile_avatar_attachments(objects,51U,low158);
+    if(merged.points.contains("sleeve")||
+       !world::reconcile_avatar_attachments(objects,0U,low158)
+            .points.empty())return 10;
     std::cout<<"OPENGENESISLINK_OBJECTUPDATE_ATTACHMENT_STATE_AND_HUD_PASS\n";
 }

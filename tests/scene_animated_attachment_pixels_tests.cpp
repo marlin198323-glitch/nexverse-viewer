@@ -59,12 +59,17 @@ int main()
             13U,20.0f,"OpenGenesisLINK Test",256U,256U,true});
         root.rotation={0.0f,0.0f,0.0f,1.0f};
         region_objects.upsert_object(root);
-        const auto inferred=
-            nexverse::world::infer_avatar_attachment_points(
-                region_objects.objects(),avatar.local_id);
-        avatar.attachments.insert(inferred.begin(),inferred.end());
+        const std::map<std::string,std::uint8_t,std::less<>> old_low158{
+            {"sleeve",31U} // stale HUD slot, actual prim says shoulder
+        };
+        const auto inferred=nexverse::world::reconcile_avatar_attachments(
+            region_objects.objects(),avatar.local_id,old_low158);
+        avatar.attachments.insert(
+            inferred.points.begin(),inferred.points.end());
         if(avatar.attachments.size()!=1U||
-           avatar.attachments.at("sleeve")!=1U)failure=11;
+           avatar.attachments.at("sleeve")!=1U||
+           inferred.current_object_points!=1U||
+           inferred.pending_appearance_points!=0U)failure=11;
         renderer->set_avatar_proxies({avatar});
         RenderSceneObject attached{};
         attached.object_id="sleeve";

@@ -27,7 +27,7 @@ class RealAttachmentSource(unittest.TestCase):
    self.assertIn(t,s)
  def test_real_self_and_other_render_rig(self):
   s=read("src/app/application.cpp")
-  self.assertGreaterEqual(s.count("world::infer_avatar_attachment_points("),4)
+  self.assertGreaterEqual(s.count("world::reconcile_avatar_attachments("),4)
   self.assertIn("world_model.objects(),self_avatar_local_id",s)
   self.assertIn("world_model.objects(),avatar.local_id",s)
   self.assertIn("appearance->attachments",s)
@@ -49,13 +49,13 @@ class RealAttachmentSource(unittest.TestCase):
   self.assertIn('"self_object_attachment_roots="+',d)
   self.assertNotIn("self_object_attachment_uuid=",d)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.564")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.574")
   j=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.564")
-  self.assertEqual(j["next_batch"],"Alpha.565–574")
+  self.assertEqual(j["viewer_version"],"0.2.0-alpha.574")
+  self.assertEqual(j["next_batch"],"Alpha.575–584")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.565–574",read(f)[:1600])
+   self.assertIn("Alpha.575–584",read(f)[:1600])
 if __name__=="__main__":unittest.main()

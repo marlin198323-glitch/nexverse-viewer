@@ -46,6 +46,9 @@ struct AvatarDiagnosticReport
     bool self_attachment_block_received=false;
     std::uint32_t self_attachment_block_count=0U;
     std::uint32_t self_object_attachment_roots=0U;
+    std::uint32_t self_attachment_effective_bindings=0U;
+    std::uint32_t self_attachment_pending_low158=0U;
+    std::uint32_t self_attachment_stale_low158=0U;
     // Number of genuine non-placeholder face UUIDs reported by a
     // current authenticated self ObjectUpdate (not Low158 verification).
     std::uint32_t self_object_bake_candidate_faces=0U;

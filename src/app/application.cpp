@@ -10558,20 +10558,18 @@ int Application::run(bool enable_developer_modules)
                                 active_playback_anchor_keys.insert(key);
                             }
                     }
+                    std::map<std::string,std::uint8_t,std::less<>>
+                        low158_attachments;
                     if(const auto& appearance=world_model.self_appearance();
                        appearance)
                         for(const auto& attachment:appearance->attachments)
-                            avatar_proxy_update.back().attachments.emplace(
+                            low158_attachments.emplace(
                                 attachment.object_id,attachment.attachment_point);
-                    // OpenGenesisLINK legacy Low158 omits AttachmentBlock.
-                    // The same simulator already provides attached root prims
-                    // as ObjectUpdate.State + ParentID=self LocalID. Retain
-                    // explicit Low158 points when they are supplied.
-                    const auto inferred=world::infer_avatar_attachment_points(
-                        world_model.objects(),self_avatar_local_id);
-                    for(const auto& [object_id,point]:inferred)
-                        avatar_proxy_update.back().attachments.emplace(
-                            object_id,point);
+                    const auto selected=world::reconcile_avatar_attachments(
+                        world_model.objects(),self_avatar_local_id,
+                        low158_attachments);
+                    avatar_proxy_update.back().attachments.insert(
+                        selected.points.begin(),selected.points.end());
                 }
                 for (const auto& [id, avatar] : world_model.avatars())
                 {
@@ -10640,14 +10638,16 @@ int Application::run(bool enable_developer_modules)
                                 active_playback_anchor_keys.insert(key);
                             }
                     }
+                    std::map<std::string,std::uint8_t,std::less<>>
+                        low158_attachments;
                     for(const auto& attachment:avatar.attachments)
-                        avatar_proxy_update.back().attachments.emplace(
+                        low158_attachments.emplace(
                             attachment.object_id,attachment.attachment_point);
-                    const auto inferred=world::infer_avatar_attachment_points(
-                        world_model.objects(),avatar.local_id);
-                    for(const auto& [object_id,point]:inferred)
-                        avatar_proxy_update.back().attachments.emplace(
-                            object_id,point);
+                    const auto selected=world::reconcile_avatar_attachments(
+                        world_model.objects(),avatar.local_id,
+                        low158_attachments);
+                    avatar_proxy_update.back().attachments.insert(
+                        selected.points.begin(),selected.points.end());
                 }
 
                 for(auto it=animation_playback_anchors.begin();
@@ -13011,10 +13011,29 @@ int Application::run(bool enable_developer_modules)
                    world_model.region().connected&&
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
                    active_session->agent_id==render_agent.agent_id)
+                {
+                    std::map<std::string,std::uint8_t,std::less<>>
+                        appearance_points;
+                    if(const auto& ap=world_model.self_appearance();
+                       ap&&ap->avatar_id==active_session->agent_id)
+                        for(const auto& a:ap->attachments)
+                            appearance_points.emplace(
+                                a.object_id,a.attachment_point);
+                    const auto selected=world::reconcile_avatar_attachments(
+                        world_model.objects(),self_avatar_local_id,
+                        appearance_points);
                     avatar_diagnostic.self_object_attachment_roots=
                         static_cast<std::uint32_t>(
-                            world::infer_avatar_attachment_points(
-                                world_model.objects(),self_avatar_local_id).size());
+                            selected.current_object_points);
+                    avatar_diagnostic.self_attachment_effective_bindings=
+                        static_cast<std::uint32_t>(selected.points.size());
+                    avatar_diagnostic.self_attachment_pending_low158=
+                        static_cast<std::uint32_t>(
+                            selected.pending_appearance_points);
+                    avatar_diagnostic.self_attachment_stale_low158=
+                        static_cast<std::uint32_t>(
+                            selected.stale_appearance_points);
+                }
                 if(const auto& obj=world_model.self_object_bakes();obj)
                 {
                     for(const auto& id:obj->visible_body)
@@ -13328,10 +13347,30 @@ int Application::run(bool enable_developer_modules)
                     if(login_ui.authenticated&&active_session&&
                        firestorm_region_lease.matches(current_firestorm_epoch)&&
                        active_session->agent_id==render_agent.agent_id)
+                    {
+                        std::map<std::string,std::uint8_t,std::less<>>
+                            appearance_points;
+                        if(const auto& ap=world_model.self_appearance();
+                           ap&&ap->avatar_id==active_session->agent_id)
+                            for(const auto& attachment:ap->attachments)
+                                appearance_points.emplace(
+                                    attachment.object_id,
+                                    attachment.attachment_point);
+                        const auto selected=world::reconcile_avatar_attachments(
+                            world_model.objects(),self_avatar_local_id,
+                            appearance_points);
                         shell_view.avatar_object_attachment_roots=
                             static_cast<std::uint32_t>(
-                                world::infer_avatar_attachment_points(
-                                    world_model.objects(),self_avatar_local_id).size());
+                                selected.current_object_points);
+                        shell_view.avatar_attachment_effective_bindings=
+                            static_cast<std::uint32_t>(selected.points.size());
+                        shell_view.avatar_attachment_pending_low158=
+                            static_cast<std::uint32_t>(
+                                selected.pending_appearance_points);
+                        shell_view.avatar_attachment_stale_low158=
+                            static_cast<std::uint32_t>(
+                                selected.stale_appearance_points);
+                    }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
 
