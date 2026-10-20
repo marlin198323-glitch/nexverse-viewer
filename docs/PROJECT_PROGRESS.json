@@ -61,10 +61,10 @@
   "next_batch": "Alpha.595–604",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "9b97aca5615a6942c4ca4521b86f46029fd9ad08",
-    "run_id": 39467519712,
+    "tested_sha": "c6ecd3fbd05218476ef1ed5e755cc5188378c1b6",
+    "run_id": 39488686178,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native C++23 headless and Python; full original Firestorm GL GUI on Mint x64 separately verified"
+    "scope": "Pi5 ARM64 native C++23 headless and Python, full OpenGL/GUI independently tested on Mint x64"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {

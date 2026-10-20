@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.594, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.595–604.**
+
+**ALPHA.594 EXAKTE PI5 ARM64 CI ERFOLGREICH:** GitHub Actions Run 39488686178 = COMPLETED SUCCESS, Pi5-ARM64-Headless Job 118855705576 = SUCCESS, exakt für Feature-SHA c6ecd3fbd05218476ef1ed5e755cc5188378c1b6. Linux Mint x64 Vollbuild 383/383, native C++/OpenGL 163/163, Python 293/293, isolierter Xvfb GUI-Start, lokale Pi5-kompatible C++23/Python Headless-Suite und X11 WM_CLASS/Systemicon PASS. Pi5-CI prüft native ARM64 C++23 Headless/Python, KEINE Pi5-GPU/GUI oder authentifizierten NexVerse-Live-Login. Direct RegionHandle-Wechsel, Circuit-Disconnect und neue authentifizierte Agent-/Session-Identität löschen inzwischen alte Prims/Attachments, Fremd-Avatare, Terrain, Parcel, Environment mit Revision und neuer Szene-Epoch. Gleichgebliebene verbundene RegionHandshake/MovementComplete-Pakete bewahren Welt. F7 zeigt echte Szene-Epoch. Frische authentifizierte NexVerse Skin/COF/Outfit/Attachments/WASD-Grid-Abnahme NICHT vorhanden; Status 39 %. Nächste zehn Blöcke Alpha.595–604. Kein Produktivdeploy.
+
 # Alpha.585–594 – alte Avatare/Anhänge bei Regionswechsel entfernen
 
 20.10.2026 | develop-current | 0.2.0-alpha.594 | Projekt 39 % (38,65 % gewichtet)
