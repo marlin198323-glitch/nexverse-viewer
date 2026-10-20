@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.544, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.545–554.**
+
+**ALPHA.544 PI5 ARM64 CI EXAKT VERIFIZIERT:** Feature-SHA 8a8c0b3d1415bdca3d05eedd47a88f4e20db7360 wurde mit self-hosted Pi5 GitHub Actions Run 39455400291 = COMPLETED SUCCESS und ARM64 Source-Job 118740824512 geprüft. Mint x64 vollständiger Build 377/377, native C++/OpenGL 160/160 PASS, Python 258/258 PASS, isolierter Xvfb Viewer, Headless C++23/Python und X11 WM_CLASS/Systemicon PASS. Pi5 ARM64 ist Headless, KEIN GPU-GUI oder authentifizierter Live-Grid-Test. Echte OpenGenesisLINK-Objektanhänge wurden aus Full/Compressed ObjectUpdate.State ParentID aktueller Avatar LocalID in Firestorm-Skelett/GL-Render integriert, Low158-Anhangdaten haben Vorrang, HUD wird aus 3D-Szene ausgeschlossen. Eigene echte NexVerse COF-Kleidung/Avatar/WASD weiterhin NICHT end-to-end bestätigt; deshalb Projekt weiterhin 39 %. Nächste zehn Blöcke Alpha.545–554. Kein Produktionsdeploy.
+
 # Alpha.535–544 – Legacy-Anhänge aus echten Simulator-Objekten
 
 20.10.2026 | develop-current | 0.2.0-alpha.544 | Projektfortschritt 39 % (38,65 % gewichtet).
