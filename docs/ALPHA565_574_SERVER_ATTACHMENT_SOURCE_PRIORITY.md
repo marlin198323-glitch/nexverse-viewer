@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.574, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.575–584.**
+
+**ALPHA.574 SHA-GENAUE Pi5 ARM64 CI VERIFIZIERT:** GitHub Actions Run 39464572356 = COMPLETED SUCCESS, self-hosted Pi5 ARM64-Headless-Job 118772472994 = COMPLETED SUCCESS, für EXAKTEN Feature-SHA 2701cf5d0307373529901ee300d13f1a3eb3b0f2. Mint x64 vollständiger Build 381/381, native C++/OpenGL 162/162, Python 281/281, Xvfb GUI-Start, lokale Headless und X11 WM_CLASS/Systemicon PASS. Pi5 läuft ARM64 C++23 Headless/Python, nicht GPU/GUI und nicht authentifizierter NexVerse-Live-Login. Neu: CURRENT Simulator ObjectUpdate.State/ParentID erhält für tatsächlich empfangene Root-Prims Vorrang vor älterem Low158-Anhangblock, wodurch stale HUD-/Bone-Punkte, State=0 Detach und Avatarwechsel korrekt getrennt werden; nicht erhaltene Low158-Items bleiben PENDING und sind keine COF-/GPU-Erfolgsbeweise. Native und Firestorm Original-OpenGL-Framebuffer-Tests, F3 und private count-only Diagnostik PASS. Authentifizierter NexVerse Skin/COF/Outfit/Attachments/WASD E2E weiter OFFEN; 39 % (38,65 %). Nächste zehn Blöcke Alpha.575–584, KEIN Produktionsdeploy.
+
 # Alpha.565–574 – aktuelle Simulator-Anhänge statt veralteter Low158-Bindings
 
 20.10.2026 | develop-current | 0.2.0-alpha.574 | Gesamtfortschritt 39 % (38,65 % gewichtet)
