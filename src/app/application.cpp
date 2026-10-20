@@ -13034,6 +13034,13 @@ int Application::run(bool enable_developer_modules)
                         static_cast<std::uint32_t>(
                             selected.stale_appearance_points);
                 }
+                if(login_ui.authenticated&&active_session&&
+                   world_model.region().connected&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   world_model.agent().agent_id==active_session->agent_id&&
+                   world_model.agent().session_id==active_session->session_id)
+                    avatar_diagnostic.self_object_bake_withdrawals=
+                        world_model.self_object_bake_withdrawals();
                 if(const auto& obj=world_model.self_object_bakes();obj)
                 {
                     for(const auto& id:obj->visible_body)
@@ -13370,6 +13377,17 @@ int Application::run(bool enable_developer_modules)
                         shell_view.avatar_attachment_stale_low158=
                             static_cast<std::uint32_t>(
                                 selected.stale_appearance_points);
+                    }
+                    if(login_ui.authenticated&&active_session&&
+                       firestorm_region_lease.matches(current_firestorm_epoch)&&
+                       world_model.agent().agent_id==active_session->agent_id&&
+                       world_model.agent().session_id==active_session->session_id)
+                    {
+                        const auto removed=
+                            world_model.self_object_bake_withdrawals();
+                        if(removed>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Self-Bake reset:"+std::to_string(removed);
                     }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();

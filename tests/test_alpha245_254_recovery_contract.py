@@ -48,7 +48,7 @@ class TerrainRecoveryContract(unittest.TestCase):
         import json
         prog=json.loads(read("docs/PROJECT_PROGRESS.json"))
         self.assertEqual(prog["default_blocks_per_run"],10)
-        self.assertEqual(prog["next_batch"],"Alpha.575–584")
+        self.assertEqual(prog["next_batch"],"Alpha.585–594")
         self.assertEqual(prog["viewer_version"],read("VERSION").strip())
         for name in ("projectplan.md","CHATUEBERGABE.md","AGENTS.md",
                      "info.md","docs/PROJEKTFORTSCHRITT.md"):

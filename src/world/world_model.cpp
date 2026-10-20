@@ -19,6 +19,7 @@ void WorldModel::reset()
     self_appearance_.reset();
     self_wearables_.reset();
     self_object_bakes_.reset();
+    self_object_bake_withdrawals_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
     avatars_.clear();
@@ -45,6 +46,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         self_appearance_.reset();
         self_wearables_.reset();
         self_object_bakes_.reset();
+        self_object_bake_withdrawals_=0U;
         self_animations_.reset();
         pending_avatar_animations_.clear();
     }
@@ -79,6 +81,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_appearance_.reset();
     self_wearables_.reset();
     self_object_bakes_.reset();
+    self_object_bake_withdrawals_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
 
@@ -98,6 +101,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
        agent_.session_id!=update.session_id)
     {
         self_object_bakes_.reset();
+        self_object_bake_withdrawals_=0U;
         self_appearance_.reset();
         self_wearables_.reset();
         self_animations_.reset();
@@ -167,11 +171,25 @@ bool WorldModel::observe_self_object_bakes(
     // avatar body's texture even when that new packet omits the TE.
     if(self_object_bakes_&&self_object_bakes_->local_id!=local_id)
         self_object_bakes_.reset();
-    // Empty, corrupt, inherited-default and placeholder assets cannot
-    // create a visible skin, regardless of the avatar's world position.
+    // Malformed / absent TextureEntry must not clobber last valid skin:
+    // the compressed avatar header often has no TE at all.
+    if(!protocol::parse_texture_entry(texture_entry))
+        return false;
+    // A *valid* full TextureEntry with only absent or placeholder baked
+    // faces is different: the current simulator has explicitly withdrawn
+    // those provisional references (e.g. after an outfit rebake).
+    // Do not carry a stale previous skin forward under the same LocalID.
     const auto bakes=protocol::extract_avatar_bakes(texture_entry).visible_body();
     if(bakes[0].empty()&&bakes[1].empty()&&bakes[2].empty())
+    {
+        if(self_object_bakes_&&self_object_bakes_->local_id==local_id)
+        {
+            self_object_bakes_.reset();
+            ++self_object_bake_withdrawals_;
+            return true; // real visual-source change, no invented new bake
+        }
         return false;
+    }
     // Store asset IDs solely inside the session-scoped model; F3/report
     // receives only counts. Modern Low158 overrides candidate rendering.
     if(self_object_bakes_&&self_object_bakes_->local_id==local_id&&
@@ -185,6 +203,10 @@ const std::optional<SelfAvatarObjectBakes>&
 WorldModel::self_object_bakes() const noexcept
 {
     return self_object_bakes_;
+}
+std::uint32_t WorldModel::self_object_bake_withdrawals() const noexcept
+{
+    return self_object_bake_withdrawals_;
 }
 
 SelfRenderBakeSelection WorldModel::self_bake_selection() const

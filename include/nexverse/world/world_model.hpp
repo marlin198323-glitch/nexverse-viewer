@@ -259,6 +259,9 @@ public:
         std::uint32_t local_id,std::span<const std::uint8_t> texture_entry);
     [[nodiscard]] const std::optional<SelfAvatarObjectBakes>&
         self_object_bakes() const noexcept;
+    // Valid current simulator self TE withdrawals, not HTTP failures or
+    // placeholder uploads. Per authenticated agent/session/region epoch.
+    [[nodiscard]] std::uint32_t self_object_bake_withdrawals() const noexcept;
     // Low158 always wins PER FACE; valid self ObjectUpdate may fill only
     // missing body faces with explicitly provisional server references.
     [[nodiscard]] SelfRenderBakeSelection self_bake_selection() const;
@@ -321,6 +324,7 @@ private:
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
+    std::uint32_t self_object_bake_withdrawals_=0U;
     std::optional<protocol::AvatarAnimationMessage> self_animations_;
     // Animation may precede ObjectUpdate. Bounded pending messages do not
     // create renderable ghost avatars and expire at region transitions.

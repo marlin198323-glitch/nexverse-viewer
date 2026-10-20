@@ -85,6 +85,27 @@ int main()
     // Empty/malformed update on same LocalID must not erase candidate.
     if(w.observe_self_object_bakes(avatar_id,region,51U,{})||
        w.self_render_bakes()!=fallback)return 9;
+    // A valid current ObjectUpdate with all placeholder bakes is a
+    // genuine withdrawal; unlike an absent or malformed packet it MUST
+    // invalidate the previous provisional skin, not keep a ghost outfit.
+    if(!w.observe_self_object_bakes(avatar_id,region,51U,tex(true,true))||
+       w.self_object_bakes()||
+       w.self_render_bakes()!=std::array<std::string,3U>{}||
+       w.self_object_bake_withdrawals()!=1U)return 33;
+    if(w.observe_self_object_bakes(avatar_id,region,51U,tex(true,true))||
+       w.observe_self_object_bakes(avatar_id,region,51U,tex(false))||
+       w.self_object_bake_withdrawals()!=1U)
+        return 34;
+    if(!w.observe_self_object_bakes(avatar_id,region,51U,head_te))
+        return 35;
+    // A valid current all-default TextureEntry also revokes the
+    // provisional bake, but not a genuine Low158 appearance reference.
+    if(!w.observe_self_object_bakes(avatar_id,region,51U,tex(false))||
+       w.self_object_bakes()||
+       w.self_render_bakes()!=std::array<std::string,3U>{}||
+       w.self_object_bake_withdrawals()!=2U)return 36;
+    if(!w.observe_self_object_bakes(avatar_id,region,51U,head_te))
+        return 37;
     // Different server LocalID invalidates old provisional visual data.
     if(w.observe_self_object_bakes(avatar_id,region,52U,{})||
        w.self_object_bakes()||w.self_render_bakes()==fallback)return 10;
@@ -113,6 +134,16 @@ int main()
        w.self_bake_selection().from_object_update[0]||
        !w.self_bake_selection().from_low158[0]||
        !w.self_bake_selection().from_low158[1])return 29;
+    // A later valid ObjectUpdate withdraws just the provisional
+    // candidate. Already authenticated Low158 Head/Upper remain
+    // authoritative and MUST NOT disappear with it.
+    if(!w.observe_self_object_bakes(avatar_id,region,53U,tex(false))||
+       w.self_object_bakes()||
+       w.self_render_bakes()!=fallback ||
+       !w.self_bake_selection().from_low158[0]||
+       !w.self_bake_selection().from_low158[1])return 38;
+    if(!w.observe_self_object_bakes(avatar_id,region,53U,head_te))
+        return 39;
     // Important conflicting-source regression: the authoritative
     // Low158 Head differs from the provisional ObjectUpdate Head.
     // Incomplete Low158 Upper is filled but its Head cannot be replaced.
@@ -137,7 +168,8 @@ int main()
     // Authenticated self with different session is not the same visual
     // lifetime, even on same simulator region.
     w.apply_agent({avatar_id,"ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});
-    if(w.self_object_bakes()||w.self_appearance()||w.self_animations())
+    if(w.self_object_bakes()||w.self_appearance()||w.self_animations()||
+       w.self_object_bake_withdrawals()!=0U)
         return 14;
     auto transferred=model();
     if(!transferred.observe_self_object_bakes(avatar_id,region,51U,head_te))

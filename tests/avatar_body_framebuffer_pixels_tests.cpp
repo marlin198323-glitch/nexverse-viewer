@@ -160,6 +160,28 @@ int main()
     }
     if(!error)
     {
+      // A real current self TE can withdraw all provisional bake refs
+      // WITHOUT evicting already uploaded GPU texture objects. The
+      // original Firestorm body must stop sampling the old skin on the
+      // very next frame, not resurrect it from the residency cache.
+      self.baked_texture_ids={};
+      renderer->set_avatar_proxies({self});
+      const auto withdrawn=draw();
+      const auto draw_status=renderer->diagnostics();
+      const auto ghost_pixels=difference(plain,withdrawn);
+      std::cout<<"WITHDRAWN_SELF_BAKES_STALE_GPU_PIXELS="
+               <<ghost_pixels<<"\n";
+      if(ghost_pixels!=0U ||
+         draw_status.self_avatar_baked_texture_draw_calls!=0U ||
+         draw_status.self_avatar_body_bake_gl_draws!=
+             (std::array<std::uint64_t,3>{0U,0U,0U}))
+          error=21;
+      self.baked_texture_ids={"fixture-bake","fixture-bake","fixture-bake"};
+      renderer->set_avatar_proxies({self});
+      if(difference(plain,draw())<100U)error=22;
+    }
+    if(!error)
+    {
       renderer->remove_object_texture("fixture-bake");
       const auto after_evict=draw();
       const auto evicted=renderer->diagnostics();

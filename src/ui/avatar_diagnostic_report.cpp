@@ -90,6 +90,8 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.self_attachment_stale_low158)+"\n"
        "self_object_bake_candidate_faces="+
            std::to_string(r.self_object_bake_candidate_faces)+"\n"
+       "self_object_bake_withdrawals="+
+           std::to_string(r.self_object_bake_withdrawals)+"\n"
        "self_object_bake_candidate_active="+
            yn(r.self_object_bake_candidate_active)+"\n"
        "self_object_bake_candidate_gpu_resident="+

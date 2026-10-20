@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-20",
-  "viewer_version": "0.2.0-alpha.574",
+  "viewer_version": "0.2.0-alpha.584",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.575–584",
-  "assessment": "Alpha.574 fixes real attachment binding precedence: older Low158 AvatarAppearance attachment positions previously won via std::map::emplace even when actual current OpenGenesisLINK ObjectUpdate/Compressed State identified a new bone/HUD point, detachment or other avatar parent. A new deterministic current-object-UUID-based reconciler now gives current simulator prim State+ParentID authoritative precedence for both own and remote avatar Firestorm rig; stale Low158 mappings cannot resurrect detached or transferred items. Unknown Low158 objects remain pending mappings only, never claims of worn GPU-rendered COF. Native duplicate/stale/reattach/detach/foreign-parent tests and real Firestorm animated GL framebuffer shoulder binding with stale Low158 HUD state pass. F3 and private diagnostics report only current/pending/stale/effective mapping counts, no UUIDs. Authenticated live NexVerse avatar skin, COF outfit and simulator-confirmed WASD end-to-end still open and unverified; weighted 38.65 percent (39 rounded).",
+  "next_five_blocks": "Alpha.585–594",
+  "assessment": "Alpha.584 fixes actual stale self avatar skin on a valid current full ObjectUpdate TextureEntry with no genuine bake faces. Previously a prior provisional ObjectUpdate skin was kept even after all-placeholder/all-default TE withdrawal. The new strict TE parser differentiates valid explicit withdrawal from missing or malformed compressed headers, which do not destroy a good last source. Authenticated Low158 bake references remain authoritative per face. A scoped count of real withdrawals is shown in F3 and privacy-safe diagnostics, reset by agent/session/region. Native TE and actual Firestorm original body OpenGL framebuffer tests verify that references can be removed while the previous texture is still resident on GPU, yielding no old-skinned pixels and zero bake draws; later valid sources restore rendering. Real authenticated NexVerse skin/COF/outfit/attachments and simulator-confirmed WASD end-to-end still open/unverified, weighted 38.65 percent (rounded 39).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.575–584",
+  "next_batch": "Alpha.585–594",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "2701cf5d0307373529901ee300d13f1a3eb3b0f2",
