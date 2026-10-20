@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.564, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.565–574.**
+
+**ALPHA.564 EXAKTE PI5 ARM64 CI VERIFIZIERT:** GitHub Actions Run 39460543881 = COMPLETED SUCCESS, Pi5-ARM64-Headless-Job 118758562602 SUCCESS exakt für Feature-SHA 498c90571b6315da6a8e022ecbb2f6ff0633c61b. Linux Mint x64 Vollbuild 381/381, native C++/OpenGL 162/162, Python 274/274, isolierter GUI-Xvfb Viewer, ARM64-kompatible Headless Suite und X11 Taskleistenicon PASS. Pi5 hat ARM64 native C++23 Headless und Python geprüft, keine Pi5-GPU/GUI und keinen authentifizierten NexVerse-Live-Login. Fix für 64-Byte Compressed-Object-Header: kein Phantomprim/UUID-Recycling von Mesh/Parent/TextureEntry, nur aktuelle passende LocalID+UUID+PCode State/Pose, State=0 löst Avatar-Anhang. Echte Firestorm-GL-Anhangpixel und LLUDP Wire-Header nativ geprüft. Live Skin/COF/Outfit/Attachments/WASD E2E weiterhin offen, Projekt 39 %. Nächste zehn Blöcke Alpha.565–574, keine Produktion.
+
 # Alpha.555–564 – sichere partielle ObjectUpdateCompressed-Pakete ohne verlorene Avatar-Anhänge
 
 20.10.2026 | develop-current | 0.2.0-alpha.564 | Projektfortschritt 39 % (38,65 % gewichtet)
