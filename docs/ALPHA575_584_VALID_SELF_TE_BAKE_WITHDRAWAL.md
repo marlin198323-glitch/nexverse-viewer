@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: Bei jedem WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE. OGL 0.2.0-alpha.584, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.585–594.**
+
+**ALPHA.584 SHA-GENAUE Pi5 ARM64 CI ERFOLGREICH:** GitHub Actions Run 39467519712 = COMPLETED SUCCESS, self-hosted Pi5 ARM64 Headless Job 118782677990 = SUCCESS, für exakten Feature-SHA 9b97aca5615a6942c4ca4521b86f46029fd9ad08. Mint x64 vollständiger Build 381/381, native C++/OpenGL 162/162, Python 287/287, isolierter Xvfb Viewer, lokale C++23/Python Headless und X11 Taskleistenicon/WM_CLASS PASS. Der Pi5-CI-Lauf prüft native ARM64 C++23 Headless/Python, keine Pi5-GPU oder GUI und keinen auth Live-NexVerse-Avatar. Wirkliche valide Self-ObjectUpdate TE ohne echte Bakes löst nur die alte PROVISORISCHE Skin; beschädigte oder verkürzte TE bleibt ohne Wirkung; gültige Low158 bleibt pro Face führend. Echte original Firestorm Body-Mesh-GL-Framebuffer-Regressionsbeweise für ausbleibende stale Skin bei noch GPU-residentem Texturasset; F3/privater count-only Herkunftsbericht pro Agent-/Regions-Epoch. Live NexVerse COF/Outfit/Skin/WASD weiter nicht bestätigt. Status 39 %, nächste zehn Blöcke Alpha.585–594, kein Produktionsdeploy.
+
 # Alpha.575–584 – gültiger Bake-Rückzug räumt vorläufige eigene Skin auf
 
 20.10.2026 | develop-current | Viewer 0.2.0-alpha.584 | Fortschritt 39 % (38,65 % gewichtet)
