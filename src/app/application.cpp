@@ -75,6 +75,7 @@
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/protocol/turn_readback.hpp"
+#include "nexverse/world/attachment_state.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
@@ -5253,6 +5254,7 @@ int Application::run(bool enable_developer_modules)
                 object.local_id = entry.local_id;
                 object.id = entry.id;
                 object.pcode = entry.pcode;
+                object.state=entry.state;
                 object.parent_id = entry.parent_id;
                 object.position = entry.position;
                 object.rotation = entry.rotation;
@@ -5362,6 +5364,7 @@ int Application::run(bool enable_developer_modules)
                 object.local_id = entry.local_id;
                 object.id = entry.id;
                 object.pcode = entry.pcode;
+                object.state=entry.state;
                 object.position = entry.position;
                 object.rotation = entry.rotation;
 
@@ -10590,6 +10593,15 @@ int Application::run(bool enable_developer_modules)
                         for(const auto& attachment:appearance->attachments)
                             avatar_proxy_update.back().attachments.emplace(
                                 attachment.object_id,attachment.attachment_point);
+                    // OpenGenesisLINK legacy Low158 omits AttachmentBlock.
+                    // The same simulator already provides attached root prims
+                    // as ObjectUpdate.State + ParentID=self LocalID. Retain
+                    // explicit Low158 points when they are supplied.
+                    const auto inferred=world::infer_avatar_attachment_points(
+                        world_model.objects(),self_avatar_local_id);
+                    for(const auto& [object_id,point]:inferred)
+                        avatar_proxy_update.back().attachments.emplace(
+                            object_id,point);
                 }
                 for (const auto& [id, avatar] : world_model.avatars())
                 {
@@ -10661,6 +10673,11 @@ int Application::run(bool enable_developer_modules)
                     for(const auto& attachment:avatar.attachments)
                         avatar_proxy_update.back().attachments.emplace(
                             attachment.object_id,attachment.attachment_point);
+                    const auto inferred=world::infer_avatar_attachment_points(
+                        world_model.objects(),avatar.local_id);
+                    for(const auto& [object_id,point]:inferred)
+                        avatar_proxy_update.back().attachments.emplace(
+                            object_id,point);
                 }
 
                 for(auto it=animation_playback_anchors.begin();
@@ -13020,6 +13037,14 @@ int Application::run(bool enable_developer_modules)
                     avatar_diagnostic.self_attachment_block_count=
                         static_cast<std::uint32_t>(ap->attachments.size());
                 }
+                if(login_ui.authenticated&&active_session&&
+                   world_model.region().connected&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   active_session->agent_id==render_agent.agent_id)
+                    avatar_diagnostic.self_object_attachment_roots=
+                        static_cast<std::uint32_t>(
+                            world::infer_avatar_attachment_points(
+                                world_model.objects(),self_avatar_local_id).size());
                 if(const auto& obj=world_model.self_object_bakes();obj)
                 {
                     for(const auto& id:obj->visible_body)
@@ -13330,6 +13355,13 @@ int Application::run(bool enable_developer_modules)
                             appearance->attachment_block_present;
                         shell_view.attachments=appearance->attachments.size();
                     }
+                    if(login_ui.authenticated&&active_session&&
+                       firestorm_region_lease.matches(current_firestorm_epoch)&&
+                       active_session->agent_id==render_agent.agent_id)
+                        shell_view.avatar_object_attachment_roots=
+                            static_cast<std::uint32_t>(
+                                world::infer_avatar_attachment_points(
+                                    world_model.objects(),self_avatar_local_id).size());
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
 

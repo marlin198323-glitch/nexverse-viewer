@@ -1288,6 +1288,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     target_link_libraries(nexverse-scene-parent-chain-tests PRIVATE NexVerse::Render)
     add_test(NAME nexverse-scene-parent-chain-tests COMMAND nexverse-scene-parent-chain-tests)
 
+    add_executable(nexverse-self-attachment-state-tests
+        tests/self_attachment_state_tests.cpp)
+    target_link_libraries(nexverse-self-attachment-state-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-self-attachment-state-tests)
+    add_test(NAME nexverse-self-attachment-state-tests
+        COMMAND nexverse-self-attachment-state-tests)
+
     add_executable(nexverse-attachment-scene-classification-tests
         tests/attachment_scene_classification_tests.cpp)
     target_link_libraries(nexverse-attachment-scene-classification-tests PRIVATE NexVerse::Render)

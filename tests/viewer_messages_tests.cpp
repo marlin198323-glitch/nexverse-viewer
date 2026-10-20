@@ -463,7 +463,8 @@ int main()
         1U};
 
     append_u32_vec(full_update_payload, 42U);
-    full_update_payload.push_back(0U);
+    // OpenGenesisLINK AttachmentPoint=1 is nibble-swapped to State=0x10.
+    full_update_payload.push_back(0x10U);
 
     const auto full_object_id =
         uuid_to_bytes("33333333-3333-3333-3333-333333333333");
@@ -572,6 +573,7 @@ int main()
         full_update->objects[0].position.y != 102.0f ||
         full_update->objects[0].position.z != 25.0f ||
         full_update->objects[0].parent_id != 7U ||
+        full_update->objects[0].state != 0x10U ||
         full_update->objects[0].scale.x != 2.0f ||
         full_update->objects[0].scale.y != 3.0f ||
         full_update->objects[0].scale.z != 4.0f ||
@@ -612,6 +614,7 @@ int main()
     std::copy(compressed_id->begin(), compressed_id->end(), compressed_data.begin());
     put_u32(compressed_data, 16U, 77U);
     compressed_data[20U] = pcode_prim;
+    compressed_data[21U] = 0xF1U; // AttachmentPoint 31 encoded by server
     put_f32(compressed_data, 40U, 12.0f);
     put_f32(compressed_data, 44U, 34.0f);
     put_f32(compressed_data, 48U, 56.0f);
@@ -626,6 +629,7 @@ int main()
     if (!compressed.has_value() ||
         compressed->objects.size() != 1U ||
         compressed->objects[0].local_id != 77U ||
+        compressed->objects[0].state != 0xF1U ||
         compressed->objects[0].position.z != 56.0f)
     {
         std::cerr << "ObjectUpdateCompressed decode failed\n";

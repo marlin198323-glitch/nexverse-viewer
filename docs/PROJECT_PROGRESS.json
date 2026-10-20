@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-19",
-  "viewer_version": "0.2.0-alpha.534",
+  "as_of": "2026-10-20",
+  "viewer_version": "0.2.0-alpha.544",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.535–544",
-  "assessment": "Alpha.534 fixes a confirmed OpenGenesisLINK server control semantics mismatch: server current main 6e446b9 ScenePresence.cs requires TURN_LEFT+YAW_POS, TURN_RIGHT+YAW_NEG while OGL previously sent opposite yaw bits. Native 114-byte High4 LLUDP AgentUpdate tests verify corrected flags, flight and diagonal/opposing key normalization. New mutex-protected TurnReadbackMonitor recognizes a direction-matched >=5-degree REAL simulator self rotation from Full, Compressed or ImprovedTerse packets only after a successful socket send, never on queued/local quaternion, with login/logout/region reset and F3 pending/confirmed status. Real authenticated NexVerse avatar/COF/skin/attachments and simulator-confirmed WASD entire end-to-end still open/unverified, weighted 38.65 percent (39 rounded).",
+  "next_five_blocks": "Alpha.545–554",
+  "assessment": "Alpha.544 integrates real OpenGenesisLINK server legacy body attachments without the absent low158 AttachmentBlock. Current server LLClientView encodes AttachmentPoint nibble-swapped in Full ObjectUpdate.State and Compressed ObjectData.State; OGL had skipped these. Full and compressed parsers now preserve State through current-region WorldModel. Only current Avatar LocalID matching root Prim ParentID and valid Firestorm slots 1-55 produce a provisional real server object attachment, preserving explicit Low158 points for self/remote rig rendering and HUD exclusion. Native packet, GL framebuffer animated attachments, HUD classification and UUID-free F3 diagnostics test the path. Authenticated live NexVerse own avatar, COF clothing and WASD end-to-end still open/unverified; weighted 38.65 percent, rounded 39 percent.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.535–544",
+  "next_batch": "Alpha.545–554",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "8c6a60aba7e5c04cdf187bc0e48c782ce49d4738",

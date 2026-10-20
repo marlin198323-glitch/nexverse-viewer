@@ -225,6 +225,9 @@ struct ObjectUpdateEntry
     std::uint32_t local_id = 0U;
     std::string id;
     std::uint8_t pcode = 0U;
+    // OpenGenesisLINK ObjectUpdate.State carries the attachment point
+    // with its high/low nibbles exchanged; zero is not attached.
+    std::uint8_t state=0U;
     std::uint32_t parent_id = 0U;
     Vec3 position;
     Quaternion rotation;
@@ -290,6 +293,9 @@ struct ObjectUpdateCompressedEntry
     std::uint32_t local_id = 0U;
     std::string id;
     std::uint8_t pcode = 0U;
+    // OpenGenesisLINK ObjectUpdate.State carries the attachment point
+    // with its high/low nibbles exchanged; zero is not attached.
+    std::uint8_t state=0U;
     std::uint32_t parent_id = 0U;
     Vec3 position;
     Quaternion rotation;

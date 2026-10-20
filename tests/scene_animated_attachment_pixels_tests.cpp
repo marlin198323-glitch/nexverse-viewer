@@ -1,5 +1,6 @@
 /* MPL-2.0: GPU framebuffer test for Firestorm joint-following attachments. */
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/world/attachment_state.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -43,7 +44,21 @@ int main()
         avatar.local_id=51U;
         avatar.position={4.0f,0.0f,0.0f};
         avatar.motion=nexverse::protocol::AvatarMotion::walk;
-        avatar.attachments["sleeve"]=1U;
+        // The real OpenGenesisLINK legacy Low158 omits AttachmentBlock:
+        // derive the same render-bone point from current simulator prim
+        // State/ParentID instead of manually creating avatar.attachments.
+        nexverse::world::ObjectState root{};
+        root.local_id=200U;root.id="sleeve";
+        root.pcode=nexverse::protocol::pcode_prim;
+        root.parent_id=51U;root.state=0x10U;
+        std::map<std::uint32_t,nexverse::world::ObjectState> region_objects;
+        region_objects.emplace(root.local_id,root);
+        const auto inferred=
+            nexverse::world::infer_avatar_attachment_points(
+                region_objects,avatar.local_id);
+        avatar.attachments.insert(inferred.begin(),inferred.end());
+        if(avatar.attachments.size()!=1U||
+           avatar.attachments.at("sleeve")!=1U)failure=11;
         renderer->set_avatar_proxies({avatar});
         RenderSceneObject attached{};
         attached.object_id="sleeve";

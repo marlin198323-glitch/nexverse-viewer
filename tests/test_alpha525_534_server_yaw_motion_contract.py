@@ -52,13 +52,13 @@ class MovementWireAndReadback(unittest.TestCase):
        'return 39;'):
    self.assertIn(x,t)
  def test_version_plan_handoff(self):
-  self.assertEqual(read('VERSION').strip(),'0.2.0-alpha.534')
+  self.assertEqual(read('VERSION').strip(),'0.2.0-alpha.544')
   s=json.loads(read('docs/PROJECT_PROGRESS.json'))
-  self.assertEqual(s['viewer_version'],'0.2.0-alpha.534')
-  self.assertEqual(s['next_batch'],'Alpha.535–544')
+  self.assertEqual(s['viewer_version'],'0.2.0-alpha.544')
+  self.assertEqual(s['next_batch'],'Alpha.545–554')
   self.assertEqual(s['default_blocks_per_run'],10)
   self.assertIn('still open',s['assessment'])
   for file in ('CHATUEBERGABE.md','projectplan.md','AGENTS.md',
                'info.md','docs/PROJEKTFORTSCHRITT.md'):
-   self.assertIn('Alpha.535–544',read(file)[:1500])
+   self.assertIn('Alpha.545–554',read(file)[:1500])
 if __name__=='__main__': unittest.main()

@@ -607,7 +607,7 @@ std::optional<ObjectUpdateMessage> decode_object_update(
         ObjectUpdateEntry object;
         object.local_id = read_le_u32(payload, offset);
         offset += 4U;
-        offset += 1U; // state
+        object.state=payload[offset++]; // state (attachment point)
         object.id = uuid_from_bytes(payload, offset);
         offset += 16U;
         offset += 4U; // CRC
@@ -821,6 +821,7 @@ decode_object_update_compressed(
         object.id = uuid_from_bytes(data, 0U);
         object.local_id = read_le_u32(data, 16U);
         object.pcode = data[20U];
+        object.state = data[21U]; // nibble-exchanged attachment point
         object.position.x = read_f32(data, 40U);
         object.position.y = read_f32(data, 44U);
         object.position.z = read_f32(data, 48U);

@@ -290,6 +290,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                     :(v.appearance_ready
                         ?"SSA-Anhaenge: Legacy-Block fehlt"
                         :"SSA-Anhaenge: Serverantwort ausstehend"))+
+                " | Obj-Anhaenge:"+std::to_string(
+                    v.avatar_object_attachment_roots)+
                 " | HUD 3D aus:"+std::to_string(v.avatar_hud_world_excluded)+
                 " | Linktiefe:"+std::to_string(v.avatar_scene_max_parent_depth)+
                 " | Bone-Pose:"+std::to_string(v.avatar_bone_pose_avatars),

@@ -32,6 +32,9 @@ struct ViewerShellView
     // Exact Self Low158 AttachmentBlock count; inventory/render success
     // are not implied. Never include attached item UUIDs in the HUD.
     bool avatar_self_attachment_packet=false;
+    // Current simulator prim State/ParentID attachment roots, not
+    // Low158 AttachmentBlock and not proof of a GPU-visible outfit.
+    std::uint32_t avatar_object_attachment_roots=0U;
     std::string avatar_movement_status;
     std::uint32_t avatar_udp_directional_sent=0U;
     std::string avatar_depth_parts;
