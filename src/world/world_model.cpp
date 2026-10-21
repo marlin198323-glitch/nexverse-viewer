@@ -20,6 +20,9 @@ void WorldModel::reset()
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
+    stale_self_cof_appearances_=0U;
+    self_cof_version_highwater_=0U;
+    self_cof_format_highwater_=0U;
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
@@ -67,6 +70,9 @@ void WorldModel::apply_region(const RegionUpdate& update)
         if(region_.handle!=0U)
             ++region_.generation; // direct transitions invalidate lease
         self_appearance_.reset();
+    stale_self_cof_appearances_=0U;
+    self_cof_version_highwater_=0U;
+    self_cof_format_highwater_=0U;
         self_wearables_.reset();
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
@@ -105,6 +111,9 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     parcel_ = {};
     environment_ = {};
     self_appearance_.reset();
+    stale_self_cof_appearances_=0U;
+    self_cof_version_highwater_=0U;
+    self_cof_format_highwater_=0U;
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
@@ -148,6 +157,9 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
         self_appearance_.reset();
+    stale_self_cof_appearances_=0U;
+    self_cof_version_highwater_=0U;
+    self_cof_format_highwater_=0U;
         self_wearables_.reset();
         self_animations_.reset();
         pending_avatar_animations_.clear();
@@ -176,6 +188,30 @@ bool WorldModel::apply_self_appearance(
                 appearance,agent_.agent_id,region_.connected)) ||
         !protocol::valid_self_appearance_texture_entry(appearance.texture_entry))
         return false;
+    // Modern Firestorm Low158 can carry an ordered COF version.
+    // Out-of-order UDP retransmission of a PREVIOUS outfit must not
+    // restore obsolete body/skin. Real OpenGenesisLINK sends the legacy
+    // AppearanceData count=0; accept such unknown-version packets.
+    if(!appearance.appearance_data.empty())
+    {
+        const auto& incoming=appearance.appearance_data.back();
+        if(incoming.cof_version!=0U)
+        {
+            if(self_cof_version_highwater_!=0U&&
+               self_cof_format_highwater_==incoming.appearance_version&&
+               incoming.cof_version<self_cof_version_highwater_)
+            {
+                if(stale_self_cof_appearances_<UINT32_MAX)
+                    ++stale_self_cof_appearances_;
+                return false;
+            }
+            // A legacy count=0 snapshot must not reset this watermark.
+            // COF integers are comparable only within the same
+            // AppearanceVersion; different versions start a new series.
+            self_cof_version_highwater_=incoming.cof_version;
+            self_cof_format_highwater_=incoming.appearance_version;
+        }
+    }
     self_appearance_ = std::move(appearance);
     // Remove any erroneously cached self entity, e.g. from a
     // pre-login appearance update; the self render path uses agent_.
@@ -713,6 +749,8 @@ const AgentState& WorldModel::agent() const noexcept { return agent_; }
 const AgentProfileState& WorldModel::agent_profile() const noexcept { return agent_profile_; }
 const std::optional<protocol::AvatarAppearanceMessage>&
 WorldModel::self_appearance() const noexcept { return self_appearance_; }
+std::uint32_t WorldModel::stale_self_cof_appearances() const noexcept
+{ return stale_self_cof_appearances_; }
 const TerrainState& WorldModel::terrain() const noexcept { return terrain_; }
 const ParcelState& WorldModel::parcel() const noexcept { return parcel_; }
 const EnvironmentState& WorldModel::environment() const noexcept { return environment_; }

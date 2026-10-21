@@ -57,5 +57,42 @@ int main()
     auto updated=appearance;updated.visual_params={1U,2U,3U};
     if(!model.apply_self_appearance(updated)||
        model.self_appearance()->visual_params!=updated.visual_params)return 10;
+    // A verified current modern COF revision protects skin data from
+    // delayed but otherwise well-formed earlier Low158 packets.
+    auto current=updated;
+    current.appearance_data={{2U,900U,0U}};
+    if(!model.apply_self_appearance(current)||
+       model.stale_self_cof_appearances()!=0U)return 11;
+    auto stale=current;
+    stale.appearance_data.back().cof_version=899U;
+    stale.visual_params={222U,223U,224U};
+    if(model.apply_self_appearance(stale)||
+       model.self_appearance()->visual_params!=current.visual_params||
+       model.stale_self_cof_appearances()!=1U)return 12;
+    // No COF version in legacy OpenGenesisLINK reply: still accepted,
+    // but the modern high-watermark remains sticky in this login.
+    auto legacy=updated;
+    legacy.appearance_data.clear();
+    legacy.visual_params={99U,98U,97U};
+    if(!model.apply_self_appearance(legacy)||
+       !model.self_appearance()->appearance_data.empty()||
+       model.stale_self_cof_appearances()!=1U)return 13;
+    if(model.apply_self_appearance(stale)||
+       model.self_appearance()->visual_params!=legacy.visual_params||
+       model.stale_self_cof_appearances()!=2U)return 14;
+    // New authenticated session establishes independent COF numbering.
+    model.apply_agent({"11111111-2222-3333-4444-555555555555",
+        "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});
+    if(model.stale_self_cof_appearances()!=0U||
+       model.self_appearance()||
+       !model.apply_self_appearance(stale)||
+       model.self_appearance()->appearance_data.back().cof_version!=899U)
+        return 15;
+    model.apply_region({0x0000010000000300ULL,"Another",{},
+        "127.0.0.1",9000U,"","",0U,0U,0U,13U,0.0f,"",
+        256U,256U,true});
+    if(model.stale_self_cof_appearances()!=0U||
+       model.self_appearance()||
+       !model.apply_self_appearance(current))return 16;
     std::cout<<"OGL_SELF_VALID_TE_PRESERVED_PASS\n";
 }

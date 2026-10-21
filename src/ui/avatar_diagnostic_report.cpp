@@ -59,6 +59,8 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.appearance_self_incomplete_ignored)+"\n"
        "appearance_self_invalid_texture_ignored="+
            std::to_string(r.appearance_self_invalid_texture_ignored)+"\n"
+       "appearance_self_stale_cof_rejected="+
+           std::to_string(r.appearance_self_stale_cof_rejected)+"\n"
        "wearables_read_request_sent="+yn(r.wearables_read_request_sent)+"\n"
        "wearables_legacy_update_received="+
            yn(r.wearables_legacy_update_received)+"\n"

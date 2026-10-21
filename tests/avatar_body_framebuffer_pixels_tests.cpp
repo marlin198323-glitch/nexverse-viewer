@@ -1,5 +1,7 @@
 /* MPL-2.0 */
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/world/world_model.hpp"
+#include "nexverse/protocol/lludp.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <glad/glad.h>
@@ -179,6 +181,96 @@ int main()
       self.baked_texture_ids={"fixture-bake","fixture-bake","fixture-bake"};
       renderer->set_avatar_proxies({self});
       if(difference(plain,draw())<100U)error=22;
+    }
+    if(!error)
+    {
+      // End-to-end: authenticated modern Low158 -> COF-version gate ->
+      // WorldModel self bake IDs -> original Firestorm body shaders.
+      // A late OLD Low158 must not switch three genuinely GPU-resident
+      // baked textures back to a previous outfit.
+      auto wire_te=[](std::string_view asset)
+      {
+        std::vector<std::uint8_t> te(16U,0x11U);
+        const auto uuid=protocol::uuid_to_bytes(asset);
+        if(!uuid)return std::vector<std::uint8_t>{};
+        for(const auto mask:{0x82U,0x84U,0x88U})
+        {
+          te.push_back(mask);te.push_back(0U);
+          te.insert(te.end(),uuid->begin(),uuid->end());
+        }
+        te.insert(te.end(),{
+          0U,255U,255U,255U,255U,0U,
+          0U,0U,128U,63U,0U,0U,128U,63U,0U,
+          0U,0U,0U,0U,0U,0U,0U,0U,
+          0U,0U,0U,0U,0U,0U
+        });
+        return te;
+      };
+      const std::string old_id=
+          "bbbbbbbb-2222-3333-4444-111111111111";
+      const std::string new_id=
+          "aaaaaaaa-2222-3333-4444-999999999999";
+      const auto make_paint=[](std::uint8_t red,std::uint8_t green)
+      {
+        render::RenderImageRgba8 result{
+            4,4,std::vector<std::uint8_t>(64U,255U)};
+        for(std::size_t i=0U;i<64U;i+=4U)
+        {
+          result.pixels[i]=red;result.pixels[i+1]=green;
+          result.pixels[i+2]=35U;
+        }
+        return result;
+      };
+      world::WorldModel skin;
+      skin.apply_region({
+          0x0000010000000200ULL,"NexVerse",{128,128,25},
+          "127.0.0.1",9000U,"","",
+          0U,0U,0U,13U,20.0f,"",256U,256U,true});
+      skin.apply_agent({"11111111-2222-3333-4444-555555555555",
+          "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});
+      protocol::AvatarAppearanceMessage appearance;
+      appearance.avatar_id=skin.agent().agent_id;
+      appearance.visual_params={120U,121U,122U};
+      appearance.appearance_data={{2U,202U,0U}};
+      appearance.texture_entry=wire_te(new_id);
+      const bool paint_loaded=
+          renderer->set_object_texture(new_id,make_paint(235U,20U))&&
+          renderer->set_object_texture(old_id,make_paint(20U,235U));
+      if(!paint_loaded||!skin.apply_self_appearance(appearance)||
+         skin.self_render_bakes()!=
+             (std::array<std::string,3U>{new_id,new_id,new_id}))
+          error=23;
+      if(!error)
+      {
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto new_skin=draw();
+        if(difference(plain,new_skin)<100U)error=24;
+        auto delayed=appearance;
+        delayed.appearance_data.back().cof_version=201U;
+        delayed.texture_entry=wire_te(old_id);
+        if(skin.apply_self_appearance(delayed)||
+           skin.stale_self_cof_appearances()!=1U)
+            error=25;
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto after_old=draw();
+        const auto stale_gpu=difference(new_skin,after_old);
+        std::cout<<"STALE_COF_LOW158_OLD_SKIN_GPU_PIXELS="
+                 <<stale_gpu<<"\n";
+        if(stale_gpu!=0U)error=26;
+        delayed.appearance_data.back().cof_version=203U;
+        if(!skin.apply_self_appearance(delayed))error=27;
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto actually_newer=draw();
+        if(difference(new_skin,actually_newer)<100U)error=28;
+      }
+      renderer->remove_object_texture(old_id);
+      renderer->remove_object_texture(new_id);
+      self.baked_texture_ids={"fixture-bake",
+                              "fixture-bake","fixture-bake"};
+      renderer->set_avatar_proxies({self});
     }
     if(!error)
     {

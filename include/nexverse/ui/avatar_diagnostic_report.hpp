@@ -32,6 +32,9 @@ struct AvatarDiagnosticReport
     std::uint32_t appearance_self_trial_ignored=0U;
     std::uint32_t appearance_self_incomplete_ignored=0U;
     std::uint32_t appearance_self_invalid_texture_ignored=0U;
+    // Real Low158 modern COF revision rollback rejections, not proof
+    // of a complete outfit/COF inventory or uploaded skin texture.
+    std::uint32_t appearance_self_stale_cof_rejected=0U;
     bool wearables_read_request_sent=false;
     bool wearables_legacy_update_received=false;
     std::uint32_t wearables_legacy_items=0U;

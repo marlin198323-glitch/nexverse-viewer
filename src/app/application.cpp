@@ -12982,6 +12982,13 @@ int Application::run(bool enable_developer_modules)
                 if(login_ui.authenticated&&active_session&&
                    world_model.region().connected&&
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   world_model.agent().agent_id==active_session->agent_id&&
+                   world_model.agent().session_id==active_session->session_id)
+                    avatar_diagnostic.appearance_self_stale_cof_rejected=
+                        world_model.stale_self_cof_appearances();
+                if(login_ui.authenticated&&active_session&&
+                   world_model.region().connected&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
                    active_session->agent_id==render_agent.agent_id)
                 {
                     std::map<std::string,std::uint8_t,std::less<>>
@@ -13361,6 +13368,11 @@ int Application::run(bool enable_developer_modules)
                         if(removed>0U)
                             shell_view.avatar_bake_stream_status+=
                                 " | Self-Bake reset:"+std::to_string(removed);
+                        const auto stale=
+                            world_model.stale_self_cof_appearances();
+                        if(stale>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF alt verworfen:"+std::to_string(stale);
                     }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();

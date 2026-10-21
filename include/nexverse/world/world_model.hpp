@@ -324,6 +324,9 @@ public:
     [[nodiscard]] const AgentProfileState& agent_profile() const noexcept;
     [[nodiscard]] const std::optional<protocol::AvatarAppearanceMessage>&
         self_appearance() const noexcept;
+    // Count late Lower COF-version Low158 snapshots for this identity
+    // and region. Legacy OpenGenesisLINK appearance has no COF version.
+    [[nodiscard]] std::uint32_t stale_self_cof_appearances() const noexcept;
     [[nodiscard]] const TerrainState& terrain() const noexcept;
     [[nodiscard]] const ParcelState& parcel() const noexcept;
     [[nodiscard]] const EnvironmentState& environment() const noexcept;
@@ -343,6 +346,11 @@ private:
     AgentState agent_;
     AgentProfileState agent_profile_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
+    std::uint32_t stale_self_cof_appearances_=0U;
+    // Highest authenticated modern COF revision survives interleaved
+    // legacy count=0 Low158 messages within this session and region.
+    std::uint32_t self_cof_version_highwater_=0U;
+    std::uint8_t self_cof_format_highwater_=0U;
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::uint32_t self_object_bake_withdrawals_=0U;

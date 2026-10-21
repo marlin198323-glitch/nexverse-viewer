@@ -23,6 +23,7 @@ int main()
     r.appearance_self_trial_ignored=2U;
     r.appearance_self_incomplete_ignored=3U;
     r.appearance_self_invalid_texture_ignored=2U;
+    r.appearance_self_stale_cof_rejected=3U;
     r.wearables_read_request_sent=true;
     r.wearables_legacy_update_received=true;
     r.wearables_legacy_items=17U;
@@ -79,6 +80,7 @@ int main()
     if(text.find("appearance_self_trial_ignored=2")==std::string::npos||
        text.find("appearance_self_incomplete_ignored=3")==std::string::npos||
        text.find("appearance_self_invalid_texture_ignored=2")==std::string::npos||
+       text.find("appearance_self_stale_cof_rejected=3")==std::string::npos||
        text.find("wearables_read_request_sent=yes")==std::string::npos||
        text.find("wearables_legacy_update_received=yes")==std::string::npos||
        text.find("wearables_legacy_items=17")==std::string::npos||

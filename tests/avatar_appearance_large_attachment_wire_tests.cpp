@@ -69,7 +69,8 @@ std::vector<std::uint8_t> baked_entry()
 }
 std::vector<std::uint8_t> datagram(std::string_view avatar,
                                    unsigned attachments,
-                                   std::uint32_t serial=17U)
+                                   std::uint32_t serial=17U,
+                                   std::uint32_t cof_version=111U)
 {
     const auto bytes=protocol::uuid_to_bytes(avatar);
     const auto asset=protocol::uuid_to_bytes(
@@ -84,7 +85,7 @@ std::vector<std::uint8_t> datagram(std::string_view avatar,
     payload.insert(payload.end(),{3U,125U,126U,127U});
     payload.push_back(1U); // AppearanceData Variable-1
     payload.push_back(2U); // AppearanceVersion
-    le32(payload,111U); // COF version, not verified
+    le32(payload,cof_version); // COF revision is real protocol metadata
     le32(payload,0U);   // Flags
     payload.push_back(0U); // AppearanceHover Variable-1 = zero
     payload.push_back(static_cast<std::uint8_t>(attachments));
@@ -267,8 +268,46 @@ int main()
     w.apply_agent({self,session,{},{},true});
     const auto next=decode(datagram(self,65U,23U));
     if(!next||!w.apply_self_appearance(*next))return 9;
+    // The real modern Low158 wire COF version must prevent a DELAYED
+    // lower revision from silently restoring the former skin/outfit.
+    const auto older=decode(datagram(self,2U,24U,110U));
+    if(!older||w.apply_self_appearance(*older)||
+       w.stale_self_cof_appearances()!=1U||
+       w.self_appearance()->appearance_data.back().cof_version!=111U||
+       w.self_appearance()->attachments.size()!=65U)return 37;
+    const auto newer=decode(datagram(self,2U,25U,112U));
+    if(!newer||!w.apply_self_appearance(*newer)||
+       w.self_appearance()->appearance_data.back().cof_version!=112U||
+       w.self_appearance()->attachments.size()!=2U)return 38;
+    // Same COF version can legitimately change the baked TextureEntry;
+    // only strictly older revisions are rejected.
+    const auto same=decode(datagram(self,3U,26U,112U));
+    if(!same||!w.apply_self_appearance(*same)||
+       w.self_appearance()->attachments.size()!=3U||
+       w.stale_self_cof_appearances()!=1U)return 39;
+    // OpenGenesisLINK main emits AppearanceData count=0. Never block
+    // the real legacy server just because modern packets were seen.
+    const auto legacy_again=decode(upstream_legacy_hover_packet(self,true));
+    if(!legacy_again||!legacy_again->appearance_data.empty()||
+       !w.apply_self_appearance(*legacy_again)||
+       w.self_appearance()->appearance_data.size()!=0U||
+       w.stale_self_cof_appearances()!=1U)return 40;
+    // Critically, the earlier modern high-water COF version 112 must
+    // survive a later legacy Low158 (AppearanceData count=0).
+    const auto old_after_legacy=decode(datagram(self,1U,28U,111U));
+    if(!old_after_legacy||w.apply_self_appearance(*old_after_legacy)||
+       w.stale_self_cof_appearances()!=2U||
+       !w.self_appearance()->appearance_data.empty())return 43;
+    // A format-version change cannot be compared as a COF revision
+    // without knowing whether those integers share the same scale.
+    const auto different_format=decode(datagram(self,1U,27U,108U));
+    if(!different_format)return 41;
+    auto alternate=*different_format;
+    alternate.appearance_data.back().appearance_version=3U;
+    if(!w.apply_self_appearance(alternate)||
+       w.stale_self_cof_appearances()!=2U)return 42;
     w.begin_region_transition({region+1U,"New",{},"127.0.0.1",
         9001U,"","",0U,0U,0U,13U,0.0f,"",256U,256U,true});
-    if(w.self_appearance())return 10;
+    if(w.self_appearance()||w.stale_self_cof_appearances()!=0U)return 10;
     std::cout<<"OGL_LOW158_ATTACHMENT_65_TO_255_WIRE_AND_MODEL_PASS\n";
 }
