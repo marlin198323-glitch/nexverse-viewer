@@ -773,3 +773,13 @@ NexVerse Login-Modal und öffnet sie ausschließlich im Systembrowser.
 Legacy /buergerverordnung bleibt strikt whitelist-beschränkt.
 Kein stilles Agree oder fremde URL; User bestätigt weiter selbst.
 Keine Live-Grid-TOS-/Outfit-Sichtbarkeit behaupten.
+
+## Alpha.715–724 – Original Firestorm LLM GPU Pose Integrität
+NaN/Inf in Avatar-Position oder Quaternion darf nicht in
+GL-MVP der originalen Head/Upper/Lower-Meshes laufen. Renderer
+filtert unbrauchbare Positionen aus der Scene, normiert rotations
+in double und setzt ungültige Quaternionen visuell auf Identity.
+Frame-echte Diagnostik und native C++23/Framebufferpixel-
+Regressionen beweisen Wiederherstellung der Originalkörperpixel
+nach ungültiger Pose, ohne Ghost-Skin-Draw. Keine echten
+COF-/Outfit-/Skin-Bakes im NexVerse-Live-Grid nachgewiesen.

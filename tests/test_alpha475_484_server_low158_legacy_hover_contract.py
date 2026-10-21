@@ -55,13 +55,13 @@ class OpenGenesisLow158(unittest.TestCase):
   model=read("src/world/world_model.cpp")
   self.assertIn("valid_self_appearance_texture_entry(appearance.texture_entry)",model)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.714")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.724")
   meta=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.714")
-  self.assertEqual(meta["next_batch"],"Alpha.715–724")
+  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.724")
+  self.assertEqual(meta["next_batch"],"Alpha.725–734")
   self.assertEqual(meta["default_blocks_per_run"],10)
   self.assertIn("still open",meta["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.715–724",read(f)[:1500])
+   self.assertIn("Alpha.725–734",read(f)[:1500])
 if __name__=="__main__":unittest.main()

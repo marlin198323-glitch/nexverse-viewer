@@ -28,6 +28,9 @@ struct AvatarPipelineProof
     AvatarVisualTruth visual_truth{};
     bool world_ready=false;
     bool self_present=false;
+    bool self_gpu_pose_dropped=false;
+    std::uint32_t remote_gpu_pose_dropped=0U;
+    std::uint32_t rotation_gpu_pose_repaired=0U;
     bool self_hover_invalid=false;
     std::uint32_t remote_hover_invalid=0U;
     AvatarViewEvidence view{};
@@ -44,6 +47,8 @@ struct AvatarPipelineProof
     // submitted by the original LLM GL mesh in THIS frame.
     [[nodiscard]] std::string view_stage() const
     {
+        if(world_ready&&self_present&&self_gpu_pose_dropped)
+            return "Avatar: GPU-Pose ungueltig (kein Mesh)";
         return describe_avatar_view(world_ready,self_present,view,
             original_body_draws,proxy_draws);
     }
@@ -61,6 +66,15 @@ struct AvatarPipelineProof
         return visible
             ?"Avatar Fragmente: sichtbar (Depth-Test)"
             :"Avatar Fragmente: 0 (verdeckt/ausserhalb)";
+    }
+    [[nodiscard]] std::string pose_stage() const
+    {
+        if(!self_gpu_pose_dropped&&remote_gpu_pose_dropped==0U&&
+           rotation_gpu_pose_repaired==0U)return {};
+        return std::string{"GPU-Pose: Self "}+
+            (self_gpu_pose_dropped?"1":"0")+
+            " / Fremde "+std::to_string(remote_gpu_pose_dropped)+
+            " / Rotation "+std::to_string(rotation_gpu_pose_repaired);
     }
     [[nodiscard]] std::string hover_stage() const
     {

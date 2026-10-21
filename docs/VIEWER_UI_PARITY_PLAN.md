@@ -420,3 +420,13 @@ Server /buergerverordnung nutzt nur seine bekannte offizielle
 Legacy-Version. Beide URLs sind zuvor auf einen fixen
 HTTPS-Wert normalisiert, nicht aus der rohen XMLRPC-Antwort
 übernommen. Passwort-Neueingabe und manuelle Zustimmung bleiben.
+
+## Alpha.715–724 – F3 Avatar-Pose entspricht tatsächlicher GPU-Position
+Echter GL-Renderer prüft Self/Remote AvatarProxy vor Original-Firestorm-
+Mesh-Draw gegen nichtfinite/unplausible Weltposition und ungültige
+Quaternionen. Das UI zeigt Self-Drop, Remote-Drops und
+reparierte Rotation aus aktuellen RenderDiagnostics pro Frame an;
+es darf einen verworfenen Self-Avatar nicht als sichtbar ausweisen.
+Frustumstatus verwendet die tatsächliche Low158-Hover-
+bereinigte Proxyposition statt unverschobene Agent-Physikposition.
+Nativer x64/Mint Original-LLM-Framebufferpixeltest, kein Grid-Live-Avatar.

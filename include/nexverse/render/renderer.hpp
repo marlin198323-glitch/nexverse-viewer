@@ -351,6 +351,11 @@ struct RenderDiagnostics
     // and separate from world-object scene mesh draw accounting.
     std::uint64_t avatar_proxy_draw_calls = 0U;
     std::uint64_t self_avatar_proxy_draw_calls = 0U;
+    // Actual GPU admission counts for this frame, never inferred from
+    // LLUDP object presence or from a previous simulator region.
+    std::uint32_t avatar_pose_invalid_dropped=0U;
+    std::uint32_t avatar_rotation_repaired=0U;
+    bool self_avatar_pose_invalid_dropped=false;
     std::uint64_t avatar_baked_texture_draw_calls = 0U;
     std::uint64_t avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t avatar_weighted_skin_draw_calls = 0U;

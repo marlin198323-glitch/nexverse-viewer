@@ -2738,11 +2738,14 @@ void render_world_hud(
         : nexverse::ui::describe_avatar_pipeline(avatar_proof);
     // A nonfinite Low158 hover used to hide otherwise valid original
     // Firestorm avatar meshes. Surface sanitation as real provenance.
+    const auto pose_warning=avatar_proof.pose_stage();
     const auto hover_warning=avatar_proof.hover_stage();
+    const auto& avatar_warning=pose_warning.empty()
+        ?hover_warning:pose_warning;
     renderer.text(card_x+14.0f*scale,rail_y+410.0f*scale,
-        9.1f*scale,hover_warning.empty()
-            ?appearance_status:hover_warning,
-        hover_warning.empty()&&avatar_proof.appearance_received
+        9.1f*scale,avatar_warning.empty()
+            ?appearance_status:avatar_warning,
+        avatar_warning.empty()&&avatar_proof.appearance_received
             ?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
         9.1f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
@@ -13102,6 +13105,13 @@ int Application::run(bool enable_developer_modules)
             avatar_proof.appearance_runtime=appearance_runtime;
             avatar_proof.world_ready=simulation_ready;
             avatar_proof.self_present=render_agent.present;
+            avatar_proof.self_gpu_pose_dropped=
+                render_diagnostics.self_avatar_pose_invalid_dropped;
+            avatar_proof.remote_gpu_pose_dropped=
+                render_diagnostics.avatar_pose_invalid_dropped-
+                    (avatar_proof.self_gpu_pose_dropped?1U:0U);
+            avatar_proof.rotation_gpu_pose_repaired=
+                render_diagnostics.avatar_rotation_repaired;
             avatar_proof.self_hover_invalid=current_self_hover_invalid;
             avatar_proof.remote_hover_invalid=current_remote_hover_invalid;
             avatar_proof.original_body_draws=
@@ -13134,9 +13144,17 @@ int Application::run(bool enable_developer_modules)
                 const auto camera=render::third_person_camera(
                     render_agent.position,render_agent.rotation,
                     camera_zoom_distance,camera_orbit_degrees);
-                avatar_proof.view=ui::inspect_avatar_view(
-                    camera,render_agent.position,
-                    framebuffer_width,framebuffer_height);
+                // Inspect the SAME sanitized visual proxy that the
+                // real renderer submits, not the unshifted physics pose.
+                const auto self=std::find_if(
+                    avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                    [](const auto& item){return item.is_self;});
+                if(self!=avatar_proxy_update.end()&&
+                   !avatar_proof.self_gpu_pose_dropped)
+                    avatar_proof.view=ui::inspect_avatar_view(
+                        camera,{self->position.x,self->position.y,
+                                self->position.z},
+                        framebuffer_width,framebuffer_height);
             }
             if(simulation_ready && active_session &&
                firestorm_region_lease.matches(current_firestorm_epoch) &&

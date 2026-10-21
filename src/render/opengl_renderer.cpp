@@ -8,6 +8,7 @@
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_skin_weight_pair.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
+#include "nexverse/render/avatar_proxy_pose_integrity.hpp"
 #include "nexverse/render/attachment_scene_classification.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
@@ -3340,10 +3341,24 @@ public:
         const std::vector<RenderAvatarProxy>& avatars) override
     {
         constexpr std::size_t max_avatar_proxies = 64U;
-        avatar_proxies_.assign(
-            avatars.begin(),
-            avatars.begin() + static_cast<std::ptrdiff_t>(
-                std::min(avatars.size(), max_avatar_proxies)));
+        avatar_proxies_.clear();
+        avatar_pose_dropped_=0U;
+        avatar_rotation_repaired_=0U;
+        self_avatar_pose_dropped_=false;
+        for(const auto& source:avatars)
+        {
+            if(avatar_proxies_.size()>=max_avatar_proxies)break;
+            auto candidate=source;
+            const auto audit=sanitize_avatar_proxy_pose(candidate);
+            if(!audit.position_valid)
+            {
+                ++avatar_pose_dropped_;
+                if(candidate.is_self)self_avatar_pose_dropped_=true;
+                continue;
+            }
+            if(audit.rotation_repaired)++avatar_rotation_repaired_;
+            avatar_proxies_.push_back(std::move(candidate));
+        }
     }
 
     void begin_frame() override
@@ -3372,6 +3387,10 @@ public:
         diagnostics_.scene_missing_mesh_triangles = 0U;
         diagnostics_.avatar_proxy_draw_calls = 0U;
         diagnostics_.self_avatar_proxy_draw_calls = 0U;
+        diagnostics_.avatar_pose_invalid_dropped=avatar_pose_dropped_;
+        diagnostics_.avatar_rotation_repaired=avatar_rotation_repaired_;
+        diagnostics_.self_avatar_pose_invalid_dropped=
+            self_avatar_pose_dropped_;
         diagnostics_.avatar_baked_texture_draw_calls = 0U;
         diagnostics_.avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.avatar_weighted_skin_draw_calls = 0U;
@@ -5445,6 +5464,9 @@ private:
     RenderEnvironment environment_;
     std::vector<RenderSceneObject> scene_objects_;
     std::vector<RenderAvatarProxy> avatar_proxies_;
+    std::uint32_t avatar_pose_dropped_=0U;
+    std::uint32_t avatar_rotation_repaired_=0U;
+    bool self_avatar_pose_dropped_=false;
     RenderAvatarBindRig avatar_bind_rig_{};
     std::vector<RenderPointLight> point_lights_;
     std::vector<RenderParticleEmitter> particle_emitters_;

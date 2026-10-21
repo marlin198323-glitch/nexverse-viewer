@@ -655,3 +655,14 @@ Pfade sind nun strikt erlaubt, niemals Query/Userinfo/Fragment/
 Fremdhost. Browser, Clipboard, UI übernehmen die jeweilige
 normalisierte HTTPS-Adresse. Keine DB-/authentifizierte Live-Bestätigung.
 Andere historische Serverdiffs bleiben MANUAL_REVIEW.
+
+## Alpha.715–724 – LLUDP/AvatarPose GL-Gate
+Aktueller Server-main 31f3d129 (kein neuer Commit) respektiert;
+kein Protokollvertrag erfunden. Selbst bei gültigem
+Agent/Region und Low158 kann ein ungültiger Quaternion-/Positionswert
+vor GPU die Firestorm LLM-Meshmatrix korrumpieren. Neues
+GPU-Admission-Gate filtert Self/Remote unendliche/NaN-
+Positionen aus und normalisiert ungültige Rotation sicher.
+WorldModel/LLUDP/Physics unverändert. GL-Diagnostik zeigt
+nur aktuelle per-Frame-Fehler, keine persönlichen IDs.
+Authentifizierte Grid-E2E und ältere Serverdiff-Audits bleiben offen.

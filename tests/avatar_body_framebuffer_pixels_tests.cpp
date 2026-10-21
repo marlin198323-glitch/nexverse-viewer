@@ -9,6 +9,7 @@
 #include <array>
 #include <vector>
 #include <iostream>
+#include <limits>
 using namespace nexverse;
 int main()
 {
@@ -75,6 +76,54 @@ int main()
     std::cout<<"ORIGINAL_AVATAR_PIXELS="<<initial<<"\n";
     if(initial<100||d.self_avatar_anatomical_mesh_draw_calls!=3||
        d.self_avatar_weighted_skin_draw_calls!=3)error=6;
+    if(!error)
+    {
+      // Real framebuffer, not a mock: malformed own position must never
+      // produce GL pixels or a false original-skin draw. Recovery on the
+      // next valid frame must restore original Firestorm body pixels.
+      const float nan=std::numeric_limits<float>::quiet_NaN();
+      auto poisoned=self;
+      poisoned.position.x=nan;
+      renderer->set_avatar_proxies({poisoned});
+      const auto rejected=draw();
+      const auto invalid=renderer->diagnostics();
+      if(difference(empty,rejected)!=0U||
+         !invalid.self_avatar_pose_invalid_dropped||
+         invalid.avatar_pose_invalid_dropped!=1U||
+         invalid.self_avatar_anatomical_mesh_draw_calls!=0U)
+          error=34;
+      if(!error)
+      {
+        // Broken orientation must not poison the already valid position.
+        auto damaged=self;
+        damaged.rotation={nan,0.0f,0.0f,1.0f};
+        renderer->set_avatar_proxies({damaged});
+        const auto fixed=draw();
+        const auto recovered=renderer->diagnostics();
+        if(difference(plain,fixed)!=0U||
+           recovered.avatar_rotation_repaired!=1U||
+           recovered.self_avatar_pose_invalid_dropped||
+           recovered.self_avatar_anatomical_mesh_draw_calls!=3U)
+            error=35;
+      }
+      if(!error)
+      {
+        // Dropping a malformed REMOTE quaternion/position cannot delete
+        // or modify an otherwise valid self body in the same GL frame.
+        auto remote=self;
+        remote.is_self=false;
+        remote.position.z=std::numeric_limits<float>::infinity();
+        renderer->set_avatar_proxies({self,remote});
+        const auto current=draw();
+        const auto stats=renderer->diagnostics();
+        if(difference(plain,current)!=0U||
+           stats.avatar_pose_invalid_dropped!=1U||
+           stats.self_avatar_pose_invalid_dropped||
+           stats.self_avatar_anatomical_mesh_draw_calls!=3U)
+            error=36;
+      }
+      renderer->set_avatar_proxies({self});
+    }
     render::RenderImageRgba8 pixels{4,4,std::vector<std::uint8_t>(64,255)};
     for(std::size_t i=0;i<pixels.pixels.size();i+=4)
     {pixels.pixels[i]=20;pixels.pixels[i+1]=220;pixels.pixels[i+2]=60;}
