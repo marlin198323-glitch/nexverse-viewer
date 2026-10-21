@@ -87,5 +87,11 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null
+  "pending_pi5_ci": {
+    "feature_sha": "0c9f60ef02dbcc35796c7cdf637eb59b94ec48a9",
+    "run_id": 39643087562,
+    "checked_status": "in_progress",
+    "checked_on": "2026-10-21 19:22 Europe/Berlin",
+    "note": "In progress, not yet a verified success. Previous last_verified_pi5_ci remains 39639482493."
+  }
 }
