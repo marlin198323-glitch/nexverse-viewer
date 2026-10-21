@@ -266,6 +266,13 @@ public:
     // Valid current simulator self TE withdrawals, not HTTP failures or
     // placeholder uploads. Per authenticated agent/session/region epoch.
     [[nodiscard]] std::uint32_t self_object_bake_withdrawals() const noexcept;
+    // Current simulator explicitly withdrew the own avatar LocalID.
+    // Invalidate ONLY ObjectUpdate provisional bakes; genuine Low158
+    // remains authoritative until a new simulator appearance arrives.
+    [[nodiscard]] bool withdraw_self_object_on_kill(
+        std::string_view avatar_id,std::uint64_t region_handle,
+        std::uint32_t local_id);
+    [[nodiscard]] std::uint32_t self_object_kills() const noexcept;
     // Low158 always wins PER FACE; valid self ObjectUpdate may fill only
     // missing body faces with explicitly provisional server references.
     [[nodiscard]] SelfRenderBakeSelection self_bake_selection() const;
@@ -354,6 +361,7 @@ private:
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::uint32_t self_object_bake_withdrawals_=0U;
+    std::uint32_t self_object_kills_=0U;
     std::optional<protocol::AvatarAnimationMessage> self_animations_;
     // Animation may precede ObjectUpdate. Bounded pending messages do not
     // create renderable ghost avatars and expire at region transitions.

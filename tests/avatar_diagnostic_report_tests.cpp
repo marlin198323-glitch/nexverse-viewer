@@ -42,6 +42,7 @@ int main()
     r.movement_discontinuities=3U;
     r.movement_stale_samples_ignored=2U;
     r.movement_waiting_after_jump=true;
+    r.self_object_kills=2U;
     r.self_object_bake_candidate_faces=2U;
     r.self_object_bake_candidate_active=true;
     r.self_object_bake_candidate_gpu_resident=2U;
@@ -101,6 +102,7 @@ int main()
        text.find("movement_discontinuities=3")==std::string::npos||
        text.find("movement_stale_samples_ignored=2")==std::string::npos||
        text.find("movement_waiting_after_jump=yes")==std::string::npos||
+       text.find("self_object_localid_kills=2")==std::string::npos||
        text.find("self_object_bake_candidate_faces=2")==std::string::npos||
        text.find("self_object_bake_candidate_active=yes")==std::string::npos||
        text.find("self_object_bake_candidate_gpu_resident=2")==std::string::npos||

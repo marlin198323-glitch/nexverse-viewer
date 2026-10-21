@@ -5202,6 +5202,9 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
+                        // Only a real nonzero simulator-owned local ID
+                        // can establish the own avatar's terse binding.
+                        if(entry.local_id==0U)continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
@@ -5315,6 +5318,9 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
+                        // Only a real nonzero simulator-owned local ID
+                        // can establish the own avatar's terse binding.
+                        if(entry.local_id==0U)continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
@@ -5519,7 +5525,8 @@ int Application::run(bool enable_developer_modules)
 
     packet_dispatcher.register_handler(
         protocol::msg_kill_object,
-        [&object_packets, &world_model, &world_mutex](
+        [&object_packets, &world_model, &world_mutex,
+         &self_avatar_local_id, &self_avatar_region_handle](
             const protocol::DecodedPacket& packet)
         {
             const auto kill = protocol::decode_kill_object(packet.payload);
@@ -5538,8 +5545,20 @@ int Application::run(bool enable_developer_modules)
 
             for (const std::uint32_t local_id : kill->local_ids)
             {
-                // KillObject covers avatar LocalIDs and all attached prim
-                // descendants, not only non-avatar object map entries.
+                if(local_id!=0U&&
+                   self_avatar_local_id==local_id&&
+                   self_avatar_region_handle==world_model.region().handle)
+                {
+                    // Current self KillObject withdraws own binding:
+                    // ignore late old LocalID terse movement and do not
+                    // continue to render withdrawn provisional skin.
+                    // Real authenticated Low158 remains authoritative.
+                    (void)world_model.withdraw_self_object_on_kill(
+                        world_model.agent().agent_id,
+                        world_model.region().handle,local_id);
+                    self_avatar_local_id=0U;
+                    self_avatar_region_handle=0U;
+                }
                 (void)world_model.kill_simulator_local_id(local_id);
             }
         });
@@ -13018,8 +13037,12 @@ int Application::run(bool enable_developer_modules)
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
                    world_model.agent().agent_id==active_session->agent_id&&
                    world_model.agent().session_id==active_session->session_id)
+                {
                     avatar_diagnostic.self_object_bake_withdrawals=
                         world_model.self_object_bake_withdrawals();
+                    avatar_diagnostic.self_object_kills=
+                        world_model.self_object_kills();
+                }
                 if(const auto& obj=world_model.self_object_bakes();obj)
                 {
                     for(const auto& id:obj->visible_body)
@@ -13368,6 +13391,11 @@ int Application::run(bool enable_developer_modules)
                         if(removed>0U)
                             shell_view.avatar_bake_stream_status+=
                                 " | Self-Bake reset:"+std::to_string(removed);
+                        const auto killed=world_model.self_object_kills();
+                        if(killed>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Eigene Objekt-ID verworfen:"+
+                                std::to_string(killed);
                         const auto stale=
                             world_model.stale_self_cof_appearances();
                         if(stale>0U)

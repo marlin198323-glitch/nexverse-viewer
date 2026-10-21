@@ -26,6 +26,7 @@ void WorldModel::reset()
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
+    self_object_kills_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
     avatars_.clear();
@@ -76,6 +77,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         self_wearables_.reset();
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
+        self_object_kills_=0U;
         self_animations_.reset();
         pending_avatar_animations_.clear();
     }
@@ -117,6 +119,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
+    self_object_kills_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
 
@@ -156,6 +159,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         }
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
+        self_object_kills_=0U;
         self_appearance_.reset();
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
@@ -288,6 +292,27 @@ WorldModel::self_object_bakes() const noexcept
 std::uint32_t WorldModel::self_object_bake_withdrawals() const noexcept
 {
     return self_object_bake_withdrawals_;
+}
+bool WorldModel::withdraw_self_object_on_kill(
+    std::string_view avatar_id,std::uint64_t region_handle,
+    std::uint32_t local_id)
+{
+    if(!region_.connected||region_.handle!=region_handle||
+       agent_.agent_id.empty()||agent_.session_id.empty()||
+       avatar_id!=agent_.agent_id||local_id==0U)
+        return false;
+    // The dispatcher additionally authenticates this LocalID against
+    // its own current ObjectUpdate binding before calling. A duplicate
+    // KillObject is not counted once that binding was cleared.
+    if(self_object_bakes_&&self_object_bakes_->local_id==local_id)
+        self_object_bakes_.reset();
+    if(self_object_kills_<UINT32_MAX)++self_object_kills_;
+    return true;
+}
+
+std::uint32_t WorldModel::self_object_kills() const noexcept
+{
+    return self_object_kills_;
 }
 
 SelfRenderBakeSelection WorldModel::self_bake_selection() const

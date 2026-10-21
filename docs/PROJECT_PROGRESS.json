@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.634",
+  "viewer_version": "0.2.0-alpha.644",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.635–644",
-  "assessment": "Alpha.634 repairs genuine authenticated self AvatarAppearance/Low158 COF reordering skin rollback: a delayed older modern Low158 previously replaced an already accepted newer, valid Firestorm TextureEntry and restored previous avatar skin/outfit source refs. WorldModel now rejects strictly smaller nonzero COF versions of the same AppearanceVersion using per-authenticated-session/region high-watermark. Equal versions can legitimately rebake, newer versions change the original body skin; OpenGenesisLINK legacy count=0 AppearanceData remains accepted and cannot reset a modern high-watermark. Changes to AppearanceVersion start fresh series; disconnect, reauth or region switch reset counters. Native real LLUDP wire Low158 tests, WorldModel session lifecycle and an actual original Firestorm three-body-mesh GL framebuffer test verify that obsolete GPU-resident skin remains unrendered while a newer source visibly changes pixels. F3 and privacy-safe diagnostic report show only region-auth-scoped rejected count, no item/texture UUID. Authenticated live NexVerse own skin/COF outfit/attachments and simulator-confirmed WASD end-to-end still open and unverified, weighted 38.65 percent, rounded 39 percent.",
+  "next_five_blocks": "Alpha.645–654",
+  "assessment": "Alpha.644 fixes actual own-avatar LLUDP KillObject lifetime gap: the previously hardened KillObject handler removed remote avatars and linked mesh prims but retained self_avatar_local_id and its old region binding. A delayed ImprovedTerseObjectUpdate on that killed LocalID could be accepted as fresh own avatar position, rotation or WASD server confirmation, and old provisional ObjectUpdate baked body skin could stay selected. The dispatcher now clears the current self LocalID and region binding on exact own KillObject and routes normal child prim kills; its world model withdraws only that LocalID's provisional baked TextureEntry, preserving genuine trusted Low158 per face. Full and Compressed own ObjectUpdate require nonzero simulator LocalID before rebinding or motion evidence. A real KillObject wire decoder C++ test, native session/region/source invariant tests, and an original Firestorm head/upper/lower framebuffer GPU test verify the prior skin has zero stale pixel/GL draws while its asset remains GPU-resident. F3 and private report expose count only, reset by true agent/session/region transitions. Upstream OpenGenesisLINK main 171e814 unchanged. Live authenticated NexVerse own skin/COF/outfit and simulator-confirmed WASD still open/unverified, weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.635–644",
+  "next_batch": "Alpha.645–654",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "ec8fa96605fb14b932ca1b70487cfa095ca7a57a",

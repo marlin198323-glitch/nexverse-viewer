@@ -57,6 +57,7 @@ struct AvatarDiagnosticReport
     std::uint32_t self_object_bake_candidate_faces=0U;
     // Real valid TE withdrawal count for THIS agent/session/region.
     std::uint32_t self_object_bake_withdrawals=0U;
+    std::uint32_t self_object_kills=0U; // real own LocalID retirement only
     bool self_object_bake_candidate_active=false;
     std::uint32_t self_object_bake_candidate_gpu_resident=0U;
     std::uint32_t self_object_bake_candidate_bake_gl_draws=0U;

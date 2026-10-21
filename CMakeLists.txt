@@ -985,6 +985,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-object-bake-fallback-tests
         COMMAND nexverse-self-object-bake-fallback-tests)
 
+    add_executable(nexverse-self-avatar-kill-binding-tests
+        tests/self_avatar_kill_binding_tests.cpp)
+    target_link_libraries(nexverse-self-avatar-kill-binding-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-self-avatar-kill-binding-tests)
+    add_test(NAME nexverse-self-avatar-kill-binding-tests
+        COMMAND nexverse-self-avatar-kill-binding-tests)
+
     add_executable(nexverse-avatar-localid-reuse-tests
         tests/avatar_localid_reuse_tests.cpp)
     target_link_libraries(nexverse-avatar-localid-reuse-tests

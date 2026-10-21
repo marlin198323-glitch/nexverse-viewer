@@ -274,6 +274,66 @@ int main()
     }
     if(!error)
     {
+      // A real own-avatar KillObject invalidates an authenticated
+      // PROVISIONAL TextureEntry even while its GL asset stays resident.
+      const auto uuid=protocol::uuid_to_bytes(
+          "44444444-4444-4444-4444-444444444444");
+      const auto own="11111111-2222-3333-4444-555555555555";
+      const auto session="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+      constexpr std::uint64_t region=0x0000010000000200ULL;
+      world::WorldModel self_world;
+      self_world.apply_region({region,"Sim",{128,128,25},
+          "127.0.0.1",9000U,"","",0U,0U,0U,13U,
+          20.0f,"",256U,256U,true});
+      self_world.apply_agent({own,session,{},{},true});
+      std::vector<std::uint8_t> te(16U,0x11U);
+      if(!uuid)error=29;
+      if(!error)
+      {
+        te.insert(te.end(),{0x82U,0U});
+        te.insert(te.end(),uuid->begin(),uuid->end());
+        te.insert(te.end(),{
+            0U,255U,255U,255U,255U,0U,
+            0U,0U,128U,63U,0U,0U,128U,63U,0U,
+            0U,0U,0U,0U,0U,0U,0U,0U,
+            0U,0U,0U,0U,0U,0U});
+        render::RenderImageRgba8 color{
+            4,4,std::vector<std::uint8_t>(64U,255U)};
+        for(std::size_t i=0U;i<color.pixels.size();i+=4U)
+        {color.pixels[i]=245U;color.pixels[i+1]=80U;color.pixels[i+2]=25U;}
+        if(!renderer->set_object_texture(
+                 "44444444-4444-4444-4444-444444444444",color)||
+           !self_world.observe_self_object_bakes(own,region,51U,te))
+            error=30;
+        if(!error)
+        {
+          self.baked_texture_ids=self_world.self_render_bakes();
+          renderer->set_avatar_proxies({self});
+          const auto before=draw();
+          if(difference(plain,before)<20U)error=31;
+          if(!self_world.withdraw_self_object_on_kill(own,region,51U)||
+             self_world.self_render_bakes()!=
+                 (std::array<std::string,3U>{}) ||
+             self_world.self_object_kills()!=1U)error=32;
+          self.baked_texture_ids=self_world.self_render_bakes();
+          renderer->set_avatar_proxies({self});
+          const auto after=draw();
+          const auto remaining=difference(plain,after);
+          std::cout<<"SELF_KILLOBJECT_STALE_GPU_SKIN_PIXELS="
+                   <<remaining<<"\n";
+          if(remaining!=0U||
+             renderer->diagnostics().self_avatar_baked_texture_draw_calls!=0U)
+              error=33;
+        }
+        renderer->remove_object_texture(
+            "44444444-4444-4444-4444-444444444444");
+      }
+      self.baked_texture_ids={"fixture-bake",
+                              "fixture-bake","fixture-bake"};
+      renderer->set_avatar_proxies({self});
+    }
+    if(!error)
+    {
       renderer->remove_object_texture("fixture-bake");
       const auto after_evict=draw();
       const auto evicted=renderer->diagnostics();
