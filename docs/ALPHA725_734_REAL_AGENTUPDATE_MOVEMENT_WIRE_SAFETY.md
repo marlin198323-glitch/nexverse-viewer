@@ -92,3 +92,17 @@ autorisierter Benutzersitzung überprüft werden. Bis dahin
 39 Prozent Projektfortschritt unverändert.
 
 Nächster Zehnerblock: Alpha.735–744 auf Linux Mint Commander.
+
+## Exakter Feature-Code-Commit und CI-Provenienz
+Feature-SHA a31201f2490e40041fa08fff6bc1c7fb8c725129.
+Direkt auf Linux Mint Commander ausgeführt:
+scripts/mint-viewer-validation.sh Exit 0, 175 native CTests,
+365 Python-Verträge, isolierter Xvfb-Viewer Version
+0.2.0-alpha.734, originales Firestorm Bind-Skeleton/Bodymesh
+und OGL-Taskleistenicon 128x128. GitHub Pi5 Run 39662405115
+für genau diesen SHA IN_PROGRESS bei Übergabe.
+Gehosteter x64 CI Run 39662405234 FAILURE vor Runnerzuteilung,
+Job 119438565129, runner_id 0, Steps 0; kein Build ausgeführt.
+Letzter bestätigter erfolgreicher SHA-GitHub-Pi5-Run:
+39660444288 zur Alpha.724, SHA 09d1c0c.
+Keine authentifizierte NexVerse-Inworld-Avatar-/Skin-/WASD-Abnahme.
