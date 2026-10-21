@@ -13,6 +13,30 @@ struct TosRect
     }
 };
 enum class TosAction{none,open_document,accept,decline};
+
+// Keyboard navigation must never select disabled "accept" before the
+// user has opened the official document. Reverse Tab is supported.
+inline TosAction next_tos_focus(TosAction current,bool can_accept,
+                                 bool reverse=false) noexcept
+{
+    if(!can_accept)
+    {
+        if(reverse)
+            return current==TosAction::open_document
+                ?TosAction::decline:TosAction::open_document;
+        return current==TosAction::decline
+            ?TosAction::open_document:TosAction::decline;
+    }
+    if(reverse)
+    {
+        if(current==TosAction::decline)return TosAction::accept;
+        if(current==TosAction::accept)return TosAction::open_document;
+        return TosAction::decline;
+    }
+    if(current==TosAction::open_document)return TosAction::accept;
+    if(current==TosAction::accept)return TosAction::decline;
+    return TosAction::open_document;
+}
 struct TosLayout
 {
     TosRect dialog,open_document,accept,decline;

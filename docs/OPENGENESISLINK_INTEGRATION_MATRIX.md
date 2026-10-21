@@ -617,3 +617,12 @@ menschliche Klickzustimmung nach Serverchallenge. Allowlist nur
 stadt-nexverse.de/buergerverordnung und Ausgabe der festen
 HTTPS-Dokumentseite. Reviewed-Baseline wegen älterer Commits nicht
 angehoben. Siehe docs/ALPHA665_674_SERVER_TOS_EXPLICIT_LOGIN_CONSENT.md.
+
+## 21.10.2026 – Alpha.675–684 Upstream und verifiziertes TOS
+Servermain 3728273e5662cef5280af6cff202108c74fb0aa0,
+gezielter Compare mit 7569838: ein Mono.Addins OGLSeasons-
+Regionmodulfix, keine neue bewiesene Login/LLUDP-Protokolländerung.
+TOS bleibt servergetrieben. Viewer-Freigabe nach fehlgeschlagenem
+Login/Ausnahme verworfen, Challenge immer zum gesendeten Avatar und
+Grid. Frühere Reviewed-SHA bleibt wegen älteren Diff-Rückstands
+unverändert; vollständiger Serververgleich weiter offen.

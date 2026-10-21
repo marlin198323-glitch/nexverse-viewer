@@ -382,3 +382,13 @@ neu verlangt. 1100x700, 1280x800 und 3440x1440 HitTests
 vorhanden. Kein nachgebauter Fake-Webview und keine
 stillschweigende Legal-Akzeptanz. Authentifizierter Browser-/
 Simulator-End-to-End-Pixeltest noch offen.
+
+## Alpha.675–684 – Modal-Fokus und echter Linux-x64-UI-Build
+Prelogin-TOS-Dialog reagiert nun auf Tab, Shift+Tab, Enter,
+Numpad-Enter, Leertaste und ESC mit sichtbarer cyanfarbener
+Fokusmarkierung. Nicht freigeschaltete Zustimmung wird übersprungen.
+Escape lehnt ausdrücklich ab und schließt nicht mehr das Viewerfenster.
+Browserstarter bereinigt POSIX-Kindprozess; Windows benötigt shell32.
+Neuer gehosteter Linux-x64-GUI-CMake-Workflow auf develop-current
+baut den echten Viewer. Erfolgreicher UI-Framebuffer-/Pixeltest,
+Login und vollständig sichtbarer Avatar noch offen.

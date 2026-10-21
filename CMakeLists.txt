@@ -270,6 +270,10 @@ if(APPLE)
         MACOSX_BUNDLE_ICON_FILE opengenesislink-viewer.icns)
 endif()
 target_link_libraries(nexverse-viewer PRIVATE NexVerse::UI)
+if(WIN32)
+    # ShellExecuteA for the official external TOS document.
+    target_link_libraries(nexverse-viewer PRIVATE shell32)
+endif()
 nexverse_enable_warnings(nexverse-viewer)
 
 install(TARGETS nexverse-viewer

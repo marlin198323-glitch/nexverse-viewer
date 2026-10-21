@@ -737,3 +737,12 @@ neuer Login mit true für gleichen Avatar und Grid. Kein
 automatisches Login und keine vorzeitige Region. Statt
 Firestorms eingebettetem Webview Systembrowser und
 Passwort-Neueingabe. Realer Grid-Test steht noch aus.
+
+## Alpha.675–684 – Firestorm-artiges TOS-Modal robust
+TOS-Dialog mit Maus und Tastatur zugänglich; Fokus sichtbar, ESC
+bricht nur Modal statt Anwendung ab. Auf Anmeldefehler oder
+Login-Exception wird das einmalige Consent gelöscht, keine stille
+Freigabe beim nächsten Versuch. Bei Grid-/Avatarwechsel gilt
+Freigabe nicht. Gehosteter Linux-x64-OpenGL-GUI-Build und
+echter XMLRPC-CMake-Test im neuen Workflow separat; kein
+eingebetteter Webview und noch keine bewiesene Live-TOS-Akzeptanz.

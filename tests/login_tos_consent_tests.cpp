@@ -38,6 +38,22 @@ int main()
     if(!s.challenge("tos","https://stadt-nexverse.de/buergerverordnung",
                     avatar,grid)||s.approved_for(avatar,grid)||s.agree())
         return 8;
+    // Keyboard-only user must be able to reach every enabled action.
+    if(ui::next_tos_focus(ui::TosAction::open_document,false)!=
+           ui::TosAction::decline||
+       ui::next_tos_focus(ui::TosAction::decline,false)!=
+           ui::TosAction::open_document||
+       ui::next_tos_focus(ui::TosAction::open_document,true)!=
+           ui::TosAction::accept||
+       ui::next_tos_focus(ui::TosAction::accept,true)!=
+           ui::TosAction::decline||
+       ui::next_tos_focus(ui::TosAction::decline,true)!=
+           ui::TosAction::open_document||
+       ui::next_tos_focus(ui::TosAction::accept,true,true)!=
+           ui::TosAction::open_document||
+       ui::next_tos_focus(ui::TosAction::open_document,true,true)!=
+           ui::TosAction::decline)
+        return 11;
     s.reset();
     if(s.visible()||s.approved_for(avatar,grid))return 9;
     ui::TosLayout widescreen{3440,1440},compact{1100,700};

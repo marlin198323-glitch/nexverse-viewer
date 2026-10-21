@@ -1,0 +1,47 @@
+name: OGL Linux x64 full viewer build
+
+on:
+  push:
+    branches: [develop-current]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ogl-gui-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-viewer:
+    name: Linux x64 OpenGL/GUI CMake compile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install native desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends             build-essential cmake ninja-build pkg-config python3             autoconf autoconf-archive automake libtool             libgl1-mesa-dev libglu1-mesa-dev             libx11-dev libxinerama-dev libxcursor-dev libxi-dev             libxrandr-dev xorg-dev             libwebkit2gtk-4.1-dev libgtk-3-dev             xvfb xauth
+      - name: Bootstrap vcpkg
+        run: |
+          git clone --depth 1 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+          "$HOME/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+      - name: CMake full GUI configure
+        run: cmake --preset debug -DNEXVERSE_BUILD_TESTS=ON
+      - name: Compile actual viewer and login parser
+        run: cmake --build --preset debug --parallel 3 --target nexverse-viewer nexverse-login-tests nexverse-login-tos-consent-tests
+      - name: Run actual compiled LoginService XML-RPC + TOS tests
+        run: |
+          ctest --test-dir build/debug --output-on-failure -R "^nexverse-login(-tos-consent)?-tests$"
+      - name: Full viewer binary exists
+        run: |
+          test -x build/debug/nexverse-viewer
+          echo "OGL_LINUX_X64_VIEWER_COMPILED"
+          echo "This job does NOT authenticate against NexVerse nor prove GPU/avatar visibility."

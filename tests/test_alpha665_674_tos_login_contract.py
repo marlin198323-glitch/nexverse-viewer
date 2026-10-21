@@ -20,12 +20,15 @@ class TosContract(unittest.TestCase):
   a=read("src/app/application.cpp")
   for key in ("render_login_tos_dialog(","open_official_tos_document()",
               "TosAction::open_document","TosAction::accept",
-              "TosAction::decline","login.tos.document_opened();",
+              "TosAction::decline","login.tos.document_opened()",
               "login.tos.agree()","glfwSetClipboardString"):
    self.assertIn(key,a)
   self.assertIn("render_login_tos_dialog(renderer,window_width,window_height,",a)
   self.assertIn("#include <shellapi.h>",a)
-  self.assertIn("posix_spawnp(&child,executable,nullptr,nullptr,args,environ)==0",a)
+  self.assertIn("posix_spawnp(&child,executable,nullptr,nullptr,args,environ)!=0",a)
+  self.assertIn("waitpid(child,&status,0)",a)
+  self.assertIn("target_link_libraries(nexverse-viewer PRIVATE shell32)",
+                read("CMakeLists.txt"))
  def test_only_verified_official_url(self):
   s=read("include/nexverse/protocol/login_tos.hpp")
   self.assertIn("https://stadt-nexverse.de/buergerverordnung",s)

@@ -140,6 +140,7 @@
 #else
 #include <spawn.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 extern char **environ;
 #endif
 
@@ -156,6 +157,7 @@ extern char **environ;
 #include <cmath>
 #include <chrono>
 #include <cstdlib>
+#include <cerrno>
 #include <deque>
 #include <exception>
 #include <future>
@@ -434,6 +436,7 @@ struct LoginUiState
     bool authenticated = false;
     // Real NexVerse versioned ToS challenge. No automatic acceptance.
     nexverse::protocol::LoginTosConsent tos;
+    nexverse::ui::TosAction tos_focus=nexverse::ui::TosAction::open_document;
 };
 
 struct InputContext
@@ -581,10 +584,23 @@ void character_callback(GLFWwindow* window, unsigned int codepoint)
     }
 }
 
+void handle_login_tos_action(LoginUiState& login,
+                             nexverse::ui::TosAction action,
+                             GLFWwindow* window);
+
 void key_callback(GLFWwindow* window, int key, int, int action, int mods)
 {
     auto* context = static_cast<InputContext*>(glfwGetWindowUserPointer(window));
 
+    // The pre-login legal dialog must take ESC BEFORE the normal global
+    // close-window shortcut, including when other UI slots are registered.
+    if(context&&context->login&&context->login->tos.visible()&&
+       key==GLFW_KEY_ESCAPE&&action==GLFW_PRESS)
+    {
+        handle_login_tos_action(
+            *context->login,nexverse::ui::TosAction::decline,window);
+        return;
+    }
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
         if(context && context->viewer_shell &&
@@ -1038,11 +1054,19 @@ void key_callback(GLFWwindow* window, int key, int, int action, int mods)
     if (state.authenticated) return;
     if(state.tos.visible())
     {
-        if(key==GLFW_KEY_ESCAPE&&action==GLFW_PRESS)
+        if(action==GLFW_PRESS)
         {
-            state.tos.reset();
-            state.status="TOS DECLINED";
-            state.notice="Buergerordnung nicht akzeptiert. Kein Login.";
+            if(key==GLFW_KEY_ESCAPE)
+                handle_login_tos_action(
+                    state,nexverse::ui::TosAction::decline,window);
+            else if(key==GLFW_KEY_TAB)
+                state.tos_focus=nexverse::ui::next_tos_focus(
+                    state.tos_focus,
+                    state.tos.phase==nexverse::protocol::TosPhase::awaiting_consent,
+                    (mods&GLFW_MOD_SHIFT)!=0);
+            else if(key==GLFW_KEY_ENTER||key==GLFW_KEY_KP_ENTER||
+                    key==GLFW_KEY_SPACE)
+                handle_login_tos_action(state,state.tos_focus,window);
         }
         return;
     }
@@ -1134,8 +1158,54 @@ bool open_official_tos_document()
         nullptr
     };
     pid_t child{};
-    return posix_spawnp(&child,executable,nullptr,nullptr,args,environ)==0;
+    if(posix_spawnp(&child,executable,nullptr,nullptr,args,environ)!=0)
+        return false;
+    // Reap launched helper asynchronously; frequent ToS opens must not
+    // accumulate zombie processes while the viewer stays running.
+    std::thread([child] {
+        int status=0;
+        while(waitpid(child,&status,0)<0&&errno==EINTR) {}
+    }).detach();
+    return true;
 #endif
+}
+
+void handle_login_tos_action(LoginUiState& login,
+                             nexverse::ui::TosAction action,
+                             GLFWwindow* window)
+{
+    if(!login.tos.visible())return;
+    switch(action)
+    {
+    case nexverse::ui::TosAction::open_document:
+        // Only the canonical HTTPS URL is copied/opened, never an
+        // untrusted message from the LoginService response.
+        glfwSetClipboardString(window,
+            nexverse::protocol::nexverse_tos_page.data());
+        if(open_official_tos_document())
+            login.notice="Browser-Aufruf gestartet. Bitte den Volltext lesen.";
+        else
+            login.notice="Link kopiert. Dokument im Browser lesen.";
+        if(login.tos.document_opened())
+            login.tos_focus=nexverse::ui::TosAction::accept;
+        break;
+    case nexverse::ui::TosAction::accept:
+        if(login.tos.agree())
+        {
+            login.status="TOS ACCEPTED";
+            login.notice="Zustimmung vorgemerkt. Passwort erneut eingeben.";
+            login.focused=LoginField::password;
+            login.tos_focus=nexverse::ui::TosAction::open_document;
+        }
+        break;
+    case nexverse::ui::TosAction::decline:
+        login.tos.reset();
+        login.tos_focus=nexverse::ui::TosAction::open_document;
+        login.status="TOS DECLINED";
+        login.notice="Buergerordnung nicht akzeptiert. Kein Login.";
+        break;
+    default:break;
+    }
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int)
@@ -1162,35 +1232,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
         glfwGetCursorPos(window,&mx,&my);
         auto& login=*context->login;
         const nexverse::ui::TosLayout layout{width,height};
-        switch(layout.hit(mx,my,
-            login.tos.phase==nexverse::protocol::TosPhase::awaiting_consent))
-        {
-        case nexverse::ui::TosAction::open_document:
-            // Copy a safe HTTPS fallback for desktop environments without
-            // a browser handler; never copy an untrusted login message.
-            glfwSetClipboardString(window,
-                nexverse::protocol::nexverse_tos_page.data());
-            if(open_official_tos_document())
-                login.notice="Offizielle Buergerordnung im Browser geoeffnet.";
-            else
-                login.notice="Link kopiert. Dokument im Browser lesen.";
-            login.tos.document_opened();
-            break;
-        case nexverse::ui::TosAction::accept:
-            if(login.tos.agree())
-            {
-                login.status="TOS ACCEPTED";
-                login.notice="Zustimmung vorgemerkt. Passwort erneut eingeben.";
-                login.focused=LoginField::password;
-            }
-            break;
-        case nexverse::ui::TosAction::decline:
-            login.tos.reset();
-            login.status="TOS DECLINED";
-            login.notice="Buergerordnung nicht akzeptiert. Kein Login.";
-            break;
-        default:break;
-        }
+        handle_login_tos_action(login,layout.hit(
+            mx,my,
+            login.tos.phase==nexverse::protocol::TosPhase::awaiting_consent),
+            window);
         return; // Modal: no clicks leak into the login button.
     }
     if(context&&context->login&&context->login->authenticated&&
@@ -3566,7 +3611,8 @@ void render_loading_diagnostics_panel(
 }
 
 void render_login_tos_dialog(UiRenderer& renderer,int width,int height,
-                             const nexverse::protocol::LoginTosConsent& tos)
+                             const nexverse::protocol::LoginTosConsent& tos,
+                             nexverse::ui::TosAction tos_focus)
 {
     if(!tos.visible())return;
     const nexverse::ui::TosLayout l{width,height};
@@ -3597,15 +3643,24 @@ void render_login_tos_dialog(UiRenderer& renderer,int width,int height,
     const auto& open=l.open_document;
     const auto& accept=l.accept;
     const auto& decline=l.decline;
+    if(tos_focus==nexverse::ui::TosAction::open_document)
+        renderer.rect(open.x-3.0f*sc,open.y-3.0f*sc,
+                      open.w+6.0f*sc,open.h+6.0f*sc,theme::cyan,8.0f*sc);
     renderer.rect(open.x,open.y,open.w,open.h,theme::blue,7.0f*sc);
     renderer.text(open.x+12.0f*sc,open.y+15.0f*sc,11.0f*sc,
                   "BUERGERORDNUNG OEFFNEN",theme::text);
+    if(tos_focus==nexverse::ui::TosAction::accept&&opened)
+        renderer.rect(accept.x-3.0f*sc,accept.y-3.0f*sc,
+                      accept.w+6.0f*sc,accept.h+6.0f*sc,theme::cyan,8.0f*sc);
     renderer.rect(accept.x,accept.y,accept.w,accept.h,
         opened?theme::blue:Color{0.055f,0.071f,0.090f,1.0f},7.0f*sc);
     renderer.text(accept.x+12.0f*sc,accept.y+15.0f*sc,10.5f*sc,
                   opened?"ICH STIMME AUSDRUECKLICH ZU":
                           "ZUERST VOLLSTEXT OEFFNEN",
                   opened?theme::text:theme::text_muted);
+    if(tos_focus==nexverse::ui::TosAction::decline)
+        renderer.rect(decline.x-3.0f*sc,decline.y-3.0f*sc,
+                      decline.w+6.0f*sc,decline.h+6.0f*sc,theme::cyan,8.0f*sc);
     renderer.rect(decline.x,decline.y,decline.w,decline.h,
         Color{0.11f,0.047f,0.075f,0.97f},7.0f*sc);
     renderer.text(decline.x+18.0f*sc,decline.y+15.0f*sc,10.5f*sc,
@@ -4878,6 +4933,10 @@ int Application::run(bool enable_developer_modules)
     bool discovery_applied = false;
 
     std::future<protocol::LoginResult> login_future;
+    // Snapshot the actual submitted identity/URI, not mutable UI fields
+    // that might be changed by a parallel GridInfo refresh while pending.
+    std::string pending_login_avatar;
+    std::string pending_login_uri;
     std::optional<protocol::LoginSession> active_session;
 
     protocol::OutboundCommandQueue outbound_queue{512U};
@@ -7647,9 +7706,10 @@ int Application::run(bool enable_developer_modules)
                             // server challenge produces a blocking modal;
                             // no session, CAPS or LLUDP is opened here.
                             if(login_ui.tos.challenge(
-                                result.reason,result.message,login_ui.username,
-                                active_login_uri))
+                                result.reason,result.message,
+                                pending_login_avatar,pending_login_uri))
                             {
+                                login_ui.tos_focus=nexverse::ui::TosAction::open_document;
                                 login_ui.status="TOS REQUIRED";
                                 login_ui.notice=
                                     "Buergerordnung lesen und bestaetigen.";
@@ -7663,6 +7723,11 @@ int Application::run(bool enable_developer_modules)
                         }
                         else
                         {
+                            // A failed password, server or transport response
+                            // cancels a pending agreement. A later retry must
+                            // never silently reuse TRUE from an old attempt.
+                            login_ui.tos.reset();
+                            login_ui.tos_focus=nexverse::ui::TosAction::open_document;
                             login_ui.status = "ERROR";
                             login_ui.notice = result.message.empty()
                                 ? "OpenSim-Anmeldung fehlgeschlagen."
@@ -7676,10 +7741,14 @@ int Application::run(bool enable_developer_modules)
                 }
                 catch (const std::exception& error)
                 {
+                    login_ui.tos.reset();
+                    login_ui.tos_focus=nexverse::ui::TosAction::open_document;
                     login_ui.status = "ERROR";
                     login_ui.notice = "Anmeldevorgang konnte nicht abgeschlossen werden.";
                     core::error(std::string{"OpenSim login worker failed: "} + error.what());
                 }
+                pending_login_avatar.clear();
+                pending_login_uri.clear();
             }
 
             if (login_ui.submit_requested)
@@ -7723,6 +7792,15 @@ int Application::run(bool enable_developer_modules)
                             login_ui.username,active_login_uri);
 
                         const std::string login_uri = active_login_uri;
+                        pending_login_avatar=login_ui.username;
+                        pending_login_uri=login_uri;
+                        // If GridInfo switched since a consent challenge,
+                        // invalidate stale approval instead of carrying it
+                        // forward to a different server or avatar.
+                        if(!login_ui.tos.approved_for(
+                               pending_login_avatar,pending_login_uri) &&
+                           !login_ui.tos.visible())
+                            login_ui.tos.reset();
                         const std::string viewer_version{core::version()};
 
                         login_ui.busy = true;
@@ -13892,7 +13970,7 @@ int Application::run(bool enable_developer_modules)
                     experience_ui,caps_snapshot,experience_consent);
             }
             render_login_tos_dialog(renderer,window_width,window_height,
-                                    login_ui.tos);
+                                    login_ui.tos,login_ui.tos_focus);
             glfwSwapBuffers(window);
         }
 
