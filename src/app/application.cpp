@@ -5246,7 +5246,8 @@ int Application::run(bool enable_developer_modules)
                     }
 
                     world_model.update_avatar_transform(
-                        entry.id,entry.position,entry.rotation,entry.local_id);
+                        entry.id,entry.position,entry.rotation,entry.local_id,
+                        true);
                     continue;
                 }
 
@@ -5356,7 +5357,8 @@ int Application::run(bool enable_developer_modules)
                     }
 
                     world_model.update_avatar_transform(
-                        entry.id,entry.position,entry.rotation,entry.local_id);
+                        entry.id,entry.position,entry.rotation,entry.local_id,
+                        true);
                     continue;
                 }
 
@@ -5567,42 +5569,9 @@ int Application::run(bool enable_developer_modules)
                 core::info("WorldModel coarse avatar stream validated");
             }
 
-            const std::string self_id = world_model.agent().agent_id;
-            std::vector<std::string> seen;
-            seen.reserve(coarse->avatars.size());
-
-            for (const auto& coarse_avatar : coarse->avatars)
-            {
-                if (coarse_avatar.agent_id == self_id)
-                {
-                    continue;
-                }
-
-                seen.push_back(coarse_avatar.agent_id);
-
-                protocol::Quaternion rotation{};
-                if (const auto existing =
-                        world_model.avatars().find(coarse_avatar.agent_id);
-                    existing != world_model.avatars().end())
-                    rotation=existing->second.rotation;
-                world_model.update_avatar_transform(
-                    coarse_avatar.agent_id,coarse_avatar.position,rotation,0U);
-            }
-
-            std::vector<std::string> stale;
-            for (const auto& [id, avatar] : world_model.avatars())
-            {
-                (void)avatar;
-                if (std::find(seen.begin(), seen.end(), id) == seen.end())
-                {
-                    stale.push_back(id);
-                }
-            }
-
-            for (const auto& id : stale)
-            {
-                world_model.remove_avatar(id);
-            }
+            // A minimap snapshot is only coarse position data, not a
+            // verified 3D avatar or an authoritative all-region census.
+            (void)world_model.apply_coarse_avatar_locations(*coarse);
         });
 
     // Simulator AvatarAnimation High20 is a complete animation set.
@@ -10575,6 +10544,7 @@ int Application::run(bool enable_developer_modules)
                 {
                     if (id == render_agent.agent_id ||
                         !avatar.position_known ||
+                        !avatar.simulator_object_update_seen ||
                         avatar_proxy_update.size() >= 64U) continue;
                     const float hover=avatar.hover_heights.empty()?0.0f:
                         std::clamp(avatar.hover_heights.front().z,-2.0f,2.0f);
@@ -13392,6 +13362,14 @@ int Application::run(bool enable_developer_modules)
                     }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
+                    for(const auto& [avatar_id,remote]:world_model.avatars())
+                    {
+                        (void)avatar_id;
+                        if(remote.simulator_object_update_seen)
+                            ++shell_view.remote_avatar_object_updates;
+                        else if(remote.coarse_position_only)
+                            ++shell_view.remote_avatar_coarse_only;
+                    }
 
                     if(viewer_shell.window==ui::ViewerWindow::objects)
                     {

@@ -4,6 +4,7 @@
  */
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
+#include <unordered_set>
 #include <cmath>
 
 #include <utility>
@@ -319,7 +320,8 @@ void WorldModel::upsert_avatar(AvatarState avatar)
 
 void WorldModel::update_avatar_transform(
     const std::string& id,Vec3 position,
-    Quaternion rotation,std::uint32_t local_id)
+    Quaternion rotation,std::uint32_t local_id,
+    bool from_avatar_object_update)
 {
     if(id.empty() ||
        (!agent_.agent_id.empty() && id == agent_.agent_id))
@@ -349,6 +351,65 @@ void WorldModel::update_avatar_transform(
     avatar.rotation=rotation;
     if(local_id!=0U)avatar.local_id=local_id;
     avatar.position_known=true;
+    if(from_avatar_object_update)
+    {
+        avatar.simulator_object_update_seen=true;
+        avatar.coarse_position_only=false;
+    }
+}
+
+bool WorldModel::apply_coarse_avatar_locations(
+    const protocol::CoarseLocationUpdate& update)
+{
+    if(!region_.connected||agent_.agent_id.empty())
+        return false;
+    // CoarseLocationUpdate contains byte-quantized positions intended
+    // for the minimap. It is not a complete ObjectUpdate and is not
+    // guaranteed to list every detailed avatar in the region.
+    std::unordered_set<std::string> seen;
+    seen.reserve(std::min(update.avatars.size(),std::size_t{128}));
+    for(const auto& entry:update.avatars)
+    {
+        const auto& id=entry.agent_id;
+        if(id.empty()||
+           id=="00000000-0000-0000-0000-000000000000"||
+           id==agent_.agent_id||
+           !std::isfinite(entry.position.x)||
+           !std::isfinite(entry.position.y)||
+           !std::isfinite(entry.position.z))
+            continue;
+        if(seen.size()>=128U)break;
+        if(!seen.insert(id).second)continue;
+        const auto existing=avatars_.find(id);
+        // Never replace a full avatar's accurate transform/rig by the
+        // coarse integer position; only maintain coarse-only map dots.
+        if(existing!=avatars_.end()&&
+           existing->second.simulator_object_update_seen)
+            continue;
+        const bool is_new=existing==avatars_.end();
+        const Quaternion rotation= is_new?Quaternion{}:
+            existing->second.rotation;
+        update_avatar_transform(id,entry.position,rotation,0U);
+        if(auto it=avatars_.find(id);it!=avatars_.end())
+            it->second.coarse_position_only=true;
+    }
+    // Drop only old purely coarse positions. Never discard a detailed
+    // AvatarAppearance/High20 entry just because one coarse snapshot
+    // omits that avatar.
+    for(auto it=avatars_.begin();it!=avatars_.end();)
+    {
+        const auto& av=it->second;
+        if(av.coarse_position_only&&!seen.contains(it->first)&&
+           !av.simulator_object_update_seen&&av.local_id==0U&&
+           av.texture_entry.empty()&&av.visual_params.empty()&&
+           av.appearance_data.empty()&&av.attachments.empty())
+        {
+            pending_avatar_animations_.erase(it->first);
+            it=avatars_.erase(it);
+        }
+        else ++it;
+    }
+    return true;
 }
 
 void WorldModel::remove_avatar(const std::string& id)

@@ -985,6 +985,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-object-bake-fallback-tests
         COMMAND nexverse-self-object-bake-fallback-tests)
 
+    add_executable(nexverse-coarse-avatar-render-admission-tests
+        tests/coarse_avatar_render_admission_tests.cpp)
+    target_link_libraries(nexverse-coarse-avatar-render-admission-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-coarse-avatar-render-admission-tests)
+    add_test(NAME nexverse-coarse-avatar-render-admission-tests
+        COMMAND nexverse-coarse-avatar-render-admission-tests)
+
     add_executable(nexverse-world-direct-region-invalidation-tests
         tests/world_direct_region_invalidation_tests.cpp)
     target_link_libraries(nexverse-world-direct-region-invalidation-tests

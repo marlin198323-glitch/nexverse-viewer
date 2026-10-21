@@ -62,6 +62,10 @@ struct ViewerShellView
     std::uint32_t region_width=256U,region_height=256U;
     std::size_t objects=0U,terrain_patches=0U;
     std::size_t remote_avatars=0U,animations=0U,attachments=0U;
+    // Avatar ObjectUpdate admission is separate from coarse map dots
+    // and separate again from proven GPU/skin/COF rendering.
+    std::size_t remote_avatar_object_updates=0U;
+    std::size_t remote_avatar_coarse_only=0U;
     // Server-reported full active snapshot, not an available clip library.
     std::vector<std::pair<std::string,std::int32_t>> animation_entries;
     std::vector<std::string> animation_asset_status;

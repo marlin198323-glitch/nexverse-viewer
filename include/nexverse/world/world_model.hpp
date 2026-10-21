@@ -76,6 +76,10 @@ struct AvatarState
     Quaternion rotation;
     std::uint32_t local_id = 0U;
     bool position_known = false;
+    // A coarse map position is NOT proof that the simulator has provided
+    // an avatar ObjectUpdate, mesh pose or a body to draw.
+    bool simulator_object_update_seen=false;
+    bool coarse_position_only=false;
     // Motion is server-position-derived; used only for visual animation.
     std::chrono::steady_clock::time_point last_translation_at{};
     bool trial_appearance = false;
@@ -277,7 +281,12 @@ public:
     // Pose-only packets must not erase AppearanceData, COF versions,
     // baked texture entries or attachment blocks already received.
     void update_avatar_transform(const std::string& id,Vec3 position,
-                                 Quaternion rotation,std::uint32_t local_id);
+                                 Quaternion rotation,std::uint32_t local_id,
+                                 bool from_avatar_object_update=false);
+    // Read-only coarse map snapshot. Never evict a detailed avatar
+    // just because the server omitted it from its bounded coarse list.
+    [[nodiscard]] bool apply_coarse_avatar_locations(
+        const protocol::CoarseLocationUpdate& update);
     void remove_avatar(const std::string& id);
     void upsert_object(ObjectState object);
     // A High9 ImprovedTerseObjectUpdate has ONLY pose, never an object

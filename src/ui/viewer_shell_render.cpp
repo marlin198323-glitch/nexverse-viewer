@@ -205,7 +205,11 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(3,"Regiongroesse: "+std::to_string(v.region_width)+" x "+
              std::to_string(v.region_height)+" Meter");
         line(4,"Objekte: "+std::to_string(v.objects)+
-             "  |  Avatare: "+std::to_string(v.remote_avatars));
+             " | Avatare: "+std::to_string(v.remote_avatars)+
+             " (ObjUpdate:"+std::to_string(
+                 v.remote_avatar_object_updates)+
+             " / Karte:"+std::to_string(
+                 v.remote_avatar_coarse_only)+")");
         line(5,"Terrain-Patches: "+std::to_string(v.terrain_patches));
         line(6,"Terrain: "+std::string(v.terrain_ready?"bereit":"laedt")+
              "  |  Parzelle: "+
