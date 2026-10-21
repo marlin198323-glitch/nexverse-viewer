@@ -22,3 +22,15 @@ Neue Chats: zunächst CHATUEBERGABE.md und projektplan.md im Mint-Checkout lesen
 ## Präzise Grenzen
 Ein erfolgreicher Debug-Vollbuild, Xvfb GUI-Start, GPU-/Window-Readbacks und Unit-Framebuffer-Tests beweisen die eigentliche lokale Softwarekette. Die Xvfb-Routine emuliert einen Bildschirm und nutzt Software-GL; NVIDIA GL 4.6 wurde unabhängig mit glxinfo -B auf dem PC bestätigt, **aber nicht als echter eingeloggter NexVerse-NVIDIA-Framebuffer-End-to-End-Test behauptet**.
 Authentifizierter eigener Avatar im NexVerse Live-Grid inklusive Low158, COF/Outfits, Skin/Bakes und WASD-/Yaw-Simulatorreadback bleibt OFFEN. Keine Geheimnisse, Passwörter oder Login-Tokens ins Repo geschrieben. Projektbewertung unverändert 38,65 % = 39 %. Nächster Zehnerblock **Alpha.705–714** auf Linux-Mint-Commander mit vollem GUI-Gate.
+
+## Exakter Commit und Folge-CI
+Vollständig lokal auf Linux Mint gegen Alpha.704 durchgelaufen:
+scripts/mint-viewer-validation.sh Exit 0; 174 CTest, 353 Python,
+isolierter GUI-Start, originale Firestorm 3x GPU-Bind-Meshes, 133
+Skeleton-Joints, X11 OGL-Icon 128x128. Code-SHA
+eceb5065ef886ce32255b4ac50c649d482ce84ba.
+GitHub Pi5 CI Run 39652812099 IN_PROGRESS.
+GitHub gehosteter Linux-x64 GUI Run 39652812111 FAILURE,
+Job 119405263374 ohne Runner (runner_id 0, 0 steps): kein
+CMake Build gestartet. Vollständiger GUI-Build auf dem
+Linux Mint Desktop Commander PC dagegen tatsächlich PASS.

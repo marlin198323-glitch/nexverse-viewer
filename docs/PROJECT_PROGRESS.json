@@ -87,21 +87,23 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null,
+  "pending_pi5_ci": {
+    "feature_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
+    "run_id": 39652812099,
+    "checked_status": "in_progress",
+    "note": "Do not mark success until exact feature SHA CI completed/success."
+  },
   "linux_x64_gui_ci": {
-    "feature_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
-    "run_id": 39650618221,
+    "feature_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
+    "run_id": 39652812111,
+    "job_id": 119405263374,
     "checked_status": "completed",
-    "previous_run_id": 39647670237,
-    "previous_conclusion": "failure_before_runner_allocation",
-    "previous_runner_id": 0,
-    "previous_steps_executed": 0,
-    "full_gui_build_verified": false,
-    "note": "Second x64 hosted runner pre-job failure, no code compilation attempted; root cause unknown.",
     "conclusion": "failure",
-    "job_id": 119397662761,
     "runner_id": 0,
-    "steps_executed": 0
+    "steps_executed": 0,
+    "hosted_gui_build_verified": false,
+    "mint_local_gui_build_verified": true,
+    "note": "Hosted GitHub runner unallocated (0 steps). Distinct from verified Linux Mint PC CMake x64 full build."
   },
   "development_host": "Linux Mint Desktop Commander jam-MS-7D28",
   "development_path": "/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer",
@@ -119,6 +121,9 @@
     "nvidia_gpu": "GeForce RTX 4070 SUPER",
     "nvidia_opengl": "4.6, glxinfo real desktop device",
     "live_grid_avatar_e2e": false,
-    "script": "scripts/mint-viewer-validation.sh"
+    "script": "scripts/mint-viewer-validation.sh",
+    "feature_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
+    "version": "0.2.0-alpha.704",
+    "full_gate_exit": 0
   }
 }
