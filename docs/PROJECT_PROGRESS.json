@@ -87,15 +87,21 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null,
+  "pending_pi5_ci": {
+    "feature_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
+    "run_id": 39650618129,
+    "checked_status": "queued",
+    "note": "Do not mark green until exact SHA completed/success."
+  },
   "linux_x64_gui_ci": {
-    "feature_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
-    "run_id": 39647670237,
-    "job_id": 119387436606,
-    "conclusion": "failure",
-    "steps_executed": 0,
-    "runner_id": 0,
-    "reason": "Unresolved pre-run GitHub runner allocation/failure; no actual configure/build/test occurred",
-    "full_gui_build_verified": false
+    "feature_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
+    "run_id": 39650618221,
+    "checked_status": "queued",
+    "previous_run_id": 39647670237,
+    "previous_conclusion": "failure_before_runner_allocation",
+    "previous_runner_id": 0,
+    "previous_steps_executed": 0,
+    "full_gui_build_verified": false,
+    "note": "Only new runner job with actual CMake/configure/build/test and success can verify GUI."
   }
 }

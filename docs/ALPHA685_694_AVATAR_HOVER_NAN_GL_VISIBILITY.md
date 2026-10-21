@@ -20,3 +20,10 @@ Gesamtfortschritt: 39 % (38,65 % gewichtet).
 Die neue Alpha repariert eine konkrete NaN-Quelle in den eigenen und fremden Avatar GL-Proxy-Positionen. Sie beweist noch nicht, dass die originalen Firestorm-Meshes, Skin, COF und Outfits nach authentifizierter NexVerse-Anmeldung fertig dargestellt werden. Ebenso fehlen GUI-Framebuffer-/Screenshot-/GPU- und serverbestätigte WASD-E2E-Beweise. Der Linux-x64 Hosted-Runner ist vor dem Job gescheitert, nicht im Compiler; der vollständige CMake-GUI-Build ist deshalb weiterhin UNVERIFIZIERT.
 
 Alte Serveränderungen seit der Review-Baseline 4e99976630f1008db9014ea2b86c3723b09e9fe6 weiter MANUAL_REVIEW. Nächster Zehnerblock Alpha.695–704, Projekt 39 %. Kein Produktivdeploy.
+
+## GitHub-SHA / Folgeprüfungen
+Code-SHA 4150521bd239c562d697802d3fae64f44de9f76f,
+Pi5 Headless Run 39650618129 und Linux-x64 CMake GUI Run
+39650618221, unmittelbar nach Code-Push noch QUEUED. Erfolg nicht
+voreilig unterstellen. Lokaler Pi5 vollständiger Headless-C++23/
+Python-Test erfolgreich (351 Python-Tests, 1 skipped).
