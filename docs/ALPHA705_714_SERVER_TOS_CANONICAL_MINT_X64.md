@@ -58,3 +58,14 @@ Outfit/Skin/COF/Bakes und AgentUpdate/WASD/Turn sind weiterhin
 NICHT als authentifizierte Ende-zu-Ende-Funktion geprüft.
 Der globale Fortschritt bleibt bei 39 %; nächster Zehnerblock
 Alpha.715–724 auf Linux Mint Commander.
+
+## Exakte GitHub-CI-Daten nach Full-Gate und Feature-Push
+
+Code-SHA bdd247ae6e894c7a135f64735f7da42881d5ac9a.
+Echter lokaler Linux-Mint Full GUI Release-Gate Exit 0, 174 CTest,
+356 Python, isolierter Xvfb Viewer 0.2.0-alpha.714,
+X11-Fensterklasse und OGL-Icon 128x128 BESTANDEN.
+GitHub Pi5 CI Run 39655327950 IN_PROGRESS.
+Hosted GitHub Linux x64 Run 39655327912 FAIL VOR Runnerzuweisung,
+Job 119413938353 runner_id 0, steps 0; KEINE CMake-/Compiler-Ausführung.
+Keine Live-Grid-Avatar-/Outfit-/Skin-/WASD-Behauptung.
