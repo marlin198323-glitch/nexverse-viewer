@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.614, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.615–624.**
+
+**ALPHA.614 EXAKTE PI5 ARM64 CI ERFOLGREICH:** GitHub Actions Run 39628852352 = COMPLETED SUCCESS, self-hosted Pi5 ARM64 Job 119321248719 = COMPLETED SUCCESS für exakten Feature-SHA 8ba3f4a89b733a32a7a230d260572dc78f87aecc. Mint x64 Vollbuild 387/387, native C++/OpenGL 165/165, Python 305/305, isolierter Xvfb-GUI-Viewer, lokale ARM64-kompatible C++23/Python Headless-Suite und X11 WM_CLASS/Systemicon PASS. Pi5 testete ARM64-native C++23 Headless plus Python, KEINE Pi5-GPU/GUI und KEINEN authentifizierten NexVerse-Live-Login. Tatsächlicher LLUDP-KillObject wird nun auch auf bekannte Fremdavatar-LocalIDs und angehängte Root-/Child-/Grandchild-Prims angewendet. Unabhängige Welt/Avatar-Objekte bleiben; Map-only Coarse kann entfernten 3D-Avatar nicht durch alten Zustand resurrecten. Nativer echter KillObject Wire-Decoder und ursprünglicher Firestorm-OpenGL-Framebuffer belegen Remote-Kill ohne alten Avatar-/Anhangpixel. F7 zählt echte regionsgebundene Avatar-/Prim-Kills ohne UUID. Aktuelle Live-NexVerse-Skin, COF/Outfit und serverbestätigte WASD End-to-End weiterhin OFFEN; Fortschritt 39 %. Nächste zehn Blöcke Alpha.615–624, kein Produktionsdeploy.
+
 # Alpha.605–614 – echte KillObject-Avatar-/Mesh-Beseitigung
 
 21.10.2026 | develop-current | 0.2.0-alpha.614 | Fortschritt 39 % (38,65 % gewichtet)
