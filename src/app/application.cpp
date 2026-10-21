@@ -1139,12 +1139,17 @@ void window_focus_callback(GLFWwindow* window,int focused)
 
 // The server challenges using the Firestorm-compatible HTTP URL, but
 // this opens the fixed official HTTPS document only (never raw XML-RPC).
-bool open_official_tos_document()
+bool open_official_tos_document(std::string_view requested_url)
 {
+    const auto official=requested_url==nexverse::protocol::nexverse_tos_page
+        ?nexverse::protocol::nexverse_tos_page
+        :requested_url==nexverse::protocol::nexverse_legacy_tos_page
+            ?nexverse::protocol::nexverse_legacy_tos_page
+            :std::string_view{};
+    if(official.empty())return false;
 #if defined(_WIN32)
     const auto result=ShellExecuteA(nullptr,"open",
-        "https://stadt-nexverse.de/buergerverordnung",
-        nullptr,nullptr,SW_SHOWNORMAL);
+        official.data(),nullptr,nullptr,SW_SHOWNORMAL);
     return reinterpret_cast<std::intptr_t>(result)>32;
 #else
     constexpr const char* executable=
@@ -1155,7 +1160,7 @@ bool open_official_tos_document()
 #endif
     char* const args[]{
         const_cast<char*>(executable),
-        const_cast<char*>("https://stadt-nexverse.de/buergerverordnung"),
+        const_cast<char*>(official.data()),
         nullptr
     };
     pid_t child{};
@@ -1181,9 +1186,8 @@ void handle_login_tos_action(LoginUiState& login,
     case nexverse::ui::TosAction::open_document:
         // Only the canonical HTTPS URL is copied/opened, never an
         // untrusted message from the LoginService response.
-        glfwSetClipboardString(window,
-            nexverse::protocol::nexverse_tos_page.data());
-        if(open_official_tos_document())
+        glfwSetClipboardString(window,login.tos.document_url.data());
+        if(open_official_tos_document(login.tos.document_url))
             login.notice="Browser-Aufruf gestartet. Bitte den Volltext lesen.";
         else
             login.notice="Link kopiert. Dokument im Browser lesen.";
@@ -3639,8 +3643,7 @@ void render_login_tos_dialog(UiRenderer& renderer,int width,int height,
                   "Vollstaendigen offiziellen Text im Browser lesen:",
                   theme::text);
     renderer.text(p.x+30.0f*sc,p.y+137.0f*sc,9.4f*sc,
-                  std::string{nexverse::protocol::nexverse_tos_page},
-                  theme::cyan);
+                  std::string{tos.document_url},theme::cyan);
     renderer.text(p.x+30.0f*sc,p.y+176.0f*sc,9.0f*sc,
                   "Ohne Zustimmung kein Login. Das Passwort muss neu eingegeben werden.",
                   theme::text_muted);

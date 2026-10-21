@@ -18,7 +18,7 @@ class TosContract(unittest.TestCase):
   self.assertIn('state.tos.visible()',a)
  def test_user_gesture_and_modal(self):
   a=read("src/app/application.cpp")
-  for key in ("render_login_tos_dialog(","open_official_tos_document()",
+  for key in ("render_login_tos_dialog(","open_official_tos_document(login.tos.document_url)",
               "TosAction::open_document","TosAction::accept",
               "TosAction::decline","login.tos.document_opened()",
               "login.tos.agree()","glfwSetClipboardString"):
@@ -32,6 +32,7 @@ class TosContract(unittest.TestCase):
  def test_only_verified_official_url(self):
   s=read("include/nexverse/protocol/login_tos.hpp")
   self.assertIn("https://stadt-nexverse.de/buergerverordnung",s)
+  self.assertIn("https://stadt-nexverse.de/service/tos",s)
   self.assertIn('reason!="tos"',s)
   self.assertIn("login_uri=grid",s)
   self.assertIn("avatar_name=avatar",s)

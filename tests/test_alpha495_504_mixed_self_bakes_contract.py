@@ -46,12 +46,12 @@ class MixBakeContract(unittest.TestCase):
   self.assertIn("self_bake_owner_is_current(",a)
   self.assertNotIn("automatic_cof_wear_on_fallback",a)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.704")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.714")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.704")
-  self.assertEqual(p["next_batch"],"Alpha.705–714")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.714")
+  self.assertEqual(p["next_batch"],"Alpha.715–724")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.705–714",read(f)[:1600])
+   self.assertIn("Alpha.715–724",read(f)[:1600])
 if __name__=="__main__":unittest.main()

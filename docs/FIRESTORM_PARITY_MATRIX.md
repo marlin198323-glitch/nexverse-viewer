@@ -764,3 +764,12 @@ nicht mehr uint64 nach uint32 zu null umbrechen: saturierende
 GL-Draw-/Skin-/Serverclip-Nachweise. Die Skelett-/Bindpose-GPU-
 Verfügbarkeit ist KEIN Proof für aktuelle authentifizierte
 NexVerse-Skin/COF/Outfit/WASD-Daten und kein Live-Avatar-Pixelbild.
+
+## Alpha.705–714 – Firestorm ToS /service/tos-Kompatibilität
+Server #263 liefert OGL den verbindlichen HTTPS-Pfad /service/tos
+und Firestorm 7.2.4 einen HTTP-Redirect-Einstieg desselben Pfades.
+OGL zeigt die konkrete offiziell validierte Seite im vorhandenen
+NexVerse Login-Modal und öffnet sie ausschließlich im Systembrowser.
+Legacy /buergerverordnung bleibt strikt whitelist-beschränkt.
+Kein stilles Agree oder fremde URL; User bestätigt weiter selbst.
+Keine Live-Grid-TOS-/Outfit-Sichtbarkeit behaupten.

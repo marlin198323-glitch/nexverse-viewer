@@ -412,3 +412,11 @@ echtem Taskleisten-Icon 128x128 BESTANDEN. Scripts:
 scripts/mint-viewer-validation.sh, mint-isolated-gui-smoke.sh und
 test-mint-window-branding.sh. Kein Start im interaktiven Desktop
 während automatisierter Tests, kein belegtes NexVerse Live-Avatar-E2E.
+
+## Alpha.705–714 – Bürgerordnung-Modal verwendet aktuelle URL
+Aktueller Serverpfad /service/tos jetzt in realer sichtbarer
+Modal-Textzeile, externem Browser und Copy-Fallback. Alter
+Server /buergerverordnung nutzt nur seine bekannte offizielle
+Legacy-Version. Beide URLs sind zuvor auf einen fixen
+HTTPS-Wert normalisiert, nicht aus der rohen XMLRPC-Antwort
+übernommen. Passwort-Neueingabe und manuelle Zustimmung bleiben.

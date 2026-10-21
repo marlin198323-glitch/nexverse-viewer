@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.704",
+  "viewer_version": "0.2.0-alpha.714",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.705–714",
-  "assessment": "Alpha.704: full Linux Mint x64 debug CMake/vcpkg Viewer build restored on jam-MS-7D28 NVIDIA RTX 4070 SUPER; 174 native CTests, x64 python contracts, isolated Xvfb GUI renderer, real X11 OGL icon/window class verified. Fixed 64-bit GL skin/animation draw counters narrowing to uint32 by saturating conversion, with native extremes regression. Canonical Mint-only x64 validation script added; Pi5 is CI only. GitHub Pi5 alpha694 SHA 4150521 run 39650618129 success, hosted x64 CI no runner/0 steps (not a compiler failure). Authenticated NexVerse own avatar COF/Outfit/Skin/WASD and Nvidia desktop GPU E2E are still open.",
+  "next_five_blocks": "Alpha.715–724",
+  "assessment": "Alpha.714: Current server main 31f3d129 #263 changes official required NexVerse ToS from /buergerverordnung to https://stadt-nexverse.de/service/tos. Old viewer allowlist blocked legitimate new reason=tos challenge; actual login modal/clipboard/system browser now use validated static canonical HTTPS path, with known older legacy path for staged server migrations. Native C++23 URL abuse and state-machine tests, real XML-RPC parser and Python contract coverage; both public canonical URLs return HTTP 200. Development on Linux Mint Desktop Commander jam-MS-7D28 with x64 full CMake/GL/UI testing. Previous Pi5 alpha704 CI run 39652812099 for eceb506 success. Authenticated legal ToS DB, self Low158 appearance, COF/Outfit/Skin/WASD simulator GPU E2E are still open; no deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.705–714",
+  "next_batch": "Alpha.715–724",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
-    "run_id": 39650618129,
+    "tested_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
+    "run_id": 39652812099,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless and Python; Mint x64 separate"
+    "scope": "Pi5 ARM64 native headless/Python; local Linux Mint x64 GUI separate"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
-    "run_id": 39652812099,
-    "checked_status": "in_progress",
-    "note": "Do not mark success until exact feature SHA CI completed/success."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "eceb5065ef886ce32255b4ac50c649d482ce84ba",
     "run_id": 39652812111,

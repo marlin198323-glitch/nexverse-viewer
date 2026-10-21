@@ -65,13 +65,13 @@ class ReadOnlyWearables(unittest.TestCase):
               "wearables_session_id="):
    self.assertNotIn(bad,report)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.704")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.714")
   s=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(s["viewer_version"],"0.2.0-alpha.704")
-  self.assertEqual(s["next_batch"],"Alpha.705–714")
+  self.assertEqual(s["viewer_version"],"0.2.0-alpha.714")
+  self.assertEqual(s["next_batch"],"Alpha.715–724")
   self.assertEqual(s["default_blocks_per_run"],10)
   self.assertIn("still open",s["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.705–714",read(f)[:1200])
+   self.assertIn("Alpha.715–724",read(f)[:1200])
 if __name__=="__main__":unittest.main()

@@ -85,13 +85,13 @@ int main()
 <methodResponse><params><param><value><struct>
 <member><name>login</name><value><boolean>0</boolean></value></member>
 <member><name>reason</name><value><string>tos</string></value></member>
-<member><name>message</name><value><string>http://stadt-nexverse.de/buergerverordnung</string></value></member>
+<member><name>message</name><value><string>https://stadt-nexverse.de/service/tos</string></value></member>
 </struct></value></param></params></methodResponse>
 )XML";
     const auto challenge=parse_login_xml_rpc_response(tos_challenge_xml);
     if(challenge.success||challenge.session.has_value()||
        challenge.reason!="tos"||
-       challenge.message!="http://stadt-nexverse.de/buergerverordnung")
+       challenge.message!="https://stadt-nexverse.de/service/tos")
         return 22;
 
     constexpr auto success_xml = R"XML(

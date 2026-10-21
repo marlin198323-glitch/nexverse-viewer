@@ -644,3 +644,14 @@ erhält TOS true/1 Normalisierung; ältere, nicht reviewte
 Upstream-Schnittstellen weiterhin MANUAL_REVIEW.
 Der x64 Mint-Client kann lokal starten; authentifizierter
 NexVerse Low158/COF/WASD-End-to-End-Test wird nicht erfunden.
+
+## Alpha.705–714 – serverseitige neue offizielle /service/tos URL
+OpenGenesisLINK main 31f3d129, Commit #263 gegen c9a0322:
+LoginService übergibt an OGL https://stadt-nexverse.de/service/tos.
+Nur für Firestorm wird der HTTP-Redirect-Einstieg gebildet.
+Die bisherige OGL-Only-Whitelist /buergerverordnung ließ den
+aktuellen legalen TOS-Login nicht durch. Beide offiziell belegten
+Pfade sind nun strikt erlaubt, niemals Query/Userinfo/Fragment/
+Fremdhost. Browser, Clipboard, UI übernehmen die jeweilige
+normalisierte HTTPS-Adresse. Keine DB-/authentifizierte Live-Bestätigung.
+Andere historische Serverdiffs bleiben MANUAL_REVIEW.
