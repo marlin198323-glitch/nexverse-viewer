@@ -24,3 +24,15 @@ Upstream Server opengenesislink/opengenesislinkserver main 3728273e5662cef5280af
 Diese Änderungen sind überprüfbare Code- und Workflow-Arbeiten. Die neue Linux-x64-GUI-CI muss für den neuen Code-SHA erst real durchlaufen und kann auch Compiler-/Dependencyfehler aufdecken. Ein grüner Pi5-Headless-Lauf allein würde keinen erfolgreichen GUI-Build beweisen. Selbst ein Linux-x64-Build ist noch kein grafischer Screenshot/Xvfb-Funktionstest und keine echte NexVerse-Grid-Anmeldung.
 
 Kritische End-to-End-Tests weiterhin offen: produktiver versionierter Erstlogin mit echter Bürgerordnung und Zustimmungsspeicherung; x64-GUI-Screenshot, Systemicon; AvatarAppearance/COF/Outfit/Skin/Mesh im Renderframe; AgentUpdate/WASD und Serverreadback. Firestorm-Parität unvollständig. Nächster Zehnerblock Alpha.685–694: Linux-GUI-CI auswerten, Buildfehler beheben, echte Grid-/Avatar-Funktionen priorisieren. Der Fortschritt wird nicht ohne Inworld-E2E-Evidenz künstlich erhöht.
+
+## Exakter Post-Push-CI-Befund
+Feature SHA 0c38c102a9f908562dd2f09141eb2cba80c14623.
+Lokal native ARM64-Headless und 347 Python-Tests (1 übersprungen): PASS.
+GitHub Pi5 Run 39647670145 bei letzter Prüfung noch IN_PROGRESS.
+Linux-x64 GUI Run 39647670237: FAILURE vor jedem Jobstep.
+Job 119387436606 meldet runner_id=0, leeren Runnernamen, steps=[],
+zwei Sekunden Laufzeit. Kein CMake-/Compiler-/Testschritt gestartet.
+Ursache der fehlenden Runnerausführung ist aus zugänglichen
+Jobdetails nicht bestimmbar und darf nicht als Codefehler gelten.
+Nächster Abschnitt muss GitHub Hosted-Runner-Verfügbarkeit klären,
+erst dann echten x64 GUI CMake Build auswerten.

@@ -87,5 +87,20 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null
+  "pending_pi5_ci": {
+    "feature_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
+    "run_id": 39647670145,
+    "checked_status": "in_progress",
+    "note": "Await completed/success for exact feature SHA; local Pi5 headless does not replace CI."
+  },
+  "linux_x64_gui_ci": {
+    "feature_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
+    "run_id": 39647670237,
+    "job_id": 119387436606,
+    "conclusion": "failure",
+    "steps_executed": 0,
+    "runner_id": 0,
+    "reason": "Unresolved pre-run GitHub runner allocation/failure; no actual configure/build/test occurred",
+    "full_gui_build_verified": false
+  }
 }
