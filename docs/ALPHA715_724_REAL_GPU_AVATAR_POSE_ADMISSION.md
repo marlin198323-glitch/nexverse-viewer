@@ -74,3 +74,13 @@ Die prozentuale Gesamtschätzung bleibt deshalb unverändert 39 %.
 Nächste zehn Arbeitsblöcke **Alpha.725–734**: realen,
 authentifizierten NexVerse-CAPS/Low158-/COF-/Outfit- und
 AgentUpdate/WASD-E2E-Weg priorisieren; Linux Mint primär.
+
+## SHA-genaue Prüfergebnisse nach Push
+Code-SHA 09d1c0c8030361945fab0af2c306ec514f83eee4,
+vollständiges Linux-Mint-x64-Gate scripts/mint-viewer-validation.sh Exit 0:
+175 native CTest (Original Firestorm 3 LLM-Framebufferpixel einschließlich
+invalid Self/Remote), 361 Python, GUI/Xvfb Version 0.2.0-alpha.724,
+OGL X11-Icon 128x128. GitHub Pi5 Run 39660444288 IN_PROGRESS.
+GitHub Hosted x64 Run 39660444315 FAILURE vor Runnerstart,
+Job 119431724689 runner_id 0, steps 0, kein CMake-Versuch.
+Keine authentifizierte Avatar-/COF-/Skin-/WASD-Live-Grid-E2E-Abnahme.
