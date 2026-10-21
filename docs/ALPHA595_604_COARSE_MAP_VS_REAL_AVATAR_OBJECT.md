@@ -1,3 +1,7 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.604, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.605–614.**
+
+**ALPHA.604 EXAKTE PI5 ARM64 CI ERFOLGREICH:** GitHub Actions Run 39626151169 = COMPLETED SUCCESS, selbstgehosteter Pi5 ARM64 Job 119311827201 = COMPLETED SUCCESS, für exakten Feature-SHA 8805576e6b26708f4250a77f2eb81ae1fbd0c3ec. Mint x64 vollständiger Build 385/385, native C++/OpenGL 164/164, Python 299/299, isolierter GUI-Xvfb Viewer, lokale Pi5-kompatible C++23/Python Headless-Suite und X11 WM_CLASS/Systemicon PASS. Pi5 testete ARM64-native C++23 Headless und Python, keine Pi5-GPU/GUI und KEIN authentifizierter Live-NexVerse-Login. CoarseLocationUpdate nur für bytequantisierte Kartenpositionen: 3D-Fremdavatar wird erst nach echtem Full/Compressed ObjectUpdate im aktuellen WorldModel admitted; echte genaue Pose/Low158-Appearance/COF wird von Coarse nicht ersetzt oder gelöscht. F7 trennt Original-Simulator-Avatar-ObjectUpdates von bloßen Kartenpunkten. Native realer Coarse-Wire-Decoder -> WorldModel/Identität/Region Test, original Viewer-UI-OpenGL bestanden. Keine aktuelle authentifizierte NexVerse Skin/COF/Outfit/WASD End-to-End-Bestätigung, Fortschritt 39 %. Nächste zehn Blöcke Alpha.605–614. KEIN Produktionsdeploy.
+
 # Alpha.595–604 – Coarse Map-Positionen sind kein echter 3D-Avatar
 
 21.10.2026 | develop-current | Viewer 0.2.0-alpha.604 | Projektfortschritt 39 % (38,65 % gewichtet)
