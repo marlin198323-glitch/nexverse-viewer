@@ -4,6 +4,7 @@
  */
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
+#include "nexverse/world/simulator_scene_validity.hpp"
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
@@ -31,11 +32,14 @@ void WorldModel::reset()
     pending_avatar_animations_.clear();
     avatars_.clear();
     objects_.clear();
+    prim_uuid_to_local_id_.clear();
     object_revision_ = 0U;
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
     remote_avatar_local_id_rebinds_=0U;
     prim_local_id_rebinds_=0U;
+    prim_uuid_relocations_=0U;
+    invalid_scene_updates_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -61,11 +65,14 @@ void WorldModel::apply_region(const RegionUpdate& update)
     {
         avatars_.clear();
         objects_.clear();
+        prim_uuid_to_local_id_.clear();
         ++object_revision_; // force current scene to become empty
         remote_avatar_kills_=0U;
         removed_prim_kills_=0U;
         remote_avatar_local_id_rebinds_=0U;
         prim_local_id_rebinds_=0U;
+        prim_uuid_relocations_=0U;
+        invalid_scene_updates_=0U;
         terrain_={};
         parcel_={};
         environment_={};
@@ -107,11 +114,14 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
 
     avatars_.clear();
     objects_.clear();
+    prim_uuid_to_local_id_.clear();
     object_revision_ = 0U;
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
     remote_avatar_local_id_rebinds_=0U;
     prim_local_id_rebinds_=0U;
+    prim_uuid_relocations_=0U;
+    invalid_scene_updates_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -151,11 +161,14 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         {
             avatars_.clear();
             objects_.clear();
+            prim_uuid_to_local_id_.clear();
             ++object_revision_;
             remote_avatar_kills_=0U;
             removed_prim_kills_=0U;
             remote_avatar_local_id_rebinds_=0U;
             prim_local_id_rebinds_=0U;
+            prim_uuid_relocations_=0U;
+            invalid_scene_updates_=0U;
             terrain_={};
             parcel_={};
             environment_={};
@@ -409,6 +422,16 @@ void WorldModel::update_avatar_transform(
     // disconnected region) cannot authorize a visible 3D avatar.
     if(from_avatar_object_update&&(!region_.connected||local_id==0U))
         return;
+    // No malformed network-sourced pose can evict the previous avatar
+    // and its GPU-resident worn mesh tree.
+    if(!finite_simulator_position(position)||
+       !finite_simulator_rotation(rotation)||
+       (from_avatar_object_update&&
+        !valid_simulator_avatar_pose(position,rotation)))
+    {
+        if(invalid_scene_updates_<UINT32_MAX)++invalid_scene_updates_;
+        return;
+    }
     if(from_avatar_object_update&&region_.connected&&local_id!=0U)
     {
         // ObjectUpdate establishes this simulator LocalID's current UUID.
@@ -544,16 +567,36 @@ void WorldModel::upsert_object(ObjectState object)
     // must never promote an identity-less prim into a GPU scene.
     if (!region_.connected || object.local_id == 0U || object.id.empty())
         return;
-    const auto prior=objects_.find(object.local_id);
-    if(prior!=objects_.end() && prior->second.id!=object.id)
+    // Malformed replacement must NOT evict a healthy mesh/linkset.
+    if(!valid_simulator_prim_geometry(
+           object.position,object.rotation,object.scale))
     {
-        // Lost KillObject: a different UUID now owns the simulator LocalID.
-        // Retire old root, nested linkset and attachments BEFORE installing
-        // the replacement. Terse updates cannot establish a new identity.
+        if(invalid_scene_updates_<UINT32_MAX)++invalid_scene_updates_;
+        return;
+    }
+    const auto prior=objects_.find(object.local_id);
+    const bool reused_local_id=
+        prior!=objects_.end()&&prior->second.id!=object.id;
+    // A dropped KillObject may leave the SAME UUID at another LocalID.
+    // Use the indexed UUID rather than scanning all scene objects on
+    // every Full/Compressed ObjectUpdate.
+    const auto prior_uuid=prim_uuid_to_local_id_.find(object.id);
+    if(prior_uuid!=prim_uuid_to_local_id_.end()&&
+       prior_uuid->second!=object.local_id)
+    {
+        (void)kill_simulator_local_id(prior_uuid->second,false);
+        if(prim_uuid_relocations_<UINT32_MAX)
+            ++prim_uuid_relocations_;
+    }
+    // A different UUID at the incoming LocalID must also withdraw the
+    // old tree before the new object is admitted.
+    if(reused_local_id)
+    {
         (void)kill_simulator_local_id(object.local_id,false);
         if(prim_local_id_rebinds_<UINT32_MAX)
             ++prim_local_id_rebinds_;
     }
+    prim_uuid_to_local_id_.insert_or_assign(object.id,object.local_id);
     objects_[object.local_id] = std::move(object);
     ++object_revision_;
 }
@@ -633,10 +676,13 @@ bool WorldModel::apply_object_compressed_partial(
 
 void WorldModel::remove_object(std::uint32_t local_id)
 {
-    if (objects_.erase(local_id) > 0U)
-    {
-        ++object_revision_;
-    }
+    const auto it=objects_.find(local_id);
+    if(it==objects_.end())return;
+    const auto index=prim_uuid_to_local_id_.find(it->second.id);
+    if(index!=prim_uuid_to_local_id_.end()&&index->second==local_id)
+        prim_uuid_to_local_id_.erase(index);
+    objects_.erase(it);
+    ++object_revision_;
 }
 
 bool WorldModel::kill_simulator_local_id(
@@ -680,7 +726,15 @@ bool WorldModel::kill_simulator_local_id(
     }
     std::size_t removed_prims=0U;
     for(const auto id:dropped)
-        removed_prims+=objects_.erase(id);
+    {
+        const auto it=objects_.find(id);
+        if(it==objects_.end())continue;
+        const auto index=prim_uuid_to_local_id_.find(it->second.id);
+        if(index!=prim_uuid_to_local_id_.end()&&index->second==id)
+            prim_uuid_to_local_id_.erase(index);
+        objects_.erase(it);
+        ++removed_prims;
+    }
     if(removed_prims>0U)
     {
         ++object_revision_; // one scene invalidation for whole linkset
@@ -703,6 +757,15 @@ std::uint32_t WorldModel::remote_avatar_local_id_rebinds() const noexcept
 std::uint32_t WorldModel::prim_local_id_rebinds() const noexcept
 {
     return prim_local_id_rebinds_;
+}
+std::uint32_t WorldModel::prim_uuid_relocations() const noexcept
+{
+    return prim_uuid_relocations_;
+}
+
+std::uint32_t WorldModel::invalid_scene_updates() const noexcept
+{
+    return invalid_scene_updates_;
 }
 
 std::uint32_t WorldModel::remote_avatar_kills() const noexcept

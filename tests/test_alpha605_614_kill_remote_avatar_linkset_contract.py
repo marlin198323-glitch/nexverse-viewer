@@ -18,13 +18,14 @@ class KilledAvatarLifetime(unittest.TestCase):
   a=s.index("bool WorldModel::kill_simulator_local_id(")
   b=s.index("std::uint32_t WorldModel::remote_avatar_kills()",a)
   impl=s[a:b]
+  self.assertIn("prim_uuid_to_local_id_.erase(index);",impl)
   for t in ("if(!region_.connected||local_id==0U)return false;",
     "it->second.local_id!=local_id",
     "pending_avatar_animations_.erase(it->first)",
     "children[prim.parent_id].push_back(id)",
     "std::vector<std::uint32_t> todo{local_id}",
     "if(!dropped.insert(id).second)continue",
-    "objects_.erase(id)",
+    "objects_.erase(it)",
     "++object_revision_;",
     "++remote_avatar_kills_","removed_prim_kills_+="):
    self.assertIn(t,impl)
@@ -59,15 +60,15 @@ class KilledAvatarLifetime(unittest.TestCase):
   self.assertIn("world_model.remote_avatar_kills();",app)
   self.assertIn("world_model.removed_prim_kills();",app)
   ui=read("src/ui/viewer_shell_render.cpp")
-  self.assertIn('" | KillObject Avatar/Prims: "+',ui)
+  self.assertIn('line(7,"KillObject Avatar/Prims: "+',ui)
  def test_handoff_and_version(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.654")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.664")
   d=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.654")
-  self.assertEqual(d["next_batch"],"Alpha.655–664")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.664")
+  self.assertEqual(d["next_batch"],"Alpha.665–674")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
              "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.655–664",read(fn)[:1800])
+   self.assertIn("Alpha.665–674",read(fn)[:1800])
 if __name__=="__main__":unittest.main()

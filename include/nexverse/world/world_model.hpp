@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstdint>
 #include <map>
+#include <unordered_map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -319,6 +320,10 @@ public:
     // Identity collisions handled without a received KillObject; separate
     // from actual simulator kill packet/removal counters.
     [[nodiscard]] std::uint32_t prim_local_id_rebinds() const noexcept;
+    // Same real Prim-UUID with a new simulator-local root ID (implicit
+    // remap without KillObject). Readable from F7, never raw UUIDs.
+    [[nodiscard]] std::uint32_t prim_uuid_relocations() const noexcept;
+    [[nodiscard]] std::uint32_t invalid_scene_updates() const noexcept;
     // Counts only successful current-region KillObject removals; no IDs.
     [[nodiscard]] std::uint32_t remote_avatar_kills() const noexcept;
     [[nodiscard]] std::uint32_t removed_prim_kills() const noexcept;
@@ -372,11 +377,16 @@ private:
         pending_avatar_animations_;
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
+    // Secondary UUID index: do not scan every prim per ObjectUpdate.
+    // Updated atomically with objects_ on insert, kill and region resets.
+    std::unordered_map<std::string,std::uint32_t> prim_uuid_to_local_id_;
     std::uint32_t object_revision_ = 0U;
     std::uint32_t remote_avatar_kills_=0U;
     std::uint32_t removed_prim_kills_=0U;
     std::uint32_t remote_avatar_local_id_rebinds_=0U;
     std::uint32_t prim_local_id_rebinds_=0U;
+    std::uint32_t prim_uuid_relocations_=0U;
+    std::uint32_t invalid_scene_updates_=0U;
     TerrainState terrain_;
     ParcelState parcel_;
     EnvironmentState environment_;

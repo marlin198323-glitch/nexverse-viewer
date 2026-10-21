@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.664, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.665–674.**
+
+21.10.2026 Alpha.655–664: gleicher Prim-UUID auf neuer Simulator-LocalID ohne vorheriges KillObject löscht alte Root-/Child-/Grandchild-Meshes, fehlerhafte Prim-/Avatar-Positionen und Quaternionen werden vor WorldModel-Umbindung und Self-WASD-Beweis zurückgewiesen. Echter Full/Compressed/High9 LLUDP-Guard und übersichtliche F7-Zähler (KillObject, ID-Reuse, UUID-Umzug, ungültige Szenendaten) parallel zum Code implementiert. Native C++23 WorldModel-/Headless-/Python-Vertragstests und CMake-Registrierung ergänzt; GitHub-Pi5 CI Alpha.654 Run 39639482493 für SHA 3fdfa60 SUCCESS bestätigt. Neuer Alpha.664 GitHub-SHA-CI und voller GUI/GPU-/NexVerse-Live-E2E-Beleg noch offen. Upstream main 0129e617, ungeprüfte 243 Commit-Diffs weiter MANUAL_REVIEW. Projekt 39 %, nächster Zehnerblock Alpha.665–674, KEIN Produktivdeploy. Details: docs/ALPHA655_664_SCENE_UUID_RELOCATION_AND_AVATAR_POSE_GATES.md.
+
+---
+
 **ALPHA.654 CODE-SHA 3fdfa60de01ea5d79c1b1e7e9fc96d85b16b82aa:** Pi5 ARM64 native WorldModel/LLUDP/TextureEntry, weitere native Headless-C++23-Prüfungen und 329/329 Python Tests (1 skipped) PASS. GitHub Actions Pi5-Lauf 39639482493 fuer GENAU diesen Feature-SHA ist laut API-Abfrage 21.10.2026 18:58 MESZ QUEUED (nicht bestanden oder fehlgeschlagen behaupten). Vollstaendiger x64-NVIDIA-GL-/Xvfb-GUI-Build und authentifizierter NexVerse Grid Avatar/COF/WASD End-to-End weiterhin offen. Letzte bestaetigte Pi5 GitHub CI ist weiterhin Alpha.644 Run 39636189352. Kein Produktivdeploy.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.654, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.655–664.**

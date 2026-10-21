@@ -71,6 +71,8 @@ struct ViewerShellView
     // Inferred new-UUID or same-UUID LocalID rebind, not KillObject.
     std::uint32_t remote_avatar_local_id_rebinds=0U;
     std::uint32_t prim_local_id_rebinds=0U;
+    std::uint32_t prim_uuid_relocations=0U;
+    std::uint32_t invalid_scene_updates=0U;
     // Server-reported full active snapshot, not an available clip library.
     std::vector<std::pair<std::string,std::int32_t>> animation_entries;
     std::vector<std::string> animation_asset_status;

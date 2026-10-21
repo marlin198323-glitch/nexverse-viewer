@@ -124,6 +124,7 @@
 #include "nexverse/ui/loading_diagnostics_layout.hpp"
 #include "nexverse/ui/loading_circuit_retry_policy.hpp"
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/world/simulator_scene_validity.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
 #include <glad/glad.h>
@@ -5202,9 +5203,11 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
-                        // Only a real nonzero simulator-owned local ID
-                        // can establish the own avatar's terse binding.
-                        if(entry.local_id==0U)continue;
+                        // A malformed self pose cannot rebind the avatar,
+                        // fake WASD feedback or poison camera coordinates.
+                        if(entry.local_id==0U||
+                           !world::valid_simulator_avatar_pose(
+                               entry.position,entry.rotation))continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
@@ -5323,9 +5326,11 @@ int Application::run(bool enable_developer_modules)
 
                     if (entry.id == self_id)
                     {
-                        // Only a real nonzero simulator-owned local ID
-                        // can establish the own avatar's terse binding.
-                        if(entry.local_id==0U)continue;
+                        // A malformed self pose cannot rebind the avatar,
+                        // fake WASD feedback or poison camera coordinates.
+                        if(entry.local_id==0U||
+                           !world::valid_simulator_avatar_pose(
+                               entry.position,entry.rotation))continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
@@ -5475,6 +5480,10 @@ int Application::run(bool enable_developer_modules)
             {
                 if (update.avatar)
                 {
+                    // High9 contains no UUID. Invalid remote *or* self
+                    // quaternion/position must not move an existing rig.
+                    if(!world::valid_simulator_avatar_pose(
+                           update.position,update.rotation))continue;
                     if (self_avatar_local_id != 0U &&
                         self_avatar_region_handle == terse->region_handle &&
                         update.local_id == self_avatar_local_id)
@@ -13427,6 +13436,10 @@ int Application::run(bool enable_developer_modules)
                         world_model.remote_avatar_local_id_rebinds();
                     shell_view.prim_local_id_rebinds=
                         world_model.prim_local_id_rebinds();
+                    shell_view.prim_uuid_relocations=
+                        world_model.prim_uuid_relocations();
+                    shell_view.invalid_scene_updates=
+                        world_model.invalid_scene_updates();
                     for(const auto& [avatar_id,remote]:world_model.avatars())
                     {
                         (void)avatar_id;

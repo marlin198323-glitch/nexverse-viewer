@@ -360,3 +360,14 @@ Avatar-/Prim-LocalID-Rebinds als unterschiedliche, vom WorldModel
 stammende Zahlen. Echter Self-Kill oder neue LocalID entwertet vorhandene
 WASD-/Yaw-Erfolgsbestätigung. Vorhandener funktionierender F7-Floater,
 keine Fake-Buttons. Inworld-Pixeltest weiter offen.
+
+## Alpha.655–664 – F7 zeigt belastbare Szenenintegrität
+
+F7 Region/Simulator hat jetzt drei getrennte Diagnosezeilen: empfangener
+KillObject Avatar/Prims mit Avatar-ID-Neubindung; Prim-LocalID/UUID-Rebind
+und zurückgewiesene ungültige Szenendaten; kombinierte echte Terrain-/
+Layer-Nachladeinformationen. Labels passen in die 85-Zeichen-Grenze,
+Fehlerzähler erscheint als Warnung. Kein Fake-Button. Tatsächliche
+Session-/Region-Werte, nicht erfundene Render-Erfolge. High9, Full- und
+Compressed-Self-Avatar-Posen müssen vor WASD-/Kamera-Evidenz gültig sein.
+Grafischer Live-Xvfb-/NexVerse-Avatar-Frame steht noch aus.

@@ -718,3 +718,13 @@ Prim UUID/LocalID-Reuse entsorgt alte verwaiste Mesh-Nachfahren.
 Self-Avatar-Kill/Rebind invalidiert die alte Turn/WASD-Evidenz.
 F7 unterscheidet tatsächlichen KillObject von implizitem Rebind.
 Firestorm-Inworld-Parität ist dadurch noch nicht vollständig belegt.
+
+## Alpha.655–664 – identifizierbare Prim- und Avatar-Szenendaten
+
+Beim wiederverwendeten Prim-UUID auf neuer Simulator-LocalID entfernt
+WorldModel die alte mehrstufige Linkset-Quelle, ähnlich der
+lebensdauergebundenen Original-OpenSim-Objektidentität. Nicht-finite
+Posen/Scale-Objekte werden nicht als gesunde Firestorm/OpenGL-Szene
+gewertet, und eigener Full/Compressed/High9-Pose-Readback validiert
+Quaternion und Position vor WASD-Erfolg. F7 visualisiert die echten
+WorldModel-Zähler. Firestorm-Inworld-Parität ist dadurch nicht bewiesen.

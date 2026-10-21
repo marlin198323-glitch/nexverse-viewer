@@ -22,7 +22,8 @@ class OwnObjectKill(unittest.TestCase):
                   h.index("world_model.kill_simulator_local_id(local_id)"))
  def test_both_self_full_and_compressed_require_nonzero_identity(self):
   s=rd("src/app/application.cpp")
-  self.assertEqual(s.count("if(entry.local_id==0U)continue;"),2)
+  self.assertEqual(s.count("if(entry.local_id==0U||"),2)
+  self.assertGreaterEqual(s.count("world::valid_simulator_avatar_pose("),3)
   self.assertIn("if (self_avatar_local_id != 0U &&",s)
   self.assertIn("update.local_id == self_avatar_local_id",s)
   self.assertIn("protocol::msg_improved_terse_object_update,",s)
@@ -70,14 +71,14 @@ class OwnObjectKill(unittest.TestCase):
   self.assertIn("r.self_object_kills=2U;",native)
   self.assertIn('text.find("self_object_localid_kills=2")',native)
  def test_version_next_and_status(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.654")
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.664")
   d=json.loads(rd("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.654")
-  self.assertEqual(d["next_batch"],"Alpha.655–664")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.664")
+  self.assertEqual(d["next_batch"],"Alpha.665–674")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for p in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",rd(p)[:350])
-   self.assertIn("Alpha.655–664",rd(p)[:1800])
+   self.assertIn("Alpha.665–674",rd(p)[:1800])
 if __name__=="__main__":unittest.main()

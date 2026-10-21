@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.654",
+  "viewer_version": "0.2.0-alpha.664",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.655–664",
-  "assessment": "Alpha.654: prim UUID reuse and nested mesh old-linkset eviction; F7 separated actual KillObject and implicit Prim LocalID rebind; self avatar KillObject and identity rebind clear stale WASD/yaw success. Real dressed NexVerse own avatar skin, COF, outfits and simulator-confirmed movement still open. ARM64 native + Python tests; live grid and GPU/x64 validation not re-run. OpenGenesisLINK 243 commits await manual review.",
+  "next_five_blocks": "Alpha.665–674",
+  "assessment": "Alpha.664: existing Prim UUID on new simulator LocalID now evicts old root and nested meshes; malformed Prim/Avatar poses blocked before scene replacement and own Full/Compressed/High9 motion feedback; real F7 counters for relocations and invalid model packets. ARM64 C++23 and Python regression testing; authenticated dressed NexVerse skin/COF/outfit/WASD GPU E2E is still open. Exact new alpha664 GitHub Pi5 CI pending; prior alpha654 SHA-exact Run 39639482493 verified success. Upstream 243 commits still require manual review.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.655–664",
+  "next_batch": "Alpha.665–674",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "231446af047539527384b7e54113e82041cdcb67",
-    "run_id": 39636189352,
+    "tested_sha": "3fdfa60de01ea5d79c1b1e7e9fc96d85b16b82aa",
+    "run_id": 39639482493,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native C++23 headless and Python; full original Firestorm OpenGL/GUI independently verified on Mint x64"
+    "scope": "Pi5 native ARM64 C++23/headless + Python, no GUI/GPU or live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,11 +87,5 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "3fdfa60de01ea5d79c1b1e7e9fc96d85b16b82aa",
-    "run_id": 39639482493,
-    "checked_status": "queued",
-    "checked_on": "2026-10-21 18:58 Europe/Berlin",
-    "note": "Not a verified CI success. Last verified CI is in last_verified_pi5_ci."
-  }
+  "pending_pi5_ci": null
 }

@@ -1001,6 +1001,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-lease-feedback-tests
         COMMAND nexverse-self-lease-feedback-tests)
 
+    add_executable(nexverse-prim-uuid-relocation-tests
+        tests/prim_uuid_relocation_tests.cpp)
+    target_link_libraries(nexverse-prim-uuid-relocation-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-prim-uuid-relocation-tests)
+    add_test(NAME nexverse-prim-uuid-relocation-tests
+        COMMAND nexverse-prim-uuid-relocation-tests)
+
+    add_executable(nexverse-simulator-scene-validity-tests
+        tests/simulator_scene_validity_tests.cpp)
+    target_link_libraries(nexverse-simulator-scene-validity-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-simulator-scene-validity-tests)
+    add_test(NAME nexverse-simulator-scene-validity-tests
+        COMMAND nexverse-simulator-scene-validity-tests)
+
     add_executable(nexverse-prim-localid-reuse-tests
         tests/prim_localid_reuse_tests.cpp)
     target_link_libraries(nexverse-prim-localid-reuse-tests

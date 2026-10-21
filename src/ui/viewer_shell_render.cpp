@@ -210,24 +210,26 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
                  v.remote_avatar_object_updates)+
              " / Karte:"+std::to_string(
                  v.remote_avatar_coarse_only)+")");
-        line(5,"Terrain-Patches: "+std::to_string(v.terrain_patches));
+        line(5,"Terrain-Patches: "+std::to_string(v.terrain_patches)+
+             " | Aktive Animationen: "+std::to_string(v.animations));
         line(6,"Terrain: "+std::string(v.terrain_ready?"bereit":"laedt")+
              "  |  Parzelle: "+
              std::string(v.parcel_ready?"bereit":"nicht geladen"));
-        line(7,"Eigene aktive Animationen: "+std::to_string(v.animations)+
-             " | KillObject Avatar/Prims: "+
+        line(7,"KillObject Avatar/Prims: "+
              std::to_string(v.removed_remote_avatar_kills)+"/"+
              std::to_string(v.removed_prim_kills)+
              " | ID neu:"+std::to_string(
-                 v.remote_avatar_local_id_rebinds)+
-             " / Prim neu:"+std::to_string(v.prim_local_id_rebinds));
-        line(8,v.terrain_recovery_status.empty()
-             ?"Terrain-Details werden ermittelt":
-             compact(v.terrain_recovery_status,72U),
-             theme::cyan);
-        line(9,v.terrain_recovery_layers.empty()
-             ?"Server-Layer: noch nicht ermittelt":
-             compact(v.terrain_recovery_layers,72U),theme::cyan);
+                 v.remote_avatar_local_id_rebinds));
+        line(8,"Prim neu:"+std::to_string(v.prim_local_id_rebinds)+
+             " | UUID umgezogen:"+std::to_string(v.prim_uuid_relocations)+
+             " | Daten verworfen:"+std::to_string(v.invalid_scene_updates),
+             v.invalid_scene_updates?theme::warning:theme::text_muted);
+        line(9,compact(
+            (v.terrain_recovery_status.empty()?
+                "Terrain-Details werden ermittelt":v.terrain_recovery_status)+
+            " | "+(v.terrain_recovery_layers.empty()?
+                "Server-Layer: noch nicht ermittelt":v.terrain_recovery_layers),
+            82U),theme::cyan);
         const bool enabled=state.terrain_retry_available;
         r.rect(x+27.0f*sc,y+ph-67.0f*sc,228.0f*sc,39.0f*sc,
                enabled?theme::blue:
