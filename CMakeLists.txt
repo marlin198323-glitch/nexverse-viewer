@@ -993,6 +993,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-avatar-kill-binding-tests
         COMMAND nexverse-self-avatar-kill-binding-tests)
 
+    add_executable(nexverse-self-lease-feedback-tests
+        tests/self_lease_feedback_tests.cpp)
+    target_link_libraries(nexverse-self-lease-feedback-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-self-lease-feedback-tests)
+    add_test(NAME nexverse-self-lease-feedback-tests
+        COMMAND nexverse-self-lease-feedback-tests)
+
+    add_executable(nexverse-prim-localid-reuse-tests
+        tests/prim_localid_reuse_tests.cpp)
+    target_link_libraries(nexverse-prim-localid-reuse-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-prim-localid-reuse-tests)
+    add_test(NAME nexverse-prim-localid-reuse-tests
+        COMMAND nexverse-prim-localid-reuse-tests)
+
     add_executable(nexverse-avatar-localid-reuse-tests
         tests/avatar_localid_reuse_tests.cpp)
     target_link_libraries(nexverse-avatar-localid-reuse-tests

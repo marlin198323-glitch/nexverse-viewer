@@ -5208,6 +5208,11 @@ int Application::run(bool enable_developer_modules)
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
+                            // A replacement simulator LocalID starts a new
+                            // evidence lease: old WASD/turn confirmations
+                            // must not survive an implicit rebind.
+                            movement_feedback.reset();
+                            turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
                             core::info("Avatar self local-id bound from ObjectUpdate");
@@ -5324,6 +5329,11 @@ int Application::run(bool enable_developer_modules)
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle)
                         {
+                            // A replacement simulator LocalID starts a new
+                            // evidence lease: old WASD/turn confirmations
+                            // must not survive an implicit rebind.
+                            movement_feedback.reset();
+                            turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
                             core::info("Avatar self local-id bound from ObjectUpdateCompressed");
@@ -5526,7 +5536,8 @@ int Application::run(bool enable_developer_modules)
     packet_dispatcher.register_handler(
         protocol::msg_kill_object,
         [&object_packets, &world_model, &world_mutex,
-         &self_avatar_local_id, &self_avatar_region_handle](
+         &self_avatar_local_id, &self_avatar_region_handle,
+         &movement_feedback, &turn_feedback](
             const protocol::DecodedPacket& packet)
         {
             const auto kill = protocol::decode_kill_object(packet.payload);
@@ -5558,6 +5569,10 @@ int Application::run(bool enable_developer_modules)
                         world_model.region().handle,local_id);
                     self_avatar_local_id=0U;
                     self_avatar_region_handle=0U;
+                    // No stale success label after a real self root kill:
+                    // the next ObjectUpdate must establish fresh motion.
+                    movement_feedback.reset();
+                    turn_feedback.reset();
                 }
                 (void)world_model.kill_simulator_local_id(local_id);
             }
@@ -13410,6 +13425,8 @@ int Application::run(bool enable_developer_modules)
                         world_model.removed_prim_kills();
                     shell_view.remote_avatar_local_id_rebinds=
                         world_model.remote_avatar_local_id_rebinds();
+                    shell_view.prim_local_id_rebinds=
+                        world_model.prim_local_id_rebinds();
                     for(const auto& [avatar_id,remote]:world_model.avatars())
                     {
                         (void)avatar_id;

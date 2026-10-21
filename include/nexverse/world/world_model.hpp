@@ -316,6 +316,9 @@ public:
     // an existing LocalID without an observed KillObject. Preserve only
     // currently verified UUID->LocalID bindings.
     [[nodiscard]] std::uint32_t remote_avatar_local_id_rebinds() const noexcept;
+    // Identity collisions handled without a received KillObject; separate
+    // from actual simulator kill packet/removal counters.
+    [[nodiscard]] std::uint32_t prim_local_id_rebinds() const noexcept;
     // Counts only successful current-region KillObject removals; no IDs.
     [[nodiscard]] std::uint32_t remote_avatar_kills() const noexcept;
     [[nodiscard]] std::uint32_t removed_prim_kills() const noexcept;
@@ -373,6 +376,7 @@ private:
     std::uint32_t remote_avatar_kills_=0U;
     std::uint32_t removed_prim_kills_=0U;
     std::uint32_t remote_avatar_local_id_rebinds_=0U;
+    std::uint32_t prim_local_id_rebinds_=0U;
     TerrainState terrain_;
     ParcelState parcel_;
     EnvironmentState environment_;

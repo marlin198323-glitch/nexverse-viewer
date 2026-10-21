@@ -1516,8 +1516,12 @@ std::optional<AvatarAppearanceMessage> decode_avatar_appearance(
     std::span<const std::uint8_t> payload,AvatarAppearanceFailure* failure)
 {
     if(failure)*failure=AvatarAppearanceFailure::none;
-    const auto reject=[&](AvatarAppearanceFailure reason) -> std::optional<AvatarAppearanceMessage> {
-        if(failure)*failure=reason;return std::nullopt;};
+    const auto reject=[&](AvatarAppearanceFailure reason)
+        -> std::optional<AvatarAppearanceMessage>
+    {
+        if(failure)*failure=reason;
+        return std::nullopt;
+    };
     if (payload.size() < 16U + 1U + 2U + 1U + 1U)
     {
         return reject(AvatarAppearanceFailure::header);

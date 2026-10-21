@@ -712,3 +712,9 @@ d8f4426 ist nur auf Uploads bezogen, nicht GetMesh.
 Project-Status 39 % als gewichtete Schätzung; echte
 NexVerse-Firestorm-Avatar-/Welt-Pixelparität weiterhin OFFEN.
 Siehe docs/ALPHA245_254_TERRAIN_RECOVERY_ANIMATION.md.
+
+## Alpha.645–654 – Objektidentität und lesbare Evidenz
+Prim UUID/LocalID-Reuse entsorgt alte verwaiste Mesh-Nachfahren.
+Self-Avatar-Kill/Rebind invalidiert die alte Turn/WASD-Evidenz.
+F7 unterscheidet tatsächlichen KillObject von implizitem Rebind.
+Firestorm-Inworld-Parität ist dadurch noch nicht vollständig belegt.

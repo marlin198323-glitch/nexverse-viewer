@@ -219,7 +219,8 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
              std::to_string(v.removed_remote_avatar_kills)+"/"+
              std::to_string(v.removed_prim_kills)+
              " | ID neu:"+std::to_string(
-                 v.remote_avatar_local_id_rebinds));
+                 v.remote_avatar_local_id_rebinds)+
+             " / Prim neu:"+std::to_string(v.prim_local_id_rebinds));
         line(8,v.terrain_recovery_status.empty()
              ?"Terrain-Details werden ermittelt":
              compact(v.terrain_recovery_status,72U),

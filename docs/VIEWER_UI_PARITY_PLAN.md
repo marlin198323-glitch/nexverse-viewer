@@ -353,3 +353,10 @@ d8f4426 ist nur auf Uploads bezogen, nicht GetMesh.
 Project-Status 39 % als gewichtete Schätzung; echte
 NexVerse-Firestorm-Avatar-/Welt-Pixelparität weiterhin OFFEN.
 Siehe docs/ALPHA245_254_TERRAIN_RECOVERY_ANIMATION.md.
+
+## Alpha.645–654 – F7-ID-Lebensdauer und Bewegungsevidenz
+F7 zeigt nun tatsächliche KillObject-Entfernungen und implizite
+Avatar-/Prim-LocalID-Rebinds als unterschiedliche, vom WorldModel
+stammende Zahlen. Echter Self-Kill oder neue LocalID entwertet vorhandene
+WASD-/Yaw-Erfolgsbestätigung. Vorhandener funktionierender F7-Floater,
+keine Fake-Buttons. Inworld-Pixeltest weiter offen.

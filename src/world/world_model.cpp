@@ -35,6 +35,7 @@ void WorldModel::reset()
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
     remote_avatar_local_id_rebinds_=0U;
+    prim_local_id_rebinds_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -63,7 +64,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
         ++object_revision_; // force current scene to become empty
         remote_avatar_kills_=0U;
         removed_prim_kills_=0U;
-    remote_avatar_local_id_rebinds_=0U;
+        remote_avatar_local_id_rebinds_=0U;
+        prim_local_id_rebinds_=0U;
         terrain_={};
         parcel_={};
         environment_={};
@@ -109,6 +111,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
     remote_avatar_local_id_rebinds_=0U;
+    prim_local_id_rebinds_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -151,7 +154,8 @@ void WorldModel::apply_agent(const AgentUpdate& update)
             ++object_revision_;
             remote_avatar_kills_=0U;
             removed_prim_kills_=0U;
-    remote_avatar_local_id_rebinds_=0U;
+            remote_avatar_local_id_rebinds_=0U;
+            prim_local_id_rebinds_=0U;
             terrain_={};
             parcel_={};
             environment_={};
@@ -536,9 +540,19 @@ void WorldModel::remove_avatar(const std::string& id)
 
 void WorldModel::upsert_object(ObjectState object)
 {
-    if (object.local_id == 0U)
-    {
+    // An ObjectUpdate is current-region evidence only. Zero/unknown UUID
+    // must never promote an identity-less prim into a GPU scene.
+    if (!region_.connected || object.local_id == 0U || object.id.empty())
         return;
+    const auto prior=objects_.find(object.local_id);
+    if(prior!=objects_.end() && prior->second.id!=object.id)
+    {
+        // Lost KillObject: a different UUID now owns the simulator LocalID.
+        // Retire old root, nested linkset and attachments BEFORE installing
+        // the replacement. Terse updates cannot establish a new identity.
+        (void)kill_simulator_local_id(object.local_id,false);
+        if(prim_local_id_rebinds_<UINT32_MAX)
+            ++prim_local_id_rebinds_;
     }
     objects_[object.local_id] = std::move(object);
     ++object_revision_;
@@ -684,6 +698,11 @@ bool WorldModel::kill_simulator_local_id(
 std::uint32_t WorldModel::remote_avatar_local_id_rebinds() const noexcept
 {
     return remote_avatar_local_id_rebinds_;
+}
+
+std::uint32_t WorldModel::prim_local_id_rebinds() const noexcept
+{
+    return prim_local_id_rebinds_;
 }
 
 std::uint32_t WorldModel::remote_avatar_kills() const noexcept
