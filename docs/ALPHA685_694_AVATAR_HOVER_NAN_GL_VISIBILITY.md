@@ -27,3 +27,11 @@ Pi5 Headless Run 39650618129 und Linux-x64 CMake GUI Run
 39650618221, unmittelbar nach Code-Push noch QUEUED. Erfolg nicht
 voreilig unterstellen. Lokaler Pi5 vollständiger Headless-C++23/
 Python-Test erfolgreich (351 Python-Tests, 1 skipped).
+
+## Letztes CI-Update
+Pi5 Run 39650618129 für Code-SHA 4150521 IN_PROGRESS.
+Linux-x64 Run 39650618221 ist COMPLETED/FAILURE, Job
+119397662761: runner_id 0, keine Steps. Keine CMake-/
+Compiler-/Viewer-Build-Schritte ausgeführt. Zweiter Hosted-
+Runner-Start scheitert vor der Zuteilung; technische Ursache
+aus den verfügbaren Jobdaten nicht verifizierbar.

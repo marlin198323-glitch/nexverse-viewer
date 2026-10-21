@@ -90,18 +90,22 @@
   "pending_pi5_ci": {
     "feature_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
     "run_id": 39650618129,
-    "checked_status": "queued",
+    "checked_status": "in_progress",
     "note": "Do not mark green until exact SHA completed/success."
   },
   "linux_x64_gui_ci": {
     "feature_sha": "4150521bd239c562d697802d3fae64f44de9f76f",
     "run_id": 39650618221,
-    "checked_status": "queued",
+    "checked_status": "completed",
     "previous_run_id": 39647670237,
     "previous_conclusion": "failure_before_runner_allocation",
     "previous_runner_id": 0,
     "previous_steps_executed": 0,
     "full_gui_build_verified": false,
-    "note": "Only new runner job with actual CMake/configure/build/test and success can verify GUI."
+    "note": "Second x64 hosted runner pre-job failure, no code compilation attempted; root cause unknown.",
+    "conclusion": "failure",
+    "job_id": 119397662761,
+    "runner_id": 0,
+    "steps_executed": 0
   }
 }
