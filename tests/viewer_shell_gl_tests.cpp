@@ -40,6 +40,8 @@ int main()
             view.remote_avatars=2U;
             view.remote_avatar_object_updates=1U;
             view.remote_avatar_coarse_only=1U;
+            view.removed_remote_avatar_kills=2U;
+            view.removed_prim_kills=4U;
             view.agent_position={128.0f,128.0f,25.0f};
             view.animations=3U;
             view.attachments=5U;

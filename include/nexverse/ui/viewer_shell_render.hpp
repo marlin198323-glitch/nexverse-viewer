@@ -66,6 +66,8 @@ struct ViewerShellView
     // and separate again from proven GPU/skin/COF rendering.
     std::size_t remote_avatar_object_updates=0U;
     std::size_t remote_avatar_coarse_only=0U;
+    std::uint32_t removed_remote_avatar_kills=0U;
+    std::uint32_t removed_prim_kills=0U;
     // Server-reported full active snapshot, not an available clip library.
     std::vector<std::pair<std::string,std::int32_t>> animation_entries;
     std::vector<std::string> animation_asset_status;

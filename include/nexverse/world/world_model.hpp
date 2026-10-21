@@ -300,6 +300,13 @@ public:
     [[nodiscard]] bool apply_object_compressed_partial(
         const protocol::ObjectUpdateCompressedEntry& partial);
     void remove_object(std::uint32_t local_id);
+    // Simulator KillObject applies to avatar LocalIDs as well as prims.
+    // Remove the killed root's attachment/linkset descendants in this
+    // region; never leave detached ghost meshes for the rig to reuse.
+    [[nodiscard]] bool kill_simulator_local_id(std::uint32_t local_id);
+    // Counts only successful current-region KillObject removals; no IDs.
+    [[nodiscard]] std::uint32_t remote_avatar_kills() const noexcept;
+    [[nodiscard]] std::uint32_t removed_prim_kills() const noexcept;
     void set_terrain(TerrainState terrain);
     void set_terrain_materials(TerrainMaterials materials);
     void apply_terrain_patch(const protocol::TerrainPatch& patch);
@@ -342,6 +349,8 @@ private:
     std::map<std::string, AvatarState, std::less<>> avatars_;
     std::map<std::uint32_t, ObjectState> objects_;
     std::uint32_t object_revision_ = 0U;
+    std::uint32_t remote_avatar_kills_=0U;
+    std::uint32_t removed_prim_kills_=0U;
     TerrainState terrain_;
     ParcelState parcel_;
     EnvironmentState environment_;

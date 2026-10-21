@@ -5,6 +5,8 @@
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include <unordered_set>
+#include <unordered_map>
+#include <vector>
 #include <cmath>
 
 #include <utility>
@@ -26,6 +28,8 @@ void WorldModel::reset()
     avatars_.clear();
     objects_.clear();
     object_revision_ = 0U;
+    remote_avatar_kills_=0U;
+    removed_prim_kills_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -52,6 +56,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
         avatars_.clear();
         objects_.clear();
         ++object_revision_; // force current scene to become empty
+        remote_avatar_kills_=0U;
+        removed_prim_kills_=0U;
         terrain_={};
         parcel_={};
         environment_={};
@@ -90,6 +96,8 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     avatars_.clear();
     objects_.clear();
     object_revision_ = 0U;
+    remote_avatar_kills_=0U;
+    removed_prim_kills_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -126,6 +134,8 @@ void WorldModel::apply_agent(const AgentUpdate& update)
             avatars_.clear();
             objects_.clear();
             ++object_revision_;
+            remote_avatar_kills_=0U;
+            removed_prim_kills_=0U;
             terrain_={};
             parcel_={};
             environment_={};
@@ -507,6 +517,67 @@ void WorldModel::remove_object(std::uint32_t local_id)
     {
         ++object_revision_;
     }
+}
+
+bool WorldModel::kill_simulator_local_id(std::uint32_t local_id)
+{
+    if(!region_.connected||local_id==0U)return false;
+    bool removed=false;
+    // A KillObject for a remote avatar identifies it by simulator
+    // LocalID, not the avatar UUID from AvatarAppearance/High20.
+    for(auto it=avatars_.begin();it!=avatars_.end();)
+    {
+        if(it->second.local_id!=local_id)
+        {
+            ++it;
+            continue;
+        }
+        pending_avatar_animations_.erase(it->first);
+        it=avatars_.erase(it);
+        if(remote_avatar_kills_<UINT32_MAX)++remote_avatar_kills_;
+        removed=true;
+    }
+    // The server may send a separate KillObject for the whole avatar
+    // root; attached prims and linkset children are no longer valid even
+    // if their own LocalIDs were not enumerated in that UDP packet.
+    std::unordered_map<std::uint32_t,std::vector<std::uint32_t>> children;
+    children.reserve(objects_.size());
+    for(const auto& [id,prim]:objects_)
+        if(prim.parent_id!=0U&&id!=prim.parent_id)
+            children[prim.parent_id].push_back(id);
+    std::vector<std::uint32_t> todo{local_id};
+    std::unordered_set<std::uint32_t> dropped;
+    dropped.reserve(objects_.size()+1U);
+    for(std::size_t i=0U;i<todo.size();++i)
+    {
+        const auto id=todo[i];
+        if(!dropped.insert(id).second)continue;
+        if(const auto it=children.find(id);it!=children.end())
+            for(const auto child:it->second)
+                if(!dropped.contains(child))todo.push_back(child);
+    }
+    std::size_t removed_prims=0U;
+    for(const auto id:dropped)
+        removed_prims+=objects_.erase(id);
+    if(removed_prims>0U)
+    {
+        ++object_revision_; // one scene invalidation for whole linkset
+        const auto remaining=UINT32_MAX-removed_prim_kills_;
+        removed_prim_kills_+=static_cast<std::uint32_t>(
+            std::min<std::size_t>(removed_prims,remaining));
+        removed=true;
+    }
+    return removed;
+}
+
+std::uint32_t WorldModel::remote_avatar_kills() const noexcept
+{
+    return remote_avatar_kills_;
+}
+
+std::uint32_t WorldModel::removed_prim_kills() const noexcept
+{
+    return removed_prim_kills_;
 }
 
 void WorldModel::set_terrain(TerrainState terrain)

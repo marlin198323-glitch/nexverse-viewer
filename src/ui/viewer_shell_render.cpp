@@ -214,7 +214,10 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(6,"Terrain: "+std::string(v.terrain_ready?"bereit":"laedt")+
              "  |  Parzelle: "+
              std::string(v.parcel_ready?"bereit":"nicht geladen"));
-        line(7,"Eigene aktive Animationen: "+std::to_string(v.animations));
+        line(7,"Eigene aktive Animationen: "+std::to_string(v.animations)+
+             " | KillObject Avatar/Prims: "+
+             std::to_string(v.removed_remote_avatar_kills)+"/"+
+             std::to_string(v.removed_prim_kills));
         line(8,v.terrain_recovery_status.empty()
              ?"Terrain-Details werden ermittelt":
              compact(v.terrain_recovery_status,72U),

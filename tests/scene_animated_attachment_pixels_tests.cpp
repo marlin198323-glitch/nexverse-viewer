@@ -188,6 +188,41 @@ int main()
         std::cout<<"JOINT_FALLBACK_DRIFT="<<fallback_delta
                  <<" HUD_STALE_RGB_PIXELS="<<hud_delta<<"\n";
         if(hud_delta!=0U)failure=5;
+        // A real KillObject for the REMOTE avatar LocalID must immediately
+        // remove the entire linkset and its Firestorm avatar GPU proxy.
+        // First establish an actual remote avatar ObjectUpdate.
+        nexverse::world::AvatarState actual_remote{};
+        actual_remote.id="received-avatar";
+        actual_remote.local_id=51U;
+        actual_remote.position_known=true;
+        actual_remote.simulator_object_update_seen=true;
+        region_objects.upsert_avatar(actual_remote);
+        rig.attachment_joint_plus_one[1U]=2U;
+        renderer->set_avatar_bind_rig(rig);
+        avatar.attachments["sleeve"]=1U;
+        renderer->set_avatar_proxies({avatar});
+        renderer->set_scene_objects({attached,sentinel});
+        const auto before_kill=capture(0.22);
+        renderer->set_avatar_proxies({});
+        renderer->set_scene_objects({sentinel});
+        const auto empty_scene=capture(0.22); // no avatar OR mesh
+        const auto before_kill_pixels=differences(before_kill,empty_scene);
+        if(before_kill_pixels<25U)failure=16;
+        // Restore the real pre-kill render scene; the next frame is
+        // derived from current WorldModel after the simulator KillObject.
+        renderer->set_avatar_proxies({avatar});
+        renderer->set_scene_objects({attached,sentinel});
+        if(!region_objects.kill_simulator_local_id(51U)||
+           !region_objects.avatars().empty()||
+           region_objects.objects().contains(200U))failure=17;
+        renderer->set_avatar_proxies({});
+        renderer->set_scene_objects({sentinel});
+        const auto after_kill=capture(0.22);
+        const auto stale_gpu_pixels=differences(empty_scene,after_kill);
+        std::cout<<"REMOTE_KILLOBJECT_STALE_ATTACHMENT_GPU_PIXELS="
+                 <<stale_gpu_pixels
+                 <<" BEFORE="<<before_kill_pixels<<"\n";
+        if(stale_gpu_pixels!=0U)failure=18;
         if(glGetError()!=GL_NO_ERROR)failure=6;
     }
     if(renderer)renderer->shutdown();

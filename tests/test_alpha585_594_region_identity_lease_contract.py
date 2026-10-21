@@ -62,14 +62,14 @@ class RegionLease(unittest.TestCase):
   self.assertIn("world_model.apply_region(",app)
   self.assertIn("protocol::region_circuit_ready(",app)
  def test_next_release_and_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.604")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.614")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.604")
-  self.assertEqual(p["next_batch"],"Alpha.605–614")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.614")
+  self.assertEqual(p["next_batch"],"Alpha.615–624")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])
   for doc in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
               "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",read(doc)[:350])
-   self.assertIn("Alpha.605–614",read(doc)[:1700])
+   self.assertIn("Alpha.615–624",read(doc)[:1700])
 if __name__=="__main__":unittest.main()

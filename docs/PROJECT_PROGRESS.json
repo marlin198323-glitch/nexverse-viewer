@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.604",
+  "viewer_version": "0.2.0-alpha.614",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.605–614",
-  "assessment": "Alpha.604 fixes CoarseLocationUpdate incorrectly admitting fake visible remote 3D avatars before any real simulator avatar ObjectUpdate and overwriting high-precision, genuinely received avatar transforms with coarse map bytes. Full and Compressed avatar ObjectUpdate alone mark simulator_object_update_seen; map-only records and pre-object Low158/animation remain unverified and excluded from the 3D proxy path. WorldModel coarse snapshots no longer delete detailed avatars when absent, preserve actual appearance/outfit metadata and keep bounded map-only dots separately. Native test drives actual encoded coarse LLUDP payload through decode_coarse_location_update into WorldModel and tests real full-object precedence, duplicates, nil/self/invalid data and region invalidation; F7 counts ObjectUpdate-confirmed avatars and pure map dots separately. Authenticated real NexVerse own skin/COF/outfit and simulator-confirmed WASD end-to-end still open/unverified, weighted 38.65 percent (39 rounded).",
+  "next_five_blocks": "Alpha.615–624",
+  "assessment": "Alpha.614 fixes a real remote-avatar ghost lifetime regression: the actual LLUDP KillObject dispatcher previously removed only ordinary prims, not avatars with those simulator LocalIDs, so detailed remote avatar proxies stayed visible permanently after their simulator object was killed. WorldModel kill_simulator_local_id now removes exactly affected remote avatar identity plus attached root prim descendants and nested linkset children using bounded visited traversal; independent avatar/world meshes remain. Subsequent coarse reappearance is map-only until a new Full/Compressed ObjectUpdate. Native real KillObject wire decoder->WorldModel tests include avatar removal, mesh descendants, replay, independent objects, region lease, plus actual Firestorm OpenGL framebuffer pixels absent following avatar kill. F7 exposes privacy-safe region-scoped genuine KillObject avatar/prim removal counts, reset on reauth/teleport/disconnect. Authenticated live NexVerse own skin/COF/outfit/attachments and simulator-confirmed WASD end-to-end still open and unverified; weighted 38.65 percent (39 rounded).",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.605–614",
+  "next_batch": "Alpha.615–624",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "8805576e6b26708f4250a77f2eb81ae1fbd0c3ec",

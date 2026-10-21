@@ -5538,7 +5538,9 @@ int Application::run(bool enable_developer_modules)
 
             for (const std::uint32_t local_id : kill->local_ids)
             {
-                world_model.remove_object(local_id);
+                // KillObject covers avatar LocalIDs and all attached prim
+                // descendants, not only non-avatar object map entries.
+                (void)world_model.kill_simulator_local_id(local_id);
             }
         });
 
@@ -13362,6 +13364,10 @@ int Application::run(bool enable_developer_modules)
                     }
                     shell_view.objects=world_model.objects().size();
                     shell_view.remote_avatars=world_model.avatars().size();
+                    shell_view.removed_remote_avatar_kills=
+                        world_model.remote_avatar_kills();
+                    shell_view.removed_prim_kills=
+                        world_model.removed_prim_kills();
                     for(const auto& [avatar_id,remote]:world_model.avatars())
                     {
                         (void)avatar_id;
