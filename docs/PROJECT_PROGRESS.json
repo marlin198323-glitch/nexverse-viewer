@@ -86,5 +86,12 @@
     "github_ci_status_at_record": "queued",
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
+  },
+  "pending_pi5_ci": {
+    "feature_sha": "3fdfa60de01ea5d79c1b1e7e9fc96d85b16b82aa",
+    "run_id": 39639482493,
+    "checked_status": "queued",
+    "checked_on": "2026-10-21 18:58 Europe/Berlin",
+    "note": "Not a verified CI success. Last verified CI is in last_verified_pi5_ci."
   }
 }
