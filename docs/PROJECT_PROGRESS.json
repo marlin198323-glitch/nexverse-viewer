@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.724",
+  "viewer_version": "0.2.0-alpha.734",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.725–734",
-  "assessment": "Alpha.724: full C++23 real OpenGL Firestorm avatar GPU admission validates own and remote proxy positions, normalizes finite quaternion and substitutes identity for invalid/zero quaternion without altering simulator physics. Actual renderer diagnostics and HUD show rejected self/remote poses and rotation repair. Real self avatar camera projection now uses actual hover-adjusted render proxy, not physics-only position. Native unit and OpenGL framebuffer pixel tests verify invalid self produces no ghost pixels, recovery restores LLM body, remote invalid cannot corrupt self. Pi5 alpha714 CI exact SHA bdd247a run 39655327950 success. Linux Mint local x64 build/GUI gate, pending new SHA; authenticated NexVerse own AvatarAppearance/COF/Outfit/Skin/BAKE/WASD E2E still open; no deploy.",
+  "next_five_blocks": "Alpha.735–744",
+  "assessment": "Alpha.734: exact Pi5 alpha724 CI 39660444288 success; current OGL server main 86f293d (#264) changed public NexVerse welcome/search/destination addresses (Welcome already compatible); public live get_grid_info HTTP 200 without login. Real C++ AgentUpdate step now never propagates NaN/+Inf/negative frame delta into yaw; reset from invalid or huge simulator quaternion uses finite double normalized heading. Actual WASD input pauses sending AgentUpdate if server position invalid, avoiding nonfinite CameraCenter. Native full 114-byte LLUDP quaternion and control bit regression and Linux Mint full x64 GUI test. Still no authenticated NexVerse own COF/Outfit/Skin/WASD E2E; no deployment. Authenticated NexVerse self AvatarAppearance, COF/Outfit/Skin GPU pixels, and simulator-confirmed WASD and yaw are still open; synthetic wire tests are not proof of live login.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.725–734",
+  "next_batch": "Alpha.735–744",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "bdd247ae6e894c7a135f64735f7da42881d5ac9a",
-    "run_id": 39655327950,
+    "tested_sha": "09d1c0c8030361945fab0af2c306ec514f83eee4",
+    "run_id": 39660444288,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless+Python, no live GL; Mint x64 separate"
+    "scope": "Pi5 ARM64 headless/Python, no live Inworld"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "09d1c0c8030361945fab0af2c306ec514f83eee4",
-    "run_id": 39660444288,
-    "checked_status": "in_progress",
-    "note": "Do not report green until exact feature SHA completed/success."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "09d1c0c8030361945fab0af2c306ec514f83eee4",
     "run_id": 39660444315,

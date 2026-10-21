@@ -5,6 +5,9 @@
 #include <cmath>
 #include <iostream>
 #include <numbers>
+#include <limits>
+#include <array>
+#include <bit>
 
 int main()
 {
@@ -237,6 +240,78 @@ int main()
        turn.server_confirmed())return 38; // initial baseline only
     if(!turn.observe_server_rotation(server_heading(1.7f),t+std::chrono::seconds{12}))
         return 39;
+    // The real AgentUpdate serializer must NEVER send a nonfinite
+    // rotation after a hung/minimized desktop frame or bad simulator pose.
+    const float nan=std::numeric_limits<float>::quiet_NaN();
+    const float inf=std::numeric_limits<float>::infinity();
+    for(const float duration:{nan,inf,-inf,-0.1f})
+    {
+        c.reset();
+        MovementKeys turn_keys{};
+        turn_keys.turn_left=true;
+        const auto safe=c.step(turn_keys,duration);
+        if(safe.body_rotation.z!=0.0f||safe.body_rotation.w!=1.0f||
+           server_control_bits(safe)!=(control_turn_left|control_yaw_pos))
+            return 40;
+    }
+    // Large finite pause MUST cap at 0.25s, no teleport spin on resume.
+    c.reset();
+    MovementKeys rotate{};
+    rotate.turn_left=true;
+    const auto capped=c.step(rotate,3600.0f);
+    if(std::abs(capped.body_rotation.z-
+            std::sin(0.25f*1.65f*0.5f))>0.0001f)return 41;
+    for(const auto heading_bad:{
+        Quaternion{nan,0.0f,0.0f,1.0f},
+        Quaternion{inf,0.0f,0.0f,1.0f},
+        Quaternion{0.0f,0.0f,0.0f,0.0f}})
+    {
+        c.reset(heading_bad);
+        const auto safe=c.step({},0.1f);
+        if(safe.body_rotation.z!=0.0f||safe.body_rotation.w!=1.0f||
+           server_control_bits(safe)!=0U)return 42;
+    }
+    // A finite but very large quaternion used to overflow float
+    // intermediates: double precision normalization preserves heading.
+    c.reset({0.0f,0.0f,7e25f,7e25f});
+    const auto large=c.step({},0.1f);
+    if(std::abs(large.body_rotation.z-0.70710678f)>0.0001f||
+       std::abs(large.body_rotation.w-0.70710678f)>0.0001f)
+        return 43;
+    for(const Vec3 invalid:std::array<Vec3,4>{{
+        {nan,128.0f,25.0f},{128.0f,inf,25.0f},
+        {128.0f,128.0f,-inf},{1e8f,128.0f,25.0f}}})
+        if(valid_agent_update_position(invalid))return 45;
+    if(!valid_agent_update_position({128.0f,128.0f,25.0f}))
+        return 46;
+    const auto wire=decode_lludp_packet(
+        encode_agent_update(53U,session,large));
+    if(!wire.ok()||wire.packet->header.message!=msg_agent_update||
+       wire.packet->payload.size()!=114U)
+        return 44;
+    // Real High4 wire body quaternion is x,y,z at offsets 32..43.
+    // The server rebuilds w; a 4th transmitted float breaks flags.
+    const auto& pl=wire.packet->payload;
+    const auto bits=std::uint32_t{pl[40]}|
+        (std::uint32_t{pl[41]}<<8U)|
+        (std::uint32_t{pl[42]}<<16U)|
+        (std::uint32_t{pl[43]}<<24U);
+    const auto actual_z=std::bit_cast<float>(bits);
+    if(!std::isfinite(actual_z)||
+       std::abs(actual_z-0.70710678f)>0.0001f)return 47;
+    c.reset();
+    const auto safe_nan=c.step(rotate,nan);
+    const auto nan_wire=decode_lludp_packet(
+        encode_agent_update(54U,session,safe_nan));
+    if(!nan_wire.ok()||nan_wire.packet->payload.size()!=114U||
+       server_control_bits(safe_nan)!=(control_turn_left|control_yaw_pos))
+        return 48;
+    const auto& npl=nan_wire.packet->payload;
+    const auto nbits=std::uint32_t{npl[40]}|
+        (std::uint32_t{npl[41]}<<8U)|
+        (std::uint32_t{npl[42]}<<16U)|
+        (std::uint32_t{npl[43]}<<24U);
+    if(std::bit_cast<float>(nbits)!=0.0f)return 49;
     std::cout << "Avatar controls and rotation tests passed\n";
     return 0;
 }

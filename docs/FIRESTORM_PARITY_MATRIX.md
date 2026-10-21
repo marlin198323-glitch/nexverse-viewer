@@ -783,3 +783,14 @@ Frame-echte Diagnostik und native C++23/Framebufferpixel-
 Regressionen beweisen Wiederherstellung der Originalkörperpixel
 nach ungültiger Pose, ohne Ghost-Skin-Draw. Keine echten
 COF-/Outfit-/Skin-Bakes im NexVerse-Live-Grid nachgewiesen.
+
+## Alpha.725–734 – Firestorm-kompatible echte High4 AgentUpdate-Wirebytes
+Echte OGL High4 AgentUpdate Body-/Head-LLQuaternion bleibt
+12 Bytes (3 floats, w rekonstruiert serverseitig), ControlFlags
+liegen weiterhin bei Payload-Offset 109. Nichtfinite Zeitdeltas,
+lange Pausen und ungültige Serverquaternionen können die
+übertragenen x/y/z-Werte nicht mehr verunreinigen.
+Bei invalidem WorldModel AgentPosition wird der komplette
+Live AgentUpdate ausgesetzt statt CameraCenter=NaN zu senden.
+Ein erfolgreicher nativer Wire-Test ist KEINE
+Simulator-bestätigte Avatar-Bewegung.

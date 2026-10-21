@@ -666,3 +666,17 @@ Positionen aus und normalisiert ungültige Rotation sicher.
 WorldModel/LLUDP/Physics unverändert. GL-Diagnostik zeigt
 nur aktuelle per-Frame-Fehler, keine persönlichen IDs.
 Authentifizierte Grid-E2E und ältere Serverdiff-Audits bleiben offen.
+
+## 21.10.2026 – Alpha.725–734 aktuelle NexVerse Discovery und WASD
+Servermain 86f293d (1 Commit nach 31f3d1, #264):
+Robust.HG.ini SearchURL https://stadt-nexverse.de/service/search,
+DestinationGuide https://stadt-nexverse.de/service/destination,
+welcome https://stadt-nexverse.de/service/welcome. OGL Welcome
+verwendet bereits die neue offizielle HTTPS-Seite.
+Unangemeldetes GridInfo aus Linux Mint live HTTP 200:
+login http://hg.stadt-nexverse.de:80/ und welcome wie oben.
+Neue OGL-WASD-Sicherheit: ungültige Reset-Yaw-/Framezeit
+erzeugt keinen LLUDP High4 Quaternion-NaN mehr; invalider
+Server AgentPosition CameraCenter hält AgentUpdate-Versand an.
+Native reale Serializer-Wirebytes bestätigt, jedoch kein
+serverbestätigtes WASD-/Yaw-E2E ohne autorisierten Login.

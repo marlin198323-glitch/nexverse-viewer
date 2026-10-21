@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/movement_frame_safety.hpp"
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -29,11 +30,7 @@ class MovementController
 public:
     void reset(const Quaternion& heading = {})
     {
-        yaw_ = std::atan2(
-            2.0f * (heading.w * heading.z + heading.x * heading.y),
-            1.0f - 2.0f *
-                (heading.y * heading.y + heading.z * heading.z));
-        if (!std::isfinite(yaw_)) yaw_ = 0.0f;
+        yaw_ = valid_initial_agent_yaw(heading);
         fly_ = false;
         previous_fly_key_ = false;
     }
@@ -44,7 +41,7 @@ public:
         if (keys.toggle_fly && !previous_fly_key_)
             fly_ = !fly_;
         previous_fly_key_ = keys.toggle_fly;
-        const float duration = std::clamp(seconds, 0.0f, 0.25f);
+        const float duration = bounded_agent_update_seconds(seconds);
         constexpr float turn_speed_radians = 1.65f;
         if (keys.turn_left != keys.turn_right)
             yaw_ += (keys.turn_left ? 1.0f : -1.0f) *

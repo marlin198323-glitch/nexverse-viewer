@@ -430,3 +430,14 @@ es darf einen verworfenen Self-Avatar nicht als sichtbar ausweisen.
 Frustumstatus verwendet die tatsächliche Low158-Hover-
 bereinigte Proxyposition statt unverschobene Agent-Physikposition.
 Nativer x64/Mint Original-LLM-Framebufferpixeltest, kein Grid-Live-Avatar.
+
+## Alpha.725–734 – Bewegung und Avatar-Antwort ohne Fake-Erfolge
+Mit der echten WASD-/Tastatursteuerung wird bei kaputter
+Simulatorposition kein AgentUpdate versendet. Eine warnende
+Logzeile erfolgt nur einmal bis zur Wiederherstellung;
+MovementFeedbackMonitor wird zurückgesetzt und meldet
+keine erfundene Serverbewegung. Bei validem Serverpose
+läuft der bisherige Firestorm-artige WASD-/Yaw-/Fly-
+Eingabepfad weiter. Willkommen-Seite stimmt mit aktueller
+NexVerse GridInfo überein; authentifizierte Inworld-Kontrolle
+bleibt ein gesonderter Abnahmetest.

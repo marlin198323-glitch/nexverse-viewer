@@ -6031,6 +6031,7 @@ int Application::run(bool enable_developer_modules)
     protocol::MovementController movement_controller;
     std::uint32_t last_reported_control_flags = 0U;
     bool movement_heading_initialized = false;
+    bool invalid_movement_position_logged = false;
 
     std::atomic_bool circuit_stop{false};
     std::future<protocol::CircuitStatus> circuit_future;
@@ -8081,6 +8082,23 @@ int Application::run(bool enable_developer_modules)
                     std::scoped_lock lock{world_mutex};
                     agent_for_camera = world_model.agent();
                 }
+                // Never transmit a High4 AgentUpdate whose camera is
+                // derived from NaN/Infinity in simulator AgentPosition.
+                // No invented coordinates: pause until a valid readback.
+                if(!protocol::valid_agent_update_position(
+                       agent_for_camera.position))
+                {
+                    if(!invalid_movement_position_logged)
+                    {
+                        core::warning(
+                            "AgentUpdate paused: simulator position invalid");
+                        invalid_movement_position_logged=true;
+                    }
+                    movement_feedback.reset();
+                }
+                else
+                {
+                    invalid_movement_position_logged=false;
                 if (!movement_heading_initialized)
                 {
                     movement_controller.reset(agent_for_camera.rotation);
@@ -8126,6 +8144,7 @@ int Application::run(bool enable_developer_modules)
                 else
                 {
                     core::warning("AgentUpdate not queued: queue full");
+                }
                 }
                 last_agent_update = now;
             }
