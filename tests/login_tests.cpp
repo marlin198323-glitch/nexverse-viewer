@@ -66,6 +66,34 @@ int main()
         return 2;
     }
 
+    // No consent may be sent before the LoginService receives an actual
+    // reason=tos challenge and the user confirms in the modal.
+    const auto tos_false=request.find("<name>agree_to_tos</name>");
+    if(tos_false==std::string::npos||
+       request.find("<boolean>0</boolean>",tos_false)==std::string::npos)
+        return 20;
+    credentials.agree_to_tos=true;
+    const auto agreed_request=nexverse::protocol::build_login_xml_rpc(
+        credentials,"OpenGenesisLINK Viewer","0.1.0-alpha.1");
+    const auto tos_member=agreed_request.find("<name>agree_to_tos</name>");
+    if(tos_member==std::string::npos||
+       agreed_request.find("<boolean>1</boolean>",tos_member)==std::string::npos)
+        return 21;
+    credentials.agree_to_tos=false;
+
+    constexpr auto tos_challenge_xml=R"XML(
+<methodResponse><params><param><value><struct>
+<member><name>login</name><value><boolean>0</boolean></value></member>
+<member><name>reason</name><value><string>tos</string></value></member>
+<member><name>message</name><value><string>http://stadt-nexverse.de/buergerverordnung</string></value></member>
+</struct></value></param></params></methodResponse>
+)XML";
+    const auto challenge=parse_login_xml_rpc_response(tos_challenge_xml);
+    if(challenge.success||challenge.session.has_value()||
+       challenge.reason!="tos"||
+       challenge.message!="http://stadt-nexverse.de/buergerverordnung")
+        return 22;
+
     constexpr auto success_xml = R"XML(
 <methodResponse><params><param><value><struct>
 <member><name>login</name><value><string>true</string></value></member>

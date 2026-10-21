@@ -371,3 +371,14 @@ Fehlerzähler erscheint als Warnung. Kein Fake-Button. Tatsächliche
 Session-/Region-Werte, nicht erfundene Render-Erfolge. High9, Full- und
 Compressed-Self-Avatar-Posen müssen vor WASD-/Kamera-Evidenz gültig sein.
 Grafischer Live-Xvfb-/NexVerse-Avatar-Frame steht noch aus.
+
+## Alpha.665–674 – Bürgerordnung vor Weltbeitritt
+Das originale Prelogin zeigt bei echter reason=tos-Antwort
+ein modales Bürgerordnungsfenster mit offiziellen URL-Button,
+ausdrücklichem Zustimmen (vorher deaktiviert) und Ablehnen,
+einschließlich ESC und blockiertem Background-Login. Nach
+Zustimmung wird für denselben Avatar/Grid das Passwort
+neu verlangt. 1100x700, 1280x800 und 3440x1440 HitTests
+vorhanden. Kein nachgebauter Fake-Webview und keine
+stillschweigende Legal-Akzeptanz. Authentifizierter Browser-/
+Simulator-End-to-End-Pixeltest noch offen.

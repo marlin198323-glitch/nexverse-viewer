@@ -606,3 +606,14 @@ Viewer-seitigen Änderungen betreffen nur die bestehenden bekannten
 ObjectUpdate, ObjectUpdateCompressed, ImprovedTerseObjectUpdate und
 KillObject-Verträge, erfinden keine neuen Serverpakete. Reviewed-SHA
 ausdrücklich nicht aktualisiert.
+
+## 21.10.2026 – Alpha.665–674 Server-TOS-Loginvertrag
+Server-main 7569838fd125d2338bb0a57ec88476648610d887,
+gezielter Compare von 0129e617 (#260, 15 Dateien). C# LoginService
+meldet bei erforderlichem TOS login=false/reason=tos und offizielle
+Bürgerordnungs-URL. Nächster zustimmender Login sendet agree_to_tos=true.
+Viewer bislang falsch automatisch true, ab Alpha.674 false bis
+menschliche Klickzustimmung nach Serverchallenge. Allowlist nur
+stadt-nexverse.de/buergerverordnung und Ausgabe der festen
+HTTPS-Dokumentseite. Reviewed-Baseline wegen älterer Commits nicht
+angehoben. Siehe docs/ALPHA665_674_SERVER_TOS_EXPLICIT_LOGIN_CONSENT.md.

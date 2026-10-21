@@ -24,6 +24,9 @@ struct LoginCredentials
     std::string last_name;
     std::string password;
     std::string start = "last";
+    // False unless the user explicitly accepted the server's ToS challenge
+    // for this avatar and this grid. Never silently agree for all logins.
+    bool agree_to_tos = false;
 };
 
 struct InventoryFolder

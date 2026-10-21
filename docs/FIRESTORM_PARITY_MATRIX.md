@@ -728,3 +728,12 @@ Posen/Scale-Objekte werden nicht als gesunde Firestorm/OpenGL-Szene
 gewertet, und eigener Full/Compressed/High9-Pose-Readback validiert
 Quaternion und Position vor WASD-Erfolg. F7 visualisiert die echten
 WorldModel-Zähler. Firestorm-Inworld-Parität ist dadurch nicht bewiesen.
+
+## Alpha.665–674 – Firestorm-TOS statt stiller Auto-Akzeptanz
+Echter OpenSim Login reason=tos und agree_to_tos ist nun
+servergesteuert und zustimmungspflichtig. Fester offizieller
+Browser-Link und sichtbarer OGL-Dialog; erst nach Buttonklick
+neuer Login mit true für gleichen Avatar und Grid. Kein
+automatisches Login und keine vorzeitige Region. Statt
+Firestorms eingebettetem Webview Systembrowser und
+Passwort-Neueingabe. Realer Grid-Test steht noch aus.

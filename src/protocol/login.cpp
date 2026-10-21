@@ -400,7 +400,8 @@ std::string build_login_xml_rpc(
     append_member(document, structure, "mac", "");
     append_member(document, structure, "id0", "");
     append_member(document, structure, "viewer_digest", "");
-    append_boolean(document, structure, "agree_to_tos", true);
+    append_boolean(document, structure, "agree_to_tos",
+                   credentials.agree_to_tos);
     append_boolean(document, structure, "read_critical", true);
     append_options(document, structure);
 

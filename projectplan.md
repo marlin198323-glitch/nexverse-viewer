@@ -1,3 +1,9 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.674, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.675–684.**
+
+21.10.2026 Alpha.665–674: Neuer OpenGenesisLINK Server-main 7569838 hat versionierte Bürgerordnung TOS im echten Login-Handler eingeführt (reason=tos). P0 im bisherigen OGL erkannt: jeder Login setzte agree_to_tos=true automatisch ohne Benutzerzustimmung. Ab Alpha.674 false bis zum echten Server-TOS-Challenge, eigener sichtbarer Bürgerordnungsdialog mit offizieller HTTPS-Seite, explizitem Zustimmen/Ablehnen und neuem Login mit Passwortneueingabe. Zustand nur für Avatar/Grid gültig, kein vorzeitiger Simulatorstart. Native C++23 Zustands-/Layouttests, CMake XML-RPC- und Python-Verträge ergänzt. Letzter bestätigter Pi5-CI Run 39643087562 (Alpha.664 SHA 0c9f60e) SUCCESS, neuer Alpha.674 GitHub-CI/GUI/NexVerse-E2E noch offen. Projekt 39 %, nächste zehn Blöcke Alpha.675–684. Details docs/ALPHA665_674_SERVER_TOS_EXPLICIT_LOGIN_CONSENT.md; kein Produktivdeploy.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.664, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.665–674.**
 
 **ALPHA.664 SHA-GENAUE TESTLAGE:** Feature SHA 0c9f60ef02dbcc35796c7cdf637eb59b94ec48a9 wurde nach nativen Pi5 ARM64 WorldModel-/LLUUDP-/Pose-Regressionen (alle sechs WorldModel-Programme PASS), weiteren Headless-C++23-Prüfungen und 335 Python-Tests mit 1 Skip nach develop-current gepusht. GitHub Actions Run 39643087562 ist fuer exakt diesen SHA um 21.10.2026 19:22 MESZ IN_PROGRESS, KEIN success vor Abschluss behauptet. Voriger Alpha.654 SHA-Run 39639482493 COMPLETE SUCCESS. Der volle Linux-x64-NVIDIA-/Xvfb-/GUI-Viewer-Build und ein authentifizierter NexVerse-Live-Avatar/COF/WASD-End-to-End-Test wurden hier NICHT ausgefuehrt. Projekt 39 %, nächste zehn Blöcke Alpha.665–674. Kein Produktivdeploy.

@@ -376,6 +376,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-grid-discovery-tests)
     add_test(NAME nexverse-grid-discovery-tests COMMAND nexverse-grid-discovery-tests)
 
+    add_executable(nexverse-login-tos-consent-tests
+        tests/login_tos_consent_tests.cpp)
+    target_link_libraries(nexverse-login-tos-consent-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-login-tos-consent-tests)
+    add_test(NAME nexverse-login-tos-consent-tests
+        COMMAND nexverse-login-tos-consent-tests)
+
     add_executable(nexverse-login-tests tests/login_tests.cpp)
     target_link_libraries(nexverse-login-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-login-tests)
