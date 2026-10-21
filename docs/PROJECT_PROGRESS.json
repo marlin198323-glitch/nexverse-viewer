@@ -87,5 +87,11 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null
+  "pending_pi5_ci": {
+    "feature_sha": "24fb21c4c841e17bc2e399c219a6261a9eecdb8a",
+    "run_id": 39645564317,
+    "checked_status": "in_progress",
+    "checked_on": "2026-10-21 19:39 Europe/Berlin",
+    "note": "Do not claim success until completion. CMake x64 GUI and live NexVerse grid ToS tests not in Pi5 headless."
+  }
 }
