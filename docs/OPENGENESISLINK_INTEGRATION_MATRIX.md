@@ -626,3 +626,12 @@ TOS bleibt servergetrieben. Viewer-Freigabe nach fehlgeschlagenem
 Login/Ausnahme verworfen, Challenge immer zum gesendeten Avatar und
 Grid. Frühere Reviewed-SHA bleibt wegen älteren Diff-Rückstands
 unverändert; vollständiger Serververgleich weiter offen.
+
+## Alpha.685–694 – Servermain c9a0322
+Der Einzelcompare gegen 3728273 enthält Commit #262 (TOS true, 1,
+string true normalisiert; false/0 weiterhin falsch) und
+serverseitige Portal-HTTPS-Proxy-Diagnose. OGLs explicit
+agree_to_tos-XMLRPC-Boolean passt zum Vertrag. Reviewed-Baseline
+wegen historischer ungeprüfter Serverdiffs nicht angehoben.
+Avatar Low158/Remote Hover.Z jetzt vor GPU validiert;
+NexVerse Avatar Live-Skin/COF/WASD-E2E weiterhin offen.

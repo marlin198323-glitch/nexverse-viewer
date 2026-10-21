@@ -392,3 +392,12 @@ Browserstarter bereinigt POSIX-Kindprozess; Windows benötigt shell32.
 Neuer gehosteter Linux-x64-GUI-CMake-Workflow auf develop-current
 baut den echten Viewer. Erfolgreicher UI-Framebuffer-/Pixeltest,
 Login und vollständig sichtbarer Avatar noch offen.
+
+## Alpha.685–694 – Avatar HUD zeigt fehlerhaften Hover
+Die vorhandene Avatar-Pipeline zeigt nun beim Auftreten von
+nicht endlichen Hover-Serverwerten einen knappen Warnstatus
+Hover korrigiert: Self 1 / Fremde N statt eines irreführenden
+Erfolgs. Die Werte stammen aus den wirklich vorbereiteten
+aktuellen AvatarProxy-Daten pro Frame. Bei gültigen Daten
+bleibt die gewohnte Appearance-Anzeige unverändert.
+Keine Fake-Inworld-Daten, kein angeblich fertiger Skin.

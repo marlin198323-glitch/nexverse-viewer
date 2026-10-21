@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.684",
+  "viewer_version": "0.2.0-alpha.694",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.685–694",
-  "assessment": "Alpha.684: login consent retry never survives non-TOS failure or worker exception; ToS challenge bound to actual submitted avatar/grid. Accessible actual modal keyboard focus, ESC priority fixed, POSIX browser helper reaped and Windows Shell32 linked. Full Linux x64 GUI CMake/real login XMLRPC GitHub CI now separately triggered on develop-current; its result for new SHA is pending. Pi5 native and Python checks, but real GUI framebuffer, authenticated TOS server round-trip and skin/COF/Outfit/WASD/Grid E2E are still open, remain unverified. Last verified Pi5 CI alpha674 SHA 24fb21c SUCCESS; upstream 3728273 new change server-only.",
+  "next_five_blocks": "Alpha.695–704",
+  "assessment": "Alpha.694: real World Renderer own and remote AvatarProxy hover from Low158 NaN/+Infinity/-Infinity now sanitized to finite 0m prior to GL, native C++23 third-person projection regression plus genuine HUD warning. Latest OpenGenesisLINK main c9a0322 normalizes explicit ToS bool true/1, existing OGL consent true is compatible. Previous Pi5 Alpha.684 exact-SHA CI 39647670145 success. Hosted x64 GUI CI failed before runner assignment (runner_id=0, 0 steps), not proof of compiler failure; full x64 GUI and live NexVerse avatar skin/COF/outfit/WASD E2E are still open. New Alpha.694 Pi5 CI pending; no production deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.685–694",
+  "next_batch": "Alpha.695–704",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "24fb21c4c841e17bc2e399c219a6261a9eecdb8a",
-    "run_id": 39645564317,
+    "tested_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
+    "run_id": 39647670145,
     "conclusion": "success",
-    "scope": "ARM64 native C++23/headless, Python; no full OpenGL viewer compilation"
+    "scope": "Pi5 ARM64 C++23 native headless and Python, not GUI/live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
-    "run_id": 39647670145,
-    "checked_status": "in_progress",
-    "note": "Await completed/success for exact feature SHA; local Pi5 headless does not replace CI."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "0c38c102a9f908562dd2f09141eb2cba80c14623",
     "run_id": 39647670237,

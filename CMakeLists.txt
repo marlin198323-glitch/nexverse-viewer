@@ -1021,6 +1021,22 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-prim-uuid-relocation-tests
         COMMAND nexverse-prim-uuid-relocation-tests)
 
+    add_executable(nexverse-avatar-hover-projection-tests
+        tests/avatar_hover_projection_tests.cpp)
+    target_link_libraries(nexverse-avatar-hover-projection-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-hover-projection-tests)
+    add_test(NAME nexverse-avatar-hover-projection-tests
+        COMMAND nexverse-avatar-hover-projection-tests)
+
+    add_executable(nexverse-avatar-hover-safety-tests
+        tests/avatar_hover_safety_tests.cpp)
+    target_link_libraries(nexverse-avatar-hover-safety-tests
+        PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-avatar-hover-safety-tests)
+    add_test(NAME nexverse-avatar-hover-safety-tests
+        COMMAND nexverse-avatar-hover-safety-tests)
+
     add_executable(nexverse-simulator-scene-validity-tests
         tests/simulator_scene_validity_tests.cpp)
     target_link_libraries(nexverse-simulator-scene-validity-tests

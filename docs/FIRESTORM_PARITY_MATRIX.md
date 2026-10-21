@@ -746,3 +746,11 @@ Freigabe beim nächsten Versuch. Bei Grid-/Avatarwechsel gilt
 Freigabe nicht. Gehosteter Linux-x64-OpenGL-GUI-Build und
 echter XMLRPC-CMake-Test im neuen Workflow separat; kein
 eingebetteter Webview und noch keine bewiesene Live-TOS-Akzeptanz.
+
+## Alpha.685–694 – Original-Avatar Hover-Z finite halten
+Nichtfinite Low158/Remote-Hoverhöhen konnten trotz gültigem
+AgentPosition die AvatarProxy-GL-Koordinaten mit NaN kontaminieren.
+Nun auf 0m korrigiert, gültige Werte bis ±2m unverändert.
+Authentische Avatar-/Region-Daten bleiben Quelle. Gezielter
+native Test bestätigt einen gültigen Drittperson-Frustum-Punkt
+nach Bereinigung; GL-Pixel-/Skin-Sichtbarkeit bleibt offen.

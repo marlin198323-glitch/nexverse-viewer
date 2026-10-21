@@ -62,13 +62,13 @@ class KilledAvatarLifetime(unittest.TestCase):
   ui=read("src/ui/viewer_shell_render.cpp")
   self.assertIn('line(7,"KillObject Avatar/Prims: "+',ui)
  def test_handoff_and_version(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.684")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.694")
   d=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.684")
-  self.assertEqual(d["next_batch"],"Alpha.685–694")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.694")
+  self.assertEqual(d["next_batch"],"Alpha.695–704")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
              "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.685–694",read(fn)[:1800])
+   self.assertIn("Alpha.695–704",read(fn)[:1800])
 if __name__=="__main__":unittest.main()

@@ -37,16 +37,16 @@ class LiveInputParity(unittest.TestCase):
  def test_invalid_avatar_appearance_is_visible_without_f3(self):
   a=source('src/app/application.cpp')
   self.assertIn('appearance_runtime.invalid_stage',a)
-  self.assertIn('9.1f*scale,appearance_status',a)
+  self.assertIn('9.1f*scale,hover_warning.empty()',a)
   self.assertIn('!avatar_proof.appearance_received&&appearance_runtime.malformed>0U',a)
   self.assertNotIn('avatar_id+" | "',a)
  def test_release_docs(self):
-  self.assertEqual(source('VERSION').strip(),'0.2.0-alpha.684')
+  self.assertEqual(source('VERSION').strip(),'0.2.0-alpha.694')
   d=json.loads(source('docs/PROJECT_PROGRESS.json'))
-  self.assertEqual(d['viewer_version'],'0.2.0-alpha.684')
-  self.assertEqual(d['next_batch'],'Alpha.685–694')
+  self.assertEqual(d['viewer_version'],'0.2.0-alpha.694')
+  self.assertEqual(d['next_batch'],'Alpha.695–704')
   self.assertEqual(d['default_blocks_per_run'],10)
   for p in ('CHATUEBERGABE.md','AGENTS.md','info.md','projectplan.md','docs/PROJEKTFORTSCHRITT.md'):
-   self.assertIn('Alpha.685–694',source(p)[:1900])
+   self.assertIn('Alpha.695–704',source(p)[:1900])
    self.assertIn('39 %',source(p)[:1900])
 if __name__=='__main__':unittest.main()

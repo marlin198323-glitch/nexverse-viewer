@@ -88,7 +88,7 @@ class MintBuildContractTests(unittest.TestCase):
         camera=(ROOT/"include/nexverse/ui/camera_zoom_controls.hpp").read_text()
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("camera_zoom_default=5.5f",camera)
-        self.assertIn("9.1f*scale,appearance_status",app)
+        self.assertIn("9.1f*scale,hover_warning.empty()",app)
         self.assertIn("8.7f*scale,avatar_proof.fragment_stage()",app)
 
     def test_terrain_same_revision_retry_updates_gpu_and_welcome_unchanged(self):

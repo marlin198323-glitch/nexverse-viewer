@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the Mozilla Public License, v. 2.0. */
 #pragma once
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
+#include "nexverse/render/avatar_hover_safety.hpp"
 #include "nexverse/ui/avatar_view_evidence.hpp"
 #include "nexverse/ui/avatar_appearance_runtime.hpp"
 #include "nexverse/ui/avatar_visual_truth.hpp"
@@ -27,6 +28,8 @@ struct AvatarPipelineProof
     AvatarVisualTruth visual_truth{};
     bool world_ready=false;
     bool self_present=false;
+    bool self_hover_invalid=false;
+    std::uint32_t remote_hover_invalid=0U;
     AvatarViewEvidence view{};
     std::uint64_t proxy_draws=0U;
     // Pre-UI, depth-tested original-body GL fragments from an asynchronous
@@ -58,6 +61,11 @@ struct AvatarPipelineProof
         return visible
             ?"Avatar Fragmente: sichtbar (Depth-Test)"
             :"Avatar Fragmente: 0 (verdeckt/ausserhalb)";
+    }
+    [[nodiscard]] std::string hover_stage() const
+    {
+        return nexverse::render::avatar_hover_status(
+            self_hover_invalid,remote_hover_invalid);
     }
     [[nodiscard]] std::string skin_stage() const
     {

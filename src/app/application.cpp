@@ -83,6 +83,7 @@
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/render/renderer.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
+#include "nexverse/render/avatar_hover_safety.hpp"
 #include "nexverse/render/avatar_gpu_submission_status.hpp"
 #include "nexverse/render/third_person_camera.hpp"
 #include "nexverse/ui/world_scene_proof.hpp"
@@ -2731,9 +2732,14 @@ void render_world_hud(
         ? "Appearance "+std::to_string(appearance_runtime.malformed)+
           " x defekt: "+appearance_runtime.invalid_stage
         : nexverse::ui::describe_avatar_pipeline(avatar_proof);
+    // A nonfinite Low158 hover used to hide otherwise valid original
+    // Firestorm avatar meshes. Surface sanitation as real provenance.
+    const auto hover_warning=avatar_proof.hover_stage();
     renderer.text(card_x+14.0f*scale,rail_y+410.0f*scale,
-        9.1f*scale,appearance_status,
-        avatar_proof.appearance_received?theme::cyan:theme::warning);
+        9.1f*scale,hover_warning.empty()
+            ?appearance_status:hover_warning,
+        hover_warning.empty()&&avatar_proof.appearance_received
+            ?theme::cyan:theme::warning);
     renderer.text(card_x+14.0f*scale,rail_y+436.0f*scale,
         9.1f*scale,nexverse::ui::describe_avatar_body_pipeline(avatar_proof),
         avatar_proof.body_gpu_drawn()
@@ -8185,6 +8191,8 @@ int Application::run(bool enable_developer_modules)
             render::RenderEnvironment environment_update;
             std::vector<render::RenderSceneObject> scene_object_update;
             std::vector<render::RenderAvatarProxy> avatar_proxy_update;
+            bool current_self_hover_invalid=false;
+            std::uint32_t current_remote_hover_invalid=0U;
             std::set<std::string,std::less<>> active_playback_anchor_keys;
             std::vector<render::RenderPointLight> scene_point_lights;
             std::vector<render::RenderParticleEmitter> scene_particle_emitters;
@@ -10747,8 +10755,12 @@ int Application::run(bool enable_developer_modules)
                     float self_hover=0.0f;
                     if (const auto& appearance=world_model.self_appearance();
                         appearance && !appearance->hover_heights.empty())
-                        self_hover=std::clamp(
-                            appearance->hover_heights.front().z,-2.0f,2.0f);
+                    {
+                        const auto sanitized=render::safe_avatar_hover(
+                            appearance->hover_heights.front().z);
+                        self_hover=sanitized.meters;
+                        current_self_hover_invalid=sanitized.invalid;
+                    }
                     std::array<std::string,3U> baked_ids{};
                     // Current verified Low158 Self always wins. A real
                     // self ObjectUpdate TE can only provisionally populate
@@ -10837,12 +10849,16 @@ int Application::run(bool enable_developer_modules)
                         !avatar.position_known ||
                         !avatar.simulator_object_update_seen ||
                         avatar_proxy_update.size() >= 64U) continue;
-                    const float hover=avatar.hover_heights.empty()?0.0f:
-                        std::clamp(avatar.hover_heights.front().z,-2.0f,2.0f);
+                    const auto hover=avatar.hover_heights.empty()
+                        ?render::AvatarHoverOffset{}
+                        :render::safe_avatar_hover(
+                            avatar.hover_heights.front().z);
+                    if(hover.invalid&&current_remote_hover_invalid<UINT32_MAX)
+                        ++current_remote_hover_invalid;
                     avatar_proxy_update.push_back({
                         {avatar.position.x,
                          avatar.position.y,
-                         avatar.position.z+hover},
+                         avatar.position.z+hover.meters},
                         {avatar.rotation.x,
                          avatar.rotation.y,
                          avatar.rotation.z,
@@ -13083,6 +13099,8 @@ int Application::run(bool enable_developer_modules)
             avatar_proof.appearance_runtime=appearance_runtime;
             avatar_proof.world_ready=simulation_ready;
             avatar_proof.self_present=render_agent.present;
+            avatar_proof.self_hover_invalid=current_self_hover_invalid;
+            avatar_proof.remote_hover_invalid=current_remote_hover_invalid;
             avatar_proof.original_body_draws=
                 render_diagnostics.self_avatar_anatomical_mesh_draw_calls;
             avatar_proof.part_visibility.original_draws=
