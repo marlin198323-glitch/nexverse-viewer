@@ -1,3 +1,11 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.704, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.705–714.**
+
+**VERBINDLICHES ENTWICKLUNGSGERÄT: Linux Mint Desktop Commander jam-MS-7D28, Checkout /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer, develop-current. Raspberry Pi 5 nur ARM64 CI. Für GUI/CMake/vcpkg/NVIDIA-Tests primär scripts/mint-viewer-validation.sh auf Mint; niemals unaufgefordert auf sichtbarem Desktop starten oder deployen.**
+
+21.10.2026 Alpha.695–704: Entwicklung auf ausdrücklichen Benutzerauftrag auf Linux Mint Desktop Commander jam-MS-7D28 verlegt. GIT sauber von d669213 nach 805fb3f ff-only synchronisiert. Echter Linux-x64-Debug-Vollbuild via vcpkg/CMake/Ninja PASS, 174/174 native CTest inkl. GL/Avatar/LLUDP/Login-TOS PASS, Xvfb-isolierter Viewer-Start mit original Firestorm-Skelett und 3 GPU-Meshes/UI Renderer PASS, X11 WM_CLASS und OGL Taskleisten-Icon 128x128 PASS, 353 Python-Verträge PASS. Echte x64-GCC -Wconversion Warnungen bei 64-Bit Avatar Skin GL Draws beseitigt (saturierende uint32_t-Diagnose); native Test auf uint64_t Extremwerte erfolgreich; Mint Desktop Full-Validation Gate script neu. GitHub Pi5 Alpha.694 SHA 4150521 Run 39650618129 SUCCESS. Hosted x64-GitHub-CI scheiterte weiterhin vor Runnerstart (0 Steps), lokale Mint-Validierung ist nicht Hosted-CI. Live authentifizierter NexVerse-Avatar/Outfits/COF/Skin/WASD weiter OPEN, Projekt 39 %, nächste zehn Blöcke Alpha.705–714. Details docs/ALPHA695_704_MINT_X64_VIEWER_GUI_GATE.md. Kein Deploy.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.694, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.695–704.**
 
 **CI-STATUS ALPHA.694 NACHGEPFRUEFT:** Linux-x64-GUI-Run 39650618221 (SHA 4150521bd239c562d697802d3fae64f44de9f76f) COMPLETED/FAILURE vor der Jobausfuehrung; Job 119397662761 mit runner_id=0 und steps=0. Zweiter Hosted-Runner-Start ohne GUI-Konfiguration oder Compiler; Ursache nicht aus Jobs ableitbar. Pi5-Run 39650618129 fuer denselben Feature-SHA IN_PROGRESS; noch kein Success nachgewiesen. Echte Live-Grid-/GPU-/Avatar-Skin-/COF-/WASD-Tests weiter offen, Projektstand 39 %. Kein Deploy.

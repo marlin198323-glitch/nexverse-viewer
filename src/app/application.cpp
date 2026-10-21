@@ -13115,15 +13115,17 @@ int Application::run(bool enable_developer_modules)
                 render_diagnostics.self_avatar_visible_samples_known;
             avatar_proof.fragment_samples_passed=
                 render_diagnostics.self_avatar_visible_samples_passed;
+            // Never narrow 64-bit renderer frame counters to 32 bits
+            // by wrapping them back to zero (false skin/animation status).
             avatar_proof.visual_truth.keyframe_skin_draws=
-                render_diagnostics.self_avatar_keyframe_skin_draw_calls;
+                ui::clamp_avatar_gl_draw_count(
+                    render_diagnostics.self_avatar_keyframe_skin_draw_calls);
             avatar_proof.visual_truth.server_selected_skin_draws=
-                render_diagnostics.self_avatar_server_selected_skin_draw_calls;
+                ui::clamp_avatar_gl_draw_count(
+                    render_diagnostics.self_avatar_server_selected_skin_draw_calls);
             avatar_proof.visual_truth.baked_body_gl_draws=
-                static_cast<std::uint32_t>(
-                    render_diagnostics.self_avatar_body_bake_gl_draws[0]+
-                    render_diagnostics.self_avatar_body_bake_gl_draws[1]+
-                    render_diagnostics.self_avatar_body_bake_gl_draws[2]);
+                ui::sum_avatar_gl_body_draws(
+                    render_diagnostics.self_avatar_body_bake_gl_draws);
             if(simulation_ready&&render_agent.present)
             {
                 const auto camera=render::third_person_camera(

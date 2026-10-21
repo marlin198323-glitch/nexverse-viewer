@@ -635,3 +635,12 @@ agree_to_tos-XMLRPC-Boolean passt zum Vertrag. Reviewed-Baseline
 wegen historischer ungeprüfter Serverdiffs nicht angehoben.
 Avatar Low158/Remote Hover.Z jetzt vor GPU validiert;
 NexVerse Avatar Live-Skin/COF/WASD-E2E weiterhin offen.
+
+## Alpha.695–704 – lokaler OGL-Linux-Mint-Client wieder voll gebaut
+Entwicklung jetzt via Desktop Commander jam-MS-7D28, CMake/vcpkg
+x64 Full Viewer + 174 native Tests + isolierter X11-Icon-Start
+erfolgreich. Latest bekannter OpenGenesisLINK main c9a0322
+erhält TOS true/1 Normalisierung; ältere, nicht reviewte
+Upstream-Schnittstellen weiterhin MANUAL_REVIEW.
+Der x64 Mint-Client kann lokal starten; authentifizierter
+NexVerse Low158/COF/WASD-End-to-End-Test wird nicht erfunden.

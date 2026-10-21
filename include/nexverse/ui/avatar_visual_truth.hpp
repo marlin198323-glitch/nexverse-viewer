@@ -1,9 +1,32 @@
 /* This Source Code Form is subject to the Mozilla Public License, v. 2.0. */
 #pragma once
 #include <cstdint>
+#include <array>
+#include <limits>
 #include <string>
 namespace nexverse::ui
 {
+// GL renderer counts are uint64_t. Diagnostics are uint32_t: a plain
+// implicit cast can wrap to zero and falsely report "no server animation"
+// or "no baked skin draw" after long sessions. Saturate, never wrap.
+[[nodiscard]] constexpr std::uint32_t
+clamp_avatar_gl_draw_count(std::uint64_t source) noexcept
+{
+    constexpr auto max=std::numeric_limits<std::uint32_t>::max();
+    return source>max?max:static_cast<std::uint32_t>(source);
+}
+[[nodiscard]] constexpr std::uint32_t
+sum_avatar_gl_body_draws(std::array<std::uint64_t,3U> draws) noexcept
+{
+    constexpr auto max=std::numeric_limits<std::uint32_t>::max();
+    std::uint64_t result=0U;
+    for(const auto count:draws)
+    {
+        if(count>=max-result)return max;
+        result+=count;
+    }
+    return static_cast<std::uint32_t>(result);
+}
 struct AvatarVisualTruth
 {
     bool server_appearance=false;

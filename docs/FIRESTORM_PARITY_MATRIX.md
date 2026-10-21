@@ -754,3 +754,13 @@ Nun auf 0m korrigiert, gültige Werte bis ±2m unverändert.
 Authentische Avatar-/Region-Daten bleiben Quelle. Gezielter
 native Test bestätigt einen gültigen Drittperson-Frustum-Punkt
 nach Bereinigung; GL-Pixel-/Skin-Sichtbarkeit bleibt offen.
+
+## Alpha.695–704 – Original-Firestorm-Pipeline im Mint-x64-Build
+Vollständiger Linux-x64-CMake-Build mit originaler Firestorm-Skeleton-
+Bindpose (133 Gelenke, 55 Attachment-Slots), drei Originalkörper-
+GPU-Meshes und 174 GL/Avatar-/Protokoll-CTest-Fällen auf dem realen
+Linux-Mint-PC erfolgreich. Unveränderte Diagnose-Counter können
+nicht mehr uint64 nach uint32 zu null umbrechen: saturierende
+GL-Draw-/Skin-/Serverclip-Nachweise. Die Skelett-/Bindpose-GPU-
+Verfügbarkeit ist KEIN Proof für aktuelle authentifizierte
+NexVerse-Skin/COF/Outfit/WASD-Daten und kein Live-Avatar-Pixelbild.

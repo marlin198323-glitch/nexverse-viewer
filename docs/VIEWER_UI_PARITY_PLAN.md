@@ -401,3 +401,14 @@ Erfolgs. Die Werte stammen aus den wirklich vorbereiteten
 aktuellen AvatarProxy-Daten pro Frame. Bei gültigen Daten
 bleibt die gewohnte Appearance-Anzeige unverändert.
 Keine Fake-Inworld-Daten, kein angeblich fertiger Skin.
+
+## Alpha.695–704 – echte Linux-Mint-GUI-Build-/Icon-Prüfung
+Primäres Arbeitsgerät jetzt Linux Mint Desktop Commander jam-MS-7D28
+mit RTX 4070 SUPER und CMake/vcpkg. Lokaler kompletter x64-Debug-Viewer
+kompiliert; 174 native CTests (inkl. GL und Firestorm Avatar),
+Xvfb Viewer Start mit 133 originalen Skelett-Joints, drei originalen
+Bindpose Meshes und UI-Renderer, WM_CLASS opengenesislink-viewer +
+echtem Taskleisten-Icon 128x128 BESTANDEN. Scripts:
+scripts/mint-viewer-validation.sh, mint-isolated-gui-smoke.sh und
+test-mint-window-branding.sh. Kein Start im interaktiven Desktop
+während automatisierter Tests, kein belegtes NexVerse Live-Avatar-E2E.
