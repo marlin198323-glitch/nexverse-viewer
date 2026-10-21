@@ -223,6 +223,33 @@ int main()
                  <<stale_gpu_pixels
                  <<" BEFORE="<<before_kill_pixels<<"\n";
         if(stale_gpu_pixels!=0U)failure=18;
+        // UDP may omit the previous KillObject. A new Full/Compressed
+        // avatar ObjectUpdate reuses LocalID 51 for a *different* UUID.
+        // WorldModel must retire the old rig and its worn mesh before
+        // the renderer uploads its next frame's avatar/scene proxies.
+        region_objects.update_avatar_transform(
+            "old-remote",{4.0f,0.0f,0.0f},{0.0f,0.0f,0.0f,1.0f},
+            51U,true);
+        region_objects.upsert_object(root);
+        renderer->set_avatar_proxies({avatar});
+        renderer->set_scene_objects({attached,sentinel});
+        const auto reused_before=capture(0.22);
+        if(differences(reused_before,empty_scene)<25U)failure=19;
+        region_objects.update_avatar_transform(
+            "new-remote",{6.0f,0.0f,0.0f},{0.0f,0.0f,0.0f,1.0f},
+            51U,true);
+        if(region_objects.avatars().contains("old-remote")||
+           !region_objects.avatars().contains("new-remote")||
+           region_objects.objects().contains(200U)||
+           region_objects.remote_avatar_local_id_rebinds()!=1U)
+            failure=20;
+        renderer->set_avatar_proxies({});
+        renderer->set_scene_objects({sentinel});
+        const auto reused_after=capture(0.22);
+        const auto orphan_rgb=differences(empty_scene,reused_after);
+        std::cout<<"REUSED_AVATAR_LOCALID_STALE_GPU_PIXELS="
+                 <<orphan_rgb<<"\n";
+        if(orphan_rgb!=0U)failure=21;
         if(glGetError()!=GL_NO_ERROR)failure=6;
     }
     if(renderer)renderer->shutdown();

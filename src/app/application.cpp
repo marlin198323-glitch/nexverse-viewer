@@ -13368,6 +13368,8 @@ int Application::run(bool enable_developer_modules)
                         world_model.remote_avatar_kills();
                     shell_view.removed_prim_kills=
                         world_model.removed_prim_kills();
+                    shell_view.remote_avatar_local_id_rebinds=
+                        world_model.remote_avatar_local_id_rebinds();
                     for(const auto& [avatar_id,remote]:world_model.avatars())
                     {
                         (void)avatar_id;

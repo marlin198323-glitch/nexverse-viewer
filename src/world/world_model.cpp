@@ -30,6 +30,7 @@ void WorldModel::reset()
     object_revision_ = 0U;
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
+    remote_avatar_local_id_rebinds_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -58,6 +59,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         ++object_revision_; // force current scene to become empty
         remote_avatar_kills_=0U;
         removed_prim_kills_=0U;
+    remote_avatar_local_id_rebinds_=0U;
         terrain_={};
         parcel_={};
         environment_={};
@@ -98,6 +100,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     object_revision_ = 0U;
     remote_avatar_kills_=0U;
     removed_prim_kills_=0U;
+    remote_avatar_local_id_rebinds_=0U;
     terrain_ = {};
     parcel_ = {};
     environment_ = {};
@@ -136,6 +139,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
             ++object_revision_;
             remote_avatar_kills_=0U;
             removed_prim_kills_=0U;
+    remote_avatar_local_id_rebinds_=0U;
             terrain_={};
             parcel_={};
             environment_={};
@@ -336,6 +340,47 @@ void WorldModel::update_avatar_transform(
     if(id.empty() ||
        (!agent_.agent_id.empty() && id == agent_.agent_id))
         return;
+    // A decoded but identity-less LocalID=0 (or a stale packet from a
+    // disconnected region) cannot authorize a visible 3D avatar.
+    if(from_avatar_object_update&&(!region_.connected||local_id==0U))
+        return;
+    if(from_avatar_object_update&&region_.connected&&local_id!=0U)
+    {
+        // ObjectUpdate establishes this simulator LocalID's current UUID.
+        // UDP KillObject is not guaranteed to arrive before LocalID reuse.
+        // Retire a displaced avatar and its attached mesh descendants.
+        std::vector<std::uint32_t> retired;
+        for(const auto& [other_id,old]:avatars_)
+            if(other_id!=id&&old.local_id==local_id&&
+               old.simulator_object_update_seen)
+                retired.push_back(old.local_id);
+        // If a known avatar moves to a new LocalID, preserve its actual
+        // Low158 appearance/animations but retire attachments under the
+        // old parent LocalID; those prims cannot belong to the new ID.
+        auto previous=avatars_.find(id);
+        std::optional<AvatarState> saved;
+        if(previous!=avatars_.end()&&
+           previous->second.simulator_object_update_seen&&
+           previous->second.local_id!=0U&&
+           previous->second.local_id!=local_id)
+        {
+            retired.push_back(previous->second.local_id);
+            saved=previous->second;
+        }
+        for(const auto retired_id:retired)
+        {
+            // This is NOT a received KillObject, so do not fabricate
+            // network packet or removal counters for actual KillObject.
+            if(kill_simulator_local_id(retired_id,false)&&
+               remote_avatar_local_id_rebinds_<UINT32_MAX)
+                ++remote_avatar_local_id_rebinds_;
+        }
+        if(saved)
+        {
+            saved->local_id=0U;
+            avatars_.insert_or_assign(id,std::move(*saved));
+        }
+    }
     auto& avatar=avatars_[id];
     if(!avatar.animations)
     {
@@ -519,7 +564,8 @@ void WorldModel::remove_object(std::uint32_t local_id)
     }
 }
 
-bool WorldModel::kill_simulator_local_id(std::uint32_t local_id)
+bool WorldModel::kill_simulator_local_id(
+    std::uint32_t local_id,bool count_kill_object)
 {
     if(!region_.connected||local_id==0U)return false;
     bool removed=false;
@@ -534,7 +580,8 @@ bool WorldModel::kill_simulator_local_id(std::uint32_t local_id)
         }
         pending_avatar_animations_.erase(it->first);
         it=avatars_.erase(it);
-        if(remote_avatar_kills_<UINT32_MAX)++remote_avatar_kills_;
+        if(count_kill_object&&remote_avatar_kills_<UINT32_MAX)
+            ++remote_avatar_kills_;
         removed=true;
     }
     // The server may send a separate KillObject for the whole avatar
@@ -562,12 +609,20 @@ bool WorldModel::kill_simulator_local_id(std::uint32_t local_id)
     if(removed_prims>0U)
     {
         ++object_revision_; // one scene invalidation for whole linkset
-        const auto remaining=UINT32_MAX-removed_prim_kills_;
-        removed_prim_kills_+=static_cast<std::uint32_t>(
-            std::min<std::size_t>(removed_prims,remaining));
+        if(count_kill_object)
+        {
+            const auto remaining=UINT32_MAX-removed_prim_kills_;
+            removed_prim_kills_+=static_cast<std::uint32_t>(
+                std::min<std::size_t>(removed_prims,remaining));
+        }
         removed=true;
     }
     return removed;
+}
+
+std::uint32_t WorldModel::remote_avatar_local_id_rebinds() const noexcept
+{
+    return remote_avatar_local_id_rebinds_;
 }
 
 std::uint32_t WorldModel::remote_avatar_kills() const noexcept

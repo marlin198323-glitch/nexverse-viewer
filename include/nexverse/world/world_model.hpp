@@ -303,7 +303,12 @@ public:
     // Simulator KillObject applies to avatar LocalIDs as well as prims.
     // Remove the killed root's attachment/linkset descendants in this
     // region; never leave detached ghost meshes for the rig to reuse.
-    [[nodiscard]] bool kill_simulator_local_id(std::uint32_t local_id);
+    [[nodiscard]] bool kill_simulator_local_id(
+        std::uint32_t local_id,bool count_kill_object=true);
+    // An actual Full/Compressed remote avatar ObjectUpdate may reassign
+    // an existing LocalID without an observed KillObject. Preserve only
+    // currently verified UUID->LocalID bindings.
+    [[nodiscard]] std::uint32_t remote_avatar_local_id_rebinds() const noexcept;
     // Counts only successful current-region KillObject removals; no IDs.
     [[nodiscard]] std::uint32_t remote_avatar_kills() const noexcept;
     [[nodiscard]] std::uint32_t removed_prim_kills() const noexcept;
@@ -351,6 +356,7 @@ private:
     std::uint32_t object_revision_ = 0U;
     std::uint32_t remote_avatar_kills_=0U;
     std::uint32_t removed_prim_kills_=0U;
+    std::uint32_t remote_avatar_local_id_rebinds_=0U;
     TerrainState terrain_;
     ParcelState parcel_;
     EnvironmentState environment_;
