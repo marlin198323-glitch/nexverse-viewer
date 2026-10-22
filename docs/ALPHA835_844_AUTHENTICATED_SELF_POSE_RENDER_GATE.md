@@ -76,3 +76,16 @@ Version 0.2.0-alpha.844 mit 133 Original Firestorm
 Bindpose-Joints und drei GPU Original .llm-Körpermeshes,
 7186 Dreiecke, korrektes WM_CLASS und OGL X11-Systemicon
 128x128. Kein Live-NexVerse-Login und kein Produktivdeploy.
+
+## Exakter GitHub-Feature-Commit und CI
+Feature SHA 712dbe92f0809116b45c74d6b837df993ad741db.
+GitHub Pi5 Source Check Run 39840873191 IN_PROGRESS
+bei letzter Prüfung; kein SUCCESS vor Abschluss.
+Gehosteter Linux x64 Run 39840873213
+COMPLETED/FAILURE, Job 120041219044 runner_id=0,
+0 Steps, kein gestarteter Compiler. Vorheriger Pi5
+Alpha.834 Run 39838069587 SHA fa2f51d SUCCESS.
+Separat lokales Mint-x64-Gate Exit 0:
+177 native Tests, 408 Python, Original Firestorm
+LLM-Meshes, Xvfb GUI und X11-Icon.
+Kein echter Live-Grid-Login oder Deployment.
