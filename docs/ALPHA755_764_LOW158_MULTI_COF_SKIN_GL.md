@@ -105,3 +105,15 @@ isolierter Xvfb-Viewer 0.2.0-alpha.764, 133 original
 Firestorm-Skelettgelenke, drei GPU-residente Original-
 Körpermeshes und erfolgreiches OGL X11-Icon 128x128.
 Keine echte Grid-Session oder Nutzeranmeldedaten verwendet.
+
+## GitHub SHA und anschließend beobachtete CI
+Code-SHA f2c53f302fa6c8dfcc00361590f14b6c19f510c4.
+Neue GitHub ARM64 Pi5 Source Check Run 39814357748 queued
+und GitHub Hosted Linux x64 Run 39814357774 queued,
+Hosted-Job 119948820858: runner_id=null, steps=0
+beim letzten Abruf. KEINEN CI-Erfolg vor Abschluss erfinden.
+Vorheriger Pi5 Run 39812188923 zu Alpha.754 war
+noch in_progress. Letzter SHA-bestätigter Pi5-SUCCESS
+39809196307 Alpha.744 (cbdfd85).
+Getrennte lokale Linux Mint x64 Full-GUI-Prüfung Exit 0:
+175 native Tests, 377 Python, Xvfb Viewer und OGL X11-Icon.
