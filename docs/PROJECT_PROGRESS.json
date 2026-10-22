@@ -89,11 +89,11 @@
   },
   "pending_pi5_ci": {
     "feature_sha": "3f6483b264d362e60c92f052faea5f9e28f84488",
-    "run_id": 39829298694,
+    "run_id": 39829308631,
     "checked_status": "in_progress",
-    "additional_run_id": 39829308631,
-    "additional_run_status": "pending",
-    "note": "Two Pi5 workflows exact SHA, neither verified complete/success."
+    "prior_run_id": 39829298694,
+    "prior_run_status": "cancelled",
+    "note": "Exact SHA Pi5 first run cancelled and later run in progress; no success yet."
   },
   "linux_x64_gui_ci": {
     "feature_sha": "3f6483b264d362e60c92f052faea5f9e28f84488",

@@ -92,4 +92,4 @@ Bodymeshes mit 7186 Dreiecken; korrektes OGL-X11-WM_CLASS
 und Taskleistenicon 128x128 PASS. Kein Live-Login/Deploy.
 
 ## GitHub-Code-SHA und CI-Belege
-Code-SHA 3f6483b264d362e60c92f052faea5f9e28f84488. Pi5 CI 39829298694 IN_PROGRESS und 39829308631 PENDING bei letzter Pruefung; kein gruener CI-Lauf behauptet. Hosted Linux-x64 39829298689 und 39829308722 COMPLETED/FAILURE VOR RUNNERSTART (runner_id 0, 0 Build-Steps). Lokales Mint-x64 Full-GUI-Gate Exit 0. Letzter SHA-exakter Pi5 SUCCESS Run 39827583351 Alpha.794, SHA 567d7a3. Kein Live-Grid-Login.
+Code-SHA 3f6483b264d362e60c92f052faea5f9e28f84488. Pi5 CI 39829298694 CANCELLED, Run 39829308631 IN_PROGRESS bei letzter Pruefung; kein gruener CI-Lauf behauptet. Hosted Linux-x64 39829298689 und 39829308722 COMPLETED/FAILURE VOR RUNNERSTART (runner_id 0, 0 Build-Steps). Lokales Mint-x64 Full-GUI-Gate Exit 0. Letzter SHA-exakter Pi5 SUCCESS Run 39827583351 Alpha.794, SHA 567d7a3. Kein Live-Grid-Login.
