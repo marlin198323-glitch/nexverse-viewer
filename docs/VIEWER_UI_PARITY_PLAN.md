@@ -512,3 +512,11 @@ Queue-Push, ansonsten Rücknahme lokaler Turn/Fly-Zustände.
 Die lokale Kamera passt sich nach einer echten serverseitigen
 Headingänderung ohne gehaltene Drehtaste wieder der
 authentischen WorldModel-Rotation an.
+
+## Alpha.805–814: F3 Skin-Warnung bei altem GPU-Texturstand
+Das bestehende F3 Avatarfenster erhält eine reale
+Rückmeldung, wenn Low158 die aktuellen Bake-IDs liefert,
+OpenGL aber noch ein anderes Head/Upper/Lower-Texture
+zeichnet. Das ist eine Wartestufe, kein grüner
+aktueller Outfitnachweis. Für provisorische Objekt-TE
+wird derselbe Vergleich gesondert angewendet.

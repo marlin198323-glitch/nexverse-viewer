@@ -38,6 +38,10 @@ int main()
     p.bakes=protocol::audit_avatar_bake_evidence(ids,{"head","upper","lower"});
     if(p.body_gpu_drawn())return 7;
     p.body_bake_draws={1U,1U,1U};
+    if(p.body_gpu_drawn())return 23;
+    p.current_body_bake_sources_drawn={true,true,false};
+    if(p.body_gpu_drawn())return 24;
+    p.current_body_bake_sources_drawn={true,true,true};
     if(!p.body_gpu_drawn())return 8;
     if(p.fragment_stage()!="Avatar Fragmente: GPU-Abfrage laeuft")
         return 18;

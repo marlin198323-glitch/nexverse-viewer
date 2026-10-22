@@ -3403,6 +3403,7 @@ public:
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
+        diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
         // stalls. Two concurrent slots per body part are versioned so
         // an older GPU result cannot overtake a newer resolved result.
@@ -4562,6 +4563,7 @@ public:
                                 // Only original Firestorm .llm anatomical
                                 // draws; never count 7-part proxy fallback.
                                 ++diagnostics_.self_avatar_body_bake_gl_draws[slot];
+                                diagnostics_.self_avatar_body_drawn_bake_ids[slot]=id;
                             }
                         }
                         diagnostics_.triangles+=static_cast<std::uint64_t>(

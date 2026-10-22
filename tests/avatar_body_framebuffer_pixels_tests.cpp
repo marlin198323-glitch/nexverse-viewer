@@ -163,6 +163,7 @@ int main()
         const auto three_independent=draw();
         const auto native_draw=renderer->diagnostics();
         const auto independent_pixels=difference(plain,three_independent);
+        if(native_draw.self_avatar_body_drawn_bake_ids!=bake_ids)error=43;
         std::cout<<"THREE_INDEPENDENT_FIRESTORM_BAKE_PIXELS="
                  <<independent_pixels<<"\n";
         if(independent_pixels<100U ||

@@ -13225,6 +13225,13 @@ int Application::run(bool enable_developer_modules)
                             fallback,object_texture_loaded_ids);
                     avatar_proof.body_bake_draws=
                         render_diagnostics.self_avatar_body_bake_gl_draws;
+                    const auto current_bakes=
+                        protocol::extract_avatar_bakes(packet->texture_entry);
+                    for(std::size_t slot=0U;slot<3U;++slot)
+                        avatar_proof.current_body_bake_sources_drawn[slot]=
+                            !current_bakes.ids[slot].empty() &&
+                            current_bakes.ids[slot]==
+                                render_diagnostics.self_avatar_body_drawn_bake_ids[slot];
                     for(std::size_t slot=0U;slot<3U;++slot)
                         if(avatar_proof.bakes.regions[slot]!=
                            protocol::AvatarBakeTextureState::missing)
@@ -13247,6 +13254,11 @@ int Application::run(bool enable_developer_modules)
                         candidate_bakes,object_texture_loaded_ids);
                     avatar_proof.body_bake_draws=
                         render_diagnostics.self_avatar_body_bake_gl_draws;
+                    for(std::size_t slot=0U;slot<3U;++slot)
+                        avatar_proof.current_body_bake_sources_drawn[slot]=
+                            !candidate_bakes.ids[slot].empty() &&
+                            candidate_bakes.ids[slot]==
+                                render_diagnostics.self_avatar_body_drawn_bake_ids[slot];
                 }
             }
             // Read only renderer-authentic CURRENT-REGION asset UUIDs.

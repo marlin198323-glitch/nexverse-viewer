@@ -764,3 +764,12 @@ gültigen 350-ms-Preview-Lease. LLUDP High4 Wirefloat geprüft.
 Eine volle Queue verändert weder lokale Fly-/Turnsteuerung
 noch last_reported_control_flags. Echte Serverposition-
 /Rotation-Readback-Prüfung bleibt unabhängig davon.
+
+## Alpha.805–814: sichtbare Low158-Skin-Quelle nachweisen
+Nur die echten vom Simulator gebrachten Low158-TextureEntry
+Head/Upper/Lower-Bake-UUIDs können als autoritative
+Quellen gelten. Deren GPU-Residency plus GL-Draws allein
+beweist nicht, dass diese selben UUIDs tatsächlich in
+den drei original Firestorm LLM-Draws verwendet wurden.
+F3 verlangt jetzt Identität der IDs. Objekt-TE-Bakes
+bleiben vorläufig, kein COF-/Low158-Success behauptet.

@@ -43,6 +43,16 @@ struct AvatarPipelineProof
     nexverse::protocol::AvatarBakeEvidence bakes{};
     std::uint64_t original_body_draws=0U;
     std::array<std::uint64_t,3U> body_bake_draws{};
+    // Read-only proof that THIS frame's original LLM bound the SAME
+    // three UUIDs as the current authenticated Low158/ObjTE source.
+    // Bare GL counters cannot establish current outfit provenance.
+    std::array<bool,3U> current_body_bake_sources_drawn{};
+    [[nodiscard]] bool current_bake_sources_match() const noexcept
+    {
+        return current_body_bake_sources_drawn[0]&&
+            current_body_bake_sources_drawn[1]&&
+            current_body_bake_sources_drawn[2];
+    }
     // All three current-server regions must be GPU-resident AND actually
     // submitted by the original LLM GL mesh in THIS frame.
     [[nodiscard]] std::string view_stage() const
@@ -100,13 +110,15 @@ struct AvatarPipelineProof
     [[nodiscard]] bool provisional_body_gpu_submitted() const noexcept
     {
         return !appearance_received && provisional_object_bakes &&
+            current_bake_sources_match() &&
             bakes.visible_body_resident==3U && original_body_draws>=3U &&
             body_bake_draws[0]>0U && body_bake_draws[1]>0U &&
             body_bake_draws[2]>0U;
     }
     [[nodiscard]] bool body_gpu_drawn() const noexcept
     {
-        return appearance_received && bakes.visible_body_resident==3U &&
+        return appearance_received && current_bake_sources_match() &&
+            bakes.visible_body_resident==3U &&
             original_body_draws>=3U && body_bake_draws[0]>0U &&
             body_bake_draws[1]>0U && body_bake_draws[2]>0U;
     }

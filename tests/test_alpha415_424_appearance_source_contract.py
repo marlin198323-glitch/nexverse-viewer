@@ -19,7 +19,7 @@ class AvatarSourceProvenance(unittest.TestCase):
  def test_object_te_cannot_impersonate_low158(self):
   s=text("include/nexverse/ui/avatar_pipeline_proof.hpp")
   self.assertIn("provisional_object_bakes",s)
-  self.assertIn("return appearance_received && bakes.visible_body_resident==3U",s)
+  self.assertIn("return appearance_received && current_bake_sources_match() &&",s)
   self.assertIn("provisional_body_gpu_submitted()",s)
   self.assertIn("Low158 fehlt",s)
   app=text("src/app/application.cpp")
@@ -51,12 +51,12 @@ class AvatarSourceProvenance(unittest.TestCase):
                  "disconnected.apply_region","disconnected.self_appearance()"):
    self.assertIn(needle,native2)
  def test_handoff(self):
-  self.assertEqual(text("VERSION").strip(),"0.2.0-alpha.804")
+  self.assertEqual(text("VERSION").strip(),"0.2.0-alpha.814")
   d=json.loads(text("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.804")
-  self.assertEqual(d["next_batch"],"Alpha.805–814")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.814")
+  self.assertEqual(d["next_batch"],"Alpha.815–824")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.805–814",text(f)[:1200])
+   self.assertIn("Alpha.815–824",text(f)[:1200])
 if __name__=="__main__":unittest.main()

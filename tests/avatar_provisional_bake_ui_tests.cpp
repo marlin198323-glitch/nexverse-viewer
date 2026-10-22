@@ -36,6 +36,8 @@ int main()
     proof.bakes=protocol::audit_avatar_bake_evidence(
         bakes,{"head","upper","lower"});
     proof.body_bake_draws={1U,1U,1U};
+    if(proof.provisional_body_gpu_submitted())return 11;
+    proof.current_body_bake_sources_drawn={true,true,true};
     if(proof.body_gpu_drawn()||!proof.provisional_body_gpu_submitted())
         return 5;
     if(ui::inspect_avatar_bakes(proof).visual.find("Depth-Test wartet")==

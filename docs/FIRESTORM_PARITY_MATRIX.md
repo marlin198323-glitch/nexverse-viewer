@@ -867,3 +867,11 @@ ohne F-Fly-State oder Key-Debounce zurückzusetzen.
 Ein wegen voller OutboundQueue nicht gesendeter TURN/Fly-
 State wird wiederhergestellt statt als Bewegung dargestellt.
 Native High4-Wire und echte Queue-Full-Regressionen.
+
+## Alpha.805–814: Original-Firestorm Body UV-Quellprovenienz
+OpenGL Renderer führt pro Frame und originalem .llm
+Head/Upper/Lower-Draw die real gebundene Textur-UUID.
+Ungebundene oder alte Slots können aktuellen COF-Skin
+nicht fälschlich belegen. Renderer/Server-UUIDs
+in F3-Diagnose ohne private Session-IDs zu kopieren.
+Echte Inworld-Avatar-Abnahme bleibt offen.

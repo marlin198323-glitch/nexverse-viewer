@@ -70,6 +70,8 @@ int main()
        partial.visual.find("unvollstaendig")==std::string::npos)return 11;
     proof.bakes=protocol::audit_avatar_bake_evidence(bakes,{"head","upper","lower"});
     proof.body_bake_draws={1,1,1};
+    if(ui::inspect_avatar_bakes(proof).visual.find("Texturstand abweichend")==std::string::npos)return 19;
+    proof.current_body_bake_sources_drawn={true,true,true};
     auto drawn=ui::inspect_avatar_bakes(proof);
     if(drawn.visual.find("Pixelpruefung")==std::string::npos)return 12;
     proof.fragment_query_known=true;proof.fragment_samples_passed=true;

@@ -382,6 +382,9 @@ struct RenderDiagnostics
     // Actual original three Firestorm .llm body GL submissions with a baked
     // server texture bound, Head/Upper/Lower. Proxy fallback excluded.
     std::array<std::uint64_t,3U> self_avatar_body_bake_gl_draws{};
+    // Actual Texture UUID used by the original LLM slot in this frame.
+    // A GPU draw with yesterday's bake must not prove today's Low158 TE.
+    std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};
 };
 
 enum class GpuUploadFailure

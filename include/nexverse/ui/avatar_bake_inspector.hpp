@@ -105,6 +105,9 @@ struct AvatarBakeInspector
             proof.bakes.regions[2]==
                 nexverse::protocol::AvatarBakeTextureState::missing)
         out.visual="Self Low158: Body-Bake-IDs noch unvollstaendig";
+    else if(proof.body_bake_draws[0]>0U&&proof.body_bake_draws[1]>0U&&
+            proof.body_bake_draws[2]>0U&&!proof.current_bake_sources_match())
+        out.visual="BakeGL Texturstand abweichend: aktuelle Low158 Bakes noch nicht gezeichnet";
     else if(!proof.body_gpu_drawn())
         out.visual="Original Head/Upper/Lower BakeGL noch unvollstaendig";
     else if(!proof.fragment_query_known)
