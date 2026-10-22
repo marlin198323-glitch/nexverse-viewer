@@ -680,3 +680,15 @@ erzeugt keinen LLUDP High4 Quaternion-NaN mehr; invalider
 Server AgentPosition CameraCenter hält AgentUpdate-Versand an.
 Native reale Serializer-Wirebytes bestätigt, jedoch kein
 serverbestätigtes WASD-/Yaw-E2E ohne autorisierten Login.
+
+## 22.10.2026 – Alpha.735–744 Single-Account-Login
+OpenGenesisLINK main 881b373 (9 neue Commits seit 86f293d).
+Mit #268 akzeptiert LLLoginHandlers XML-RPC username/passwd
+für Firestorm 7.2.4 zusätzlich zu Legacy first/last/passwd.
+OGL hatte Einwortnamen zuvor bereits in GLFW blockiert.
+Jetzt Single-Namen exakt per username, Legacy weiterhin
+first/last, kein erfundener Resident-Name. Kein stilles ToS
+und kein Klartextpasswort im XML-RPC. Serveränderungen
+zu Economy, Gruppen, Portal sind nicht automatisch
+implementierte OGL Clientendpunkte. Live Grid weiterhin
+still open; ältere Upstream-Diffs MANUAL_REVIEW.

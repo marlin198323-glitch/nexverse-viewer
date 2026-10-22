@@ -68,6 +68,7 @@
 #include "nexverse/protocol/environment_settings.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/avatar_login_identity.hpp"
 #include "nexverse/protocol/login_tos.hpp"
 #include "nexverse/ui/login_tos_layout.hpp"
 #include "nexverse/protocol/packet_dispatcher.hpp"
@@ -1797,38 +1798,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     }
 }
 
-std::optional<std::pair<std::string, std::string>> split_avatar_name(std::string_view name)
+// Shared with native login regression tests: accept the new single-name
+// Firestorm-style account, and still preserve classic First Last logins.
+std::optional<nexverse::protocol::AvatarLoginIdentity>
+split_avatar_name(std::string_view name)
 {
-    const std::size_t first = name.find_first_not_of(' ');
-    const std::size_t last = name.find_last_not_of(' ');
-    if (first == std::string_view::npos || last == std::string_view::npos)
-    {
-        return std::nullopt;
-    }
-
-    const std::string_view trimmed = name.substr(first, last - first + 1U);
-    const std::size_t separator = trimmed.find(' ');
-    if (separator == std::string_view::npos)
-    {
-        return std::nullopt;
-    }
-
-    const std::size_t last_first = trimmed.find_first_not_of(' ', separator);
-    if (last_first == std::string_view::npos)
-    {
-        return std::nullopt;
-    }
-
-    std::string first_name{trimmed.substr(0, separator)};
-    std::string last_name{trimmed.substr(last_first)};
-    if (first_name.empty() || last_name.empty())
-    {
-        return std::nullopt;
-    }
-
-    return std::pair<std::string, std::string>{
-        std::move(first_name),
-        std::move(last_name)};
+    return nexverse::protocol::parse_avatar_login_identity(name);
 }
 
 Color with_alpha(Color color, float alpha)
@@ -7789,13 +7764,19 @@ int Application::run(bool enable_developer_modules)
                     if (!avatar_name.has_value())
                     {
                         login_ui.status = "READY";
-                        login_ui.notice = "Avatarname als Vorname Nachname eingeben.";
+                        login_ui.notice =
+                            "Gueltigen Avatarname (einzeln oder Vorname Nachname) eingeben.";
                     }
                     else
                     {
                         protocol::LoginCredentials credentials;
-                        credentials.first_name = avatar_name->first;
-                        credentials.last_name = avatar_name->second;
+                        if(avatar_name->account_username)
+                            credentials.account_username=avatar_name->first;
+                        else
+                        {
+                            credentials.first_name=avatar_name->first;
+                            credentials.last_name=avatar_name->last;
+                        }
                         credentials.password = std::move(login_ui.password);
                         login_ui.password.clear();
                         credentials.start = "last";

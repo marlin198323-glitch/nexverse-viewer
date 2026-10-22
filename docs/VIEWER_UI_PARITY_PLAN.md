@@ -441,3 +441,12 @@ läuft der bisherige Firestorm-artige WASD-/Yaw-/Fly-
 Eingabepfad weiter. Willkommen-Seite stimmt mit aktueller
 NexVerse GridInfo überein; authentifizierte Inworld-Kontrolle
 bleibt ein gesonderter Abnahmetest.
+
+## Alpha.735–744 – Einzelner Avatarname ohne Zwangsnachnamen
+Echtes GLFW-Loginfeld lässt jetzt neben Vorname Nachname
+auch einen einteiligen Kontonamen zu. Der Parser ermittelt
+die Form, der LoginService sendet dafür das vom aktuellen
+OpenGenesisLINK Server #268 unterstützte XML-RPC username.
+Validierungsfehler verlangen keinen künstlichen Nachnamen.
+Ausdrücklicher TOS-Dialog und Passwortschutz unverändert.
+Xvfb GUI-Smoke ist kein authentifizierter Avatar-GPU-Test.

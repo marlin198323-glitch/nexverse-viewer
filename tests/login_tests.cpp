@@ -1,5 +1,6 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/avatar_login_identity.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -52,7 +53,7 @@ int main()
         return 1;
     }
 
-    LoginCredentials credentials{"Jane", "Doe", "secret", "home"};
+    LoginCredentials credentials{"Jane", "Doe", "secret", "home", false, {}};
     const std::string request =
         nexverse::protocol::build_login_xml_rpc(credentials, "OpenGenesisLINK Viewer", "0.1.0-alpha.1");
 
@@ -80,6 +81,48 @@ int main()
        agreed_request.find("<boolean>1</boolean>",tos_member)==std::string::npos)
         return 21;
     credentials.agree_to_tos=false;
+
+    // OpenGenesisLINK server #268 / Firestorm 7.2.4 accepts a single
+    // username (without requiring a fabricated "Resident" surname).
+    // Preserve byte-for-byte legacy First/Last XML-RPC compatibility.
+    using nexverse::protocol::parse_avatar_login_identity;
+    const auto single=parse_avatar_login_identity("  Luna  ");
+    const auto legacy=parse_avatar_login_identity("  Luna   Viewer ");
+    const auto resident=parse_avatar_login_identity("Luna Resident");
+    if(!single||single->first!="Luna"||!single->last.empty()||
+       !single->account_username||
+       !legacy||legacy->first!="Luna"||
+       legacy->last!="Viewer"||legacy->account_username||
+       !resident||resident->last!="Resident"||
+       parse_avatar_login_identity("   ")||
+       parse_avatar_login_identity("Luna\nViewer"))
+        return 30;
+    LoginCredentials account{};
+    account.account_username=single->first;
+    account.password="secret";
+    const auto account_rpc=nexverse::protocol::build_login_xml_rpc(
+        account,"OpenGenesisLINK Viewer","0.2.0-alpha.744");
+    if(account_rpc.find("<name>username</name>")==std::string::npos||
+       account_rpc.find("<string>Luna</string>")==std::string::npos||
+       account_rpc.find("<name>first</name>")!=std::string::npos||
+       account_rpc.find("<name>last</name>")!=std::string::npos||
+       account_rpc.find("secret")!=std::string::npos||
+       account_rpc.find("$1$5ebe2294ecd0e0f08eab7690d2a6ee69")==std::string::npos)
+        return 31;
+    // No consent without server challenge plus user's explicit action.
+    const auto account_tos=account_rpc.find("<name>agree_to_tos</name>");
+    if(account_tos==std::string::npos||
+       account_rpc.find("<boolean>0</boolean>",account_tos)==std::string::npos)
+        return 32;
+    account.agree_to_tos=true;
+    const auto accepted_rpc=nexverse::protocol::build_login_xml_rpc(
+        account,"OpenGenesisLINK Viewer","0.2.0-alpha.744");
+    const auto accepted_tos=accepted_rpc.find("<name>agree_to_tos</name>");
+    if(accepted_tos==std::string::npos||
+       accepted_rpc.find("<boolean>1</boolean>",accepted_tos)==std::string::npos||
+       accepted_rpc.find("<name>first</name>")!=std::string::npos)
+        return 33;
+    account.agree_to_tos=false;
 
     constexpr auto tos_challenge_xml=R"XML(
 <methodResponse><params><param><value><struct>
@@ -243,6 +286,37 @@ int main()
         std::cerr << "Login service transport contract failed\n";
         return 6;
     }
+
+    // Actual LoginService transport contract for new single-name account
+    // while legacy path above remains unchanged.
+    const auto account_result=service.login(
+        "http://grid.example.test:8002/",account,
+        "OpenGenesisLINK Viewer","0.2.0-alpha.744");
+    if(!account_result.success||
+       transport->posted_body.find("<name>username</name>")==std::string::npos||
+       transport->posted_body.find("<name>last</name>")!=std::string::npos)
+        return 34;
+    transport->response={200,std::string{tos_challenge_xml},{}};
+    const auto account_challenge=service.login(
+        "http://grid.example.test:8002/",account,
+        "OpenGenesisLINK Viewer","0.2.0-alpha.744");
+    if(account_challenge.success||account_challenge.reason!="tos"||
+       transport->posted_body.find("<name>username</name>")==std::string::npos)
+        return 35;
+    LoginCredentials ambiguous{};
+    ambiguous.first_name="Jane";
+    ambiguous.last_name="Doe";
+    ambiguous.account_username="Luna";
+    ambiguous.password="secret";
+    if(service.login("http://grid.example.test:8002/",ambiguous,
+       "OpenGenesisLINK Viewer","0.2.0-alpha.744").reason!="missing_credentials")
+        return 37;
+    LoginCredentials blank{};
+    blank.account_username="   ";
+    blank.password="secret";
+    if(service.login("http://grid.example.test:8002/",blank,
+       "OpenGenesisLINK Viewer","0.2.0-alpha.744").reason!="missing_credentials")
+        return 36;
 
     std::cout << "OpenSim login protocol tests passed\n";
     return 0;

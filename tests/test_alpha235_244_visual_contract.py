@@ -61,7 +61,7 @@ class VisualWorldTenBlocksContract(unittest.TestCase):
 
     def test_next_chat_has_ten_blocks_and_progress(self):
         handoff=source("CHATUEBERGABE.md")
-        self.assertIn("Alpha.735–744",handoff[:2600])
+        self.assertIn("Alpha.745–754",handoff[:2600])
         self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",handoff[:700])
         self.assertIn("39 %",handoff[:1000])
         self.assertIn("ZEHN-BLÖCKE-REGEL",source("projectplan.md")[:2500])

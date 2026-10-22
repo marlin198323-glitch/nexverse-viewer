@@ -27,6 +27,9 @@ struct LoginCredentials
     // False unless the user explicitly accepted the server's ToS challenge
     // for this avatar and this grid. Never silently agree for all logins.
     bool agree_to_tos = false;
+    // Firestorm 7.2.4/OpenGenesisLINK #268: a genuine one-part avatar
+    // account uses XML-RPC "username" instead of first/last.
+    std::string account_username;
 };
 
 struct InventoryFolder

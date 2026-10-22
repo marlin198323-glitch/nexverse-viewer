@@ -383,8 +383,17 @@ std::string build_login_xml_rpc(
     auto* value = document.NewElement("value");
     auto* structure = document.NewElement("struct");
 
-    append_member(document, structure, "first", credentials.first_name);
-    append_member(document, structure, "last", credentials.last_name);
+    // Exactly one identity shape is sent. Legacy first/last requests
+    // must remain wire-identical; modern single-name users go through
+    // the upstream server's Resident username resolver (#268).
+    if(!credentials.account_username.empty())
+        append_member(document, structure, "username",
+                      credentials.account_username);
+    else
+    {
+        append_member(document, structure, "first", credentials.first_name);
+        append_member(document, structure, "last", credentials.last_name);
+    }
     append_member(document, structure, "passwd", hash_login_password(credentials.password));
     append_member(document, structure, "start", credentials.start.empty() ? "last" : credentials.start);
     append_member(document, structure, "channel", channel);
@@ -529,9 +538,19 @@ LoginResult LoginService::login(
     {
         return {false, std::nullopt, "invalid_login_uri", "Grid supplied an invalid login URI"};
     }
-    if (credentials.first_name.empty() || credentials.last_name.empty() || credentials.password.empty())
+    const bool account_identity=
+        !credentials.account_username.empty() &&
+        credentials.account_username.find_first_not_of(' ')!=std::string::npos;
+    const bool legacy_identity=
+        !credentials.first_name.empty()&&!credentials.last_name.empty();
+    // Fail closed on ambiguous identity: an account-only login must
+    // never silently override a separately provided first/last user.
+    if (credentials.password.empty() ||
+        (!account_identity&&!legacy_identity)||
+        (account_identity&&legacy_identity))
     {
-        return {false, std::nullopt, "missing_credentials", "Avatar name and password are required"};
+        return {false, std::nullopt, "missing_credentials",
+                "Avatar name and password are required"};
     }
 
     const std::string request = build_login_xml_rpc(credentials, channel, version);

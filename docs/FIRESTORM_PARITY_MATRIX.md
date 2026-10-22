@@ -794,3 +794,13 @@ Bei invalidem WorldModel AgentPosition wird der komplette
 Live AgentUpdate ausgesetzt statt CameraCenter=NaN zu senden.
 Ein erfolgreicher nativer Wire-Test ist KEINE
 Simulator-bestätigte Avatar-Bewegung.
+
+## Alpha.735–744 – Firestorm Single-Name-Avatar-Login
+Server #268 erlaubt username anstelle der klassischen
+first/last XML-RPC-Identität. OGL GUI akzeptiert jetzt
+den einteiligen Avatar-Kontonamen, authentifiziert ihn
+über das neue username-Feld. Zwei-/mehrteilige Legacy-
+Loginformen bleiben unverändert. Server normalisiert
+gegebenenfalls Resident; Client erfindet keine Nachnamen.
+Native LoginService FakeTransport und TOS-Tests PASS,
+noch kein echter authentifizierter NexVerse Login.
