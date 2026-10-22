@@ -82,6 +82,7 @@
 #include "nexverse/protocol/turn_readback.hpp"
 #include "nexverse/world/attachment_state.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
+#include "nexverse/protocol/avatar_cof_revision.hpp"
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/render/renderer.hpp"
@@ -9812,7 +9813,7 @@ int Application::run(bool enable_developer_modules)
                     else
                     {
                         const auto server_ver=
-                            packet.appearance_data.back().cof_version;
+                            protocol::avatar_cof_version_for_display(packet);
                         const auto& cof_id=caps_state.current_outfit_folder;
                         const auto current_version=
                             gallery_inventory_sync.versions().find(cof_id);
@@ -13957,7 +13958,7 @@ int Application::run(bool enable_developer_modules)
                                     object_texture_loaded_ids);
                             gallery_appearance_snapshot_status=
                                 protocol::describe_avatar_bake_evidence(
-                                    packet->appearance_data.back().cof_version,
+                                    protocol::avatar_cof_version_for_display(*packet),
                                     inventory_version,evidence,true);
                         }
                     }

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-22",
-  "viewer_version": "0.2.0-alpha.824",
+  "viewer_version": "0.2.0-alpha.834",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.825–834",
-  "assessment": "Alpha.824: genuine F9/manual self skin GetTexture Recheck bug fixed. Previously three total requests exhausted entire region even after an authenticated new outfit TE arrived. Now source-scoped 3 attempts per distinct nonempty authenticated Head/Upper/Lower with hard 12 manual requests per region epoch and unchanged 12-second throttle, source validation and AssetRetrySchedule backend. Nil/placeholder/unauthenticated updates cannot reset. Real application runtime F9 integration, native backend tests and Python contracts, full Mint x64 build/GUI gate. Prior Pi5 Alpha814 SHA f2b8094 Run 39833603079 success; OpenGenesisLINK upstream 7396897d unchanged. Live authenticated AvatarAppearance/COF/Outfit/Skin/WASD still open; no deployment.",
+  "next_five_blocks": "Alpha.835–844",
+  "assessment": "Alpha.834: Fixed real discrepancy in F9 manual and 750ms live avatar COF status versus WorldModel. The authenticated Model already selected the latest nonzero revision across original Low158 AppearanceData rows to reject old skin; both UI paths incorrectly displayed the final row, including trailing zero (unknown), causing false COF OFFEN. New shared MPL-2.0 protocol selector is used for authenticated WorldModel rollback admission and both UI status paths. Only genuinely versioned rows may show COF match, fully unknown legacy packets remain COF 0. Native real LLUDP Low158 multi-row wire and COF-evidence tests, Python integration and full Mint x64 GUI gate. Previous Alpha824 Pi5 exact SHA 730f115 Run 39836372832 success. OpenGenesisLINK upstream server main 7396897d unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin actual inworld GPU pixels and simulator-confirmed WASD/yaw E2E still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.825–834",
+  "next_batch": "Alpha.835–844",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "f2b809453bd68c0e7407569a25b627362010dc17",
-    "run_id": 39833603079,
+    "tested_sha": "730f115723b10cf47c88e13d05add446e982f560",
+    "run_id": 39836372832,
     "conclusion": "success",
-    "scope": "Pi5 headless CI, not live authenticated NexVerse inworld"
+    "scope": "Pi5 ARM64 headless / Python CI, no live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "730f115723b10cf47c88e13d05add446e982f560",
-    "run_id": 39836372832,
-    "checked_status": "in_progress",
-    "note": "Do not claim Pi5 success until this exact code SHA completed/success."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "730f115723b10cf47c88e13d05add446e982f560",
     "run_id": 39836372803,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 176,
     "native_ctest_failed": 0,
-    "python_tests_passed": 400,
+    "python_tests_passed": 404,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "730f115723b10cf47c88e13d05add446e982f560",
-    "version": "0.2.0-alpha.824",
+    "version": "0.2.0-alpha.834",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Mint full CMake/vcpkg x64 viewer, 176 native CTest, 400 Python, authenticated source-scoped F9 bake recheck native regressions, Xvfb GUI and taskbar icon passed; no live Grid login",
+    "note": "Linux Mint x64 full CMake/vcpkg build, 176 native tests, 404 Python, real Low158 multirow COF decoded wire, F9 manual/live shared WorldModel source, isolated Xvfb UI and icon PASS. No live login.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -136,6 +131,7 @@
     "outbound_queue_reject_rolls_back_yaw_fly_test": true,
     "self_avatar_current_gl_bake_uuid_proof_test": true,
     "source_scoped_outfit_recheck_bounded": true,
-    "xvfb_gui_verified": true
+    "xvfb_gui_verified": true,
+    "f9_manual_live_shared_multirecord_cof": true
   }
 }

@@ -4,6 +4,7 @@
  */
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
+#include "nexverse/protocol/avatar_cof_revision.hpp"
 #include "nexverse/protocol/wearables_serial_order.hpp"
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include <algorithm>
@@ -226,11 +227,9 @@ bool WorldModel::apply_self_appearance(
         // versioned entry should bypass our existing COF rollback gate.
         // Use the last *meaningful* row, preserving all legacy count=0
         // and version=0 compatibility.
-        const auto revision=std::find_if(
-            appearance.appearance_data.rbegin(),
-            appearance.appearance_data.rend(),
-            [](const auto& entry){return entry.cof_version!=0U;});
-        if(revision!=appearance.appearance_data.rend())
+        const auto revision=
+            protocol::latest_nonzero_avatar_cof(appearance);
+        if(revision)
         {
             const auto& incoming=*revision;
             if(incoming.cof_version!=0U)

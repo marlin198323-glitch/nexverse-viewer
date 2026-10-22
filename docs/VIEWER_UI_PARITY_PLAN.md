@@ -528,3 +528,13 @@ may return if actual current textures are missing and CAP,
 backoff and inflight gates allow it. Different warning
 labels distinguish 3/outfit vs. total 12/region. No button
 may bypass real server ownership or asset cooldown.
+
+
+## Alpha.825–834 – F9 manuell und Live ohne COF-Fehlanzeige
+F9-COF-Status zeigt bei aktuellem mehrteiligen
+Low158-Paket mit einer gültigen COF-Version und
+trailing COF=0 nicht länger irrtümlich COF 0.
+Der manuelle Button und die alle 750ms aktualisierte
+Live-Anzeige greifen nun auf denselben selektierten
+Wert wie der echte WorldModel-Antirollback-Guard zu.
+Bei fehlender COF-Revision bleibt OFFEN angezeigt.

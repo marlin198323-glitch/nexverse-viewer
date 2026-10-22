@@ -2,6 +2,7 @@
  * End to end: actual LLUDP packet -> Low158 decoder -> self WorldModel. */
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/avatar_cof_revision.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
@@ -319,6 +320,7 @@ int main()
     const auto replay_v2=decode(datagram(self,1U,29U,110U,2U,true));
     if(!replay_v2||replay_v2->appearance_data.size()!=2U||
        replay_v2->appearance_data.back().cof_version!=0U||
+       protocol::avatar_cof_version_for_display(*replay_v2)!=110U||
        w.apply_self_appearance(*replay_v2)||
        w.stale_self_cof_appearances()!=3U)return 44;
     const auto fresh_v3=decode(datagram(self,1U,30U,109U,3U,true));

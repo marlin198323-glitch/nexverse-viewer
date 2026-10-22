@@ -883,3 +883,13 @@ simulator region. New authenticated Head/Upper/Lower TE gets
 an independent 3-check allowance within strict 12/region cap,
 12-second delay and the existing GetTexture retry schedule.
 No client bake is uploaded or unverified COF marked ready.
+
+
+## Alpha.825–834 – Firestorm Low158 mehrteilige COF-Revision
+Firestorm erlaubt unterschiedliche AppearanceData-Reihen
+inklusive COF=0 (unbekannte Revision). Gleiches
+Protokollselktionsverfahren bestimmt nun die wirksame
+COF-Version sowohl im WorldModel-Replay-Schutz
+als auch in beiden F9-Anzeigewegen. Native echte
+Low158-Wire-Nachrichten plus Evidence-Tests.
+Unbekannte/Legacy-COF bedeutet kein Outfit-Success.

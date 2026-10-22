@@ -782,3 +782,14 @@ are available per distinct valid source, while 12 per simulator
 region and the original 12s delay/AssetRetrySchedule always hold.
 No new server endpoints; placeholder, empty and unauthenticated
 sources cannot grant new requests. No live-inworld success claimed.
+
+
+## Alpha.825–834 – Low158 COF-Multirow in F9 und WorldModel identisch
+Firestorm/Simulator Low158 AppearanceData kann mehrere Reihen
+enthalten. Die juengste nicht-null COF-Version aus der
+Original-Nachricht ist jetzt die gemeinsame Quelle fuer
+WorldModel-Antirollback und manuelle/live F9-Anzeige.
+Trailing COF=0 darf weder den aktuellen Outfitstatus
+als OFFEN maskieren noch die authentische COF-Version
+zuruecksetzen. Vollstaendig unbekannte Legacy-Daten
+bleiben COF=0/OFFEN. Keine neue Server-API.

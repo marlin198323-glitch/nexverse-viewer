@@ -6,9 +6,11 @@ def src(name):return (R/name).read_text()
 class CofMultiRecordGuard(unittest.TestCase):
  def test_actual_model_not_just_diagnostics(self):
   s=src("src/world/world_model.cpp")
-  self.assertIn("appearance.appearance_data.rbegin()",s)
-  self.assertIn("entry.cof_version!=0U",s)
-  self.assertIn("revision!=appearance.appearance_data.rend()",s)
+  self.assertIn("protocol::latest_nonzero_avatar_cof(appearance)",s)
+  selector=src("include/nexverse/protocol/avatar_cof_revision.hpp")
+  self.assertIn("packet.appearance_data.rbegin()",selector)
+  self.assertIn("entry.cof_version!=0U",selector)
+  self.assertIn("revision==packet.appearance_data.rend()",selector)
   self.assertIn("incoming.cof_version<self_cof_version_highwater_",s)
   self.assertLess(s.index("incoming.cof_version<self_cof_version_highwater_"),
                   s.index("self_appearance_ = std::move(appearance);"))
@@ -28,6 +30,6 @@ class CofMultiRecordGuard(unittest.TestCase):
             "difference(new_skin,actually_newer)<100U"):
    self.assertIn(x,s)
  def test_version_and_handoff(self):
-  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.824")
-  self.assertIn("Alpha.825–834",src("CHATUEBERGABE.md"))
+  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.834")
+  self.assertIn("Alpha.835–844",src("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

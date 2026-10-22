@@ -1,5 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
+#include "nexverse/protocol/avatar_cof_revision.hpp"
 #include <iostream>
 #include <unordered_set>
 
@@ -48,6 +49,28 @@ int main()
     if(stale.find("COF 17/18 OFFEN")==std::string::npos||
        unknown.find("COF 0/0 OFFEN")==std::string::npos)
         return 6;
+
+    // Both F9 manual and F9 live readback must select EXACTLY the
+    // same meaningful Firestorm Low158 COF revision as WorldModel, even
+    // if a trailing row is merely COF=0 (unknown/legacy).
+    AvatarAppearanceMessage appearance{};
+    if(avatar_cof_version_for_display(appearance)!=0U||
+       latest_nonzero_avatar_cof(appearance))return 12;
+    appearance.appearance_data={{2U,17U,0U},{2U,0U,0U}};
+    const auto selected=latest_nonzero_avatar_cof(appearance);
+    if(!selected||selected->appearance_version!=2U||
+       avatar_cof_version_for_display(appearance)!=17U||
+       describe_avatar_bake_evidence(
+           avatar_cof_version_for_display(appearance),17U,partial).
+           find("COF 17/17 OK")==std::string::npos)return 13;
+    appearance.appearance_data.push_back({3U,42U,0U});
+    appearance.appearance_data.push_back({3U,0U,0U});
+    if(avatar_cof_version_for_display(appearance)!=42U||
+       latest_nonzero_avatar_cof(appearance)->appearance_version!=3U)
+        return 14;
+    appearance.appearance_data={{2U,0U,0U},{3U,0U,0U}};
+    if(avatar_cof_version_for_display(appearance)!=0U||
+       latest_nonzero_avatar_cof(appearance))return 15;
 
     // A full set of server references is still NOT permission to bake/upload.
     const std::unordered_set<std::string> all_gpu{
