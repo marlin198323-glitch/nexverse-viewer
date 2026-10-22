@@ -127,3 +127,14 @@ Version 0.2.0-alpha.754 mit originalem Firestorm
 (7186 Dreiecke), originalem OpenGenesisLINK
 X11 WM_CLASS und Taskleistenicon 128x128.
 Kein Login/Passwort/Produktivdeploy, kein Inworld-Test.
+
+## GitHub-SHA-genaue CI-Beobachtung nach Push
+Feature Code Commit 706b6117421c9b157c67f88058bda1c1903f4cc0.
+GitHub Pi5 CI Run 39812188923 IN_PROGRESS.
+Gehosteter GitHub Linux x64 Run 39812189063
+COMPLETED/FAILURE vor Runnerzuweisung;
+Job 119941137572 mit runner_id=0, steps=0.
+Kein CMake-/C++-Compiler ausgeführt. Dagegen lokales Mint
+x64 GUI-Gate Exit 0, 175 CTests, 373 Python, Firestorm
+Bindpose/Original-Meshes, X11 OGL-Icon 128x128.
+Keine echte NexVerse-Avatar-Inworld-Session getestet.
