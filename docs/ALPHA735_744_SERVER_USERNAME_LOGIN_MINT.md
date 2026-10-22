@@ -93,3 +93,14 @@ Skelettgelenke, 3 Originalkörpermeshes, 7186 Dreiecke)
 sowie X11 WM_CLASS und OGL Taskleisten-Icon
 128x128 bestanden. Keine interaktive Desktopanmeldung,
 keine realen Avatarpasswörter, kein Produktivdeploy.
+
+## Nach Code-Push: SHA-genaue CI-Beobachtung
+
+Feature-Commit cbdfd857c00a6d9c3c897a5c2f3441223d080cf9.
+GitHub Pi5 Run 39809196307 IN_PROGRESS bei letzter Prüfung.
+Gehosteter GitHub-x64-Run 39809196408 COMPLETED/FAILURE,
+Job 119930505086 mit runner_id 0 und 0 ausgeführten Schritten:
+Weder Konfiguration noch Viewer-Compiler auf Hosted-Runner
+gestartet. Vollständiger Linux-Mint-CMake/175 CTest/369 Python/
+Xvfb-GUI/Taskleisten-Icon dagegen lokal nachweislich erfolgreich.
+Keine echte authentifizierte Grid-Avatar-Sitzung durchgeführt.
