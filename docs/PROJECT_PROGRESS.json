@@ -87,18 +87,27 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": null,
+  "pending_pi5_ci": {
+    "feature_sha": "3f6483b264d362e60c92f052faea5f9e28f84488",
+    "run_id": 39829298694,
+    "checked_status": "in_progress",
+    "additional_run_id": 39829308631,
+    "additional_run_status": "pending",
+    "note": "Two Pi5 workflows exact SHA, neither verified complete/success."
+  },
   "linux_x64_gui_ci": {
-    "feature_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
-    "run_id": 39827583363,
-    "job_id": 119994867860,
+    "feature_sha": "3f6483b264d362e60c92f052faea5f9e28f84488",
+    "run_id": 39829308722,
+    "job_id": 120000900863,
+    "prior_duplicate_run_id": 39829298689,
+    "prior_duplicate_job_id": 120000865821,
     "checked_status": "completed",
     "conclusion": "failure",
     "runner_id": 0,
     "steps_executed": 0,
     "hosted_gui_build_verified": false,
     "mint_local_gui_build_verified": true,
-    "note": "Hosted GitHub runner unallocated, zero steps; local Mint x64 CMake full build+GUI gate exit 0."
+    "note": "Both hosted workflows failed with no runner, zero steps; local full Mint x64 GUI passed."
   },
   "development_host": "Linux Mint Desktop Commander jam-MS-7D28",
   "development_path": "/home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer",
@@ -117,7 +126,7 @@
     "nvidia_opengl": "4.6, glxinfo real desktop device",
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
-    "feature_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
+    "feature_sha": "3f6483b264d362e60c92f052faea5f9e28f84488",
     "version": "0.2.0-alpha.804",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
