@@ -112,3 +112,16 @@ sowie originalem Firestorm Head/Upper/Lower-Framebuffer-Pixeltest;
 133 Firestorm-Joints, drei original-GPU-residente LLM-Körpermesh-Teile
 (7186 Dreiecke), X11 WM_CLASS und OGL-Systemicon 128x128 PASS.
 Kein echtes eingeloggtes Grid-/WASD-/Skin-E2E.
+
+## Exakter GitHub-Code-Commit und Folge-CI
+Feature SHA a68ca53e8c9a669a9994ec4d1bf28b3e2a7dc975.
+GitHub Pi5 Run 39824131466 QUEUED beim letzten Abruf.
+Hosted Linux x64 Run 39824131896 COMPLETED/FAILURE;
+Job 119982788458 runner_id 0, 0 ausgeführte Steps,
+kein GitHub-hosted Compiler-/CMake-Lauf gestartet.
+Voriger Pi5 Alpha.764 Feature-SHA f2c53f3
+Run 39814357748 SUCCESS.
+Alter Pi5 Alpha.754 Run 39812188923 wurde CANCELLED.
+Getrennt davon Linux-Mint-x64-GUI-Volltest Exit 0:
+175 native, 381 Python, isoliertes UI/Original LLML/Taskleisten-Icon.
+Authentifizierte NexVerse-Live-Avatar-/Skin-/WASD-Beweise weiterhin OFFEN.
