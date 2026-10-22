@@ -893,3 +893,13 @@ COF-Version sowohl im WorldModel-Replay-Schutz
 als auch in beiden F9-Anzeigewegen. Native echte
 Low158-Wire-Nachrichten plus Evidence-Tests.
 Unbekannte/Legacy-COF bedeutet kein Outfit-Success.
+
+
+## Alpha.835–844 – Original-Firestorm-Mesh nur am echten Ort
+Die Original .llm Head/Upper/Lower-Körpermeshes werden für
+den eigenen Agenten erst zur Renderliste hinzugefügt,
+wenn der Simulator eine endliche Pose für genau diese
+Anmeldung und Region geliefert hat. Ohne Pose zeigt F3
+AgentPosition fehlt, während die eigentliche Terrain-
+und Weltdarstellung weiterlaufen darf. Kein erfundener
+Avatar-Live-/Outfit-/Skin-Erfolg.

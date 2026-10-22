@@ -20,7 +20,7 @@ for source in src/world/world_model.cpp src/protocol/viewer_messages.cpp     src
     g++ -std=c++23 -O0 -Wall -Wextra -Wpedantic -Werror         -pthread -Iinclude -c "$source" -o "$obj"
     world_objects+=("$obj")
 done
-for name in prim_localid_reuse_tests prim_uuid_relocation_tests     avatar_localid_reuse_tests kill_avatar_linkset_tests     self_avatar_kill_binding_tests world_model_tests; do
+for name in prim_localid_reuse_tests prim_uuid_relocation_tests     avatar_localid_reuse_tests kill_avatar_linkset_tests     self_avatar_kill_binding_tests world_model_tests self_avatar_pose_authority_tests; do
     g++ -std=c++23 -O0 -Wall -Wextra -Wpedantic -Werror         -pthread -Iinclude "tests/$name.cpp" "${world_objects[@]}"         -o "$tmp/$name"
     "$tmp/$name"
 done

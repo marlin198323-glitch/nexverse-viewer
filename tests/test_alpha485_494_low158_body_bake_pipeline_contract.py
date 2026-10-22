@@ -56,13 +56,13 @@ class BodyBakePipeline(unittest.TestCase):
   self.assertIn("legacy->attachment_block_present",t)
   self.assertIn("with_body.apply_agent(",t)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.834")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.844")
   meta=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.834")
-  self.assertEqual(meta["next_batch"],"Alpha.835–844")
+  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.844")
+  self.assertEqual(meta["next_batch"],"Alpha.845–854")
   self.assertEqual(meta["default_blocks_per_run"],10)
   self.assertIn("still open",meta["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.835–844",read(f)[:1500])
+   self.assertIn("Alpha.845–854",read(f)[:1500])
 if __name__=="__main__":unittest.main()

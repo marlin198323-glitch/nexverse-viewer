@@ -538,3 +538,13 @@ Der manuelle Button und die alle 750ms aktualisierte
 Live-Anzeige greifen nun auf denselben selektierten
 Wert wie der echte WorldModel-Antirollback-Guard zu.
 Bei fehlender COF-Revision bleibt OFFEN angezeigt.
+
+
+## Alpha.835–844 – F3 Verbindung nicht als eigenen Avatar verwechseln
+Der Avatar-Pose-Indikator und der datensparsame
+Diagnosebericht nutzen die gleiche bestätigte Pose
+wie das eigene Original-Firestorm-Renderproxy.
+Ein grüner Circuit kann weiterhin Weltstreaming ermöglichen,
+aber ohne AgentMovementComplete/Self-ObjectUpdate
+bleibt der Status AgentPosition fehlt sichtbar.
+Nach Region-/Sessionwechsel wird erneut authentifiziert.

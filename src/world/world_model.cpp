@@ -24,6 +24,7 @@ void WorldModel::reset()
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
+    self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
@@ -84,6 +85,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         if(region_.handle!=0U)
             ++region_.generation; // direct transitions invalidate lease
         self_appearance_.reset();
+        self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
@@ -131,6 +133,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     parcel_ = {};
     environment_ = {};
     self_appearance_.reset();
+    self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
@@ -184,6 +187,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         self_object_bake_withdrawals_=0U;
         self_object_kills_=0U;
         self_appearance_.reset();
+        self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
@@ -198,6 +202,24 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     agent_.position = update.position;
     agent_.rotation = update.rotation;
     agent_.present = update.present;
+}
+
+bool WorldModel::accept_simulator_self_pose(
+    std::string_view avatar_id,std::string_view session_id,
+    std::uint64_t region_handle,Vec3 position,Quaternion rotation)
+{
+    // Only a decoded, authenticated AgentMovementComplete or real self
+    // ObjectUpdate/Compressed/Terse may confirm inworld body geometry.
+    // A connected circuit or an unsent client WASD update never can.
+    if(avatar_id.empty()||session_id.empty()||region_handle==0U||
+       avatar_id!=agent_.agent_id||session_id!=agent_.session_id||
+       region_handle!=region_.handle||
+       !valid_simulator_avatar_pose(position,rotation))
+        return false;
+    apply_agent({agent_.agent_id,agent_.session_id,position,rotation,
+                 agent_.present});
+    self_pose_confirmed_=true;
+    return true;
 }
 
 void WorldModel::set_agent_profile(AgentProfileState profile)
@@ -349,6 +371,7 @@ bool WorldModel::withdraw_self_object_on_kill(
     // KillObject is not counted once that binding was cleared.
     if(self_object_bakes_&&self_object_bakes_->local_id==local_id)
         self_object_bakes_.reset();
+    self_pose_confirmed_=false; // killed body cannot remain confirmed
     if(self_object_kills_<UINT32_MAX)++self_object_kills_;
     return true;
 }

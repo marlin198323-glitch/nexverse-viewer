@@ -793,3 +793,14 @@ Trailing COF=0 darf weder den aktuellen Outfitstatus
 als OFFEN maskieren noch die authentische COF-Version
 zuruecksetzen. Vollstaendig unbekannte Legacy-Daten
 bleiben COF=0/OFFEN. Keine neue Server-API.
+
+
+## Alpha.835–844 – Eigenavatar-Pose ausschließlich aus Simulator
+AgentMovementComplete und self Full/Compressed ObjectUpdate
+können bei passenden Agent-, Session- und Regionsdaten
+eine gültige eigene Pose bestätigen. ImprovedTerseObjectUpdate
+braucht zusätzlich eine aktuelle gebundene Self-LocalID.
+Ein aktiver LLUDP-Circuit mit noch unbekannter Position
+darf keine Firestorm-Anatomie am Nullpunkt als verbundenen
+Avatar darstellen. Bei KillObject, Region/Logout und
+Circuitverlust wird die vorherige Bestätigung verworfen.

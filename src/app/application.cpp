@@ -5217,12 +5217,14 @@ int Application::run(bool enable_developer_modules)
                 return;
             }
 
-            world_model.apply_agent({
-                agent.agent_id,
-                agent.session_id,
-                movement->position,
-                agent.rotation,
-                agent.present});
+            // AgentMovementComplete is the first genuine simulator
+            // position; circuit readiness alone must not create a ghost
+            // self avatar at its provisional (0,0,0) login position.
+            if(!world_model.accept_simulator_self_pose(
+                   movement->agent_id,movement->session_id,
+                   movement->region_handle,movement->position,
+                   agent.rotation))
+                return;
 
             world_model.apply_region({
                 region.handle,
@@ -5417,12 +5419,11 @@ int Application::run(bool enable_developer_modules)
                                        "validated provisional bake faces; "
                                        "not proof of Low158 AvatarAppearance");
                         const world::AgentState current = world_model.agent();
-                        world_model.apply_agent({
-                            current.agent_id,
-                            current.session_id,
-                            entry.position,
-                            entry.rotation,
-                            current.present});
+                        if(!world_model.accept_simulator_self_pose(
+                               entry.id,current.session_id,
+                               update->region_handle,
+                               entry.position,entry.rotation))
+                            continue;
                         // Full ObjectUpdate is also an actual simulator
                         // self position; terse updates are not guaranteed.
                         if(turn_feedback.observe_server_rotation(
@@ -5540,12 +5541,11 @@ int Application::run(bool enable_developer_modules)
                                        "validated provisional bake faces; "
                                        "not proof of Low158 AvatarAppearance");
                         const world::AgentState current = world_model.agent();
-                        world_model.apply_agent({
-                            current.agent_id,
-                            current.session_id,
-                            entry.position,
-                            entry.rotation,
-                            current.present});
+                        if(!world_model.accept_simulator_self_pose(
+                               entry.id,current.session_id,
+                               update->region_handle,
+                               entry.position,entry.rotation))
+                            continue;
                         if(turn_feedback.observe_server_rotation(
                                entry.rotation,std::chrono::steady_clock::now()))
                             core::info("Avatar turn VERIFIED by real self "
@@ -5677,9 +5677,11 @@ int Application::run(bool enable_developer_modules)
                         update.local_id == self_avatar_local_id)
                     {
                         const auto current = world_model.agent();
-                        world_model.apply_agent({
-                            current.agent_id, current.session_id,
-                            update.position, update.rotation, current.present});
+                        if(!world_model.accept_simulator_self_pose(
+                               current.agent_id,current.session_id,
+                               terse->region_handle,
+                               update.position,update.rotation))
+                            continue;
                         const auto now = std::chrono::steady_clock::now();
                         if(turn_feedback.observe_server_rotation(
                                update.rotation,now))
@@ -10790,8 +10792,11 @@ int Application::run(bool enable_developer_modules)
                     scene_particle_emitters.push_back(
                         emitter_candidates[i].value);
 
-                if (render_agent.present)
+                if (world_model.self_avatar_renderable())
                 {
+                    // A ready LLUDP circuit never proves a self avatar
+                    // location; only a decoded server pose may render
+                    // the original Firestorm anatomical body.
                     // Server-reported appearance hover shifts the visual
                     // proxy only; do not alter simulator-authoritative agent
                     // coordinates or the collision/physics position.
@@ -13153,7 +13158,13 @@ int Application::run(bool enable_developer_modules)
             ui::AvatarPipelineProof avatar_proof{};
             avatar_proof.appearance_runtime=appearance_runtime;
             avatar_proof.world_ready=simulation_ready;
-            avatar_proof.self_present=render_agent.present;
+            // F3 must not confuse a connected CircuitCode with a
+            // simulator-confirmed self pose. Without this evidence the
+            // original Firestorm body is intentionally NOT rendered.
+            {
+                std::scoped_lock lock{world_mutex};
+                avatar_proof.self_present=world_model.self_avatar_renderable();
+            }
             avatar_proof.self_gpu_pose_dropped=
                 render_diagnostics.self_avatar_pose_invalid_dropped;
             avatar_proof.remote_gpu_pose_dropped=
@@ -13292,7 +13303,7 @@ int Application::run(bool enable_developer_modules)
             avatar_diagnostic.world_ready=simulation_ready;
             avatar_diagnostic.simulator_circuit_active=
                 circuit_snapshot.state==protocol::CircuitState::active;
-            avatar_diagnostic.agent_present=render_agent.present;
+            avatar_diagnostic.agent_present=avatar_proof.self_present;
             avatar_diagnostic.appearance_received=
                 avatar_proof.appearance_received;
             avatar_diagnostic.wearables_read_request_sent=

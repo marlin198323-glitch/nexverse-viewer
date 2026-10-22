@@ -21,7 +21,9 @@ class SceneIdentityTests(unittest.TestCase):
   terse=a[a.index("protocol::msg_improved_terse_object_update,"):a.index("protocol::msg_kill_object,")]
   for piece in (full,compressed,terse):
    self.assertIn("world::valid_simulator_avatar_pose(",piece)
-  self.assertIn("world_model.apply_agent(",terse)
+  for piece in (full,compressed,terse):
+   self.assertIn("world_model.accept_simulator_self_pose(",piece)
+  self.assertNotIn("world_model.apply_agent(",terse)
  def test_f7_has_real_source_and_distinct_visible_rows(self):
   a=read("src/app/application.cpp"); h=read("include/nexverse/ui/viewer_shell_render.hpp")
   ui=read("src/ui/viewer_shell_render.cpp")

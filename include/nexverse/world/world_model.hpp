@@ -248,6 +248,16 @@ public:
     void apply_region(const RegionUpdate& update);
     void begin_region_transition(const RegionUpdate& update);
     void apply_agent(const AgentUpdate& update);
+    // A live circuit is not evidence of the self avatar's location.
+    // Only an agent/session/region-matching decoded simulator movement
+    // or ObjectUpdate may authorize an original Firestorm body to render.
+    [[nodiscard]] bool accept_simulator_self_pose(
+        std::string_view avatar_id,std::string_view session_id,
+        std::uint64_t region_handle,Vec3 position,Quaternion rotation);
+    [[nodiscard]] bool simulator_self_pose_confirmed() const noexcept
+    { return self_pose_confirmed_; }
+    [[nodiscard]] bool self_avatar_renderable() const noexcept
+    { return scene_ready()&&self_pose_confirmed_; }
     void set_agent_profile(AgentProfileState profile);
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(
@@ -359,6 +369,7 @@ private:
     GridState grid_;
     RegionState region_;
     AgentState agent_;
+    bool self_pose_confirmed_=false;
     AgentProfileState agent_profile_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
     std::uint32_t stale_self_cof_appearances_=0U;
