@@ -1,3 +1,11 @@
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.824, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.825–834.**
+
+**VERBINDLICHER ENTWICKLUNGSRECHNER: Desktop Commander Linux Mint jam-MS-7D28; /home/jam/Schreibtisch/OGL-Viewer/nexverse-viewer, Branch develop-current. Raspberry Pi5 nur ARM64-CI; Mint x64-Vollbuild/GUI-Tests vor Push; kein Produktivdeploy.**
+
+22.10.2026 Alpha.815–824: vorheriger Pi5 Alpha.814 Code-SHA f2b8094 Run 39833603079 SUCCESS. OpenGenesisLINK Servermain 7396897d unverändert. Echter F9 Outfit-Avatar-Bake-Nachprüfen-Fehler: drei manuelle GetTexture-Replans waren pro ganzer Region erlaubt, danach auch für NEUE echte Outfits gesperrt. Jetzt authentifizierte neue Head/Upper/Lower-Serverquelle mit eigenem max. 3-Versuche-Budget, zugleich 12 total pro Regions-Epoch. 12s-Cooldown/HTTP-AssetRetrySchedule bleiben erhalten, Placeholder, leere/Fremd-Sources können keine erneute Freigabe erschleichen. F9 zeigt Outfit- und Regionslimit klar getrennt. Native vollständige Kontroll-/Epoch-/Churn-Regression und Python-Sourcematrix, Mint-x64 Release-Gate. P0 authentifiziertes Live-Avatar/Low158/COF/Skin/WASD bleibt offen. Gesamtprojekt 39 %, nächste Alpha.825–834; Details docs/ALPHA815_824_OUTFIT_BAKE_RECHECK_SCOPE.md. Kein Deploy.
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE). OGL 0.2.0-alpha.814, Fortschritt 39 % (38,65 % gewichtet), NÄCHSTE Alpha.815–824.**
 
 **ALPHA.814 GITHUB-/CI-STAND:** Code-SHA f2b809453bd68c0e7407569a25b627362010dc17 nach develop-current gepusht. Voller Linux-Mint-x64-Gate Exit 0 mit 176/176 nativen CTests, 396/396 Python, isoliertem Xvfb GUI und OGL-Systemicon PASS. GitHub Pi5 CI Run 39833603079 COMPLETED/SUCCESS. Gehostete x64 CI Run 39833603059 FAILURE vor Runnerstart (Job 120015989833, runner_id 0, steps 0); kein Compilerfehler belegt. Letzter Pi5-SUCCESS Run 39829308631 zur vorherigen Alpha.804-SHA 3f6483b. Aktuelle GPU-gebundene Low158-Head/Upper/Lower-Bake-IDs werden nun mit echten Server-IDs verglichen; fehlende Uebereinstimmung bleibt F3-Warnung. Authentifizierter NexVerse-Avatar/COF/Skin/WASD-Inworld-Test weiter OFFEN. Fortschritt 39 %, naechste Alpha.815–824. Linux Mint primaer, Pi nur CI, kein Deploy.**

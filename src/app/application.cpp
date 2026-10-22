@@ -11930,6 +11930,12 @@ int Application::run(bool enable_developer_modules)
                 avatar_bake_source_refresh.observe(
                     material_scope.epoch(),self_bake_authenticated,
                     self_bake_lease,self_bake_ids);
+            // A genuine new Server Body TE gets its own bounded manual
+            // rechecks; do not allow empty/placeholder TE or churn to
+            // bypass the 12-request per-region total or 12-second pacing.
+            avatar_bake_recheck.observe_source(
+                material_scope.epoch(),self_bake_authenticated,
+                self_bake_lease,self_bake_ids);
             if(self_bake_source_changed)
             {
                 const auto ref_count=std::count_if(
@@ -11969,9 +11975,12 @@ int Application::run(bool enable_developer_modules)
                     ?"Bakes: GetTexture-Stream belegt"
                 :self_bake_pending==0U
                     ?"Bakes: keine freigegebenen fehlenden Layer (GPU/Backoff)"
+                :avatar_bake_recheck.total_requests>=
+                    assets::AvatarBakeRecheck::max_total_requests
+                    ?"Bakes: Regions-Limit fuer Nachpruefung erreicht"
                 :avatar_bake_recheck.requests>=
                     assets::AvatarBakeRecheck::max_requests
-                    ?"Bakes: manuelles Replan-Limit erreicht"
+                    ?"Bakes: Outfit-Limit fuer Nachpruefung erreicht"
                 :texture_plan_now<avatar_bake_recheck.retry_after
                     ?"Bakes: Replan-Pause noch aktiv"
                 :"Bakes: "+std::to_string(self_bake_pending)+

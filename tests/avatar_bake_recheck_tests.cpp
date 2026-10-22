@@ -23,6 +23,7 @@ int main()
     if(assets::avatar_bake_ready_missing(ids,gpu,retry,t)!=2U)return 3;
     (void)retry.failure("upper",assets::AssetFailure::missing,t);
     if(assets::avatar_bake_ready_missing(ids,gpu,retry,t)!=1U)return 4;
+    policy.observe_source(23U,true,true,ids);
     if(!policy.request(true,true,true,false,true,t)||
        policy.request(true,true,true,false,true,t+
            std::chrono::seconds{11}))return 5;
@@ -32,9 +33,51 @@ int main()
            std::chrono::seconds{24}) ||
        policy.request(true,true,true,false,true,t+
            std::chrono::seconds{36}))return 6;
-    if(policy.requests!=3U)return 7;
+    if(policy.requests!=3U||policy.total_requests!=3U)return 7;
+    // The SAME outfit may not bypass 3 attempts by passing an empty,
+    // placeholder or temporarily unauthenticated TE to the policy.
+    policy.observe_source(23U,true,true,ids);
+    policy.observe_source(23U,true,true,{});
+    policy.observe_source(23U,true,true,{
+        std::string{protocol::baked_placeholders[0]},"",""});
+    policy.observe_source(23U,false,true,{"other","upper","lower"});
+    policy.observe_source(23U,true,false,{"other","upper","lower"});
+    if(policy.requests!=3U||
+       policy.request(true,true,true,false,true,
+                      t+std::chrono::seconds{36}))return 19;
+    // A DIFFERENT authenticated real self TE may be checked, while
+    // preserving the region total and the 12-second shared pacing.
+    const std::array<std::string,3U> second{"other","upper","lower"};
+    policy.observe_source(23U,true,true,second);
+    if(policy.requests!=0U||policy.total_requests!=3U||
+       !policy.request(true,true,true,false,true,
+                       t+std::chrono::seconds{36}))return 20;
+    const std::array<std::string,3U> third{"third","upper","lower"};
+    policy.observe_source(23U,true,true,third);
+    if(policy.request(true,true,true,false,true,
+                      t+std::chrono::seconds{42}))return 21;
+    if(!policy.request(true,true,true,false,true,
+                       t+std::chrono::seconds{48})||
+       !policy.request(true,true,true,false,true,
+                       t+std::chrono::seconds{60})||
+       policy.requests!=2U||policy.total_requests!=6U)return 22;
+    // Outfit churn never evades the aggregate region epoch cap.
+    for(unsigned i=0U;i<6U;++i)
+    {
+        auto differing=third;
+        differing[0]="outfit-"+std::to_string(i);
+        policy.observe_source(23U,true,true,differing);
+        if(!policy.request(true,true,true,false,true,
+                           t+std::chrono::seconds{72+12*i}))
+            return 23;
+    }
+    policy.observe_source(23U,true,true,{"final","upper","lower"});
+    if(policy.total_requests!=12U||
+       policy.request(true,true,true,false,true,
+                      t+std::chrono::seconds{145}))return 24;
     policy.enter(24U);
-    if(policy.requests!=0U||!policy.allowed(true,true,true,false,true,t))
+    if(policy.requests!=0U||policy.total_requests!=0U||
+       !policy.allowed(true,true,true,false,true,t))
         return 8;
     ids[2]="upper";
     if(assets::avatar_bake_ready_missing(ids,gpu,retry,

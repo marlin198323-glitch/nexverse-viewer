@@ -875,3 +875,11 @@ Ungebundene oder alte Slots können aktuellen COF-Skin
 nicht fälschlich belegen. Renderer/Server-UUIDs
 in F3-Diagnose ohne private Session-IDs zu kopieren.
 Echte Inworld-Avatar-Abnahme bleibt offen.
+
+
+## Alpha.815–824 – Firestorm F9 Outfit Bake Recheck after wardrobe changes
+Previously all three manual bake checks were spent forever per
+simulator region. New authenticated Head/Upper/Lower TE gets
+an independent 3-check allowance within strict 12/region cap,
+12-second delay and the existing GetTexture retry schedule.
+No client bake is uploaded or unverified COF marked ready.

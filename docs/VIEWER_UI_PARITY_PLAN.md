@@ -520,3 +520,11 @@ OpenGL aber noch ein anderes Head/Upper/Lower-Texture
 zeichnet. Das ist eine Wartestufe, kein grüner
 aktueller Outfitnachweis. Für provisorische Objekt-TE
 wird derselbe Vergleich gesondert angewendet.
+
+
+## Alpha.815–824 – Visible F9 outfit/recheck status
+When a new genuine outfit is selected, the Bake Recheck button
+may return if actual current textures are missing and CAP,
+backoff and inflight gates allow it. Different warning
+labels distinguish 3/outfit vs. total 12/region. No button
+may bypass real server ownership or asset cooldown.

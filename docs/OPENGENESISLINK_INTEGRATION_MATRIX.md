@@ -773,3 +773,12 @@ beweist nicht, dass diese selben UUIDs tatsächlich in
 den drei original Firestorm LLM-Draws verwendet wurden.
 F3 verlangt jetzt Identität der IDs. Objekt-TE-Bakes
 bleiben vorläufig, kein COF-/Low158-Success behauptet.
+
+
+## Alpha.815–824 – Authenticated Outfit Bake manual recovery
+F9 now receives the real current Self Head/Upper/Lower TE UUIDs
+from the admitted authenticated avatar render source. Three retries
+are available per distinct valid source, while 12 per simulator
+region and the original 12s delay/AssetRetrySchedule always hold.
+No new server endpoints; placeholder, empty and unauthenticated
+sources cannot grant new requests. No live-inworld success claimed.
