@@ -826,3 +826,14 @@ Bakes ersetzen. Native Tests plus echter Xvfb OpenGL-Pixeltest
 mit originalen Firestorm .llm Meshes bestanden.
 Legacy OpenGenesisLINK Count=0 weiter unterstützt.
 Authentifiziertes Inworld-Outfit ist noch nicht bestätigt.
+
+## Alpha.765–774 – Firestorm Low158 COF per AppearanceVersion
+Verschachtelte AppearanceVersion 2=>3=>2 darf nicht zur
+Reaktivierung einer veralteten Version-2 Outfit-Skin führen.
+C++ WorldModel merkt jetzt je uint8-Format die zuletzt
+gültige COF-Obergrenze, neben vorhandener letzter Revision.
+Modern/Legacy mit COF=0 wird weiter angenommen, ohne
+Highwater zu löschen. Der original-LLM-OpenGL-Framebuffer-
+Test beweist unveränderte Skinpixel nach einem echten
+veralteten Zwischenformat-COF-Paket. Keine tatsächliche
+NexVerse-Inworld-COF-Synchronisierung erfunden.

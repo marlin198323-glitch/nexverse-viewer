@@ -70,7 +70,9 @@ std::vector<std::uint8_t> baked_entry()
 std::vector<std::uint8_t> datagram(std::string_view avatar,
                                    unsigned attachments,
                                    std::uint32_t serial=17U,
-                                   std::uint32_t cof_version=111U)
+                                   std::uint32_t cof_version=111U,
+                                   std::uint8_t appearance_version=2U,
+                                   bool trailing_unknown_cof=false)
 {
     const auto bytes=protocol::uuid_to_bytes(avatar);
     const auto asset=protocol::uuid_to_bytes(
@@ -83,10 +85,16 @@ std::vector<std::uint8_t> datagram(std::string_view avatar,
     payload.push_back(static_cast<std::uint8_t>(te.size()>>8U));
     payload.insert(payload.end(),te.begin(),te.end());
     payload.insert(payload.end(),{3U,125U,126U,127U});
-    payload.push_back(1U); // AppearanceData Variable-1
-    payload.push_back(2U); // AppearanceVersion
+    payload.push_back(trailing_unknown_cof?2U:1U);
+    payload.push_back(appearance_version); // AppearanceVersion
     le32(payload,cof_version); // COF revision is real protocol metadata
     le32(payload,0U);   // Flags
+    if(trailing_unknown_cof)
+    {
+        payload.push_back(appearance_version);
+        le32(payload,0U); // unknown version, MUST NOT erase highwater
+        le32(payload,0U); // Flags
+    }
     payload.push_back(0U); // AppearanceHover Variable-1 = zero
     payload.push_back(static_cast<std::uint8_t>(attachments));
     for(unsigned i=0;i<attachments;++i)
@@ -306,6 +314,25 @@ int main()
     alternate.appearance_data.back().appearance_version=3U;
     if(!w.apply_self_appearance(alternate)||
        w.stale_self_cof_appearances()!=2U)return 42;
+    // Actual encoded/decoded Low158 wire: alternating version-series
+    // cannot allow an earlier format-2 COF revision to reappear.
+    const auto replay_v2=decode(datagram(self,1U,29U,110U,2U,true));
+    if(!replay_v2||replay_v2->appearance_data.size()!=2U||
+       replay_v2->appearance_data.back().cof_version!=0U||
+       w.apply_self_appearance(*replay_v2)||
+       w.stale_self_cof_appearances()!=3U)return 44;
+    const auto fresh_v3=decode(datagram(self,1U,30U,109U,3U,true));
+    if(!fresh_v3||!w.apply_self_appearance(*fresh_v3)||
+       w.stale_self_cof_appearances()!=3U)return 45;
+    const auto delayed_v2=decode(datagram(self,1U,31U,111U,2U,true));
+    if(!delayed_v2||w.apply_self_appearance(*delayed_v2)||
+       w.stale_self_cof_appearances()!=4U)return 46;
+    const auto current_v2=decode(datagram(self,1U,32U,112U,2U,true));
+    if(!current_v2||!w.apply_self_appearance(*current_v2)||
+       w.stale_self_cof_appearances()!=4U)return 47;
+    const auto delayed_v3=decode(datagram(self,1U,33U,108U,3U,true));
+    if(!delayed_v3||w.apply_self_appearance(*delayed_v3)||
+       w.stale_self_cof_appearances()!=5U)return 48;
     w.begin_region_transition({region+1U,"New",{},"127.0.0.1",
         9001U,"","",0U,0U,0U,13U,0.0f,"",256U,256U,true});
     if(w.self_appearance()||w.stale_self_cof_appearances()!=0U)return 10;

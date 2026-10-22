@@ -366,6 +366,10 @@ private:
     // legacy count=0 Low158 messages within this session and region.
     std::uint32_t self_cof_version_highwater_=0U;
     std::uint8_t self_cof_format_highwater_=0U;
+    // AppearanceVersion is uint8. Interleaving different format versions
+    // must not make an older COF revision from a previous format valid.
+    // Each series is scoped to this authenticated agent + region.
+    std::array<std::uint32_t,256U> self_cof_by_format_highwater_{};
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::uint32_t self_object_bake_withdrawals_=0U;

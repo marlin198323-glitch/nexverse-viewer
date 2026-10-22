@@ -715,3 +715,16 @@ COF=0-Zeile liegende wirkliche COF-Revision.
 Legacy Count=0 und reine 0-Versionen bleiben erlaubt,
 der moderne Versions-Highwater wird dabei nicht gelöscht.
 Kein echter Grid Avatar-/COF-End-to-End-Test behauptet.
+
+## Alpha.765–774 – Multi-Format-Low158 COF-Versionsintegrität
+OpenGenesisLINK Servermain bd6bf4f: #273 Gruppen-JWT-SQL-Test
+und #274 Gruppenland-/NexDollar-Verlauf; keine belegte
+Änderung an Low158 AvatarAppearance. Die bekannte Firestorm
+Low158 AppearanceData AppearanceVersion (uint8) kann zwischen
+Versionsserien wechseln; ein späterer COF-Retransmit einer
+früheren Serie wird im echten WorldModel nun gegen deren
+EIGENES Highwater geprüft. Session/Region-Resets erhalten
+saubere separate Lebensdauern; Legacy count=0 bleibt.
+Natives echtes LLUDP Low158-Wire plus Firestorm OpenGL
+Original-Körperpixelregression vorhanden. Authentifizierte
+Live-Grid-Skin/WASD-Sitzung weiter offen.

@@ -327,6 +327,23 @@ int main()
         renderer->set_avatar_proxies({self});
         const auto actually_newer=draw();
         if(difference(new_skin,actually_newer)<100U)error=28;
+        // Both Firestorm AppearanceVersion formats can be interleaved.
+        // After version 3 becomes most recent, old version 2 COF must
+        // NEVER roll back already published GPU Head/Upper/Lower pixels.
+        auto format3=appearance;
+        format3.appearance_data={{3U,52U,0U}};
+        if(!skin.apply_self_appearance(format3))error=39;
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto skin_v3=draw();
+        if(difference(actually_newer,skin_v3)<100U)error=40;
+        auto v2_stale=delayed;
+        v2_stale.appearance_data.front().cof_version=202U;
+        if(skin.apply_self_appearance(v2_stale))error=41;
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto after_format_replay=draw();
+        if(difference(skin_v3,after_format_replay)!=0U)error=42;
       }
       renderer->remove_object_texture(old_id);
       renderer->remove_object_texture(new_id);

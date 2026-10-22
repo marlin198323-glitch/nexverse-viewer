@@ -112,6 +112,33 @@ int main()
        model.stale_self_cof_appearances()!=4U)return 20;
     if(model.apply_self_appearance(replay)||
        model.stale_self_cof_appearances()!=5U)return 21;
+    // Returning to format 2 after an interleaved format 3 MUST still
+    // reject the old COF=900, even though the last observed format was 3.
+    auto format3=updated;
+    format3.appearance_data={{3U,11U,0U},{3U,0U,0U}};
+    format3.visual_params={111U,112U,113U};
+    if(!model.apply_self_appearance(format3)||
+       model.self_appearance()->visual_params!=format3.visual_params)
+       return 22;
+    auto format2_rollback=current;
+    format2_rollback.appearance_data.push_back({2U,0U,0U});
+    format2_rollback.visual_params={33U,34U};
+    if(model.apply_self_appearance(format2_rollback)||
+       model.self_appearance()->visual_params!=format3.visual_params||
+       model.stale_self_cof_appearances()!=6U)return 23;
+    auto format2_fresh=current;
+    format2_fresh.appearance_data.back().cof_version=902U;
+    format2_fresh.visual_params={44U,45U};
+    if(!model.apply_self_appearance(format2_fresh)||
+       model.self_appearance()->visual_params!=format2_fresh.visual_params)
+        return 24;
+    // The return to format 2 cannot forget format 3's independent
+    // revision 11 either. This protects alternating server protocols.
+    auto format3_rollback=format3;
+    format3_rollback.appearance_data.front().cof_version=10U;
+    if(model.apply_self_appearance(format3_rollback)||
+       model.self_appearance()->visual_params!=format2_fresh.visual_params||
+       model.stale_self_cof_appearances()!=7U)return 25;
     // New authenticated session establishes independent COF numbering.
     model.apply_agent({"11111111-2222-3333-4444-555555555555",
         "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});

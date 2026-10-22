@@ -471,3 +471,14 @@ trailing unbekannter COF-Version die aktuelle Skin
 überschreiben. Sichtbar kontrolliert durch Original-
 Body-OpenGL-Framebuffer-Regression. Kein künstlicher
 Outfit-Success-Toast; Livetest noch offen.
+
+## Alpha.765–774 – visuelle Skin-Konsistenz bei Low158-Formatwechsel
+Das bestehende Viewer-F3-/Avatar-Diagnosepanel nutzt die
+tatsächlich vom WorldModel akzeptierten Low158-Daten.
+Eine alte Outfitversion aus einer früheren
+AppearanceVersion-Reihe wird nun ebenfalls verworfen,
+wenn zwischenzeitlich eine andere Formatserie aktiv war.
+Die vorhandene Zählung verworfener COF-Pakete steigt
+tatsächlich; keine gefälschte Live-Skin-Success-Anzeige.
+Realer Xvfb GL Original-Firestorm-Körperpixeltest;
+sichtbarer eingeloggter Inworld-Avatar weiter offen.

@@ -25,6 +25,7 @@ void WorldModel::reset()
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
+    self_cof_by_format_highwater_.fill(0U);
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
@@ -84,6 +85,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
+    self_cof_by_format_highwater_.fill(0U);
         self_wearables_.reset();
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
@@ -130,6 +132,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
+    self_cof_by_format_highwater_.fill(0U);
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
@@ -182,6 +185,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
     self_cof_format_highwater_=0U;
+    self_cof_by_format_highwater_.fill(0U);
         self_wearables_.reset();
         self_animations_.reset();
         pending_avatar_animations_.clear();
@@ -230,9 +234,12 @@ bool WorldModel::apply_self_appearance(
             const auto& incoming=*revision;
             if(incoming.cof_version!=0U)
             {
-            if(self_cof_version_highwater_!=0U&&
-               self_cof_format_highwater_==incoming.appearance_version&&
-               incoming.cof_version<self_cof_version_highwater_)
+            if((self_cof_version_highwater_!=0U&&
+                self_cof_format_highwater_==incoming.appearance_version&&
+                incoming.cof_version<self_cof_version_highwater_)||
+               (self_cof_by_format_highwater_[incoming.appearance_version]!=0U&&
+                incoming.cof_version<
+                    self_cof_by_format_highwater_[incoming.appearance_version]))
             {
                 if(stale_self_cof_appearances_<UINT32_MAX)
                     ++stale_self_cof_appearances_;
@@ -243,6 +250,9 @@ bool WorldModel::apply_self_appearance(
             // AppearanceVersion; different versions start a new series.
             self_cof_version_highwater_=incoming.cof_version;
             self_cof_format_highwater_=incoming.appearance_version;
+            auto& per_format=
+                self_cof_by_format_highwater_[incoming.appearance_version];
+            per_format=std::max(per_format,incoming.cof_version);
             }
         }
     }
