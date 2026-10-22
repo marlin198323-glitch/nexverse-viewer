@@ -752,3 +752,15 @@ Nur die Renderkopie erhält kurzlebiges, Agent/Session-
 gebundenes lokales Preview, das nicht ins LLUDP-
 Readback zurückfließt. Natives x64/Source-Gate,
 authentifiziertes NexVerse-Yaw-E2E still open.
+
+## Alpha.795–804 – echte AgentUpdate-Bodyrotation nach externem Serverturn
+Aktueller OpenGenesisLINK Servermain 7396897d unverändert
+seit #275; kein neuer High4/Low158-Client-Vertrag.
+WASD sendet nach serverseitigem externem Yaw nicht mehr
+auf Dauer den veralteten lokalen Reset-Heading:
+MovementController adopt_server_heading verwendet nur
+WorldModel-Agent-Rotation bei keinem aktiven TURN und keiner
+gültigen 350-ms-Preview-Lease. LLUDP High4 Wirefloat geprüft.
+Eine volle Queue verändert weder lokale Fly-/Turnsteuerung
+noch last_reported_control_flags. Echte Serverposition-
+/Rotation-Readback-Prüfung bleibt unabhängig davon.

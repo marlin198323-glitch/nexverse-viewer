@@ -35,6 +35,15 @@ public:
         previous_fly_key_ = false;
     }
 
+    // A simulator can rotate the avatar independently (region handoff,
+    // collision or scripted action). Resync the yaw baseline without
+    // clearing flight/toggle edge state; never adopt an unconfirmed local
+    // preview as server authority.
+    void adopt_server_heading(const Quaternion& heading) noexcept
+    {
+        yaw_ = valid_initial_agent_yaw(heading);
+    }
+
     [[nodiscard]] AgentUpdateData step(
         const MovementKeys& keys, float seconds)
     {

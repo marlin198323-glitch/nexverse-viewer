@@ -500,3 +500,15 @@ Self-Renderkopie darf denselben max. 350-ms-Heading-
 Preview verwenden. F3-Serverbestätigungsfelder beruhen
 dagegen weiterhin ausschließlich auf echtem Simulator-
 Readback. Sichtbarer authentifizierter Live-Test offen.
+
+## Alpha.795–804 – Statusanzeige nur für tatsächlich gequeue-te WASD-Steuerung
+Die Self-Avatar-Walk-Fallback-Animation beruht auf
+last_reported_control_flags. Zuvor war dieser Status
+vor erfolgreichem Queue.push aktualisiert worden; eine
+mit zuverlässigen Nachrichten gefüllte Queue konnte
+daher fälschlich einen laufenden Avatar melden.
+Jetzt Flag/Log/Preview/MovementFeedback erst nach erfolgreichem
+Queue-Push, ansonsten Rücknahme lokaler Turn/Fly-Zustände.
+Die lokale Kamera passt sich nach einer echten serverseitigen
+Headingänderung ohne gehaltene Drehtaste wieder der
+authentischen WorldModel-Rotation an.

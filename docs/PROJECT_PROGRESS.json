@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.794",
+  "as_of": "2026-10-22",
+  "viewer_version": "0.2.0-alpha.804",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.795–804",
-  "assessment": "Alpha.794: OpenGenesisLINK upstream main 7396897d #275 changed NexGroups key setup only. Fixed real WASD turn authority: application previously called WorldModel::apply_agent with local requested body rotation before a real server ObjectUpdate and even before successful AgentUpdate queue admission, falsifying authoritative yaw readback. The app now preserves simulator WorldModel rotation and only previews successfully queued local TURN on a temporary render-only agent/session-scoped quaternion for at most 350ms, with reset on login/logout/circuit transition. Native C++ MovementController+camera preview tests and Python real source contract; Linux Mint x64 full GUI gate. Prior Alpha784 Pi5 exact SHA 37a1068 Run 39825721706 pending when checked. Authenticated NexVerse own AvatarAppearance, COF/Outfit/Skin GPU and simulator-confirmed WASD/yaw E2E still open; no deployment.",
+  "next_five_blocks": "Alpha.805–814",
+  "assessment": "Alpha.804: OpenGenesisLINK main 7396897d unchanged, no new avatar protocol contract. Actual WASD MovementController initialized yaw only once and subsequently kept sending stale local yaw in High4 AgentUpdate even after a genuine independent simulator rotation. Added adopt_server_heading for the real WorldModel body quaternion only when no user turn is held and no active session-scoped 350ms local preview exists, preserving flying/key edge state. Also fixed local speculative state and movement display before successful OutboundCommandQueue push: failed full reliable-only queue now rolls back local yaw and flight, publishes no fake moving control flags, and does not pretend server motion. Native 114-byte LLUDP quaternion and queue-full TURN/Fly regression, Python real app wiring and full Mint x64 GUI validation. Previous Alpha794 Pi5 exact SHA 567d7a3 run 39827583351 success. Authenticated NexVerse own Low158/COF/Outfit/Skin GPU and server-confirmed WASD/yaw inworld E2E still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.795–804",
+  "next_batch": "Alpha.805–814",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "37a10685c827760adb548f7295d973ff9c843c7b",
-    "run_id": 39825721706,
+    "tested_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
+    "run_id": 39827583351,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless + Python, not live Grid"
+    "scope": "Pi5 ARM64 native headless and Python, no live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
-    "run_id": 39827583351,
-    "checked_status": "in_progress",
-    "note": "Do not mark success before this exact SHA completes successfully."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
     "run_id": 39827583363,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 176,
     "native_ctest_failed": 0,
-    "python_tests_passed": 388,
+    "python_tests_passed": 392,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,14 +118,16 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "567d7a3ffbc39a4b0a7ad468d8547a8654f5270b",
-    "version": "0.2.0-alpha.794",
+    "version": "0.2.0-alpha.804",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Full Linux Mint vcpkg CMake x64 build 176 native CTests, 388 Python, short-lived TURN render-only preview after successful queue, Xvfb GUI with Firestorm bind-pose and taskbar icon PASS. No live Grid session.",
+    "note": "Linux Mint full CMake/vcpkg x64 viewer built, 176/176 native CTests, 392/392 Python, genuine High4 quaternion and full outbound-queue rejection native tests, isolated Xvfb + original Firestorm LLM meshes + 128px OGL X11 icon PASS. Not authenticated NexVerse inworld.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
     "low382_real_lludp_wrap_authorized_readback_test": true,
-    "local_heading_authority_native_test": true
+    "local_heading_authority_native_test": true,
+    "server_heading_idle_rebase_native_wire_test": true,
+    "outbound_queue_reject_rolls_back_yaw_fly_test": true
   }
 }

@@ -856,3 +856,14 @@ Der 350-ms-GPU-Preview wird erst nach erfolgreichem
 AgentUpdate-Queue-Push und nur zur aktuellen Agent-/Session-
 ID zugelassen. Realer Server-High9/FullObject-Rotation-
 Readback bleibt getrennt; keine erfundene WASD-Abnahme.
+
+## Alpha.795–804 – Firestorm AgentUpdate Heading-Rebase/Queue-Truth
+Firestorm-typische WASD-Drehung muss bei aktiver Benutzerdrehung
+lokal flüssig sein, darf aber beim folgenden Leerlauf
+nicht alte Body-Yaw-Werte über ein serverseitiges Heading
+schreiben. Controller synchronisiert auf authentisches
+Readback nach Ablauf des max. 350-ms-TURN-Previews,
+ohne F-Fly-State oder Key-Debounce zurückzusetzen.
+Ein wegen voller OutboundQueue nicht gesendeter TURN/Fly-
+State wird wiederhergestellt statt als Bewegung dargestellt.
+Native High4-Wire und echte Queue-Full-Regressionen.

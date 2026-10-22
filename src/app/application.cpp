@@ -8094,6 +8094,24 @@ int Application::run(bool enable_developer_modules)
                     core::info("Avatar controls active: WASD, arrow-turn, "
                                "Shift fast, Space jump, F flight toggle");
                 }
+                const bool turn_requested=
+                    keys.turn_left!=keys.turn_right;
+                // Keep user-requested yaw briefly after releasing the
+                // arrow key; beyond that lease, each idle frame uses
+                // the REAL simulator heading. This avoids re-sending a
+                // stale client yaw after external/server-side rotation.
+                if(!turn_requested &&
+                   !protocol::active_local_heading_preview(
+                       local_heading_preview,
+                       agent_for_camera.agent_id,
+                       agent_for_camera.session_id,
+                       true,now))
+                    movement_controller.adopt_server_heading(
+                        agent_for_camera.rotation);
+                // Local yaw/flight toggles are speculative until the
+                // OutboundCommandQueue accepts them. A full reliable-
+                // only queue must not leave an unsent local state change.
+                const auto controller_before_queue=movement_controller;
                 auto update = movement_controller.step(
                     keys, std::chrono::duration<float>(
                         now - last_agent_update).count());
@@ -8101,8 +8119,6 @@ int Application::run(bool enable_developer_modules)
                 // Requested yaw has NOT been confirmed by the simulator.
                 // Do not write it to authoritative WorldModel AgentState.
                 agent_for_camera.rotation = update.body_rotation;
-                const bool turn_requested=
-                    keys.turn_left!=keys.turn_right;
                 const auto preview_rotation=update.body_rotation;
                 const CameraState camera =
                     camera_from_agent(agent_for_camera);
@@ -8112,16 +8128,18 @@ int Application::run(bool enable_developer_modules)
                 update.camera_up_axis = camera.up;
                 update.far_clip = camera.far_clip;
 
-                if (update.control_flags != last_reported_control_flags)
-                {
-                    last_reported_control_flags = update.control_flags;
-                    core::info("AgentUpdate controls changed: " +
-                        std::to_string(update.control_flags) +
-                        (movement_controller.flying()
-                            ? " (flying)" : ""));
-                }
                 if(outbound_queue.push(std::move(update)))
                 {
+                    // Self "moving" animation fallback must also only
+                    // observe controls that actually made it into queue.
+                    if (queued_controls != last_reported_control_flags)
+                    {
+                        last_reported_control_flags=queued_controls;
+                        core::info("AgentUpdate controls queued: " +
+                            std::to_string(queued_controls) +
+                            (movement_controller.flying()
+                                ? " (flying)" : ""));
+                    }
                     // Only actually queued TURN commands may change the
                     // local visual heading; never fake simulator readback.
                     if(turn_requested)
@@ -8133,6 +8151,7 @@ int Application::run(bool enable_developer_modules)
                 }
                 else
                 {
+                    movement_controller=controller_before_queue;
                     core::warning("AgentUpdate not queued: queue full");
                 }
                 }

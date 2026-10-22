@@ -312,6 +312,35 @@ int main()
         (std::uint32_t{npl[42]}<<16U)|
         (std::uint32_t{npl[43]}<<24U);
     if(std::bit_cast<float>(nbits)!=0.0f)return 49;
+    // Server sends an independent 90-degree body rotation after login.
+    // Idle input MUST adopt that authoritative heading, not keep
+    // retransmitting the old local yaw. Flight toggle remains active.
+    c.reset();
+    k={};k.toggle_fly=true;
+    if((c.step(k,0.1f).control_flags&control_fly)==0U)return 50;
+    c.adopt_server_heading({0.0f,0.0f,0.70710678f,0.70710678f});
+    k={};k.forward=true;
+    const auto server_aligned=c.step(k,0.1f);
+    if((server_aligned.control_flags&(control_at_pos|control_fly))!=
+       (control_at_pos|control_fly)||
+       std::abs(server_aligned.body_rotation.z-0.70710678f)>0.0001f)
+        return 51;
+    const auto authority_wire=decode_lludp_packet(
+        encode_agent_update(59U,session,server_aligned));
+    if(!authority_wire.ok()||
+       authority_wire.packet->payload.size()!=114U)return 52;
+    const auto& wire_bytes=authority_wire.packet->payload;
+    const auto wire_z=std::bit_cast<float>(
+        std::uint32_t{wire_bytes[40]}|
+        (std::uint32_t{wire_bytes[41]}<<8U)|
+        (std::uint32_t{wire_bytes[42]}<<16U)|
+        (std::uint32_t{wire_bytes[43]}<<24U));
+    if(std::abs(wire_z-0.70710678f)>0.0001f)return 53;
+    // New server heading can also be adopted while grounded.
+    // The adapter does not reset the fly-key debouncing state.
+    c.adopt_server_heading({0.0f,0.0f,0.0f,1.0f});
+    if(c.step(k,0.1f).body_rotation.z!=0.0f)return 54;
+
     std::cout << "Avatar controls and rotation tests passed\n";
     return 0;
 }
