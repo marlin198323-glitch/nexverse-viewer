@@ -91,3 +91,14 @@ Firestorm-Skelett (133 Gelenke), drei GPU-Körpermeshes,
 7186 Dreiecken und OGL-X11-Icon/WM_CLASS 128x128.
 Kein authentifizierter NexVerse-Login, kein
 Inworld-Avatar-/Skin-/WASD-Livetest, kein Deploy.
+
+## Exakter GitHub-Code-Commit und CI-Läufe
+Code-Feature-SHA fa2f51ded72fc4ae3d0c78d5f977b4ba212e4d36.
+GitHub Pi5 Source Check Run 39838069587 IN_PROGRESS bei letzter
+Prüfung, NICHT grün vor Abschluss.
+GitHub Hosted Linux x64 Run 39838069563
+COMPLETED/FAILURE Job 120031529209 runner_id 0, steps 0,
+daher kein gestarteter CMake-/Compilerjob.
+Voriger Pi5 Alpha.824 Run 39836372832 SHA 730f115 SUCCESS.
+Lokales Mint-x64-Release-Gate EXIT 0: 176 native, 404 Python,
+Xvfb GUI und OGL-Taskleisten-Icon. Live-Grid-E2E weiter offen.
