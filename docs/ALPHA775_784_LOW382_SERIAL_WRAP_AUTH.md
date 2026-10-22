@@ -77,3 +77,15 @@ Viewer 0.2.0-alpha.784, originales Firestorm-Skelett
 (7186 Dreiecke); WM_CLASS opengenesislink-viewer,
 OGL-X11-Systemicon 128x128 PASS.
 Kein echtes Inworld-Login und kein Produktionsdeploy.
+
+## Exakte Commit- und GitHub-CI-Nachweise
+Feature Code SHA 37a10685c827760adb548f7295d973ff9c843c7b.
+GitHub Pi5 ARM64 CI Run 39825721706 IN_PROGRESS bei letzter Prüfung.
+Hosted GitHub x64 CI Run 39825721705 COMPLETED/FAILURE;
+Job 119988361983 runner_id=0, steps=0.
+GitHub Hosted hat keinen Build-Schritt ausgeführt.
+Letzter bestätigter Pi5 SUCCESS: Alpha.774 SHA a68ca53
+Run 39824131466. Tatsächliches lokales Mint-x64 GUI-Gate
+Exit 0 mit 175 nativen Tests, 384 Python, Firestorm-
+Originalkörpermeshes, isoliertem Login-Viewer und OGL-Icon.
+Keine authentifizierte NexVerse Avatar-/Skin-/WASD-Live-Session.
