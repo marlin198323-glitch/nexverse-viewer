@@ -804,3 +804,14 @@ Loginformen bleiben unverändert. Server normalisiert
 gegebenenfalls Resident; Client erfindet keine Nachnamen.
 Native LoginService FakeTransport und TOS-Tests PASS,
 noch kein echter authentifizierter NexVerse Login.
+
+## Alpha.745–754 – Firestorm Original Head/Upper/Lower-Texturen
+Die echten drei OpenSim-Baked-Body-UUIDs des eigenen
+und fremder Avatare durchlaufen vor GetTexture die
+identische Position-Zulassung wie vor der OpenGL-
+Zeichnung. Gültige eigene Firestorm-LLM-Bakes bleiben
+vor Remote-Avatar-/Welt-/Partikeltexturen priorisiert;
+reale beschädigte Quaternionen bei gültiger Weltposition
+verlieren nicht fälschlich ihre Bakes. Native VRAM-
+Prioritätstests; noch kein sichtbarer autorisierter
+Live-Outfit-/COF-/Skin-Nachweis.

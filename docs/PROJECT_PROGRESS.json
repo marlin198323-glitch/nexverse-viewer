@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.744",
+  "viewer_version": "0.2.0-alpha.754",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.745–754",
-  "assessment": "Alpha.744: OpenGenesisLINK server main 881b373 #268 supports Firestorm single-name XML-RPC username. OGL GUI previously rejected one-part avatars; actual GLFW login, LoginCredentials, LoginService and serializer now support single username or legacy first/last, never both. Contradictory and blank identities rejected; password hashed and explicit ToS preserved. Native real XML-RPC fake transport and Python contracts on Linux Mint x64. Prior Pi5 CI 39662405115 SHA a31201f success. Authenticated NexVerse own AvatarAppearance, COF/Outfit/GPU Skin and simulator-confirmed WASD live Grid E2E are still open; no deployment.",
+  "next_five_blocks": "Alpha.755–764",
+  "assessment": "Alpha.754: renderer already rejected NaN/Inf/bad avatar GL poses, but GetTexture self/remote Head/Upper/Lower bake streaming, self replan, texture residency samples and full-mip priority still used the rejected unsanitized RenderAvatarProxy positions. A shared per-frame real GPU avatar admission now filters bad positions before all these actual GetTexture/VRAM queue inputs while retaining authentic server asset IDs and valid self priority even when avatar order changes. Native C++23 prioritize_avatar_body_bakes/texture residency tests, Python contract and Linux Mint x64 GUI gate. Latest OpenGenesisLINK server HEAD 881b373 unchanged; last verified Pi5 CI exact SHA cbdfd857 run 39809196307 success. Authenticated NexVerse own Low158, COF/Outfit/skin GPU pixels and server-confirmed WASD/yaw live E2E are still open. No production deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.745–754",
+  "next_batch": "Alpha.755–764",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "a31201f2490e40041fa08fff6bc1c7fb8c725129",
-    "run_id": 39662405115,
+    "tested_sha": "cbdfd857c00a6d9c3c897a5c2f3441223d080cf9",
+    "run_id": 39809196307,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless/Python, not live Grid"
+    "scope": "Pi5 ARM64 native headless/Python, no live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "cbdfd857c00a6d9c3c897a5c2f3441223d080cf9",
-    "run_id": 39809196307,
-    "checked_status": "in_progress",
-    "note": "Only exact SHA completed/success may confirm this run."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "cbdfd857c00a6d9c3c897a5c2f3441223d080cf9",
     "run_id": 39809196408,
@@ -112,7 +107,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 175,
     "native_ctest_failed": 0,
-    "python_tests_passed": 369,
+    "python_tests_passed": 373,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -122,9 +117,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "cbdfd857c00a6d9c3c897a5c2f3441223d080cf9",
-    "version": "0.2.0-alpha.744",
+    "version": "0.2.0-alpha.754",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Full Linux Mint CMake/CTest/Python/Xvfb/GL/X11 taskbar validated; no authenticated Grid login"
+    "note": "Full Linux Mint CMake/CTest/Python/Xvfb/GL/X11 taskbar validated; no authenticated Grid login",
+    "avatar_bake_gpu_pose_aligned_native_test": true
   }
 }

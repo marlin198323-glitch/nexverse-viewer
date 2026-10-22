@@ -450,3 +450,15 @@ OpenGenesisLINK Server #268 unterstützte XML-RPC username.
 Validierungsfehler verlangen keinen künstlichen Nachnamen.
 Ausdrücklicher TOS-Dialog und Passwortschutz unverändert.
 Xvfb GUI-Smoke ist kein authentifizierter Avatar-GPU-Test.
+
+## Alpha.745–754 – Skin-Nachprüfung und tatsächliche GPU-Zulassung
+Die im Viewer vorhandene manuelle
+Avatar-GetTexture-Nachprüfung sowie automatische
+Bake-Refresher berücksichtigen jetzt ausschließlich
+Self-Bake-Quellen von wirklich GPU-zugelassenen
+Avatarpositionen. Bei Server-NaN kann das UI keine
+falschen Nachprüfungs- oder Full-Mip-Bereitschaften
+mehr aus Avatar-Assets ableiten, die nicht gerendert
+werden dürfen. Normale valide Bakes laufen durch
+bestehendes GetTexture-/Mip-/VRAM-System weiter.
+Die optische Live-Inworld-Abnahme bleibt offen.

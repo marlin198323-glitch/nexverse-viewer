@@ -1,5 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #include "nexverse/assets/avatar_bake_stream_priority.hpp"
+#include "nexverse/assets/avatar_bake_gpu_admission.hpp"
 #include "nexverse/assets/texture_residency.hpp"
 #include <cmath>
 #include <iostream>
@@ -71,6 +72,62 @@ int main()
             {"id-"+std::to_string(i),"",""},1.0f,0.0f,0.0f});
     if(prioritize_avatar_body_bakes(many,0,0,0,100U).size()!=20U)
         return 8;
+    // Renderer would reject this malformed remote pose. The GetTexture
+    // queue must reject it too, even if it has three server TE asset IDs.
+    using nexverse::render::RenderAvatarProxy;
+    const float nan=std::numeric_limits<float>::quiet_NaN();
+    std::vector<RenderAvatarProxy> proxies;
+    RenderAvatarProxy bad_remote{};
+    bad_remote.position={nan,1.0f,30.0f};
+    bad_remote.baked_texture_ids={"invalid-head","invalid-upper","invalid-lower"};
+    proxies.push_back(bad_remote);
+    RenderAvatarProxy valid_remote{};
+    valid_remote.position={3.0f,0.0f,30.0f};
+    valid_remote.baked_texture_ids={"remote-head","remote-upper","remote-lower"};
+    proxies.push_back(valid_remote);
+    // The self avatar is NOT necessarily the first entry; it must still
+    // win head/upper/lower priority and full mip residency.
+    RenderAvatarProxy own{};
+    own.position={0.0f,0.0f,30.0f};
+    own.is_self=true;
+    own.baked_texture_ids={"self-head","self-upper","self-lower"};
+    proxies.push_back(own);
+    const auto admitted=admit_avatar_bake_gpu_candidates(proxies);
+    if(admitted.invalid_positions_skipped!=1U||
+       admitted.self_position_skipped||admitted.accepted.size()!=2U||
+       !admitted.accepted[1].is_self||
+       admitted.accepted[1].body!=own.baked_texture_ids)
+        return 9;
+    const auto valid_priority=prioritize_avatar_body_bakes(
+        admitted.accepted,0.0f,0.0f,30.0f);
+    const std::vector<std::string> good_order{
+        "self-head","self-upper","self-lower",
+        "remote-head","remote-upper","remote-lower"};
+    if(valid_priority!=good_order)return 10;
+    std::unordered_set<std::string> rejected{"invalid-head",
+        "invalid-upper","invalid-lower"};
+    const auto safe_plan=plan_texture_residency(
+        {},{"material"},old_loaded,512U,valid_priority);
+    for(const auto& id:rejected)
+        if(safe_plan.desired_ids.contains(id))return 11;
+    // A damaged nonfinite orientation is repaired by the GPU renderer
+    // without excluding an otherwise position-valid self texture.
+    proxies[2].rotation={nan,0.0f,0.0f,1.0f};
+    const auto still_admitted=admit_avatar_bake_gpu_candidates(proxies);
+    if(still_admitted.accepted.size()!=2U||
+       still_admitted.self_position_skipped)return 12;
+    // But a server self pose rejected by GL must not spend the
+    // self-specific GetTexture/mip slots or pretend skin is drawable.
+    proxies[2].position.z=std::numeric_limits<float>::infinity();
+    const auto invalid_self=admit_avatar_bake_gpu_candidates(proxies);
+    if(invalid_self.accepted.size()!=1U||
+       !invalid_self.self_position_skipped||
+       invalid_self.invalid_positions_skipped!=2U)
+        return 13;
+    const auto no_self_priority=prioritize_avatar_body_bakes(
+        invalid_self.accepted,0.0f,0.0f,30.0f);
+    if(no_self_priority.size()!=3U||
+       no_self_priority.front()!="remote-head")return 14;
     // All names are synthetic fixtures: no network or upload involved.
     std::cout<<"Avatar baked body stream priority and GPU eviction PASSED\n";
     return 0;

@@ -692,3 +692,15 @@ und kein Klartextpasswort im XML-RPC. Serveränderungen
 zu Economy, Gruppen, Portal sind nicht automatisch
 implementierte OGL Clientendpunkte. Live Grid weiterhin
 still open; ältere Upstream-Diffs MANUAL_REVIEW.
+
+## Alpha.745–754 – GPU-zugelassene echte Avatar-Bake-Streaming-Daten
+Aktueller OpenGenesisLINK-Servermain 881b373 unverändert.
+NexVerse Server-Avatar/ObjectUpdate-/Low158-Bake-IDs
+werden nur aus dem aktuellen WorldModel übernommen.
+Ein Avatar, dessen Position vom echten GL-Renderer
+wegen NaN/Inf/unplausibler Werte verworfen wird,
+wird jetzt ebenso aus GetTexture-/VRAM-Kandidaten,
+Self-Replan und Full-Mip-Priorität ferngehalten.
+Das verhütet falsche knappe HTTP-/GPU-Budgetbelegung,
+ändert aber keine Simulator-/CAPS-API-Felder.
+Live Low158/COF/Avatar-GPU-E2E still open.

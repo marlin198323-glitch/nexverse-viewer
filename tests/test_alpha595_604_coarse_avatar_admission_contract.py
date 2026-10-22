@@ -67,13 +67,13 @@ class CoarseAvatarAdmission(unittest.TestCase):
   self.assertIn("view.remote_avatar_object_updates=1U;",gl)
   self.assertIn("view.remote_avatar_coarse_only=1U;",gl)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.744")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.754")
   j=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.744")
-  self.assertEqual(j["next_batch"],"Alpha.745–754")
+  self.assertEqual(j["viewer_version"],"0.2.0-alpha.754")
+  self.assertEqual(j["next_batch"],"Alpha.755–764")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for p in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.745–754",read(p)[:1800])
+   self.assertIn("Alpha.755–764",read(p)[:1800])
 if __name__=="__main__":unittest.main()

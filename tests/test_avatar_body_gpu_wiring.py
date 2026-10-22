@@ -44,7 +44,10 @@ class AvatarBodyGpuWiring(unittest.TestCase):
         self.assertIn("const auto mip_self=std::find_if(",APP)
         self.assertIn("const auto ui_self=std::find_if(",APP)
         self.assertIn("ui_self!=avatar_proxy_update.end()",APP)
-        self.assertIn("mip_self!=avatar_proxy_update.end()",APP)
+        # Full-mip selection must follow the GPU-admitted (drawable)
+        # subset, not raw simulator proxies with invalid positions.
+        self.assertIn("mip_self!=admitted_bakes.accepted.end()",APP)
+        self.assertIn("admitted_bakes.accepted.begin()",APP)
         self.assertNotIn("avatar_proxy_update.front().is_self",APP)
 
     def test_f9_real_bake_previews_do_not_fetch_assets(self):

@@ -41,6 +41,7 @@
 #include "nexverse/assets/asset_stream_scheduler.hpp"
 #include "nexverse/assets/texture_prefetch.hpp"
 #include "nexverse/assets/avatar_bake_stream_priority.hpp"
+#include "nexverse/assets/avatar_bake_gpu_admission.hpp"
 #include "nexverse/assets/avatar_bake_mip_priority.hpp"
 #include "nexverse/assets/texture_cached_request.hpp"
 #include "nexverse/core/logger.hpp"
@@ -11868,13 +11869,19 @@ int Application::run(bool enable_developer_modules)
                 emitter_texture_ids.push_back(emitter.texture_id);
             const auto texture_plan_now = std::chrono::steady_clock::now();
             avatar_bake_recheck.enter(material_scope.epoch());
+            // One frame-consistent GPU admission applies to replan,
+            // self-bake fallback, HTTP queue and full mip priority.
+            const auto admitted_bakes=
+                assets::admit_avatar_bake_gpu_candidates(
+                    avatar_proxy_update);
             const auto self_bake_it=std::find_if(
-                avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                admitted_bakes.accepted.begin(),
+                admitted_bakes.accepted.end(),
                 [](const auto& item){return item.is_self;});
             const std::array<std::string,3U> self_bake_ids=
-                self_bake_it==avatar_proxy_update.end()
+                self_bake_it==admitted_bakes.accepted.end()
                     ?std::array<std::string,3U>{}
-                    :self_bake_it->baked_texture_ids;
+                    :self_bake_it->body;
             const bool self_bake_authenticated=login_ui.authenticated&&
                 active_session&&simulation_ready&&render_agent.present&&
                 active_session->agent_id==render_agent.agent_id;
@@ -11902,7 +11909,7 @@ int Application::run(bool enable_developer_modules)
                 self_bake_ids,object_texture_loaded_ids,
                 object_texture_retries,texture_plan_now);
             const auto object_bake_provenance=self_bake_authenticated&&
-                self_bake_lease&&self_bake_it!=avatar_proxy_update.end()
+                self_bake_lease&&self_bake_it!=admitted_bakes.accepted.end()
                 ?[&]()
                  {
                      std::scoped_lock lock{world_mutex};
@@ -11983,22 +11990,18 @@ int Application::run(bool enable_developer_modules)
             {
                 last_texture_residency_plan = texture_plan_now;
                 auto resident_texture_samples=scene_texture_samples;
-                std::vector<assets::AvatarBakeStreamCandidate> body_candidates;
-                body_candidates.reserve(avatar_proxy_update.size());
-                for(const auto& avatar:avatar_proxy_update)
-                    body_candidates.push_back({
-                        avatar.is_self,avatar.baked_texture_ids,
-                        avatar.position.x,avatar.position.y,avatar.position.z});
+                // Feed GetTexture the same GPU-admitted avatar poses
+                // as the real renderer. Invalid remote/self positions
+                // cannot consume the capped VRAM/HTTP bake queue.
                 const auto avatar_body_priority=
                     assets::prioritize_avatar_body_bakes(
-                        body_candidates,render_agent.position.x,
+                        admitted_bakes.accepted,render_agent.position.x,
                         render_agent.position.y,render_agent.position.z);
-                for(const auto& avatar:avatar_proxy_update)
-                    for(const auto& baked:avatar.baked_texture_ids)
+                for(const auto& avatar:admitted_bakes.accepted)
+                    for(const auto& baked:avatar.body)
                         if(!baked.empty())
                             resident_texture_samples.push_back({
-                                baked,avatar.position.x,
-                                avatar.position.y,avatar.position.z});
+                                baked,avatar.x,avatar.y,avatar.z});
                 const std::unordered_set<std::string> active_particles{
                     emitter_texture_ids.begin(),emitter_texture_ids.end()};
                 auto planned_mips = assets::plan_texture_mip_levels(
@@ -12016,13 +12019,14 @@ int Application::run(bool enable_developer_modules)
                 // first entry. Region-proxy ordering can change as remote
                 // avatar packets are received.
                 const auto mip_self=std::find_if(
-                    avatar_proxy_update.begin(),avatar_proxy_update.end(),
+                    admitted_bakes.accepted.begin(),
+                    admitted_bakes.accepted.end(),
                     [](const auto& avatar){return avatar.is_self;});
-                if(mip_self!=avatar_proxy_update.end()&&active_session&&
+                if(mip_self!=admitted_bakes.accepted.end()&&active_session&&
                    active_session->agent_id==render_agent.agent_id)
                     (void)assets::pin_self_avatar_body_full_mip(
                         planned_mips,
-                        mip_self->baked_texture_ids,
+                        mip_self->body,
                         simulation_ready&&
                         firestorm_region_lease.matches(
                             current_firestorm_epoch));
