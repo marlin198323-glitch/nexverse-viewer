@@ -115,7 +115,7 @@ Kein echtes eingeloggtes Grid-/WASD-/Skin-E2E.
 
 ## Exakter GitHub-Code-Commit und Folge-CI
 Feature SHA a68ca53e8c9a669a9994ec4d1bf28b3e2a7dc975.
-GitHub Pi5 Run 39824131466 QUEUED beim letzten Abruf.
+GitHub Pi5 Run 39824131466 IN_PROGRESS beim letzten Abruf.
 Hosted Linux x64 Run 39824131896 COMPLETED/FAILURE;
 Job 119982788458 runner_id 0, 0 ausgeführte Steps,
 kein GitHub-hosted Compiler-/CMake-Lauf gestartet.

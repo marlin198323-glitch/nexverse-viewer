@@ -90,7 +90,7 @@
   "pending_pi5_ci": {
     "feature_sha": "a68ca53e8c9a669a9994ec4d1bf28b3e2a7dc975",
     "run_id": 39824131466,
-    "checked_status": "queued",
+    "checked_status": "in_progress",
     "note": "No green until exact feature SHA CI completes successfully; Alpha754 old run cancelled."
   },
   "linux_x64_gui_ci": {
