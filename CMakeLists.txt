@@ -509,6 +509,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-world-hud-toggle-tests
         COMMAND nexverse-world-hud-toggle-tests)
 
+    add_executable(nexverse-local-heading-preview-tests
+        tests/local_heading_preview_tests.cpp)
+    target_link_libraries(nexverse-local-heading-preview-tests PRIVATE NexVerse::Render)
+    nexverse_enable_warnings(nexverse-local-heading-preview-tests)
+    add_test(NAME nexverse-local-heading-preview-tests COMMAND nexverse-local-heading-preview-tests)
+
     add_executable(nexverse-third-person-camera-tests
         tests/third_person_camera_tests.cpp)
     target_link_libraries(nexverse-third-person-camera-tests

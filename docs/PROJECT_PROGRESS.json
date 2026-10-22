@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.784",
+  "viewer_version": "0.2.0-alpha.794",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.785–794",
-  "assessment": "Alpha.784: server main bd6bf4f unchanged. Authenticated Low382 AgentWearablesUpdate uint32 SerialNum was previously ordered by raw <= which permanently rejected all new wearables after rollover. Real WorldModel now uses half-cycle modulo serial comparison after agent/session/region ownership checks, accepts 0xffffffff->0 and subsequent 1, rejects stale prewrap retransmits, duplicates, ambiguous half-cycle jumps. Native LLUDP encode/decode and model regression validates wearables data and session resets. Previous Alpha774 Pi5 CI exact SHA a68ca53 run 39824131466 success, hosted x64 CI no runner, local Mint x64 GUI separate. Actual authenticated NexVerse own COF/Outfit/Skin GPU and simulator-confirmed WASD/yaw E2E still open; no deploy.",
+  "next_five_blocks": "Alpha.795–804",
+  "assessment": "Alpha.794: OpenGenesisLINK upstream main 7396897d #275 changed NexGroups key setup only. Fixed real WASD turn authority: application previously called WorldModel::apply_agent with local requested body rotation before a real server ObjectUpdate and even before successful AgentUpdate queue admission, falsifying authoritative yaw readback. The app now preserves simulator WorldModel rotation and only previews successfully queued local TURN on a temporary render-only agent/session-scoped quaternion for at most 350ms, with reset on login/logout/circuit transition. Native C++ MovementController+camera preview tests and Python real source contract; Linux Mint x64 full GUI gate. Prior Alpha784 Pi5 exact SHA 37a1068 Run 39825721706 pending when checked. Authenticated NexVerse own AvatarAppearance, COF/Outfit/Skin GPU and simulator-confirmed WASD/yaw E2E still open; no deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.785–794",
+  "next_batch": "Alpha.795–804",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "a68ca53e8c9a669a9994ec4d1bf28b3e2a7dc975",
@@ -111,9 +111,9 @@
   "mint_x64_validation": {
     "status": "local_pass",
     "cmake_full_debug_build": true,
-    "native_ctest_passed": 175,
+    "native_ctest_passed": 176,
     "native_ctest_failed": 0,
-    "python_tests_passed": 384,
+    "python_tests_passed": 388,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,13 +123,14 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "37a10685c827760adb548f7295d973ff9c843c7b",
-    "version": "0.2.0-alpha.784",
+    "version": "0.2.0-alpha.794",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Linux Mint full x64 CMake debug viewer, 175 native tests, 384 Python tests, low382 LLUDP authenticated serial wrap, Xvfb viewer + X11 icon 128px PASSED; no Grid login",
+    "note": "Full Linux Mint vcpkg CMake x64 build 176 native CTests, 388 Python, short-lived TURN render-only preview after successful queue, Xvfb GUI with Firestorm bind-pose and taskbar icon PASS. No live Grid session.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
-    "low382_real_lludp_wrap_authorized_readback_test": true
+    "low382_real_lludp_wrap_authorized_readback_test": true,
+    "local_heading_authority_native_test": true
   }
 }

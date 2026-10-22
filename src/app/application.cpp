@@ -77,6 +77,7 @@
 #include "nexverse/protocol/region_material_scope.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/movement_controls.hpp"
+#include "nexverse/protocol/local_heading_preview.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
 #include "nexverse/protocol/turn_readback.hpp"
 #include "nexverse/world/attachment_state.hpp"
@@ -6007,6 +6008,8 @@ int Application::run(bool enable_developer_modules)
     protocol::MovementController movement_controller;
     std::uint32_t last_reported_control_flags = 0U;
     bool movement_heading_initialized = false;
+    // Local yaw is only a bounded visual preview; never Model authority.
+    std::optional<protocol::LocalHeadingPreview> local_heading_preview;
     bool invalid_movement_position_logged = false;
 
     std::atomic_bool circuit_stop{false};
@@ -7040,6 +7043,7 @@ int Application::run(bool enable_developer_modules)
                         movement_feedback.reset();
                         turn_feedback.reset();
                         movement_heading_initialized = false;
+                        local_heading_preview.reset();
                         last_reported_control_flags = 0U;
                         {
                             std::scoped_lock lock{world_mutex};
@@ -7859,6 +7863,7 @@ int Application::run(bool enable_developer_modules)
                         movement_feedback.reset();
                         turn_feedback.reset();
                         movement_heading_initialized=false;
+                        local_heading_preview.reset();
                         last_reported_control_flags=0U;
                         {
                             std::scoped_lock lock{world_mutex};
@@ -7928,6 +7933,7 @@ int Application::run(bool enable_developer_modules)
                     movement_feedback.reset();
                         turn_feedback.reset();
                     movement_heading_initialized=false;
+                    local_heading_preview.reset();
                     last_reported_control_flags=0U;
                     protocol::LoginSession retry_session=*active_session;
                     retry_session.simulator_ip=circuit_target_ip;
@@ -8092,17 +8098,12 @@ int Application::run(bool enable_developer_modules)
                     keys, std::chrono::duration<float>(
                         now - last_agent_update).count());
                 const auto queued_controls=update.control_flags;
+                // Requested yaw has NOT been confirmed by the simulator.
+                // Do not write it to authoritative WorldModel AgentState.
                 agent_for_camera.rotation = update.body_rotation;
-                {
-                    std::scoped_lock lock{world_mutex};
-                    const auto authoritative = world_model.agent();
-                    world_model.apply_agent({
-                        authoritative.agent_id,
-                        authoritative.session_id,
-                        authoritative.position,
-                        update.body_rotation,
-                        authoritative.present});
-                }
+                const bool turn_requested=
+                    keys.turn_left!=keys.turn_right;
+                const auto preview_rotation=update.body_rotation;
                 const CameraState camera =
                     camera_from_agent(agent_for_camera);
                 update.camera_center = camera.center;
@@ -8121,6 +8122,13 @@ int Application::run(bool enable_developer_modules)
                 }
                 if(outbound_queue.push(std::move(update)))
                 {
+                    // Only actually queued TURN commands may change the
+                    // local visual heading; never fake simulator readback.
+                    if(turn_requested)
+                        local_heading_preview=protocol::LocalHeadingPreview{
+                            agent_for_camera.agent_id,
+                            agent_for_camera.session_id,
+                            preview_rotation,now};
                     movement_feedback.queued_controls(queued_controls);
                 }
                 else
@@ -10579,6 +10587,14 @@ int Application::run(bool enable_developer_modules)
             {
                 std::scoped_lock lock{world_mutex};
                 render_agent = world_model.agent();
+                // Short-lived local-only GPU and camera preview; the
+                // real server position and heading stay in WorldModel.
+                if(const auto yaw=protocol::active_local_heading_preview(
+                       local_heading_preview,
+                       render_agent.agent_id,render_agent.session_id,
+                       world_model.region().connected,
+                       std::chrono::steady_clock::now());yaw)
+                    render_agent.rotation=*yaw;
                 // Legacy point lights are regular prim ExtraParams.
                 // Choose a small bounded set of nearby lights for the
                 // legacy OpenGL shader; region lights never leave CPU

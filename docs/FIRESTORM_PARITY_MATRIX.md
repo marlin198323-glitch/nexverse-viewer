@@ -847,3 +847,12 @@ Packets können die Listen nicht zurücksetzen.
 F9-Wearable/COF-Audit bleibt read-only und warnt
 weiter ausdrücklich: Low382 ist kein aktueller
 Skin-/Outfit-Renderbeweis. Native echte Datagrammtests.
+
+## Alpha.785–794 – Firestorm WASD/ThirdPerson visueller Turn
+Die lokale WASD-Drehung führt weiterhin zu unmittelbarer
+Blick-/Körpervorschau, aber ihre Quaternion wird nicht
+als Simulatorantwort in WorldModel geschrieben.
+Der 350-ms-GPU-Preview wird erst nach erfolgreichem
+AgentUpdate-Queue-Push und nur zur aktuellen Agent-/Session-
+ID zugelassen. Realer Server-High9/FullObject-Rotation-
+Readback bleibt getrennt; keine erfundene WASD-Abnahme.

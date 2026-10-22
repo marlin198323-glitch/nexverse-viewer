@@ -740,3 +740,15 @@ unverändertem Session-/Avatar-/Regionsnachweis.
 Echte LLUDP-Encode/Decode-Tests mit 0xfffffffe/0/1,
 verspätetem 0xffffffff und Session-Reset.
 Kein künstlicher Low158-/COF-/GPU-Nachweis.
+
+## Alpha.785–794 – AgentUpdate-Yaw ist kein Simulator-Readback
+OpenGenesisLINK Servermain 7396897d aktualisiert nur NexGroups
+Land-API-Key (#275), keine neuen High4-Felder.
+OGL darf bei lokalem TURN niemals WorldModel::apply_agent
+mit der angeforderten Bodyrotation aufrufen. Echte
+serverbestätigte Full/Compressed/ImprovedTerse-Rotationen
+bleiben der Ursprung autoritativer AgentState-Daten.
+Nur die Renderkopie erhält kurzlebiges, Agent/Session-
+gebundenes lokales Preview, das nicht ins LLUDP-
+Readback zurückfließt. Natives x64/Source-Gate,
+authentifiziertes NexVerse-Yaw-E2E still open.

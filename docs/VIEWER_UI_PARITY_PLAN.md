@@ -491,3 +491,12 @@ Readback-Daten anzuzeigen. Kein gefälschter
 Avatar-Skin-Erfolg aus Wearables allein; native
 Low382-Datagramme und Modelzustand getestet.
 Echte NexVerse-Live-Avatar-Abnahme weiter offen.
+
+## Alpha.785–794 – Lokale Turn-Vorschau statt falscher Serverdrehung
+Das ThirdPerson-Kamerabild kann bei einem echten
+eingereihten Drehkommando kurz auf die eigene
+Wunschrotation reagieren. Die Original-Firestorm-
+Self-Renderkopie darf denselben max. 350-ms-Heading-
+Preview verwenden. F3-Serverbestätigungsfelder beruhen
+dagegen weiterhin ausschließlich auf echtem Simulator-
+Readback. Sichtbarer authentifizierter Live-Test offen.
