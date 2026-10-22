@@ -4,6 +4,7 @@
  */
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
+#include "nexverse/protocol/wearables_serial_order.hpp"
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include <algorithm>
 #include <unordered_set>
@@ -270,9 +271,12 @@ bool WorldModel::apply_self_wearables(
        agent_.session_id.empty()||
        update.agent_id!=agent_.agent_id||
        update.session_id!=agent_.session_id)return false;
-    // Never replace newer simulator readback with a late retransmit;
-    // historical Low382 SerialNum is monotonic per login session.
-    if(self_wearables_&&update.serial<=self_wearables_->serial)
+    // Low382 SerialNum is a 32-bit cyclic sequence. A raw <= would
+    // reject every legitimate readback after 0xffffffff wraps to zero.
+    // Modular half-cycle admission also rejects delayed pre-wrap UDP
+    // retransmits. Agent and session ownership were checked above.
+    if(self_wearables_&&!protocol::wearables_serial_newer(
+           update.serial,self_wearables_->serial))
         return false;
     self_wearables_=std::move(update);
     return true;

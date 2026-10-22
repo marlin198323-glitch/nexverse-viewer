@@ -482,3 +482,12 @@ Die vorhandene Zählung verworfener COF-Pakete steigt
 tatsächlich; keine gefälschte Live-Skin-Success-Anzeige.
 Realer Xvfb GL Original-Firestorm-Körperpixeltest;
 sichtbarer eingeloggter Inworld-Avatar weiter offen.
+
+## Alpha.775–784 – aktuelle F9-Wearables trotz 32-Bit-Wrap
+Der vorhandene Wearables-/COF-Diagnosebereich erhält
+den letzten authentifizierten Low382-Snapshot jetzt
+auch nach SerialNum-Überlauf, statt dauerhaft alte
+Readback-Daten anzuzeigen. Kein gefälschter
+Avatar-Skin-Erfolg aus Wearables allein; native
+Low382-Datagramme und Modelzustand getestet.
+Echte NexVerse-Live-Avatar-Abnahme weiter offen.

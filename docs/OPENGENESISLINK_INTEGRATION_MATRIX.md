@@ -728,3 +728,15 @@ saubere separate Lebensdauern; Legacy count=0 bleibt.
 Natives echtes LLUDP Low158-Wire plus Firestorm OpenGL
 Original-Körperpixelregression vorhanden. Authentifizierte
 Live-Grid-Skin/WASD-Sitzung weiter offen.
+
+## Alpha.775–784 – echte Low382-Wearables-SerialNum-Rollover
+Aktueller Servermain bd6bf4f, keine neue Low382-Wire-
+Darstellung. UInt32 SerialNum in authentifizierter
+AgentWearablesUpdate-Datagrammantwort war bisher
+mit <= gegen vorige ID verglichen; uint32-Rollover
+löste eine lebenslange Sperre neuer Outfit-Snapshots aus.
+Jetzt echte modulare Halbkreis-Reihenfolge, nach
+unverändertem Session-/Avatar-/Regionsnachweis.
+Echte LLUDP-Encode/Decode-Tests mit 0xfffffffe/0/1,
+verspätetem 0xffffffff und Session-Reset.
+Kein künstlicher Low158-/COF-/GPU-Nachweis.

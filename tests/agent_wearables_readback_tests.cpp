@@ -3,6 +3,7 @@
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/protocol/wearables_serial_order.hpp"
 #include <array>
 #include <cstdint>
 #include <iostream>
@@ -108,5 +109,38 @@ int main()
     w.begin_region_transition({region+1U,"New",{},"127.0.0.1",
       9001U,"","",0U,0U,0U,13U,0.0f,"",256U,256U,true});
     if(w.self_wearables())return 17;
+    // Actual LLUDP datagrams traverse encode -> Low382 decoder ->
+    // session/region-authenticated model. Wrap must NOT freeze outfits.
+    using protocol::wearables_serial_newer;
+    if(!wearables_serial_newer(0U,0xffffffffU)||
+       !wearables_serial_newer(1U,0xfffffffeU)||
+       wearables_serial_newer(0xffffffffU,0U)||
+       wearables_serial_newer(4U,4U)||
+       wearables_serial_newer(0x80000000U,0U)||
+       wearables_serial_newer(0U,0x80000000U))
+        return 18;
+    const auto near_wrap=decode(packet(self_id,session_id,0xfffffffeU,2U));
+    const auto wrapped0=decode(packet(self_id,session_id,0U,3U));
+    const auto wrapped1=decode(packet(self_id,session_id,1U,4U));
+    const auto old_retransmit=decode(packet(self_id,session_id,0xffffffffU,9U));
+    if(!near_wrap||!wrapped0||!wrapped1||!old_retransmit||
+       !w.apply_self_wearables(*near_wrap)||
+       w.self_wearables()->serial!=0xfffffffeU||
+       !w.apply_self_wearables(*wrapped0)||
+       w.self_wearables()->wearables.size()!=3U||
+       w.apply_self_wearables(*old_retransmit)||
+       !w.apply_self_wearables(*wrapped1)||
+       w.self_wearables()->serial!=1U||
+       w.self_wearables()->wearables.size()!=4U)return 19;
+    // A pre-wrap retransmit still cannot revive previous outfit data,
+    // and an exact duplicate cannot create a second "new" readback.
+    if(w.apply_self_wearables(*near_wrap)||
+       w.apply_self_wearables(*wrapped1)||
+       w.self_wearables()->serial!=1U)return 20;
+    // New login may restart serial numbering from any initial value.
+    w.apply_agent({other_id,session_id,{},{},true});
+    w.apply_agent({self_id,session_id,{},{},true});
+    if(w.self_wearables()||!w.apply_self_wearables(*worn)||
+       w.self_wearables()->serial!=4U)return 21;
     std::cout<<"OGL_AGENT_WEARABLES_LOW381_382_REAL_DATAGRAM_AUTH_PASS\n";
 }

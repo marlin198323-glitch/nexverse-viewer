@@ -38,12 +38,12 @@ class LinksetDepth(unittest.TestCase):
   self.assertIn('scene_linkset_max_depth',source('src/ui/avatar_diagnostic_report.cpp'))
   self.assertIn('scene_linkset_deep_visible',source('include/nexverse/ui/avatar_diagnostic_report.hpp'))
  def test_release_handoff(self):
-  self.assertEqual(source('VERSION').strip(),'0.2.0-alpha.774')
+  self.assertEqual(source('VERSION').strip(),'0.2.0-alpha.784')
   j=json.loads(source('docs/PROJECT_PROGRESS.json'))
-  self.assertEqual(j['viewer_version'],'0.2.0-alpha.774')
-  self.assertEqual(j['next_batch'],'Alpha.775–784')
+  self.assertEqual(j['viewer_version'],'0.2.0-alpha.784')
+  self.assertEqual(j['next_batch'],'Alpha.785–794')
   self.assertEqual(j['default_blocks_per_run'],10)
   for f in ('CHATUEBERGABE.md','AGENTS.md','info.md','projectplan.md','docs/PROJEKTFORTSCHRITT.md'):
-   self.assertIn('Alpha.775–784',source(f)[:2000])
+   self.assertIn('Alpha.785–794',source(f)[:2000])
    self.assertIn('39 %',source(f)[:2000])
 if __name__=="__main__":unittest.main()

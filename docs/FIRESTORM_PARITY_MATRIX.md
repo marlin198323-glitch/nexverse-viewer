@@ -837,3 +837,13 @@ Highwater zu löschen. Der original-LLM-OpenGL-Framebuffer-
 Test beweist unveränderte Skinpixel nach einem echten
 veralteten Zwischenformat-COF-Paket. Keine tatsächliche
 NexVerse-Inworld-COF-Synchronisierung erfunden.
+
+## Alpha.775–784 – Firestorm Low381/Low382 Readback
+Low381 fordert Legacy-Wearablesliste an. Low382
+enthält tatsächliche Worn-Item-/Asset-IDs und zyklische
+32-bit SerialNum. Neue Outfits nach Rollover
+werden nicht mehr als Alt-Daten verworfen; verspätete
+Packets können die Listen nicht zurücksetzen.
+F9-Wearable/COF-Audit bleibt read-only und warnt
+weiter ausdrücklich: Low382 ist kein aktueller
+Skin-/Outfit-Renderbeweis. Native echte Datagrammtests.

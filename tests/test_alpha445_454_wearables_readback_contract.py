@@ -30,9 +30,12 @@ class ReadOnlyWearables(unittest.TestCase):
   for s in ("bool WorldModel::apply_self_wearables(",
             "update.agent_id!=agent_.agent_id",
             "update.session_id!=agent_.session_id",
-            "update.serial<=self_wearables_->serial",
+            "protocol::wearables_serial_newer(",
             "self_wearables_.reset();","self_wearables = self_wearables_"):
    self.assertIn(s,model)
+  serial=read("include/nexverse/protocol/wearables_serial_order.hpp")
+  self.assertIn("delta!=0U&&delta<0x80000000U",serial)
+  self.assertNotIn("update.serial<=self_wearables_->serial",model)
   test=read("tests/agent_wearables_readback_tests.cpp")
   for s in ("decode_lludp_packet","msg_agent_wearables_update",
             "w.apply_self_wearables(*foreign)",
@@ -65,13 +68,13 @@ class ReadOnlyWearables(unittest.TestCase):
               "wearables_session_id="):
    self.assertNotIn(bad,report)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.774")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.784")
   s=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(s["viewer_version"],"0.2.0-alpha.774")
-  self.assertEqual(s["next_batch"],"Alpha.775–784")
+  self.assertEqual(s["viewer_version"],"0.2.0-alpha.784")
+  self.assertEqual(s["next_batch"],"Alpha.785–794")
   self.assertEqual(s["default_blocks_per_run"],10)
   self.assertIn("still open",s["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.775–784",read(f)[:1200])
+   self.assertIn("Alpha.785–794",read(f)[:1200])
 if __name__=="__main__":unittest.main()
