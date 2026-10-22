@@ -20,3 +20,6 @@ Nachweisbar ist die Renderer-Herkunft der verwendeten Skin-UUIDs, nicht ein tats
 
 ## Vollstaendige lokale Freigabepruefung
 Mint script `scripts/mint-viewer-validation.sh` EXIT 0: voller Linux-x64 Debug Viewer, 176/176 native CTests, 396/396 Python, Firestorm Original-LLM Body GPU Textur-UUIDs, isolierter Xvfb GUI-Start Viewer 0.2.0-alpha.814 mit 133 Bind-Joints, drei GPU-Bodymeshes (7186 Dreiecke) und OGL Systemicon 128x128. Keine echte Grid-Session.
+
+## GitHub Code-SHA und CI
+Feature-SHA f2b809453bd68c0e7407569a25b627362010dc17. Pi5 Source Check Run 39833603079 IN_PROGRESS beim Abruf; noch nicht grün. Hosted Linux-x64 Run 39833603059, Job 120015989833: FAILURE vor Runnerallokation (runner_id 0, 0 Steps), kein Compiler gestartet. Voriger Pi5 Alpha.804 Run 39829308631 zur SHA 3f6483b SUCCESS. Der lokale Linux Mint Gate war EXIT 0 mit 176 CTests, 396 Python, Xvfb GUI und OGL X11-Icon. Kein Live-Login.
