@@ -101,3 +101,15 @@ nexverse-local-heading-preview-tests),
 OGL X11 WM_CLASS und System-/Taskleistenicon
 128x128 erfolgreich. Keine echte Grid-Anmeldung,
 kein serverbestätigter WASD-/Yaw-Live-Test.
+
+## GitHub SHA-genauer CI-Stand nach Push
+Feature-Code-SHA 567d7a3ffbc39a4b0a7ad468d8547a8654f5270b.
+GitHub Pi5 Source Check Run 39827583351 IN_PROGRESS.
+Hosted Linux x64 Run 39827583363 COMPLETED/FAILURE,
+Job 119994867860 runner_id 0, steps 0.
+Das ist KEIN fehlgeschlagener OGL-Compilerlauf,
+sondern kein gestarteter Hosted-Runner.
+Voriger Pi5 Alpha.784 Run 39825721706 für SHA
+37a1068 SUCCESS. Der vollständige lokale Mint-x64-GUI-
+Test (176 CTests, 388 Python, Xvfb, WM_CLASS und
+Original-Icon) war EXIT 0. Live-Grid-End-to-End noch OFFEN.
