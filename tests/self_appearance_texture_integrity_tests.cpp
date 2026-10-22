@@ -80,6 +80,38 @@ int main()
     if(model.apply_self_appearance(stale)||
        model.self_appearance()->visual_params!=legacy.visual_params||
        model.stale_self_cof_appearances()!=2U)return 14;
+    // Firestorm can include 2+ AppearanceData entries; a trailing
+    // unknown COF=0 is NOT an authorization to replay old skin.
+    auto padded_stale=stale;
+    padded_stale.appearance_data.push_back({2U,0U,0U});
+    padded_stale.visual_params={231U,232U};
+    if(model.apply_self_appearance(padded_stale)||
+       model.self_appearance()->visual_params!=legacy.visual_params||
+       model.stale_self_cof_appearances()!=3U)
+        return 17;
+    auto padded_new=current;
+    padded_new.appearance_data.back().cof_version=901U;
+    padded_new.appearance_data.push_back({2U,0U,0U});
+    padded_new.visual_params={241U,242U};
+    if(!model.apply_self_appearance(padded_new)||
+       model.self_appearance()->visual_params!=padded_new.visual_params||
+       model.stale_self_cof_appearances()!=3U)
+        return 18;
+    // Another delayed packet with COF 900 cannot displace 901 after
+    // the trailing 0 row. Count=0 legacy remains accepted earlier.
+    auto replay=current;
+    replay.appearance_data.push_back({2U,0U,0U});
+    if(model.apply_self_appearance(replay)||
+       model.self_appearance()->visual_params!=padded_new.visual_params||
+       model.stale_self_cof_appearances()!=4U)return 19;
+    // A row with only zero COF numbers has no trustworthy revision:
+    // it must neither erase the watermark nor block older OpenSim.
+    auto unknown=legacy;
+    unknown.appearance_data={{2U,0U,0U},{2U,0U,0U}};
+    if(!model.apply_self_appearance(unknown)||
+       model.stale_self_cof_appearances()!=4U)return 20;
+    if(model.apply_self_appearance(replay)||
+       model.stale_self_cof_appearances()!=5U)return 21;
     // New authenticated session establishes independent COF numbering.
     model.apply_agent({"11111111-2222-3333-4444-555555555555",
         "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee",{},{},true});

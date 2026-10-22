@@ -704,3 +704,14 @@ Self-Replan und Full-Mip-Priorität ferngehalten.
 Das verhütet falsche knappe HTTP-/GPU-Budgetbelegung,
 ändert aber keine Simulator-/CAPS-API-Felder.
 Live Low158/COF/Avatar-GPU-E2E still open.
+
+## Alpha.755–764 – Firestorm Low158 Mehrfach COF-Datensätze
+OpenGenesisLINK main bcb528a hat einen Gruppen-Testcommit #272
+seit 881b373, KEINEN belegten neuen Avatarvertrag. Der
+vorhandene Low158-Decoder erlaubt mehrere AppearanceData-Blöcke
+bis zu 16; der authentifizierte WorldModel-COF-Versionen-
+Schutz berücksichtigt jetzt auch die vor einer trailing
+COF=0-Zeile liegende wirkliche COF-Revision.
+Legacy Count=0 und reine 0-Versionen bleiben erlaubt,
+der moderne Versions-Highwater wird dabei nicht gelöscht.
+Kein echter Grid Avatar-/COF-End-to-End-Test behauptet.

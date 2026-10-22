@@ -462,3 +462,12 @@ mehr aus Avatar-Assets ableiten, die nicht gerendert
 werden dürfen. Normale valide Bakes laufen durch
 bestehendes GetTexture-/Mip-/VRAM-System weiter.
 Die optische Live-Inworld-Abnahme bleibt offen.
+
+## Alpha.755–764 – Avatar-Outfit nicht durch COF-Replay wechseln
+Die bestehenden Skin-/Avatarstatus-Fenster spiegeln reale
+WorldModel/Renderer-Daten. Neuer Backend-Fix verhindert,
+dass verspätete Low158-Nachrichten mit älterem COF plus
+trailing unbekannter COF-Version die aktuelle Skin
+überschreiben. Sichtbar kontrolliert durch Original-
+Body-OpenGL-Framebuffer-Regression. Kein künstlicher
+Outfit-Success-Toast; Livetest noch offen.

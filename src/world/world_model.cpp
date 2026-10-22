@@ -5,6 +5,7 @@
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/world/simulator_scene_validity.hpp"
+#include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
@@ -215,9 +216,20 @@ bool WorldModel::apply_self_appearance(
     // AppearanceData count=0; accept such unknown-version packets.
     if(!appearance.appearance_data.empty())
     {
-        const auto& incoming=appearance.appearance_data.back();
-        if(incoming.cof_version!=0U)
+        // Firestorm Low158 permits multiple AppearanceData rows. A
+        // trailing version=0 row is NOT evidence that an earlier
+        // versioned entry should bypass our existing COF rollback gate.
+        // Use the last *meaningful* row, preserving all legacy count=0
+        // and version=0 compatibility.
+        const auto revision=std::find_if(
+            appearance.appearance_data.rbegin(),
+            appearance.appearance_data.rend(),
+            [](const auto& entry){return entry.cof_version!=0U;});
+        if(revision!=appearance.appearance_data.rend())
         {
+            const auto& incoming=*revision;
+            if(incoming.cof_version!=0U)
+            {
             if(self_cof_version_highwater_!=0U&&
                self_cof_format_highwater_==incoming.appearance_version&&
                incoming.cof_version<self_cof_version_highwater_)
@@ -231,6 +243,7 @@ bool WorldModel::apply_self_appearance(
             // AppearanceVersion; different versions start a new series.
             self_cof_version_highwater_=incoming.cof_version;
             self_cof_format_highwater_=incoming.appearance_version;
+            }
         }
     }
     self_appearance_ = std::move(appearance);

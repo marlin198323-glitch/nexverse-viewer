@@ -308,7 +308,20 @@ int main()
         std::cout<<"STALE_COF_LOW158_OLD_SKIN_GPU_PIXELS="
                  <<stale_gpu<<"\n";
         if(stale_gpu!=0U)error=26;
+        // Wire-compatible multiple AppearanceData records: trailing
+        // COF=0 cannot let the OLD green body repaint the new outfit.
+        auto padded_old=delayed;
+        padded_old.appearance_data.push_back({2U,0U,0U});
+        if(skin.apply_self_appearance(padded_old)||
+           skin.stale_self_cof_appearances()!=2U)error=37;
+        self.baked_texture_ids=skin.self_render_bakes();
+        renderer->set_avatar_proxies({self});
+        const auto after_padded_old=draw();
+        if(difference(new_skin,after_padded_old)!=0U)error=38;
+        // Real newer outfit is still allowed despite its own trailing
+        // unknown COF row, and the actual GPU body pixels must change.
         delayed.appearance_data.back().cof_version=203U;
+        delayed.appearance_data.push_back({2U,0U,0U});
         if(!skin.apply_self_appearance(delayed))error=27;
         self.baked_texture_ids=skin.self_render_bakes();
         renderer->set_avatar_proxies({self});

@@ -41,11 +41,11 @@ class SelfTextureGate(unittest.TestCase):
   c=read("CMakeLists.txt")
   self.assertIn("nexverse-self-appearance-texture-integrity-tests",c)
  def test_release_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.754")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.764")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.754")
-  self.assertEqual(p["next_batch"],"Alpha.755–764")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.764")
+  self.assertEqual(p["next_batch"],"Alpha.765–774")
   self.assertEqual(p["default_blocks_per_run"],10)
   for name in ("CHATUEBERGABE.md","AGENTS.md","projectplan.md","info.md"):
-   self.assertIn("Alpha.755–764",read(name)[:1000])
+   self.assertIn("Alpha.765–774",read(name)[:1000])
 if __name__=="__main__": unittest.main()

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-21",
-  "viewer_version": "0.2.0-alpha.754",
+  "viewer_version": "0.2.0-alpha.764",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.755–764",
-  "assessment": "Alpha.754: renderer already rejected NaN/Inf/bad avatar GL poses, but GetTexture self/remote Head/Upper/Lower bake streaming, self replan, texture residency samples and full-mip priority still used the rejected unsanitized RenderAvatarProxy positions. A shared per-frame real GPU avatar admission now filters bad positions before all these actual GetTexture/VRAM queue inputs while retaining authentic server asset IDs and valid self priority even when avatar order changes. Native C++23 prioritize_avatar_body_bakes/texture residency tests, Python contract and Linux Mint x64 GUI gate. Latest OpenGenesisLINK server HEAD 881b373 unchanged; last verified Pi5 CI exact SHA cbdfd857 run 39809196307 success. Authenticated NexVerse own Low158, COF/Outfit/skin GPU pixels and server-confirmed WASD/yaw live E2E are still open. No production deployment.",
+  "next_five_blocks": "Alpha.765–774",
+  "assessment": "Alpha.764: current OpenGenesisLINK server main bcb528a compared against 881b373 adds #272 group SQL tests only, no client avatar protocol change. In actual WorldModel self Low158 COF antirollback the use of the last AppearanceData entry allowed a trailing COF=0 after an older nonzero COF to bypass stale skin detection. WorldModel now selects the last meaningful nonzero COF row, rejecting stale older outfit snapshots while leaving all-zero and count=0 legacy packets compatible and highwater sticky. Real native C++ WorldModel and Firestorm original body OpenGL framebuffer pixel tests confirm no outdated skin redraw and newer outfit updates still draw. Local Linux Mint x64 full GUI tests and ARM64 CI tracked separately. Authenticated NexVerse self AvatarAppearance, COF/Outfit and live simulator GPU skin, WASD/yaw end-to-end remain still open; no deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.755–764",
+  "next_batch": "Alpha.765–774",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "cbdfd857c00a6d9c3c897a5c2f3441223d080cf9",
@@ -112,7 +112,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 175,
     "native_ctest_failed": 0,
-    "python_tests_passed": 373,
+    "python_tests_passed": 377,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -122,10 +122,11 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "706b6117421c9b157c67f88058bda1c1903f4cc0",
-    "version": "0.2.0-alpha.754",
+    "version": "0.2.0-alpha.764",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Full Linux Mint CMake/CTest/Python/Xvfb/GL/X11 taskbar validated; no authenticated Grid login",
-    "avatar_bake_gpu_pose_aligned_native_test": true
+    "note": "Linux Mint CMake full x64 build, native 175 CTests, 377 Python, original Firestorm GL framebuffer and Xvfb GUI + OGL taskbar; no authenticated Grid test",
+    "avatar_bake_gpu_pose_aligned_native_test": true,
+    "cof_multirow_original_body_framebuffer_pixel_regression": true
   }
 }

@@ -815,3 +815,14 @@ reale beschädigte Quaternionen bei gültiger Weltposition
 verlieren nicht fälschlich ihre Bakes. Native VRAM-
 Prioritätstests; noch kein sichtbarer autorisierter
 Live-Outfit-/COF-/Skin-Nachweis.
+
+## Alpha.755–764 – Firestorm COF-Versionen und echte Skin-Pixel
+Firestorm Low158 AppearanceData kann mehrere Zeilen enthalten.
+Ein trailing COF=0 ist nicht autoritativ gegenüber einer
+vorher vorhandenen älteren COF-Revision. WorldModel schützt
+die alte validierte Skin vor rollback; eine neue höhere
+COF-Version darf natürlich die Original Head/Upper/Lower-
+Bakes ersetzen. Native Tests plus echter Xvfb OpenGL-Pixeltest
+mit originalen Firestorm .llm Meshes bestanden.
+Legacy OpenGenesisLINK Count=0 weiter unterstützt.
+Authentifiziertes Inworld-Outfit ist noch nicht bestätigt.
