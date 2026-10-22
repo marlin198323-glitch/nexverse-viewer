@@ -57,3 +57,14 @@ drei Original-Körpermeshes GPU-resident
 OGL-X11-Taskleisten-Icon 128x128 PASS.
 Authentifizierter Grid-Avatar/Outfit/Skin/WASD
 damit NICHT nachgewiesen. Kein Produktivdeploy.
+
+## Exakter GitHub-Feature-Code und CI
+Feature SHA 730f115723b10cf47c88e13d05add446e982f560,
+GitHub Pi5 Source Check Run 39836372832 IN_PROGRESS.
+Gehosteter Linux-x64 Run 39836372803 COMPLETED/FAILURE,
+Job 120025674283 runner_id 0, 0 ausgefuehrte Steps:
+kein Compiler gestartet. Vorherige Pi5-CI Alpha.814 SHA
+f2b8094 Run 39833603079 SUCCESS.
+Separat lokale Mint-x64-Validierung EXIT 0:
+176 native, 400 Python, isoliertes GUI, Firestorm-Meshes
+und OGL X11 Icon. Live-NexVerse-Avatar offen.
