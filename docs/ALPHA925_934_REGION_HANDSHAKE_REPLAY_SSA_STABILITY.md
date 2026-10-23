@@ -27,3 +27,16 @@ Xvfb Viewer mit originalem Firestorm-Skeleton 133 Gelenke,
 drei originalen GPU-LLM Bodymeshes / 7186 Dreiecke,
 X11 WM_CLASS und OGL Taskleisten-Systemicon 128x128 PASS.
 Kein eingeloggter authentifizierter Avatar, kein Produktivdeploy.
+
+## Exakte GitHub Code-SHA / CI
+Feature-Code-SHA f9d8a7585bdd4ea71211b2159c17ae80c9a1279a.
+Pi5 Source Check Run 39992793374 IN_PROGRESS zuletzt,
+nicht als Erfolg behaupten. Hosted Linux-x64
+Run 39992793464 COMPLETED/FAILURE,
+Job 120548539766 runner_id 0, steps 0:
+Runner nicht zugeteilt, kein Compiler gestartet.
+Letzter Pi5 SUCCESS Alpha.924 Code-SHA 6be966b
+Run 39991058245. Lokal Mint FULL-GATE EXIT 0:
+183 native CTests, 447 Python, Original-Firestorm
+Xvfb-GUI, GPU-Koerpermeshes und X11-OGL-Systemicon.
+Kein Live-Grid-Login, kein Deployment.
