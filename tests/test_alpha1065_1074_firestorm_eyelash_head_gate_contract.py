@@ -21,7 +21,7 @@ class EyelashGate(unittest.TestCase):
                 "self_avatar_eyelash_head_gl_draws=0U",
                 "++diagnostics_.self_avatar_eyelash_head_gl_draws"):
    self.assertIn(token,gl)
-  self.assertIn("std::array<GpuMesh,8U>",gl)
+  self.assertIn("std::array<GpuMesh,10U>",gl)
   self.assertIn("avatar_body_meshes_.begin()+3",gl)
  def test_separate_not_three_body_skin(self):
   header=rd("include/nexverse/render/renderer.hpp")

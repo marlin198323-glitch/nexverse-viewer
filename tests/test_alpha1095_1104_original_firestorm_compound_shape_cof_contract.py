@@ -41,15 +41,15 @@ class CompoundCofShape(unittest.TestCase):
             "firestorm_cof_shape_morph_preview(",
             'upload("avatar_head.llm",6U,',
             'upload("avatar_eyelashes.llm",7U,',
-            "if(head_ok&&lash_ok)",
+            "if(head_ok&&lash_ok&&upper_ok&&lower_ok)",
             "clear_self_avatar_head_shape_preview();",
             "shape_head_preview_active=true"):
    self.assertIn(v,chunk)
   self.assertNotIn("appearance->visual_params[",chunk)
  def test_self_only_second_eye_lash_slot_not_remote(self):
   gl=rd("src/render/opengl_renderer.cpp")
-  for token in ("std::array<GpuMesh,8U>",
-      "avatar.is_self&&slot==0U", "avatar_body_meshes_[6U]",
+  for token in ("std::array<GpuMesh,10U>",
+      "avatar.is_self&&", "avatar_body_meshes_[6U]",
       "avatar.is_self&&avatar_body_meshes_[7U].vao",
       "avatar_body_meshes_[7U]={};",
       "self_avatar_shape_eyelash_gl_draws=0U",

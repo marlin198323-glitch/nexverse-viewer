@@ -47,6 +47,6 @@ class VerifiedHigh4WASD(unittest.TestCase):
    self.assertIn(token,native)
   self.assertIn("nexverse-self-agent-high4-pose-gate-tests",read("CMakeLists.txt"))
   self.assertIn("self_agent_high4_pose_gate_tests",read("scripts/pi5-headless-tests.sh"))
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1104")
-  self.assertIn("Alpha.1105–1114",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1114")
+  self.assertIn("Alpha.1115–1124",read("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

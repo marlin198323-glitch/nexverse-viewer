@@ -3277,6 +3277,10 @@ public:
         avatar_body_meshes_[6U]={};
         destroy_mesh(avatar_body_meshes_[7U]);
         avatar_body_meshes_[7U]={};
+        destroy_mesh(avatar_body_meshes_[8U]);
+        avatar_body_meshes_[8U]={};
+        destroy_mesh(avatar_body_meshes_[9U]);
+        avatar_body_meshes_[9U]={};
     }
 
     [[nodiscard]] bool set_avatar_eyelash_visibility_mask(
@@ -3474,6 +3478,7 @@ public:
         diagnostics_.self_avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_eyelash_mask_gl_draws=0U;
         diagnostics_.self_avatar_shape_head_gl_draws=0U;
+        diagnostics_.self_avatar_shape_body_gl_draws={};
         diagnostics_.self_avatar_shape_eyelash_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
@@ -4513,12 +4518,14 @@ public:
                     // Only one GL_ANY_SAMPLES_PASSED can be active at once.
                     for(std::size_t slot=0U;slot<3U;++slot)
                     {
-                        const auto& gpu=
-                            avatar.is_self&&slot==0U&&
-                            avatar_body_meshes_[6U].vao!=0U&&
-                            avatar_body_meshes_[6U].index_count>0
-                                ?avatar_body_meshes_[6U]
-                                :avatar_body_meshes_[slot];
+                        // All 3 original anatomical meshes may have
+                        // independently morphed SELF-only copies.
+                        const std::size_t preview_slot=
+                            slot==0U?6U:(slot==1U?8U:9U);
+                        const auto& preview=avatar_body_meshes_[preview_slot];
+                        const auto& gpu=avatar.is_self&&
+                            preview.vao!=0U&&preview.index_count>0
+                                ?preview:avatar_body_meshes_[slot];
                         bool skin_valid=!posed.empty() &&
                             gpu.skin_vbo!=0U &&
                             gpu.skin_palette.size()>=2U &&
@@ -4616,10 +4623,14 @@ public:
                         }
                         ++diagnostics_.draw_calls;
                         ++diagnostics_.avatar_anatomical_mesh_draw_calls;
-                        if(avatar.is_self&&slot==0U&&
-                           avatar_body_meshes_[6U].vao!=0U&&
-                           &gpu==&avatar_body_meshes_[6U])
-                            ++diagnostics_.self_avatar_shape_head_gl_draws;
+                        if(avatar.is_self&&&gpu==&preview)
+                        {
+                            if(slot==0U)
+                                ++diagnostics_.self_avatar_shape_head_gl_draws;
+                            else
+                                ++diagnostics_.self_avatar_shape_body_gl_draws[
+                                    slot-1U];
+                        }
                         if(avatar.is_self)
                             ++diagnostics_.self_avatar_anatomical_mesh_draw_calls;
                         if(skin_valid)
@@ -5780,7 +5791,9 @@ private:
     // morph preview cannot change any remote avatar's shared Head.
     // Optional slot 6 SELF Head, slot 7 SELF eyelashes from one
     // authenticated current-COF Shape: remote anatomy stays original.
-    std::array<GpuMesh,8U> avatar_body_meshes_{};
+    // Slots 8/9 independently shape OWN upper/lower body only.
+    // Remote bodies continue original slots 1/2.
+    std::array<GpuMesh,10U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};

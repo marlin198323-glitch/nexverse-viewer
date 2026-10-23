@@ -26,7 +26,7 @@ class DualEyes(unittest.TestCase):
             "avatar_body_meshes_[4U]", "posed[static_cast<std::size_t>(",
             "avatar.eyes_bake_texture_id", "self_avatar_eyes_bake_gl_draws"):
    self.assertIn(t,gl)
-  self.assertIn("std::array<GpuMesh,8U>",gl)
+  self.assertIn("std::array<GpuMesh,10U>",gl)
   self.assertIn("avatar_body_meshes_.begin()+3",gl)
   self.assertIn("std::string eyes_bake_texture_id",
       read("include/nexverse/render/renderer.hpp"))

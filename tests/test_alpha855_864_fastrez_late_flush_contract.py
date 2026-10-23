@@ -35,6 +35,6 @@ class LateFlushAuthority(unittest.TestCase):
   s=rd("scripts/pi5-headless-tests.sh")
   self.assertIn("early_avatar_readback_tests; do",s)
   self.assertIn("nexverse-early-avatar-readback-tests",rd("CMakeLists.txt"))
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1104")
-  self.assertIn("Alpha.1105–1114",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1114")
+  self.assertIn("Alpha.1115–1124",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

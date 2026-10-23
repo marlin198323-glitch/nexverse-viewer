@@ -404,6 +404,9 @@ struct RenderDiagnostics
     // enabled on an admitted Wimpern GL draw, not final makeup COF.
     std::uint64_t self_avatar_eyelash_mask_gl_draws=0U;
     std::uint64_t self_avatar_shape_head_gl_draws=0U;
+    // Original current COF Shape upper/lower are visual previews,
+    // not server-baked texture evidence.
+    std::array<std::uint64_t,2U> self_avatar_shape_body_gl_draws{};
     // Optional current verified owner COF shape lash geometry, never
     // counts as Head/Upper/Lower authenticated skin or a remote mesh.
     std::uint64_t self_avatar_shape_eyelash_gl_draws=0U;

@@ -9664,7 +9664,15 @@ int Application::run(bool enable_developer_modules)
                                         selection->eyelashes.empty()||
                                         upload("avatar_eyelashes.llm",7U,
                                                selection->eyelashes);
-                                    if(head_ok&&lash_ok)
+                                    const bool upper_ok=
+                                        selection->upper.empty()||
+                                        upload("avatar_upper_body.llm",8U,
+                                               selection->upper);
+                                    const bool lower_ok=
+                                        selection->lower.empty()||
+                                        upload("avatar_lower_body.llm",9U,
+                                               selection->lower);
+                                    if(head_ok&&lash_ok&&upper_ok&&lower_ok)
                                     {
                                         shape_head_preview_active=true;
                                         shape_head_preview_epoch=
@@ -9677,7 +9685,7 @@ int Application::run(bool enable_developer_modules)
                                             active_session->agent_id;
                                         gallery_asset_status+=
                                             "; original COF-Shape Head/"
-                                            "Wimpern lokal sichtbar";
+                                            "Wimpern/Upper/Lower lokal sichtbar";
                                     }
                                     else
                                     {
@@ -14289,6 +14297,17 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if((render_diagnostics.self_avatar_shape_body_gl_draws[0U]+
+                    render_diagnostics.self_avatar_shape_body_gl_draws[1U])>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm COF-Shape-Body-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_shape_body_gl_draws[0U])+
+                        "/"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_shape_body_gl_draws[1U])+
+                        " (lokal, kein Bake-Beweis)";
                 if(render_diagnostics.self_avatar_shape_eyelash_gl_draws>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

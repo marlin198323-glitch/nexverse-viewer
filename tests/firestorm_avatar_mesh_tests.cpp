@@ -190,6 +190,32 @@ int main()
     const auto reset=firestorm_cof_shape_morph_preview({
         {770,0.0f},{186,0.0f},{686,0.0f},{518,0.0f}});
     if(!reset||reset->active())return 41;
+    // Alpha1114: exact original LAD Upper/Lower shape IDs and boundaries.
+    const auto body_shape=firestorm_cof_shape_morph_preview({
+        {104,0.9f},{106,1.1f},{151,0.8f},{152,1.2f}});
+    if(!body_shape||body_shape->upper.size()!=2U||
+       body_shape->lower.size()!=2U||
+       !body_shape->head.empty()||!body_shape->eyelashes.empty())
+        return 42;
+    const auto upper_shape=morph_firestorm_avatar_mesh(
+        *upper,body_shape->upper);
+    const auto lower_shape=morph_firestorm_avatar_mesh(
+        *lower,body_shape->lower);
+    if(!upper_shape||!lower_shape||
+       upper_shape->vertices==upper->vertices||
+       lower_shape->vertices==lower->vertices||
+       upper_shape->skin_weights!=upper->skin_weights||
+       lower_shape->indices!=lower->indices||
+       upper_shape->joint_names!=upper->joint_names)
+        return 43;
+    if(firestorm_cof_shape_morph_preview({{104,1.01f}})||
+       firestorm_cof_shape_morph_preview({{106,1.41f}})||
+       firestorm_cof_shape_morph_preview({{151,-0.01f}})||
+       firestorm_cof_shape_morph_preview({{152,1.51f}}))
+        return 44;
+    std::cout<<"FIRESTORM_ORIGINAL_COF_BODY_MORPHS_UPPER="
+             <<body_shape->upper.size()
+             <<"; LOWER="<<body_shape->lower.size()<<"\n";
     std::cout<<"ORIGINAL_FIRESTORM_MULTI_COF_SHAPE_HEAD_MORPHS="
              <<selected->head.size()<<"; LASH_MORPHS="
              <<selected->eyelashes.size()<<"\n";

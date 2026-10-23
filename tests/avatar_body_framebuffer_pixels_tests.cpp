@@ -206,6 +206,79 @@ int main()
         renderer->set_avatar_proxies({self});
       }
     }
+    if(!error)
+    {
+        // Alpha1114: true original upper and lower LLM GPU morphs,
+        // completely separate SELF-only copies, remote body stays
+        // unchanged even while self switches COF Shape.
+        const auto shape=assets::firestorm_cof_shape_morph_preview({
+            {104,0.95f},{106,1.25f},{151,0.9f},{152,1.3f}});
+        const auto upper=assets::load_firestorm_avatar_llm(
+            *dir/"avatar_upper_body.llm");
+        const auto lower=assets::load_firestorm_avatar_llm(
+            *dir/"avatar_lower_body.llm");
+        const auto upper_morphed=shape&&upper?
+            assets::morph_firestorm_avatar_mesh(
+                *upper,shape->upper):std::nullopt;
+        const auto lower_morphed=shape&&lower?
+            assets::morph_firestorm_avatar_mesh(
+                *lower,shape->lower):std::nullopt;
+        const auto up_palette=upper?
+            assets::firestorm_joint_render_palette(
+                *rig,upper->joint_names):std::nullopt;
+        const auto lo_palette=lower?
+            assets::firestorm_joint_render_palette(
+                *rig,lower->joint_names):std::nullopt;
+        if(!upper_morphed||!lower_morphed||
+           !up_palette||!lo_palette)error=82;
+        if(!error)
+        {
+            renderer->set_camera({{5.5f,0,1.15f},
+                {-1,0,0},{0,-1,0},{0,0,1},55,0.01f,40});
+            renderer->set_avatar_proxies({self});
+            const auto base=draw();
+            auto remote=self;remote.is_self=false;
+            renderer->set_avatar_proxies({remote});
+            const auto remote_base=draw();
+            if(!renderer->set_avatar_body_mesh(8U,
+                   {upper_morphed->vertices,upper_morphed->indices,{},
+                    upper_morphed->skin_weights,*up_palette})||
+               !renderer->set_avatar_body_mesh(9U,
+                   {lower_morphed->vertices,lower_morphed->indices,{},
+                    lower_morphed->skin_weights,*lo_palette}))
+                error=83;
+            renderer->set_avatar_proxies({self});
+            const auto shaped=draw();
+            const auto changed=difference(base,shaped);
+            const auto counts=renderer->diagnostics();
+            std::cout<<"ORIGINAL_FIRESTORM_UPPER_LOWER_SHAPE_PIXELS="
+                     <<changed<<"; BODY_MORPH_GL="
+                     <<counts.self_avatar_shape_body_gl_draws[0U]<<"/"
+                     <<counts.self_avatar_shape_body_gl_draws[1U]<<"\n";
+            if(changed<3U||
+               counts.self_avatar_shape_body_gl_draws[0U]!=1U||
+               counts.self_avatar_shape_body_gl_draws[1U]!=1U||
+               counts.self_avatar_anatomical_mesh_draw_calls!=3U)
+                error=84;
+            renderer->set_avatar_proxies({remote});
+            const auto untouched=difference(remote_base,draw());
+            std::cout<<"REMOTE_BODY_SHAPE_GHOST_PIXELS="
+                     <<untouched<<"\n";
+            if(untouched!=0U||
+               renderer->diagnostics().self_avatar_shape_body_gl_draws[0U]!=0U)
+                error=85;
+            renderer->clear_self_avatar_head_shape_preview();
+            renderer->set_avatar_proxies({self});
+            const auto reset=difference(base,draw());
+            std::cout<<"RESET_BODY_SHAPE_GHOST_PIXELS="
+                     <<reset<<"\n";
+            if(reset!=0U||
+               renderer->diagnostics().self_avatar_shape_body_gl_draws[1U]!=0U)
+                error=86;
+            renderer->set_camera(
+                {{0,0,1},{1,0,0},{0,1,0},{0,0,1},65,0.1f,40});
+        }
+    }
     render::RenderImageRgba8 pixels{4,4,std::vector<std::uint8_t>(64,255)};
     for(std::size_t i=0;i<pixels.pixels.size();i+=4)
     {pixels.pixels[i]=20;pixels.pixels[i+1]=220;pixels.pixels[i+2]=60;}

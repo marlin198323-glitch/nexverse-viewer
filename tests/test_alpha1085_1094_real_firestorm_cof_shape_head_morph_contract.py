@@ -52,9 +52,9 @@ class FirestormMorph1094(unittest.TestCase):
   self.assertIn("clear_self_avatar_head_shape_preview()",app)
  def test_actual_gpu_draw_is_self_only_and_reset_before_render(self):
   gl=read("src/render/opengl_renderer.cpp")
-  for key in ("std::array<GpuMesh,8U>",
-              "avatar.is_self&&slot==0U",
-              "avatar_body_meshes_[6U].vao",
+  for key in ("std::array<GpuMesh,10U>",
+              "avatar.is_self&&",
+              "slot==0U?6U:(slot==1U?8U:9U)",
               "clear_self_avatar_head_shape_preview() override",
               "self_avatar_shape_head_gl_draws"):
    self.assertIn(key,gl)

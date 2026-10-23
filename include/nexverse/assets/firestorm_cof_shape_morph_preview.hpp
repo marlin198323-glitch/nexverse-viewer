@@ -14,8 +14,11 @@ struct FirestormCofMorphPreview
 {
     std::vector<std::pair<std::string,float>> head;
     std::vector<std::pair<std::string,float>> eyelashes;
+    std::vector<std::pair<std::string,float>> upper;
+    std::vector<std::pair<std::string,float>> lower;
     [[nodiscard]] bool active() const noexcept
-    {return !head.empty()||!eyelashes.empty();}
+    {return !head.empty()||!eyelashes.empty()||
+            !upper.empty()||!lower.empty();}
 };
 // Static, individually checked pairs from ORIGINAL Firestorm Nightly LAD.
 // No ID guessing from Low158 unnamed visual-param byte positions.
@@ -27,11 +30,16 @@ firestorm_cof_shape_morph_preview(
     const std::map<std::int32_t,float>& shape_params)
 {
     struct Known {int id;const char* name;float min;float max;};
-    constexpr std::array<Known,4U> known{{
+    constexpr std::array<Known,8U> known{{
         {770,"Elongate_Head",-1.0f,1.0f},
         {186,"Egg_Head",-1.3f,1.0f},
         {686,"Head_Eyes_Big",-2.0f,2.0f},
-        {518,"Eyelashes_Long",-0.3f,1.5f}
+        {518,"Eyelashes_Long",-0.3f,1.5f},
+        // Original Firestorm avatar_lad.xml wearable=shape:
+        {104,"Big_Belly_Torso",0.0f,1.0f},
+        {106,"Muscular_Torso",0.0f,1.4f},
+        {151,"Big_Butt_Legs",0.0f,1.0f},
+        {152,"Muscular_Legs",0.0f,1.5f}
     }};
     FirestormCofMorphPreview selection;
     for(const auto& param:known)
@@ -44,9 +52,16 @@ firestorm_cof_shape_morph_preview(
         if(std::abs(value)<0.0001f)continue;
         // Firestorm's original eyelashes contain three Head-compatible
         // morphs too; each applied to COPY of its own .llm vertex data.
-        if(param.id!=518)
-            selection.head.emplace_back(param.name,value);
-        selection.eyelashes.emplace_back(param.name,value);
+        if(param.id==104||param.id==106)
+            selection.upper.emplace_back(param.name,value);
+        else if(param.id==151||param.id==152)
+            selection.lower.emplace_back(param.name,value);
+        else
+        {
+            if(param.id!=518)
+                selection.head.emplace_back(param.name,value);
+            selection.eyelashes.emplace_back(param.name,value);
+        }
     }
     return selection;
 }
