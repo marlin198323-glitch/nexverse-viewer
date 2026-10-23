@@ -28,3 +28,17 @@ isolierter Xvfb Viewer mit originalem Firestorm-Skelett 133 Gelenke,
 3 GPU-LLM-Bodymeshes / 7186 Dreiecke,
 X11 WM_CLASS und OGL 128x128-Systemicon PASS.
 Keine echte authentifizierte Grid-Live-Session; kein Deploy.
+
+## Exakte GitHub-Code-SHA und CI
+Feature SHA 7bf730812ed149f358a84b12ebe8d24ee6cba14a.
+Pi5 ARM64 Run 40011135542 zuletzt IN_PROGRESS,
+nicht grün bis completed/success.
+Hosted Linux x64 Run 40011135336 COMPLETED/FAILURE,
+Job 120611503544, runner_id=0, steps=0:
+kein gestarteter Compiler wegen fehlender Runner-Zuteilung.
+Letzter Pi5 SUCCESS Alpha.954 SHA c86977f
+Run 40008385875.
+Lokaler Linux Mint voller x64-Gate EXIT 0:
+183 native CTests, 462 Python, Xvfb Firestorm LLM
+GPU-Körpermeshes und X11-Systemicon 128x128 PASS.
+Kein authentifizierter Live-Grid-Login, kein Deploy.
