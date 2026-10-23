@@ -829,3 +829,12 @@ WebRTC Voice deploy: no new Low158/Low382 wire contract.
 
 ## Alpha.865-874 - Simulator-Socketwechsel ohne Regionshandle-Wechsel
 Nach einem Reconnect kann ein neuer OpenSim-Simulator denselben RegionHandle nutzen, aber eine andere IP oder einen neuen UDP-Port haben. WorldModel behandelt bekannte Endpoint-Aenderungen nun wie einen echten Region-Epoch-Reset, einschliesslich COF/Low158/Wearables, Mesh/LocalIDs, Terrain und bestaetigter Avatar-Pose. Unvollstaendige IP/Port-Interims-RegionHandshake-Nachrichten duerfen den bekannten Socket nicht leeren.
+
+## Alpha.875-884: Original High9 Terse LocalID and simulator generation
+ImprovedTerseObjectUpdate has a local numeric ID but no UUID.
+In same RegionHandle a simulator restart can recycle the ID;
+its previous binding is not self by default. The real
+WorldModel generation and RegionHandle must match the binding
+made by authenticated Full/Compressed ObjectUpdate before
+High9 can confirm avatar position/turn/WASD. No server API
+or LLUDP message format changed.

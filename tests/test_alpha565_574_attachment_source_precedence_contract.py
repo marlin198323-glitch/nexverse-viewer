@@ -16,7 +16,7 @@ class LiveAttachmentPrecedence(unittest.TestCase):
  def test_real_self_and_remote_gpu_rig_both_use_reconciliation(self):
   src=read("src/app/application.cpp")
   self.assertEqual(src.count("world::reconcile_avatar_attachments("),4)
-  self.assertIn("world_model.objects(),self_avatar_local_id",src)
+  self.assertIn("world_model.objects(),world::current_self_avatar_local_id(",src)
   self.assertIn("world_model.objects(),avatar.local_id",src)
   self.assertIn("avatar_proxy_update.back().attachments.insert(",src)
   self.assertNotIn("avatar_proxy_update.back().attachments.emplace(",src)
@@ -52,13 +52,13 @@ class LiveAttachmentPrecedence(unittest.TestCase):
   self.assertIn("world_model.self_bake_selection()",src)
   self.assertIn("gallery_cof_batch.status()",src)
  def test_version_and_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.874")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.884")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.874")
-  self.assertEqual(p["next_batch"],"Alpha.875–884")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.884")
+  self.assertEqual(p["next_batch"],"Alpha.885–894")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
              "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.875–884",read(fn)[:1800])
+   self.assertIn("Alpha.885–894",read(fn)[:1800])
 if __name__=="__main__":unittest.main()

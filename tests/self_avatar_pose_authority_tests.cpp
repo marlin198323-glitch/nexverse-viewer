@@ -1,5 +1,6 @@
 /* MPL-2.0. Only genuine authenticated simulator self pose is renderable. */
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/world/self_avatar_localid_lease.hpp"
 #include <iostream>
 #include <limits>
 using namespace nexverse;
@@ -78,5 +79,26 @@ int main()
     model.reset();
     if(model.self_avatar_renderable()||
        model.simulator_self_pose_confirmed())return 17;
-    std::cout<<"OGL_SIMULATOR_SELF_POSE_LIVE_RENDER_ADMISSION_PASS\n";
+    // High9 packet does not contain a UUID. RegionHandle alone is
+    // insufficient to distinguish the old simulator from its replacement
+    // using the SAME handle and LocalID in the NEW region generation.
+    auto local=world::current_self_avatar_local_id;
+    constexpr std::uint32_t avatar_local_id=54U;
+    if(local(avatar_local_id,region,5U,region,5U)!=avatar_local_id)
+        return 18;
+    if(local(avatar_local_id,region,5U,region,6U)!=0U)
+        return 19;
+    if(local(avatar_local_id,region,5U,region2,5U)!=0U)
+        return 20;
+    if(local(0U,region,5U,region,5U)!=0U||
+       local(avatar_local_id,0U,0U,0U,0U)!=0U)
+        return 21;
+    if(local(avatar_local_id,region,0U,region,0U)!=avatar_local_id||
+       local(avatar_local_id,region,0U,region,1U)!=0U)
+        return 23;
+    // A newly authenticated Full/Compressed binds the SAME numeric ID
+    // under the NEW generation without inheriting previous lease.
+    if(local(avatar_local_id,region,6U,region,6U)!=avatar_local_id)
+        return 22;
+    std::cout<<"OGL_SIMULATOR_SELF_POSE_LIVE_RENDER_ADMISSION_PASS\\n";
 }

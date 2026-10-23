@@ -924,3 +924,11 @@ readback. Endpoint IP/port binds both buffered messages.
 
 ## Alpha.865-874 - Kein Firestorm-Koerper aus alter Simulatorinstanz
 Wird ein gleicher RegionHandle von einem anderen konkreten Simulator-IP/Port bedient, verlieren alte LLUDP-LocalIDs, Avatar-Skin/Outfit-Bakes, Terrain- und Objektmeshes ihre Autoritaet. Original-LLM-Body erst nach neuer echter Simulatorposition darstellen. Bei identischem Socket ein normales Handshake/Statusrefresh ohne Verlust.
+
+## Alpha.875-884: Firestorm own root ID generation-scope
+After simulator socket change with same RegionHandle, old
+Full/Compressed ObjectUpdate local ID is NOT own root.
+The native avatar body, High9 position readback, KillObject
+and attachments only honor generation-current Self LocalID.
+Initial valid generation 0 is allowed. New Full/Compressed
+bind of same numeric ID on new generation is valid.

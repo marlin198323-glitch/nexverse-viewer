@@ -1,5 +1,6 @@
 /* MPL-2.0. FastRez: authenticated Low158 / Low382 early-circuit replay. */
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/world/self_avatar_localid_lease.hpp"
 #include "nexverse/protocol/avatar_cof_revision.hpp"
 #include <iostream>
 #include <string>
@@ -182,6 +183,12 @@ int main()
     remote_avatar.id="other-avatar";
     socket_region.upsert_avatar(std::move(remote_avatar));
     const auto stable_epoch=socket_region.region().generation;
+    constexpr std::uint32_t prior_self_local_id=54U;
+    if(current_self_avatar_local_id(
+         prior_self_local_id,region,stable_epoch,
+         socket_region.region().handle,
+         socket_region.region().generation)!=prior_self_local_id)
+        return 36;
     // Identical known socket is a harmless RegionHandshake refresh.
     socket_region.apply_region(area(region,true));
     if(!socket_region.self_appearance()||
@@ -213,6 +220,13 @@ int main()
        socket_region.self_avatar_renderable()||
        !socket_region.avatars().empty())
         return 31;
+    // High9 with a recycled numeric LocalID from the old simulator
+    // cannot silently become our NEW self body in the same region.
+    if(current_self_avatar_local_id(
+         prior_self_local_id,region,stable_epoch,
+         socket_region.region().handle,
+         socket_region.region().generation)!=0U)
+        return 37;
     // Never silently revive old COF / pose after a socket switch.
     socket_region.apply_agent({self,session,{},{},true});
     if(socket_region.self_appearance()||
@@ -222,6 +236,11 @@ int main()
            self,session,region,{127.0f,126.0f,33.0f},{})||
        !socket_region.self_avatar_renderable())
         return 33;
+    if(current_self_avatar_local_id(
+         prior_self_local_id,region,socket_region.region().generation,
+         socket_region.region().handle,
+         socket_region.region().generation)!=prior_self_local_id)
+        return 38;
     // IP-only change with an unchanged UDP port must be equally fatal
     // for old simulator state, including local prim references.
     const auto changed_epoch=socket_region.region().generation;

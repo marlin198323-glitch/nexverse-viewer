@@ -131,6 +131,7 @@
 #include "nexverse/ui/loading_diagnostics_layout.hpp"
 #include "nexverse/ui/loading_circuit_retry_policy.hpp"
 #include "nexverse/world/world_model.hpp"
+#include "nexverse/world/self_avatar_localid_lease.hpp"
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 
@@ -4953,6 +4954,7 @@ int Application::run(bool enable_developer_modules)
     std::mutex world_mutex;
     std::uint32_t self_avatar_local_id = 0U;
     std::uint64_t self_avatar_region_handle = 0U;
+    std::uint32_t self_avatar_region_generation = 0U;
     std::chrono::steady_clock::time_point last_self_movement_log{};
     protocol::MovementFeedbackMonitor movement_feedback;
     protocol::TurnReadbackMonitor turn_feedback;
@@ -5359,6 +5361,7 @@ int Application::run(bool enable_developer_modules)
          &full_object_live_logged,
          &self_avatar_local_id,
          &self_avatar_region_handle,
+         &self_avatar_region_generation,
          &movement_feedback,
          &turn_feedback,
          &world_model,
@@ -5399,7 +5402,9 @@ int Application::run(bool enable_developer_modules)
                            !world::valid_simulator_avatar_pose(
                                entry.position,entry.rotation))continue;
                         if (self_avatar_local_id != entry.local_id ||
-                            self_avatar_region_handle != update->region_handle)
+                            self_avatar_region_handle != update->region_handle ||
+                            self_avatar_region_generation !=
+                                world_model.region().generation)
                         {
                             // A replacement simulator LocalID starts a new
                             // evidence lease: old WASD/turn confirmations
@@ -5408,6 +5413,8 @@ int Application::run(bool enable_developer_modules)
                             turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
+                            self_avatar_region_generation=
+                                world_model.region().generation;
                             core::info("Avatar self local-id bound from ObjectUpdate");
                         }
                         const bool provisional_bakes=
@@ -5480,6 +5487,7 @@ int Application::run(bool enable_developer_modules)
          &compressed_object_live_logged,
          &self_avatar_local_id,
          &self_avatar_region_handle,
+         &self_avatar_region_generation,
          &movement_feedback,
          &turn_feedback,
          &world_model,
@@ -5521,7 +5529,9 @@ int Application::run(bool enable_developer_modules)
                            !world::valid_simulator_avatar_pose(
                                entry.position,entry.rotation))continue;
                         if (self_avatar_local_id != entry.local_id ||
-                            self_avatar_region_handle != update->region_handle)
+                            self_avatar_region_handle != update->region_handle ||
+                            self_avatar_region_generation !=
+                                world_model.region().generation)
                         {
                             // A replacement simulator LocalID starts a new
                             // evidence lease: old WASD/turn confirmations
@@ -5530,6 +5540,8 @@ int Application::run(bool enable_developer_modules)
                             turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
+                            self_avatar_region_generation=
+                                world_model.region().generation;
                             core::info("Avatar self local-id bound from ObjectUpdateCompressed");
                         }
                         const bool provisional_bakes=
@@ -5638,6 +5650,7 @@ int Application::run(bool enable_developer_modules)
          &terse_object_live_logged,
          &self_avatar_local_id,
          &self_avatar_region_handle,
+         &self_avatar_region_generation,
          &last_self_movement_log,
          &movement_feedback,
          &turn_feedback,
@@ -5672,9 +5685,12 @@ int Application::run(bool enable_developer_modules)
                     // quaternion/position must not move an existing rig.
                     if(!world::valid_simulator_avatar_pose(
                            update.position,update.rotation))continue;
-                    if (self_avatar_local_id != 0U &&
-                        self_avatar_region_handle == terse->region_handle &&
-                        update.local_id == self_avatar_local_id)
+                    if (update.local_id!=0U &&
+                        world::current_self_avatar_local_id(
+                            self_avatar_local_id,self_avatar_region_handle,
+                            self_avatar_region_generation,
+                            world_model.region().handle,
+                            world_model.region().generation)==update.local_id)
                     {
                         const auto current = world_model.agent();
                         if(!world_model.accept_simulator_self_pose(
@@ -5736,6 +5752,7 @@ int Application::run(bool enable_developer_modules)
         protocol::msg_kill_object,
         [&object_packets, &world_model, &world_mutex,
          &self_avatar_local_id, &self_avatar_region_handle,
+         &self_avatar_region_generation,
          &movement_feedback, &turn_feedback](
             const protocol::DecodedPacket& packet)
         {
@@ -5756,8 +5773,11 @@ int Application::run(bool enable_developer_modules)
             for (const std::uint32_t local_id : kill->local_ids)
             {
                 if(local_id!=0U&&
-                   self_avatar_local_id==local_id&&
-                   self_avatar_region_handle==world_model.region().handle)
+                   world::current_self_avatar_local_id(
+                       self_avatar_local_id,self_avatar_region_handle,
+                       self_avatar_region_generation,
+                       world_model.region().handle,
+                       world_model.region().generation)==local_id)
                 {
                     // Current self KillObject withdraws own binding:
                     // ignore late old LocalID terse movement and do not
@@ -5768,6 +5788,7 @@ int Application::run(bool enable_developer_modules)
                         world_model.region().handle,local_id);
                     self_avatar_local_id=0U;
                     self_avatar_region_handle=0U;
+                    self_avatar_region_generation=0U;
                     // No stale success label after a real self root kill:
                     // the next ObjectUpdate must establish fresh motion.
                     movement_feedback.reset();
@@ -7069,6 +7090,7 @@ int Application::run(bool enable_developer_modules)
                             std::scoped_lock lock{world_mutex};
                             self_avatar_local_id = 0U;
                             self_avatar_region_handle = 0U;
+                            self_avatar_region_generation = 0U;
                         }
                         login_ui.status = "CONNECTED";
                         login_ui.notice = result.message.empty()
@@ -7889,6 +7911,7 @@ int Application::run(bool enable_developer_modules)
                             std::scoped_lock lock{world_mutex};
                             self_avatar_local_id=0U;
                             self_avatar_region_handle=0U;
+                            self_avatar_region_generation=0U;
                         }
                         circuit_target_ip=destination_ip;
                         circuit_target_port=destination_port;
@@ -8304,6 +8327,22 @@ int Application::run(bool enable_developer_modules)
             gallery_inventory_sync.enter(current_firestorm_epoch);
             if(animation_asset_epoch!=current_firestorm_epoch)
             {
+                // Preserve new authenticated full self bind received
+                // before this UI frame noticed the epoch; clear only
+                // previous-generation local IDs (High9 has no UUID).
+                {
+                    std::scoped_lock lock{world_mutex};
+                    if(world::current_self_avatar_local_id(
+                           self_avatar_local_id,self_avatar_region_handle,
+                           self_avatar_region_generation,
+                           world_model.region().handle,
+                           world_model.region().generation)==0U)
+                    {
+                        self_avatar_local_id=0U;
+                        self_avatar_region_handle=0U;
+                        self_avatar_region_generation=0U;
+                    }
+                }
                 // Server positions, a pending socket send and movement
                 // proof are all scoped to the same region lease. A
                 // teleport changes coordinates discontinuously; never
@@ -10865,7 +10904,11 @@ int Application::run(bool enable_developer_modules)
                          render_agent.rotation.y,
                          render_agent.rotation.z,
                          render_agent.rotation.w},
-                        true,baked_ids,self_avatar_local_id,
+                        true,baked_ids,world::current_self_avatar_local_id(
+                            self_avatar_local_id,self_avatar_region_handle,
+                            self_avatar_region_generation,
+                            world_model.region().handle,
+                            world_model.region().generation),
                         {},false,protocol::AvatarMotion::idle,false,
                         nullptr,-1.0f});
                     avatar_proxy_update.back().moving=
@@ -10923,7 +10966,11 @@ int Application::run(bool enable_developer_modules)
                             low158_attachments.emplace(
                                 attachment.object_id,attachment.attachment_point);
                     const auto selected=world::reconcile_avatar_attachments(
-                        world_model.objects(),self_avatar_local_id,
+                        world_model.objects(),world::current_self_avatar_local_id(
+                            self_avatar_local_id,self_avatar_region_handle,
+                            self_avatar_region_generation,
+                            world_model.region().handle,
+                            world_model.region().generation),
                         low158_attachments);
                     avatar_proxy_update.back().attachments.insert(
                         selected.points.begin(),selected.points.end());
@@ -13438,7 +13485,11 @@ int Application::run(bool enable_developer_modules)
                             appearance_points.emplace(
                                 a.object_id,a.attachment_point);
                     const auto selected=world::reconcile_avatar_attachments(
-                        world_model.objects(),self_avatar_local_id,
+                        world_model.objects(),world::current_self_avatar_local_id(
+                            self_avatar_local_id,self_avatar_region_handle,
+                            self_avatar_region_generation,
+                            world_model.region().handle,
+                            world_model.region().generation),
                         appearance_points);
                     avatar_diagnostic.self_object_attachment_roots=
                         static_cast<std::uint32_t>(
@@ -13800,7 +13851,11 @@ int Application::run(bool enable_developer_modules)
                                     attachment.object_id,
                                     attachment.attachment_point);
                         const auto selected=world::reconcile_avatar_attachments(
-                            world_model.objects(),self_avatar_local_id,
+                            world_model.objects(),world::current_self_avatar_local_id(
+                            self_avatar_local_id,self_avatar_region_handle,
+                            self_avatar_region_generation,
+                            world_model.region().handle,
+                            world_model.region().generation),
                             appearance_points);
                         shell_view.avatar_object_attachment_roots=
                             static_cast<std::uint32_t>(

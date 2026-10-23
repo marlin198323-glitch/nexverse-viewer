@@ -568,3 +568,11 @@ No new interactive login or network requests.
 
 ## Alpha.865-874 - F3-Verbindungs-/Avatar-Pose nach Socket-Reconnect
 F3/Pose-Anzeige folgt bestehendem WorldModel und zeigt nach echtem IP-/Portwechsel ohne neue Simulator-Position keine falsche bestehende Eigendargestellung. Keine neuen Bedienelemente oder unrealistischen Erfolgs-Badges. Identischer Socket und unvollstaendiger Zwischenhandshake sollen keine unnoetigen visuellen Zuruecksetzungen verursachen.
+
+## Alpha.875-884: F3 attachments/movement and stale self root
+F3 self-avatar attachment counts and original Firestorm
+body attachments use only local IDs authenticated by the
+current region generation, avoiding phantom own attachments
+after reconnect. User-sent AgentUpdate remains speculative;
+High9 readback only confirms WASD after a valid current
+Self LocalID binding. No live E2E claimed.

@@ -11,8 +11,9 @@ class OwnObjectKill(unittest.TestCase):
   h=s[a:b]
   for token in (
       "protocol::decode_kill_object(packet.payload)",
-      "self_avatar_local_id==local_id",
-      "self_avatar_region_handle==world_model.region().handle",
+      "world::current_self_avatar_local_id(",
+      "self_avatar_region_generation",
+      "world_model.region().generation)==local_id",
       "world_model.withdraw_self_object_on_kill(",
       "self_avatar_local_id=0U;",
       "self_avatar_region_handle=0U;",
@@ -24,8 +25,9 @@ class OwnObjectKill(unittest.TestCase):
   s=rd("src/app/application.cpp")
   self.assertEqual(s.count("if(entry.local_id==0U||"),2)
   self.assertGreaterEqual(s.count("world::valid_simulator_avatar_pose("),3)
-  self.assertIn("if (self_avatar_local_id != 0U &&",s)
-  self.assertIn("update.local_id == self_avatar_local_id",s)
+  self.assertIn("if (update.local_id!=0U &&",s)
+  self.assertIn("world::current_self_avatar_local_id(",s)
+  self.assertIn("world_model.region().generation)==update.local_id",s)
   self.assertIn("protocol::msg_improved_terse_object_update,",s)
  def test_model_keeps_trusted_low158_but_revokes_provisional(self):
   m=rd("src/world/world_model.cpp")
@@ -71,14 +73,14 @@ class OwnObjectKill(unittest.TestCase):
   self.assertIn("r.self_object_kills=2U;",native)
   self.assertIn('text.find("self_object_localid_kills=2")',native)
  def test_version_next_and_status(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.874")
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.884")
   d=json.loads(rd("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.874")
-  self.assertEqual(d["next_batch"],"Alpha.875–884")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.884")
+  self.assertEqual(d["next_batch"],"Alpha.885–894")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for p in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",rd(p)[:350])
-   self.assertIn("Alpha.875–884",rd(p)[:1800])
+   self.assertIn("Alpha.885–894",rd(p)[:1800])
 if __name__=="__main__":unittest.main()

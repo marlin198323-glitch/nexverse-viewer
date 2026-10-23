@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.874",
+  "viewer_version": "0.2.0-alpha.884",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.875–884",
-  "assessment": "Alpha874 fixed a real same RegionHandle cross-simulator endpoint authority flaw. WorldModel apply_region previously kept avatars, old original Firestorm body pose, COF/Low158/Low382 wearable references, terrain and old object local IDs when the actual simulator IP or UDP port changed without a RegionHandle change. Explicit known socket change now resets region epoch/scene/appearance/pose/early-reply cache, matching real handoffs. Incomplete same-region handshake with empty IP or port zero preserves last known concrete simulator endpoint and cannot bypass the later socket-change detection. Native C++ regression proves same socket retains scene, new port or IP invalidates everything and fresh simulator pose and skin are needed; Python real source contract, Mint Linux-x64 GUI gate, Pi5 headless integration. Previous exact SHA Pi5 Alpha864 66e0211 Run 39977723209 success. OpenGenesisLINK main 08f95e7 unchanged since dedicated Voice #285. Real authenticated NexVerse AvatarAppearance/COF/Skin/Outfit GPU and simulator confirmed WASD/yaw live E2E still open, no deployment.",
+  "next_five_blocks": "Alpha.885–894",
+  "assessment": "Alpha884: Fixed real UUID-less ImprovedTerseObjectUpdate self LocalID identity bug after same RegionHandle simulator endpoint changes. WorldModel resets old state but application previously retained numeric self_avatar_local_id and handle without checking new generation; recycled High9 ID could falsely count as self motion and attachments. A new MPL world current_self_avatar_local_id check requires current WorldModel region generation AND handle, with initial generation zero legitimately supported. Real Full/Compressed bind this epoch; High9/KillObject/Firestorm body render and three F3/attachment readback paths now enforce it. Main UI epoch rollover preserves a fresh UDP-bound local ID while discarding only truly stale ones. Native exact same RegionHandle/socket change and generation-zero regressions plus Python app source tests, full Mint x64 GUI gate. Previous exact SHA Pi5 Alpha874 6eabf2f Run 39979417843 success. OpenGenesisLINK upstream main 08f95e7 unchanged. Authenticated NexVerse AvatarAppearance/COF/Skin/Outfit GPU frames and simulator-confirmed WASD/yaw live E2E still open, no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.875–884",
+  "next_batch": "Alpha.885–894",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "66e0211817709f6b6db96ec2fab25d68b7e679d6",
-    "run_id": 39977723209,
+    "tested_sha": "6eabf2f9d93dbb6188dcfdc60d739ef309bfd965",
+    "run_id": 39979417843,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native headless / Python; not live Grid"
+    "scope": "Pi5 ARM64 headless and Python, no authenticated Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "6eabf2f9d93dbb6188dcfdc60d739ef309bfd965",
-    "run_id": 39979417843,
-    "checked_status": "in_progress",
-    "note": "Pi5 exact feature SHA still in progress; no green claim yet."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "6eabf2f9d93dbb6188dcfdc60d739ef309bfd965",
     "run_id": 39979417903,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 178,
     "native_ctest_failed": 0,
-    "python_tests_passed": 420,
+    "python_tests_passed": 424,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "6eabf2f9d93dbb6188dcfdc60d739ef309bfd965",
-    "version": "0.2.0-alpha.874",
+    "version": "0.2.0-alpha.884",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Mint full CMake/vcpkg x64 Viewer built, 178/178 native CTests, 420/420 Python, same-handle simulator socket change resets avatar COF/wearables/pose/remote objects, incomplete handshake preserves known endpoint; Xvfb GUI, original Firestorm 133 joints/3 LLM body GPU meshes 7186 triangles, 128px X11 icon PASS. No authenticated live Grid.",
+    "note": "Mint x64 full CMake/vcpkg viewer, 178/178 native CTests, 424/424 Python, simulator-generation-bound self High9 LocalID with initial generation-zero valid, current Full/Compressed rebind, KillObject, render/F3 attachments; isolated GUI Firestorm 133 original skeleton joints, 3 original GPU LLM body meshes 7186 triangles, OGL X11 WM_CLASS 128 icon. No authenticated live Grid.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -144,6 +139,8 @@
     "early_self_readback_simulator_socket_lease": true,
     "f3_pending_low158_low382_visible": true,
     "known_simulator_socket_epoch_reset": true,
-    "same_handle_incomplete_handshake_preserves_last_socket": true
+    "same_handle_incomplete_handshake_preserves_last_socket": true,
+    "simulator_generation_bound_high9_self_localid": true,
+    "initial_worldmodel_generation_zero_valid": true
   }
 }
