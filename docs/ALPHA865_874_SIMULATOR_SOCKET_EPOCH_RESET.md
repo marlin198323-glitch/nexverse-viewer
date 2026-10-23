@@ -26,3 +26,15 @@ isolated Xvfb GUI with original Firestorm 133 bind joints,
 three original GPU LLM Bodymeshes/7186 triangles,
 X11 WM_CLASS+128x128 OGL system taskbar icon PASS.
 No authenticated NexVerse Live-Grid session or deployment.
+
+## Exakte Github SHA und CI
+Code SHA 6eabf2f9d93dbb6188dcfdc60d739ef309bfd965.
+Pi5 Source Check 39979417843 IN_PROGRESS zuletzt;
+nicht als Erfolg markieren ohne completed/success.
+Hosted Linux x64 39979417903 COMPLETED/FAILURE
+Job 120502450767 runner_id 0 / steps 0,
+kein Compiler gestartet. Letzter Pi5-SUCCESS
+Alpha.864 SHA 66e0211 Run 39977723209.
+Mint x64 Full-Gate gruen: 178 native, 420 Python,
+Xvfb GUI, Original-Firestorm Bodymeshes + OGL Icon.
+Kein Produktivdeploy.
