@@ -9704,7 +9704,13 @@ int Application::run(bool enable_developer_modules)
                                                 selection->upper.size())+
                                             " Lower="+std::to_string(
                                                 selection->lower.size())+
-                                            " (lokal, kein Bake-Beweis)";
+                                            " DriverMorph="+
+                                            std::to_string(
+                                                selection->driver_morph_links)+
+                                            (selection->skeletal_driver_pending
+                                              ?" (Bone-Driver offen, lokal, "
+                                               "kein Bake-Beweis)"
+                                              :" (lokal, kein Bake-Beweis)");
                                     }
                                     else
                                     {

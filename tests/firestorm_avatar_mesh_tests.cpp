@@ -247,6 +247,38 @@ int main()
     if(firestorm_cof_shape_morph_from_original_lad(
            *dir/"missing-character-assets",{{104,0.8f}}))
         return 49;
+    // Alpha1134 original Firestorm DRIVER-param chains. Visible
+    // shape IDs 2 and 35 aren't mesh morphs; original LAD maps them
+    // via driver_parameters -> IDs 20002/20035 in headMesh, while
+    // skeleton IDs 30002/30035 still require separate skeleton code.
+    const auto driven=firestorm_cof_shape_morph_from_original_lad(
+        *dir,{{2,1.1f},{35,1.4f}});
+    if(!driven||driven->head.size()!=2U||
+       !driven->upper.empty()||!driven->lower.empty()||
+       !driven->eyelashes.empty()||!driven->active()||
+       driven->driver_morph_links!=2U||
+       !driven->skeletal_driver_pending)
+        return 50;
+    const auto driver_head=morph_firestorm_avatar_mesh(
+        *head,driven->head);
+    if(!driver_head||driver_head->vertices==head->vertices)
+        return 51;
+    if(firestorm_cof_shape_morph_from_original_lad(
+            *dir,{{35,2.01f}})||
+       firestorm_cof_shape_morph_from_original_lad(
+            *dir,{{2,-0.81f}})||
+       firestorm_cof_shape_morph_from_original_lad(
+            *dir,{{35,std::numeric_limits<float>::quiet_NaN()}}))
+        return 52;
+    // A driver and explicit direct target cannot silently apply
+    // conflicting weights to the same original named LLM morph.
+    const auto compatible=firestorm_cof_shape_morph_from_original_lad(
+        *dir,{{2,0.9f},{20002,0.9f}});
+    if(!compatible||compatible->head.size()!=1U)
+        return 53;
+    std::cout<<"ORIGINAL_FIRESTORM_DRIVER_HEAD_MORPHS="
+             <<driven->head.size()
+             <<"; SKELETON_DRIVER_REMAINS_OPEN=1\n";
     std::cout<<"FIRESTORM_ORIGINAL_LAD_DYNAMIC_MORPHS_HEAD="
              <<dynamic->head.size()<<"; LASH="
              <<dynamic->eyelashes.size()<<"; UPPER="

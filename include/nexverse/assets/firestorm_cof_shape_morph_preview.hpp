@@ -17,6 +17,11 @@ struct FirestormCofMorphPreview
     std::vector<std::pair<std::string,float>> eyelashes;
     std::vector<std::pair<std::string,float>> upper;
     std::vector<std::pair<std::string,float>> lower;
+    // Counts admitted original Firestorm param_driver -> LLM Morph
+    // links ONLY. The separate param_skeleton/BoneDriver component
+    // is NOT represented by these GPU vertices.
+    std::size_t driver_morph_links=0U;
+    bool skeletal_driver_pending=false;
     [[nodiscard]] bool active() const noexcept
     {return !head.empty()||!eyelashes.empty()||
             !upper.empty()||!lower.empty();}

@@ -50,6 +50,6 @@ class PreActiveSsaAck(unittest.TestCase):
   self.assertIn("circuit_snapshot.region_handshake_pre_active_ack_preserved",a)
   self.assertIn("circuit_snapshot.self_appearance_ack_at",a)
  def test_release(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1124")
-  self.assertIn("Alpha.1125–1134",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1134")
+  self.assertIn("Alpha.1135–1144",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

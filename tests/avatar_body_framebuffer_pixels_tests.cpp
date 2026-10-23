@@ -186,6 +186,29 @@ int main()
         if(mixed_pixels<2U||
            renderer->diagnostics().self_avatar_shape_head_gl_draws!=1U)
             error=77;
+        // Alpha1134: actual original Firestorm visible Shape SLIDER
+        // 35 Big_Ears / 2 Nose_Big_Out -> explicit original LAD
+        // driver_parameters -> Head LLM sparse morph names. The
+        // skeleton component of the driver is NOT claimed complete.
+        const auto driven=assets::firestorm_cof_shape_morph_from_original_lad(
+            *dir,{{2,1.2f},{35,1.5f}});
+        const auto driver_mesh=driven?
+            assets::morph_firestorm_avatar_mesh(
+                *original,driven->head):std::nullopt;
+        if(!driver_mesh||
+           !renderer->set_avatar_body_mesh(6U,
+               {driver_mesh->vertices,driver_mesh->indices,{},
+                driver_mesh->skin_weights,*palette}))
+            error=89;
+        renderer->set_avatar_proxies({self});
+        const auto slider_pixels=draw();
+        const auto driver_delta=difference(
+            mixed_morphed,slider_pixels);
+        std::cout<<"ORIGINAL_FIRESTORM_SHAPE_DRIVER_HEAD_PIXELS="
+                 <<driver_delta<<"\n";
+        if(driver_delta<2U||
+           renderer->diagnostics().self_avatar_shape_head_gl_draws!=1U)
+            error=90;
         renderer->set_avatar_proxies({remote});
         const auto remote_after=draw();
         const auto remote_stale=difference(

@@ -25,6 +25,6 @@ class AvatarGpuBakeAdmission(unittest.TestCase):
   self.assertIn("proxies[2].rotation={nan",s)
   self.assertIn("invalid-head",s)
  def test_next_release_docs(self):
-  self.assertEqual(content("VERSION").strip(),"0.2.0-alpha.1124")
-  self.assertIn("Alpha.1125–1134",content("CHATUEBERGABE.md"))
+  self.assertEqual(content("VERSION").strip(),"0.2.0-alpha.1134")
+  self.assertIn("Alpha.1135–1144",content("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

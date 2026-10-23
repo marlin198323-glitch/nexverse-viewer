@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1124",
+  "viewer_version": "0.2.0-alpha.1134",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1125–1134",
-  "assessment": "Alpha1124: original locally installed Firestorm avatar_lad.xml dynamic wearable=shape param_morph catalogue with bounded 1 MiB XML, up to 512 original shape parameters, exact id/name/individual bounds and strong cross-check against ACTUAL original matching LLM sparse MorphTargets from head, eyelashes, upper and lower. No guessed Low158 unlabelled visual param byte positions, no HTTP or downloaded third-party assets. Accept up to 96 validated original morph targets per body mesh (CPU copies only), reject NaN/Infinity, out-of-range values, duplicate contradictory morph names, missing original files/XML and oversized inputs; matching duplicate original shared LLM IDs allowed only when equal values. Authenticated complete owner/epoch/COF-folder/COF-version LLWearable Shape type0 read now invokes dynamic source instead of hardcoded 8 parameters. Older public pure eight-ID helper retained for compatibility and standalone native tests, not used for live COF. Original Firestorm fixture detects original 3 Head, 4 Eyelash, 3 Upper and 3 Lower morphs with extra authentic IDs 634 Fat_Torso and 635 Fat_Legs beyond previous manual 8; same-current-frame self-only GPU Upper/Lower renders 1553 ADDITIONAL pixels against old 8-ID shape, remote original geometry zero changed pixels and zero ghost pixels after reset. UI now reports actual per-mesh locally-previewed morph counts, not fake full skin success. Full Firestorm Shape visual driver/joint/body composition and authenticated real-grid 3/3 RGB Skin/COF/Outfit and server-confirmed WASD/Yaw E2E still open. OpenGenesisLINK server latest main debdcce15d6175a3adc1cd81fd5bd0715317080b (World API auth role scopes change, not new avatar wire requirement). No production deployment.",
+  "next_five_blocks": "Alpha.1135–1144",
+  "assessment": "Alpha1134: original Firestorm avatar_lad.xml driver_parameters user-facing Shape sliders now traverse their original <driven id> targets in the installed character XML. Accept only identity-compatible driver target with the same finite original min/max and exactly matching param_morph/LLM sparse target name in Head/Upper/Lower/Lash original assets. Explicitly skip custom piecewise driver intervals and param_skeleton/Joint/Bone adjustments. Record real count of admitted DriverMorph targets and mark any original linked skeleton part as PENDING in the avatar/COF UI ('Bone-Driver offen', LOCAL only, no Bake proof). Invalid/out-of-range/NaN and contradictory repeated morph inputs fail closed, bounded 32 linked drivers per active Shape slider and original 512-wearable/1MiB-LAD and 96 per-original mesh limits. Verified from original installed Firestorm LAD that visible Shape slider id2 Nose_Big_Out drives original head LLM param_morph 20002 plus skeleton 30002, id35 Big_Ears drives 20035/30035. Native original Firestorm test accepts two original Head morph targets, detects two admitted driver mesh links and pending Skeleton; out-of-range slider weights rejected. Original GL Xvfb framebuffer shows 45811 DIFFERENT self Head pixels relative to preceding compound morph and exactly 0 remote avatar pixel changes, zero stale pixels after removing preview. Five extra Python realpath tests. Source-specific COF authorization checks and no server wire/asset fetching changes. Not full Firestorm skeletal driver composition, not live Grid Skin/Outfit/COF and server-confirmed WASD/Yaw. Upstream OpenGenesisLINK server main debdcce15d6175a3adc1cd81fd5bd0715317080b unchanged. No production deployment. Authenticated live Grid Skin/Outfit/COF and server-confirmed WASD/Yaw E2E still open.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1125–1134",
+  "next_batch": "Alpha.1135–1144",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
