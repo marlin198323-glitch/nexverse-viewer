@@ -26,6 +26,27 @@ int main()
        receipt.note_ack(113U,true))return 5;
     receipt.note_sent(0U);
     if(receipt.sent||receipt.note_ack(0U,true))return 6;
+    // New, DISTINCT RegionHandshake during initial connection:
+    // once SSA bit2 ACK is VERIFIED, a second negotiation cannot
+    // rewind the proof solely because AgentMovementComplete is pending.
+    receipt.reset();
+    receipt.note_sent(120U);
+    if(!receipt.note_ack(120U,true))return 12;
+    receipt.note_refresh(121U);
+    if(!receipt.acknowledged||receipt.sequence!=120U||
+       receipt.note_ack(121U,true))return 13;
+    // Before ANY receipt is ACKed, the newest sent reply remains
+    // the only valid pending ACK (not an untracked old sequence).
+    receipt.reset();
+    receipt.note_sent(130U);
+    receipt.note_refresh(131U);
+    if(receipt.sequence!=131U||receipt.acknowledged||
+       receipt.note_ack(130U,true)||
+       !receipt.note_ack(131U,true))return 14;
+    // A fresh login circuit always explicitly resets the old proof.
+    receipt.reset();
+    if(receipt.acknowledged||receipt.sent||
+       receipt.note_ack(120U,true))return 15;
 
     using nexverse::ui::describe_self_appearance_handshake;
     if(describe_self_appearance_handshake(true,true,false,false).find(

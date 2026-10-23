@@ -48,6 +48,7 @@ struct CircuitStatus
     // current simulator state or invalidate a real SSA reply ACK.
     std::uint32_t region_handshake_duplicates=0U;
     std::uint32_t region_handshake_refreshes=0U;
+    std::uint32_t region_handshake_pre_active_ack_preserved=0U;
     // Legacy Low381 read-only bootstrap (socket-send, not ACK/reply).
     // A packet ID is not a simulator handshake. These counters expose
     // real Low15 admission, not a confirmed rendered avatar.

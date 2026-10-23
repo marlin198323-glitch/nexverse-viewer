@@ -21,14 +21,16 @@ class SelfAppearanceHandshakeContract(unittest.TestCase):
         circuit=s("src/protocol/circuit.cpp")
         status=s("include/nexverse/protocol/circuit.hpp")
         ui=s("include/nexverse/ui/avatar_appearance_runtime.hpp")
-        self.assertIn("status.self_appearance_support_sent=false;",circuit)
+        self.assertIn("bool self_appearance_support_sent=false;",status)
+        self.assertIn("self_appearance_receipt_.reset();",circuit)
+        self.assertIn("self_appearance_receipt_.note_refresh(reply_sequence);",circuit)
         self.assertIn("self_appearance_receipt_.sent;",circuit)
         # Alpha.934: a repeated handshake cannot downgrade SSA proof or
         # regress an already active simulator circuit.
         self.assertIn("const bool was_active=status.state==CircuitState::active;",circuit)
         self.assertIn("region_handshake_replay_.already_replied(packet.header.sequence)",circuit)
         self.assertIn("if(!was_active)",circuit)
-        self.assertIn("self_appearance_receipt_.note_sent(reply_sequence)",circuit)
+        self.assertIn("self_appearance_receipt_.note_refresh(reply_sequence)",circuit)
         self.assertIn("bool self_appearance_support_sent=false;",status)
         self.assertIn("Self-Serverantwort fehlt",ui)
         self.assertIn("Self vom Simulator empfangen",ui)
@@ -57,13 +59,13 @@ class SelfAppearanceHandshakeContract(unittest.TestCase):
         self.assertIn("decoded_region_reply.packet->payload[32U]!=0U",test)
         self.assertIn("(ssa.packet->header.flags&packet_reliable)==0U",test)
     def test_handoff_and_percent(self):
-        self.assertEqual(s("VERSION").strip(),"0.2.0-alpha.944")
+        self.assertEqual(s("VERSION").strip(),"0.2.0-alpha.954")
         data=json.loads(s("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(data["viewer_version"],"0.2.0-alpha.944")
+        self.assertEqual(data["viewer_version"],"0.2.0-alpha.954")
         self.assertEqual(data["default_blocks_per_run"],10)
-        self.assertEqual(data["next_batch"],"Alpha.945–954")
+        self.assertEqual(data["next_batch"],"Alpha.955–964")
         for name in ("CHATUEBERGABE.md","AGENTS.md","info.md",
                      "projectplan.md","docs/PROJEKTFORTSCHRITT.md"):
             self.assertIn("39 %",s(name)[:2400])
-            self.assertIn("Alpha.945–954",s(name)[:2400])
+            self.assertIn("Alpha.955–964",s(name)[:2400])
 if __name__=="__main__": unittest.main()

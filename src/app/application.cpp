@@ -13837,6 +13837,11 @@ int Application::run(bool enable_developer_modules)
                         " | RegionHandshake Aktualisierung: "+
                         std::to_string(
                             circuit_snapshot.region_handshake_refreshes);
+                if(circuit_snapshot.region_handshake_pre_active_ack_preserved>0U)
+                    shell_view.avatar_handshake_status+=
+                        " | SSA ACK vor Inworld erhalten: "+
+                        std::to_string(
+                            circuit_snapshot.region_handshake_pre_active_ack_preserved);
                 shell_view.avatar_bake_stream_status=
                     (texture_recovered_j2c_transfers>0U
                         ?"J2C-Retry gerettet: "+

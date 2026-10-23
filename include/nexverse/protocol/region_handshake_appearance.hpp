@@ -48,6 +48,16 @@ struct SelfAppearanceHandshakeReceipt
             sent=true;
         }
     }
+    // Multiple distinct inbound RegionHandshake packets can precede
+    // AgentMovementComplete. Once any SSA-bit2 reply was demonstrably
+    // ACKed by the reliable tracker, another negotiated reply on THIS
+    // login circuit must not destroy the already-authenticated proof.
+    // Unacknowledged handshakes still rebind to the latest live request.
+    void note_refresh(std::uint32_t outgoing_sequence) noexcept
+    {
+        if(!acknowledged)
+            note_sent(outgoing_sequence);
+    }
     [[nodiscard]] bool note_ack(std::uint32_t ack_sequence,
                                 bool pending_tracker_matched) noexcept
     {

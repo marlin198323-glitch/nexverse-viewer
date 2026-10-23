@@ -890,3 +890,11 @@ Nur wenn beide Login-Koordinaten explizit fehlen, bleibt der Legacy-
 Login kompatibel und die anschließende WorldModel-Prüfung maßgeblich.
 Unterschiedliche tatsächliche Regionen dürfen kein Low381/WASD freigeben.
 OpenGenesisLINK Servermain ccfc644d bleibt wire-kompatibel.
+
+## Alpha.945–954 – SSA bit2 ACK auch vor Inworld stabil
+Mehrere echte RegionHandshake-Sequenzen vor AgentMovementComplete dürfen
+eine nachgewiesene zuverlässige SSA-bit2-ACK nicht zurücksetzen. Derselbe
+Circuit behält die bereits bestätigte Antwort und Zeit; noch unbestätigte
+Negotiations binden weiter nur die neueste zuverlässige Reply-Sequenz.
+Nur neuer Login/Circuit setzt SSA vollständig zurück. Servermain
+ccfc644d ohne neue AvatarAppearance-Wireänderungen.

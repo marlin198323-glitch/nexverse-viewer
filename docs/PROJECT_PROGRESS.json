@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.944",
+  "viewer_version": "0.2.0-alpha.954",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.945–954",
-  "assessment": "Alpha944: Fixed a real LLUDP CircuitConnection/WorldModel region-identity inconsistency after Alpha924 handshake admission. Previously a decoded AgentMovementComplete with correct authenticated AgentID/SessionID but a wrong, nonzero RegionHandle and finite position could mark CircuitState active and issue initial Low381 although WorldModel rejected that foreign region and never admitted the own avatar pose. Admission now enforces EXACT 64-bit LoginSession region_x<<32 | region_y handle, identical to application WorldModel login region. Legacy logins with both coords zero keep deferred WorldModel verification; legitimate x=0 or y=0 edge-of-world region with other nonzero coordinate still matched strictly. Separate bounded wrong-region Low15 CircuitStatus and F3 count added without leaking agent/session identifiers. Native real LLUDP encode/decode regression extended with mismatched handles, legacy both-zero and x-zero edge, Mint/Pi5 ARM64 headless, Python production-source contract and full Mint x64 GUI gate. Previous Pi5 Alpha934 exact feature SHA f9d8a75 Run 39992793374 completed success. OpenGenesisLINK main ccfc644d unchanged. Authenticated NexVerse AvatarAppearance/COF/Skin/Outfit GPU pixels and simulator-confirmed WASD/Yaw live E2E still open; no deploy.",
+  "next_five_blocks": "Alpha.955–964",
+  "assessment": "Alpha954: Fixed real SSA-bit2 reliable ACK authority loss on distinct RegionHandshake packets BEFORE CircuitState active (awaiting_region_ready). Alpha934 protected SSA ACK only after active, but pre-active distinct handshake reset the verified SelfAppearanceHandshakeReceipt and timestamp. New MPL SelfAppearanceHandshakeReceipt.note_refresh preserves already reliably ACKed SSA before and after active while unACKed negotiation rebinds only the latest sent sequence. New circuit still resets receipt. Circuit never promotes to active without authenticated movement complete. F3 bounded pre-active-preserved-SSA-ACK count stays separate from AvatarAppearance/COF/Skin-GPU or WASD. Native C++23 pre-active ACK, outstanding pending reply and login reset tests on Mint/Pi5 plus Python source contract and full Mint Linux x64 isolated GUI gate. Prior Pi5 Alpha944 exact SHA 7a97831 Run 39994940156 success. OpenGenesisLINK servermain ccfc644d unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin GPU pixels and simulator-confirmed WASD/yaw live E2E still open, no deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.945–954",
+  "next_batch": "Alpha.955–964",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "f9d8a7585bdd4ea71211b2159c17ae80c9a1279a",
-    "run_id": 39992793374,
+    "tested_sha": "7a97831bd9ef52f5a001cd174d70ffba006c0e30",
+    "run_id": 39994940156,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native/Python headless; no authenticated Grid"
+    "scope": "Pi5 ARM64 native/Python headless, not authenticated live Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "7a97831bd9ef52f5a001cd174d70ffba006c0e30",
-    "run_id": 39994940156,
-    "checked_status": "in_progress",
-    "note": "Pi5 green claim only after this exact code SHA completed/success."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "7a97831bd9ef52f5a001cd174d70ffba006c0e30",
     "run_id": 39994940090,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 183,
     "native_ctest_failed": 0,
-    "python_tests_passed": 452,
+    "python_tests_passed": 457,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "7a97831bd9ef52f5a001cd174d70ffba006c0e30",
-    "version": "0.2.0-alpha.944",
+    "version": "0.2.0-alpha.954",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Linux Mint full CMake/vcpkg x64 OGL Viewer 0.2.0-alpha.944; 183/183 native CTests including real LLUDP RegionHandle login binding, 452/452 Python integration tests; isolated Xvfb GUI original Firestorm 133 joints and 3 GPU .llm body meshes 7186 triangles, OGL X11 128px icon PASS. No live authenticated NexVerse session.",
+    "note": "Linux Mint full CMake/vcpkg Viewer 0.2.0-alpha.954, 183/183 native CTests, 457/457 Python; confirmed SSA bit2 ACK preserved before and after CircuitState active with outstanding reply sequencing and fresh login reset; isolated Xvfb GUI original Firestorm skeleton 133 bind joints/3 GPU LLM body meshes 7186 triangles, OGL X11 WM_CLASS/128px icon PASS. No authenticated live NexVerse Grid session.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -159,6 +154,8 @@
     "region_handshake_replay_ssa_preserves_active": true,
     "region_handshake_replay_16_entry_out_of_order": true,
     "current_login_64bit_region_handle_gate": true,
-    "wrong_region_f3_low15_counter": true
+    "wrong_region_f3_low15_counter": true,
+    "ssa_ack_preserved_before_inworld": true,
+    "ssa_unacked_current_sequence_only": true
   }
 }

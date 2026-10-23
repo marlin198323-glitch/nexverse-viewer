@@ -24,7 +24,9 @@ int main()
     if(!receipt.note_ack(77U,true)||!receipt.acknowledged)return 4;
     if(!replay.already_replied(9U)||!receipt.acknowledged)return 5;
     replay.note_replied(12U); // distinct updated region metadata
-    if(!replay.already_replied(12U)||!receipt.acknowledged)return 6;
+    receipt.note_refresh(79U); // even before full region activation
+    if(!replay.already_replied(12U)||!receipt.acknowledged||
+       receipt.sequence!=77U)return 6;
     if(!advertises_self_appearance(ogl_region_handshake_flags))return 7;
     replay.reset();
     if(replay.already_replied(9U)||replay.already_replied(12U))return 8;

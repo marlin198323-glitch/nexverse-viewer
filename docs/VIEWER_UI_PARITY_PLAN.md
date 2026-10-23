@@ -616,3 +616,9 @@ begrenzte Anzahl Low15 falsche Login-Region. Gleicher Agent und Session
 bei fremder Region lassen den Circuit nicht aktiv werden. Keine
 sensiblen UUID-/Session-/Simulatorendpunkte in der Diagnose und kein
 falscher Avatar/COF/GPU-/Bewegungserfolg.
+
+## Alpha.945–954 – F3 SSA-ACK vor Inworld
+F3 zeigt gezählt an, wie oft eine bestätigte SSA-ACK beim weiteren
+RegionHandshake vor dem Inworld-Eintritt erhalten wurde. Circuit-Welt
+und WASD bleiben bis gültiger AgentMovementComplete gesperrt.
+Keine Server-AvatarAppearance-/Skin-/GPU-Erfolgsbehauptung.

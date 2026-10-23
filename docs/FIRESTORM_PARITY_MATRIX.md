@@ -972,3 +972,9 @@ wenn seine volle RegionHandle-64bit-Kennung mit dem erwarteten Login
 Region-x/y-Paar übereinstimmt. Fehlende beide Loginregion-Koordinaten
 sind als alte Kompatibilität erlaubt; Welt- und Avatarpose benötigen
 weiterhin eine eigene echte WorldModel-Annahme. Keine Änderung am Wire.
+
+## Alpha.945–954 – Firestorm Original SSA Reply ACK Pre-Inworld
+Firestorm SSA-bit2 wird als Capability im RegionHandshakeReply erklärt.
+Die simulatorbestätigte ACK bleibt auch dann erhalten, wenn vor
+AgentMovementComplete eine weitere RegionHandshake-Antwort zuverlässig
+gesendet wird. Das ist KEIN empfangenes Low158 oder aktuelles COF/Outfit.

@@ -24,7 +24,8 @@ class RegionHandshakeReplayContract(unittest.TestCase):
   self.assertIn("const bool was_active=status.state==CircuitState::active",handler)
   self.assertIn("const bool prior_ack=status.self_appearance_support_acknowledged",handler)
   self.assertIn("if(!was_active)",handler)
-  self.assertIn("if(!prior_ack)",handler)
+  self.assertIn("self_appearance_receipt_.note_refresh(reply_sequence)",handler)
+  self.assertIn("if(prior_ack&&status.region_handshake_pre_active_ack_preserved<9999U)",handler)
   self.assertIn("status.state=CircuitState::awaiting_region_ready",handler)
   self.assertLess(handler.index("if(!was_active)"),handler.index("status.state=CircuitState::awaiting_region_ready"))
   self.assertNotIn("status.state=CircuitState::active",handler)
@@ -48,6 +49,6 @@ class RegionHandshakeReplayContract(unittest.TestCase):
   self.assertIn("nexverse-region-handshake-replay-tests",rd("CMakeLists.txt"))
   self.assertIn("region_handshake_replay_tests wearables",rd("scripts/pi5-headless-tests.sh"))
  def test_version_and_next_batch(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.944")
-  self.assertIn("Alpha.945–954",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.954")
+  self.assertIn("Alpha.955–964",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

@@ -10,7 +10,7 @@ class Alpha295AckProof(unittest.TestCase):
         h=source("include/nexverse/protocol/circuit.hpp")
         for needle in ("const bool tracker_matched=tracker.acknowledge(ack)",
             "self_appearance_receipt_.note_ack(ack,tracker_matched)",
-            "self_appearance_receipt_.note_sent(reply_sequence)",
+            "self_appearance_receipt_.note_refresh(reply_sequence)",
             "status.self_appearance_support_acknowledged=true;",
             "self_appearance_receipt_.reset();",
             "status.self_appearance_ack_at=std::chrono::steady_clock::now()"):
@@ -62,13 +62,13 @@ class Alpha295AckProof(unittest.TestCase):
 
     def test_release_and_handoff(self):
         data=json.loads(source("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.944")
-        self.assertEqual(data["viewer_version"],"0.2.0-alpha.944")
-        self.assertEqual(data["next_batch"],"Alpha.945–954")
+        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.954")
+        self.assertEqual(data["viewer_version"],"0.2.0-alpha.954")
+        self.assertEqual(data["next_batch"],"Alpha.955–964")
         self.assertEqual(data["default_blocks_per_run"],10)
         for name in ("CHATUEBERGABE.md","AGENTS.md","info.md",
                      "projectplan.md","docs/PROJEKTFORTSCHRITT.md"):
             text=source(name)[:2100]
             self.assertIn("39 %",text)
-            self.assertIn("Alpha.945–954",text)
+            self.assertIn("Alpha.955–964",text)
 if __name__=="__main__":unittest.main()

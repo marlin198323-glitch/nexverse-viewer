@@ -204,33 +204,28 @@ bool CircuitConnection::handle_packet(
                 return false;
             }
             region_handshake_replay_.note_replied(packet.header.sequence);
+            // On this SAME login circuit, a simulator may send more
+            // distinct region handshakes before movement completes.
+            // Even pre-active, keep the previously authenticated
+            // SSA-bit2 ACK and timestamp instead of losing the proof.
+            // Until an ACK arrives, the newest reliable reply sequence
+            // is still the only unacknowledged candidate for admission.
+            self_appearance_receipt_.note_refresh(reply_sequence);
+            status.self_appearance_support_sent=
+                self_appearance_receipt_.sent;
             if(!was_active)
             {
-                // During initial negotiation use the exact latest
-                // reliable sequence to establish real ACK provenance.
-                self_appearance_receipt_.reset();
-                status.self_appearance_support_sent=false;
-                status.self_appearance_support_acknowledged=false;
-                status.self_appearance_ack_at={};
-                self_appearance_receipt_.note_sent(reply_sequence);
-                status.self_appearance_support_sent=
-                    self_appearance_receipt_.sent;
+                if(prior_ack&&status.region_handshake_pre_active_ack_preserved<9999U)
+                    ++status.region_handshake_pre_active_ack_preserved;
                 status.state=CircuitState::awaiting_region_ready;
-                status.message=
-                    "RegionHandshakeReply sent: supports SELF AvatarAppearance "
-                    "(SSA bit2); simulator appearance reply not yet verified";
+                status.message=prior_ack
+                    ?"RegionHandshakeReply refreshed before movement; "
+                     "existing SSA ACK preserved"
+                    :"RegionHandshakeReply sent: supports SELF AvatarAppearance "
+                     "(SSA bit2); simulator appearance reply not yet verified";
             }
             else
             {
-                // New region metadata within same active circuit can
-                // legitimately be refreshed. The previous verified SSA
-                // ACK is still authoritative; do not make the active
-                // world disappear or restart Low381/WASD bootstrapping.
-                if(!prior_ack)
-                {
-                    self_appearance_receipt_.note_sent(reply_sequence);
-                    status.self_appearance_support_sent=true;
-                }
                 if(status.region_handshake_refreshes<9999U)
                     ++status.region_handshake_refreshes;
                 status.message=
