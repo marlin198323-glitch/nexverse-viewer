@@ -167,6 +167,69 @@ int main()
        endpoint.self_appearance()||endpoint.self_wearables())return 27;
     if(endpoint.early_self_readbacks_pending()[0]||
        endpoint.early_self_readbacks_pending()[1])return 28;
-    std::cout<<"OGL_FASTREZ_EARLY_LO158_LO382_SESSION_REGION_REPLAY_PASS\n";
+    // A live world on the original socket MUST lose its scene, outfit,
+    // self pose and local IDs on a reconnect to another simulator socket
+    // EVEN WHEN RegionHandle and agent/session stay identical.
+    WorldModel socket_region;
+    socket_region.apply_region(area(region,true));
+    socket_region.apply_agent({self,session,{},{},true});
+    if(!socket_region.apply_self_appearance(appearance(31))||
+       !socket_region.apply_self_wearables(worn(31))||
+       !socket_region.accept_simulator_self_pose(
+           self,session,region,{128.0f,128.0f,28.0f},{}))
+        return 29;
+    AvatarState remote_avatar;
+    remote_avatar.id="other-avatar";
+    socket_region.upsert_avatar(std::move(remote_avatar));
+    const auto stable_epoch=socket_region.region().generation;
+    // Identical known socket is a harmless RegionHandshake refresh.
+    socket_region.apply_region(area(region,true));
+    if(!socket_region.self_appearance()||
+       !socket_region.self_wearables()||
+       !socket_region.simulator_self_pose_confirmed()||
+       socket_region.avatars().empty()||
+       socket_region.region().generation!=stable_epoch)
+        return 30;
+    // An incomplete interim handshake must neither revoke a healthy
+    // circuit nor ERASE its socket identity; otherwise the next known
+    // endpoint change could evade the security/appearance reset.
+    auto incomplete=area(region,true);
+    incomplete.simulator_ip.clear();
+    incomplete.simulator_port=0U;
+    socket_region.apply_region(incomplete);
+    if(socket_region.region().generation!=stable_epoch||
+       socket_region.region().simulator_ip!="127.0.0.1"||
+       socket_region.region().simulator_port!=9000U||
+       !socket_region.self_avatar_renderable()||
+       !socket_region.self_appearance())return 35;
+    // A genuinely different known socket MUST revoke all old scene data.
+    auto switched=area(region,true);
+    switched.simulator_port=9001U;
+    socket_region.apply_region(switched);
+    if(socket_region.region().generation==stable_epoch||
+       socket_region.self_appearance()||
+       socket_region.self_wearables()||
+       socket_region.simulator_self_pose_confirmed()||
+       socket_region.self_avatar_renderable()||
+       !socket_region.avatars().empty())
+        return 31;
+    // Never silently revive old COF / pose after a socket switch.
+    socket_region.apply_agent({self,session,{},{},true});
+    if(socket_region.self_appearance()||
+       socket_region.self_avatar_renderable())return 32;
+    if(!socket_region.apply_self_appearance(appearance(32))||
+       !socket_region.accept_simulator_self_pose(
+           self,session,region,{127.0f,126.0f,33.0f},{})||
+       !socket_region.self_avatar_renderable())
+        return 33;
+    // IP-only change with an unchanged UDP port must be equally fatal
+    // for old simulator state, including local prim references.
+    const auto changed_epoch=socket_region.region().generation;
+    switched.simulator_ip="127.0.0.2";
+    socket_region.apply_region(switched);
+    if(socket_region.region().generation==changed_epoch||
+       socket_region.self_avatar_renderable()||
+       socket_region.self_appearance())return 34;
+    std::cout<<"OGL_FASTREZ_EARLY_LO158_LO382_SESSION_REGION_REPLAY_PASS\\n";
     return 0;
 }

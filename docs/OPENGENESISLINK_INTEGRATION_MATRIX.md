@@ -826,3 +826,6 @@ simulator IP+UDP port in addition to session, agent, region, generation.
 Same region handle after switching socket cannot inherit old early
 wearables/skin. OpenGenesisLINK server main 08f95e7 #285
 WebRTC Voice deploy: no new Low158/Low382 wire contract.
+
+## Alpha.865-874 - Simulator-Socketwechsel ohne Regionshandle-Wechsel
+Nach einem Reconnect kann ein neuer OpenSim-Simulator denselben RegionHandle nutzen, aber eine andere IP oder einen neuen UDP-Port haben. WorldModel behandelt bekannte Endpoint-Aenderungen nun wie einen echten Region-Epoch-Reset, einschliesslich COF/Low158/Wearables, Mesh/LocalIDs, Terrain und bestaetigter Avatar-Pose. Unvollstaendige IP/Port-Interims-RegionHandshake-Nachrichten duerfen den bekannten Socket nicht leeren.

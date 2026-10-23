@@ -65,9 +65,35 @@ void WorldModel::apply_region(const RegionUpdate& update)
     // readiness, however, invalidates ALL regional prims and avatars;
     // clearing only our self appearance left ghost meshes, attachments,
     // old terrain and cached particles visible after the disconnect.
+    // A simulator restart or reconnect can reuse the same RegionHandle
+    // while moving the UDP circuit to a different IP/port. RegionHandle
+    // equality alone cannot authorize retaining old local IDs, body pose,
+    // baked outfit or prim geometry. Treat an actual known socket change
+    // as a region-epoch transition, but not incomplete handshakes where
+    // the socket is still unknown.
+    // Some intermediate RegionHandshake/AgentMovementComplete updates
+    // do not include both IP and port. While refreshing the SAME region,
+    // preserve the last concrete circuit socket: otherwise a blank
+    // handshake could erase the identity and let a later different
+    // real socket inherit the previous authenticated avatar/scene.
+    const bool same_handle=region_.handle!=0U&&
+        region_.handle==update.handle;
+    const std::string effective_ip=
+        same_handle&&update.simulator_ip.empty()
+        ?region_.simulator_ip:update.simulator_ip;
+    const std::uint16_t effective_port=
+        same_handle&&update.simulator_port==0U
+        ?region_.simulator_port:update.simulator_port;
+    const bool simulator_socket_changed=
+        same_handle &&
+        !region_.simulator_ip.empty() && !effective_ip.empty() &&
+        region_.simulator_port!=0U && effective_port!=0U &&
+        (region_.simulator_ip!=effective_ip ||
+         region_.simulator_port!=effective_port);
     const bool leave_region =
         (region_.handle!=0U && region_.handle!=update.handle) ||
-        (region_.connected && !update.connected);
+        (region_.connected && !update.connected) ||
+        simulator_socket_changed;
     if(leave_region)
     {
         avatars_.clear();
@@ -104,8 +130,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
     region_.handle = update.handle;
     region_.name = update.name;
     region_.agent_position = update.agent_position;
-    region_.simulator_ip = update.simulator_ip;
-    region_.simulator_port = update.simulator_port;
+    region_.simulator_ip = effective_ip;
+    region_.simulator_port = effective_port;
     region_.seed_capability = update.seed_capability;
     region_.region_id = update.region_id;
     region_.region_flags = update.region_flags;

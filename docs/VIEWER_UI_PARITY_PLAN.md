@@ -565,3 +565,6 @@ Low382 gepuffert (warte Circuit) from locked WorldModel.
 Pending delivery is separate from authenticated avatar
 appearance, COF, GPU resident skin or original body GL draws.
 No new interactive login or network requests.
+
+## Alpha.865-874 - F3-Verbindungs-/Avatar-Pose nach Socket-Reconnect
+F3/Pose-Anzeige folgt bestehendem WorldModel und zeigt nach echtem IP-/Portwechsel ohne neue Simulator-Position keine falsche bestehende Eigendargestellung. Keine neuen Bedienelemente oder unrealistischen Erfolgs-Badges. Identischer Socket und unvollstaendiger Zwischenhandshake sollen keine unnoetigen visuellen Zuruecksetzungen verursachen.

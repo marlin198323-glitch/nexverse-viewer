@@ -30,6 +30,6 @@ class F9CofConsistency(unittest.TestCase):
             "avatar_cof_version_for_display(appearance)!=0U"):
    self.assertIn(x,s)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.864")
-  self.assertIn("Alpha.865–874",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.874")
+  self.assertIn("Alpha.875–884",read("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

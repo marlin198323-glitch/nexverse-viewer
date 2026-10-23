@@ -921,3 +921,6 @@ version, even where COF comparison is unavailable on legacy
 OpenSim packets. Modern and legacy status are not invented.
 Low382 U32 serial ordering remains authoritative for wearable
 readback. Endpoint IP/port binds both buffered messages.
+
+## Alpha.865-874 - Kein Firestorm-Koerper aus alter Simulatorinstanz
+Wird ein gleicher RegionHandle von einem anderen konkreten Simulator-IP/Port bedient, verlieren alte LLUDP-LocalIDs, Avatar-Skin/Outfit-Bakes, Terrain- und Objektmeshes ihre Autoritaet. Original-LLM-Body erst nach neuer echter Simulatorposition darstellen. Bei identischem Socket ein normales Handshake/Statusrefresh ohne Verlust.

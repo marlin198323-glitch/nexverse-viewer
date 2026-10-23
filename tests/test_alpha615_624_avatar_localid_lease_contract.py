@@ -66,14 +66,14 @@ class LocalAvatarLease(unittest.TestCase):
   self.assertIn("view.remote_avatar_local_id_rebinds=3U;",
                 read("tests/viewer_shell_gl_tests.cpp"))
  def test_version_and_next_batch(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.864")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.874")
   progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(progress["viewer_version"],"0.2.0-alpha.864")
-  self.assertEqual(progress["next_batch"],"Alpha.865–874")
+  self.assertEqual(progress["viewer_version"],"0.2.0-alpha.874")
+  self.assertEqual(progress["next_batch"],"Alpha.875–884")
   self.assertEqual(progress["default_blocks_per_run"],10)
   self.assertIn("still open",progress["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
              "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",read(fn)[:350])
-   self.assertIn("Alpha.865–874",read(fn)[:1900])
+   self.assertIn("Alpha.875–884",read(fn)[:1900])
 if __name__=="__main__":unittest.main()
