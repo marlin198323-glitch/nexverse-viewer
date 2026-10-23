@@ -27,3 +27,13 @@ same-simulator-handle/new-port und High9 LocalID-Generationstest,
 Original Firestorm 133 Skeleton Joints/drei GPU-LLM-Bodymeshes
 7186 Dreiecke und X11 WM_CLASS/128px OGL Taskbar-Icon PASS.
 Kein Live-NexVerse-Login, kein Deploy.
+
+## Exakte GitHub-Code-SHA und getrennte CI-Ergebnisse
+Code SHA 7e43a2aca847525fa0a4a9cdaaec49db6e0283d7.
+Pi5 Source Check Run 39982171338 IN_PROGRESS beim Abruf.
+Hosted Linux-x64 Run 39982171352 COMPLETED/FAILURE,
+Job 120511984008, runner_id 0, null ausgeführte Schritte:
+kein gestarteter Compiler. Letzter Pi5-Erfolg Alpha.874
+SHA 6eabf2f Run 39979417843. Separat lokaler Mint-x64-Gate
+Exit 0: 178 native CTests, 424 Python, Xvfb GUI und OGL Icon.
+Live-Avatar E2E weiterhin offen.
