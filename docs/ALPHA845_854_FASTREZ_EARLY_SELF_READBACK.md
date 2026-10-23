@@ -97,7 +97,7 @@ Kein Live-Login oder Produktivdeploy.
 ## Exakter Code-Commit / CI-Läufe nach GitHub-Push
 Code-SHA 584ea1519dd176fb311597673d6fe2f8f9eb71fc.
 Pi5 Source Check Run 39975553846 IN_PROGRESS;
-Host Linux-x64 Run 39975554311 QUEUED, beide noch
+Hosted Linux-x64 Run 39975554311 FAILED vor Runnerstart (Job 120489071717, runner_id=0, steps=0); Pi5 weiterhin
 kein positives Endergebnis. Bisheriger exakt
 verifizierter Pi5 SUCCESS: Alpha.844 Feature-SHA
 712dbe9 Run 39840873191. Separat voller lokaler
