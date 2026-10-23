@@ -622,3 +622,10 @@ F3 zeigt gezählt an, wie oft eine bestätigte SSA-ACK beim weiteren
 RegionHandshake vor dem Inworld-Eintritt erhalten wurde. Circuit-Welt
 und WASD bleiben bis gültiger AgentMovementComplete gesperrt.
 Keine Server-AvatarAppearance-/Skin-/GPU-Erfolgsbehauptung.
+
+## Alpha.955–964 – F3 benennt alte provisorische Bakes beim Outfitwechsel
+F3 zeigt COF-Wechsel: alte Objekt-Bakes verworfen N nur bei
+nachgewiesener angekommener neuer Version und zurückgenommenen
+alten provisorischen Body-TE-Daten. Der Zähler ist getrennt
+von serverseitig gelieferten neuen Low158-/GetTexture-/GPU-Pixeln.
+Keine behauptete gerenderte Haut bei reinem Revisionswechsel.

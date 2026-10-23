@@ -34,6 +34,7 @@ void WorldModel::reset()
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
+    self_object_bake_outfit_invalidations_=0U;
     self_object_kills_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
@@ -123,6 +124,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         self_wearables_.reset();
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
+    self_object_bake_outfit_invalidations_=0U;
         self_object_kills_=0U;
         self_animations_.reset();
         pending_avatar_animations_.clear();
@@ -173,6 +175,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_wearables_.reset();
     self_object_bakes_.reset();
     self_object_bake_withdrawals_=0U;
+    self_object_bake_outfit_invalidations_=0U;
     self_object_kills_=0U;
     self_animations_.reset();
     pending_avatar_animations_.clear();
@@ -217,6 +220,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         }
         self_object_bakes_.reset();
         self_object_bake_withdrawals_=0U;
+    self_object_bake_outfit_invalidations_=0U;
         self_object_kills_=0U;
         self_appearance_.reset();
     early_self_appearance_.reset();
@@ -375,6 +379,26 @@ bool WorldModel::apply_self_appearance(
                 appearance,agent_.agent_id,region_.connected)) ||
         !protocol::valid_self_appearance_texture_entry(appearance.texture_entry))
         return false;
+    // Genuine modern COF revision changes identify a different outfit.
+    // The earlier self ObjectUpdate TE belongs to the old outfit and
+    // cannot safely fill missing Head/Upper/Lower slots in NEW Low158.
+    // Do not clear on the first Low158, unversioned legacy messages,
+    // repeated same revision or packets rejected by the rollback gate.
+    const auto previous_outfit=self_appearance_
+        ?protocol::latest_nonzero_avatar_cof(*self_appearance_)
+        :std::optional<protocol::AvatarAppearanceData>{};
+    const auto incoming_outfit=
+        protocol::latest_nonzero_avatar_cof(appearance);
+    // A legacy count=0 Low158 may have arrived after an authoritative
+    // modern outfit. Preserve the last accepted meaningful COF via the
+    // existing watermark, otherwise a subsequent new modern outfit
+    // could reuse object bakes from a much older wardrobe.
+    const bool prior_outfit_known=previous_outfit.has_value()||
+        self_cof_version_highwater_!=0U;
+    const auto prior_outfit_version=previous_outfit
+        ?previous_outfit->cof_version:self_cof_version_highwater_;
+    const auto prior_outfit_format=previous_outfit
+        ?previous_outfit->appearance_version:self_cof_format_highwater_;
     // Modern Firestorm Low158 can carry an ordered COF version.
     // Out-of-order UDP retransmission of a PREVIOUS outfit must not
     // restore obsolete body/skin. Real OpenGenesisLINK sends the legacy
@@ -413,6 +437,17 @@ bool WorldModel::apply_self_appearance(
                 self_cof_by_format_highwater_[incoming.appearance_version];
             per_format=std::max(per_format,incoming.cof_version);
             }
+        }
+    }
+    if(prior_outfit_known&&incoming_outfit&&
+       (prior_outfit_format!=incoming_outfit->appearance_version||
+        prior_outfit_version!=incoming_outfit->cof_version))
+    {
+        if(self_object_bakes_)
+        {
+            self_object_bakes_.reset();
+            if(self_object_bake_outfit_invalidations_<UINT32_MAX)
+                ++self_object_bake_outfit_invalidations_;
         }
     }
     self_appearance_ = std::move(appearance);
@@ -494,6 +529,11 @@ WorldModel::self_object_bakes() const noexcept
 std::uint32_t WorldModel::self_object_bake_withdrawals() const noexcept
 {
     return self_object_bake_withdrawals_;
+}
+std::uint32_t WorldModel::self_object_bake_outfit_invalidations()
+    const noexcept
+{
+    return self_object_bake_outfit_invalidations_;
 }
 bool WorldModel::withdraw_self_object_on_kill(
     std::string_view avatar_id,std::uint64_t region_handle,

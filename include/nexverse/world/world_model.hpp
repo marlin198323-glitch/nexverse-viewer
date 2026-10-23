@@ -306,6 +306,10 @@ public:
     // Valid current simulator self TE withdrawals, not HTTP failures or
     // placeholder uploads. Per authenticated agent/session/region epoch.
     [[nodiscard]] std::uint32_t self_object_bake_withdrawals() const noexcept;
+    // A newer authentic Low158 COF outfit invalidated provisional
+    // ObjectUpdate TE references from the previous outfit revision.
+    [[nodiscard]] std::uint32_t self_object_bake_outfit_invalidations()
+        const noexcept;
     // Current simulator explicitly withdrew the own avatar LocalID.
     // Invalidate ONLY ObjectUpdate provisional bakes; genuine Low158
     // remains authoritative until a new simulator appearance arrives.
@@ -433,6 +437,7 @@ private:
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
     std::uint32_t self_object_bake_withdrawals_=0U;
+    std::uint32_t self_object_bake_outfit_invalidations_=0U;
     std::uint32_t self_object_kills_=0U;
     std::optional<protocol::AvatarAnimationMessage> self_animations_;
     // Animation may precede ObjectUpdate. Bounded pending messages do not

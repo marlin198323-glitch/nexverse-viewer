@@ -216,5 +216,56 @@ int main()
     wrong.apply_agent({"another",session_id,{},{},true});
     if(wrong.observe_self_object_bakes(avatar_id,region,51U,head_te))
         return 17;
+    // Alpha.955–964: a REAL newer modern COF outfit must retire the
+    // *previous* outfit's provisional ObjectUpdate TE, even when new
+    // Low158 only contains a partial/placeholder baked body.
+    auto outfit=model();
+    if(!outfit.observe_self_object_bakes(avatar_id,region,60U,head_te))
+        return 40;
+    protocol::AvatarAppearanceMessage first_cof=authoritative;
+    first_cof.appearance_data={{1U,100U,0U}};
+    if(!outfit.apply_self_appearance(first_cof)||
+       outfit.self_render_bakes()!=fallback||
+       outfit.self_object_bake_outfit_invalidations()!=0U)return 41;
+    auto same_revision=first_cof;
+    same_revision.texture_entry=tex(true,true);
+    if(!outfit.apply_self_appearance(same_revision)||
+       outfit.self_render_bakes()!=fallback)return 42;
+    auto newer_cof=first_cof;
+    newer_cof.appearance_data={{1U,101U,0U}};
+    if(!outfit.apply_self_appearance(newer_cof)||
+       outfit.self_object_bakes()||
+       outfit.self_render_bakes()!=std::array<std::string,3U>{}||
+       outfit.self_object_bake_outfit_invalidations()!=1U)return 43;
+    // A delayed prior revision cannot erase the newly accepted
+    // outfit or count a second invalidation.
+    if(outfit.apply_self_appearance(first_cof)||
+       outfit.self_object_bake_outfit_invalidations()!=1U)return 44;
+    // Fresh verified ObjectUpdate TE can provision new bakes again.
+    if(!outfit.observe_self_object_bakes(avatar_id,region,61U,head_te)||
+       outfit.self_render_bakes()!=fallback)return 45;
+    // Legacy unversioned Low158 isn't a distinct COF outfit and must
+    // keep genuine provisional fallback for Firestorm/OpenSim.
+    if(!outfit.apply_self_appearance(authoritative)||
+       outfit.self_render_bakes()!=fallback||
+       outfit.self_object_bake_outfit_invalidations()!=1U)return 46;
+    // A different modern appearance format is a different proven
+    // outfit source; never retain the older format's fallback.
+    newer_cof.appearance_data={{2U,1U,0U}};
+    if(!outfit.apply_self_appearance(newer_cof)||
+       outfit.self_render_bakes()!=std::array<std::string,3U>{}||
+       outfit.self_object_bake_outfit_invalidations()!=2U)return 47;
+    if(!outfit.observe_self_object_bakes(avatar_id,region,62U,head_te))
+        return 48;
+    // Unchanged COF does not trigger another retirement.
+    if(!outfit.apply_self_appearance(newer_cof)||
+       outfit.self_render_bakes()!=fallback||
+       outfit.self_object_bake_outfit_invalidations()!=2U)return 49;
+    // A different authenticated session cannot inherit the counter
+    // or provisional TE from a previous resident.
+    outfit.apply_agent({avatar_id,"cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee",
+                        {},{},true});
+    if(outfit.self_object_bake_outfit_invalidations()!=0U||
+       outfit.self_object_bakes()||outfit.self_appearance())return 50;
     std::cout<<"OGL_SELF_OBJECT_BAKE_CANDIDATE_AND_LO158_PRECEDENCE_PASS\n";
 }

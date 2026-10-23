@@ -978,3 +978,10 @@ Firestorm SSA-bit2 wird als Capability im RegionHandshakeReply erklärt.
 Die simulatorbestätigte ACK bleibt auch dann erhalten, wenn vor
 AgentMovementComplete eine weitere RegionHandshake-Antwort zuverlässig
 gesendet wird. Das ist KEIN empfangenes Low158 oder aktuelles COF/Outfit.
+
+## Alpha.955–964 – Firestorm Outfit-Bake-Quelle an COF-Version binden
+Beim authentifizierten modernen Low158-Outfitwechsel wird der alte
+provisorische Self ObjectUpdate TE-Skin verworfen, bevor seine Slots
+mit dem neuen Low158-Body vermischt werden könnten. Erstlogin- und
+Legacy-Bake-Fallback bleibt, aktuelle spätere ObjectUpdate-TE darf
+wieder fehlende Slots ergänzen. Keine Low158-/COF-Mutation vom Viewer.

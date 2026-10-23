@@ -898,3 +898,12 @@ Circuit behält die bereits bestätigte Antwort und Zeit; noch unbestätigte
 Negotiations binden weiter nur die neueste zuverlässige Reply-Sequenz.
 Nur neuer Login/Circuit setzt SSA vollständig zurück. Servermain
 ccfc644d ohne neue AvatarAppearance-Wireänderungen.
+
+## Alpha.955–964 – moderner Low158 COF wechselt Outfit-/Baked-Texture-Epoch
+OpenSim/Firestorm Low158-Body-TE bleibt autoritativ. Echte aktuelle
+ObjectUpdate-TE darf fehlende Body-Bakes vorläufig ergänzen, aber nach
+einem wirklich neueren, akzeptierten COF-/AppearanceVersion-Outfit
+dürfen vorherige provisorische TE-IDs nicht mehr in neue Head/Upper/Lower
+gemischt werden. Bereits verifizierte Low158 Bakes bleiben erhalten;
+Legacy count=0 und gleiche/rejected Version führen keinen Reset aus.
+OpenGenesisLINK Servermain ccfc644d Wire unverändert.

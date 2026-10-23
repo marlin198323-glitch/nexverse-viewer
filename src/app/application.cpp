@@ -13971,6 +13971,12 @@ int Application::run(bool enable_developer_modules)
                         if(removed>0U)
                             shell_view.avatar_bake_stream_status+=
                                 " | Self-Bake reset:"+std::to_string(removed);
+                        const auto changed_outfits=
+                            world_model.self_object_bake_outfit_invalidations();
+                        if(changed_outfits>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF-Wechsel: alte Objekt-Bakes verworfen:"+
+                                std::to_string(changed_outfits);
                         const auto killed=world_model.self_object_kills();
                         if(killed>0U)
                             shell_view.avatar_bake_stream_status+=
