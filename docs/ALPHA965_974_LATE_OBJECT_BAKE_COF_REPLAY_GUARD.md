@@ -28,3 +28,15 @@ Xvfb-GUI mit Original Firestorm Avatar-Bind-Skeleton
 OGL X11 WM_CLASS und Taskleisten-Systemicon 128x128 PASS.
 Kein authentifizierter Live-NexVerse-Avatar/COF/Skin/WASD,
 kein Produktivdeploy.
+
+## Exakte Code-SHA / GitHub CI
+Feature SHA 4798bff70bb86abed265229b6f31c255ab00d355.
+Pi5 ARM64 Source Check Run 40012744294 IN_PROGRESS beim
+letzten Abruf; kein Pi5-Gruen vor completed/success.
+Hosted Linux-x64 Run 40012744160 COMPLETED/FAILURE,
+Job 120616981110 runner_id 0 steps 0, kein gestarteter Compiler.
+Letzter Pi5 SUCCESS Alpha.964 Code-SHA 7bf7308
+Run 40011135542. Lokaler Mint-x64-Gate EXIT 0:
+183 CTests, 467 Python, Firestorm Xvfb Original-
+GPU-Körpermeshes und OGL X11 Taskleisten-Icon.
+Kein Live-Grid-E2E und kein Produktivdeploy.
