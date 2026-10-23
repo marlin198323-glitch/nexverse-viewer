@@ -27,3 +27,14 @@ Joints, drei GPU Bodymeshes/7186 Dreiecke,
 OGL X11 WM_CLASS/Systemicon 128x128 PASS.
 Keine authentifizierte Live-Grid-Avatar-Session,
 keine automatische COF-/Skin-/Outfit-Mutation.
+
+## Exakte GitHub SHA und CI-Ergebnisse
+Code Feature-SHA 55b719e011a9321cf7a24c60e52cfc8053029c1f.
+Pi5 Source Check Run 39989404270 IN_PROGRESS beim letzten Abruf;
+kein Erfolg ohne Abschluss auf genau dieser Code-SHA.
+Hosted Linux-x64 Run 39989404307 COMPLETED/FAILURE
+Job 120536947166 runner_id=0, steps=0, kein Compiler.
+Letzter Pi5-Erfolg Alpha.904 Code 90bde59 Run 39986215063.
+Lokal Mint Full Gate EXIT 0: 181 CTests, 437 Python,
+Xvfb Firestorm-LLM GUI und OGL Taskbar-Icon.
+Kein Live-NexVerse-Login oder Deployment.
