@@ -548,3 +548,13 @@ Ein grüner Circuit kann weiterhin Weltstreaming ermöglichen,
 aber ohne AgentMovementComplete/Self-ObjectUpdate
 bleibt der Status AgentPosition fehlt sichtbar.
 Nach Region-/Sessionwechsel wird erneut authentifiziert.
+
+
+## Alpha.845–854 – F3 früher Avatar/Outfit-Readback
+F3 Avatarstatus unterscheidet sofort erhaltene
+Low158/Low382-Paketzähler von tatsächlich im WorldModel
+akzeptierter Self-Appearance. Falls Serverpakete vor
+UI-CircuitState::active eintreffen, erfolgt die gültige
+Übernahme nach Freigabe und erst dann erscheinen
+COF-/Outfit-Status und aktualisierte F3-Accepted-Zähler.
+Keine Anzeige von Skin-GPU-Success vor echtem GL-Readback.

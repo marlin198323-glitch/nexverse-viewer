@@ -1107,6 +1107,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-avatar-pose-authority-tests
         COMMAND nexverse-self-avatar-pose-authority-tests)
 
+    add_executable(nexverse-early-avatar-readback-tests
+        tests/early_avatar_readback_tests.cpp)
+    target_link_libraries(nexverse-early-avatar-readback-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-early-avatar-readback-tests)
+    add_test(NAME nexverse-early-avatar-readback-tests
+        COMMAND nexverse-early-avatar-readback-tests)
+
     add_executable(nexverse-world-model-tests tests/world_model_tests.cpp)
     target_link_libraries(nexverse-world-model-tests PRIVATE NexVerse::World)
     nexverse_enable_warnings(nexverse-world-model-tests)

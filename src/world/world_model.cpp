@@ -24,6 +24,8 @@ void WorldModel::reset()
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
+    early_self_appearance_.reset();
+    early_self_wearables_.reset();
     self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
@@ -85,6 +87,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
         if(region_.handle!=0U)
             ++region_.generation; // direct transitions invalidate lease
         self_appearance_.reset();
+    early_self_appearance_.reset();
+    early_self_wearables_.reset();
         self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
@@ -133,6 +137,8 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     parcel_ = {};
     environment_ = {};
     self_appearance_.reset();
+    early_self_appearance_.reset();
+    early_self_wearables_.reset();
     self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
@@ -187,6 +193,8 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         self_object_bake_withdrawals_=0U;
         self_object_kills_=0U;
         self_appearance_.reset();
+    early_self_appearance_.reset();
+    early_self_wearables_.reset();
         self_pose_confirmed_=false;
     stale_self_cof_appearances_=0U;
     self_cof_version_highwater_=0U;
@@ -225,6 +233,84 @@ bool WorldModel::accept_simulator_self_pose(
 void WorldModel::set_agent_profile(AgentProfileState profile)
 {
     agent_profile_ = std::move(profile);
+}
+
+bool WorldModel::stage_early_self_appearance(
+    protocol::AvatarAppearanceMessage appearance)
+{
+    if(region_.connected||region_.handle==0U||
+       agent_.agent_id.empty()||agent_.session_id.empty()||
+       !protocol::appearance_is_authoritative(
+           protocol::assess_self_appearance(
+               appearance,agent_.agent_id,true))||
+       !protocol::valid_self_appearance_texture_entry(
+           appearance.texture_entry))
+        return false;
+    // Ignore older retransmits with the same appearance format. A
+    // fast, valid reply must never regress the staged outfit before the
+    // main thread has confirmed circuit readiness.
+    if(early_self_appearance_)
+    {
+        const auto old=protocol::latest_nonzero_avatar_cof(
+            early_self_appearance_->packet);
+        const auto incoming=protocol::latest_nonzero_avatar_cof(appearance);
+        if(old&&(!incoming||
+                 (incoming->appearance_version==old->appearance_version&&
+                  incoming->cof_version<old->cof_version)))
+            return false;
+    }
+    early_self_appearance_=EarlySelfPacket<protocol::AvatarAppearanceMessage>{
+        std::move(appearance),
+        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation}};
+    return true;
+}
+
+bool WorldModel::stage_early_self_wearables(
+    protocol::AgentWearablesUpdateMessage update)
+{
+    if(region_.connected||region_.handle==0U||
+       agent_.agent_id.empty()||agent_.session_id.empty()||
+       update.agent_id!=agent_.agent_id||
+       update.session_id!=agent_.session_id)
+        return false;
+    if(early_self_wearables_&&
+       !protocol::wearables_serial_newer(
+           update.serial,early_self_wearables_->packet.serial))
+        return false;
+    early_self_wearables_=EarlySelfPacket<protocol::AgentWearablesUpdateMessage>{
+        std::move(update),
+        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation}};
+    return true;
+}
+
+WorldModel::EarlySelfReadbackResult
+WorldModel::flush_early_self_readbacks()
+{
+    EarlySelfReadbackResult result{};
+    if(!region_.connected||agent_.agent_id.empty()||
+       agent_.session_id.empty())return result;
+    const auto valid=[this](const EarlySelfSource& source)
+    {
+        return source.agent_id==agent_.agent_id&&
+            source.session_id==agent_.session_id&&
+            source.region_handle==region_.handle&&
+            source.region_generation==region_.generation;
+    };
+    if(early_self_appearance_)
+    {
+        auto staged=std::move(*early_self_appearance_);
+        early_self_appearance_.reset();
+        if(valid(staged.source))
+            result.appearance=apply_self_appearance(std::move(staged.packet));
+    }
+    if(early_self_wearables_)
+    {
+        auto staged=std::move(*early_self_wearables_);
+        early_self_wearables_.reset();
+        if(valid(staged.source))
+            result.wearables=apply_self_wearables(std::move(staged.packet));
+    }
+    return result;
 }
 
 bool WorldModel::apply_self_appearance(

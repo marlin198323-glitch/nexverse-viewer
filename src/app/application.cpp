@@ -5873,8 +5873,17 @@ int Application::run(bool enable_developer_modules)
             std::scoped_lock lock{world_mutex};
             if (!world_model.region().connected)
             {
-                avatar_appearance_ignored_region.fetch_add(
-                    1U,std::memory_order_relaxed);
+                // OpenGenesisLINK FastRez may deliver self Low158 before
+                // the UI thread notices CircuitState::active. Defer only
+                // a validated current-agent packet under the WorldModel
+                // session+region-generation lease; do NOT treat this as a
+                // confirmed COF, skin, or visible own avatar yet.
+                if(world_model.stage_early_self_appearance(*appearance))
+                    core::info("AvatarAppearance SELF buffered until current "
+                               "LLUDP circuit is ready; no skin/COF claim");
+                else
+                    avatar_appearance_ignored_region.fetch_add(
+                        1U,std::memory_order_relaxed);
                 return;
             }
 
@@ -5964,6 +5973,14 @@ int Application::run(bool enable_developer_modules)
                 packet.payload);
             if(!update)return;
             std::scoped_lock lock{world_mutex};
+            if(!world_model.region().connected)
+            {
+                // FastRez can return Low382 sooner than the main thread
+                // publishes circuit readiness. Securely stage read-only
+                // references rather than discard the only requested reply.
+                (void)world_model.stage_early_self_wearables(*update);
+                return;
+            }
             const bool initial=!world_model.self_wearables().has_value();
             if(!world_model.apply_self_wearables(*update))return;
             if(initial)
@@ -7997,6 +8014,26 @@ int Application::run(bool enable_developer_modules)
                     agent_snapshot.position,
                     agent_snapshot.rotation,
                     region_circuit_active});
+
+                // Readback can arrive between actual UDP receipt and
+                // next UI circuit-state publication. Only after both
+                // current region AND authenticated session are ready may
+                // the small staged Low158/Low382 snapshots affect outfit
+                // evidence. No network retries or appearance uploads.
+                const auto recovered=
+                    world_model.flush_early_self_readbacks();
+                if(recovered.appearance)
+                {
+                    self_appearance_serial.fetch_add(
+                        1U,std::memory_order_relaxed);
+                    avatar_appearance_self_accepted.fetch_add(
+                        1U,std::memory_order_relaxed);
+                    core::info("Early authenticated Low158 SELF released "
+                               "after circuit readiness; no GPU claim");
+                }
+                if(recovered.wearables)
+                    core::info("Early authenticated Low382 wearables "
+                               "released after circuit readiness; read only");
 
                 simulation_ready = world_model.scene_ready();
             }

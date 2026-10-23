@@ -262,6 +262,20 @@ public:
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(
         protocol::AvatarAppearanceMessage appearance);
+    // Simulator may transmit Low158/Low382 before the UI thread observes
+    // CircuitState::active. Keep ONE strictly validated readback per type,
+    // bound to the current authenticated agent/session/region generation.
+    // The packets are NOT authoritative until circuit readiness is true.
+    [[nodiscard]] bool stage_early_self_appearance(
+        protocol::AvatarAppearanceMessage appearance);
+    [[nodiscard]] bool stage_early_self_wearables(
+        protocol::AgentWearablesUpdateMessage update);
+    struct EarlySelfReadbackResult
+    {
+        bool appearance=false;
+        bool wearables=false;
+    };
+    [[nodiscard]] EarlySelfReadbackResult flush_early_self_readbacks();
     // Read-only legacy wearable references (no wear/set-appearance writes).
     [[nodiscard]] bool apply_self_wearables(
         protocol::AgentWearablesUpdateMessage update);
@@ -371,6 +385,22 @@ private:
     AgentState agent_;
     bool self_pose_confirmed_=false;
     AgentProfileState agent_profile_;
+    struct EarlySelfSource
+    {
+        std::string agent_id;
+        std::string session_id;
+        std::uint64_t region_handle=0U;
+        std::uint32_t region_generation=0U;
+    };
+    template<class Packet> struct EarlySelfPacket
+    {
+        Packet packet;
+        EarlySelfSource source;
+    };
+    std::optional<EarlySelfPacket<protocol::AvatarAppearanceMessage>>
+        early_self_appearance_;
+    std::optional<EarlySelfPacket<protocol::AgentWearablesUpdateMessage>>
+        early_self_wearables_;
     std::optional<protocol::AvatarAppearanceMessage> self_appearance_;
     std::uint32_t stale_self_cof_appearances_=0U;
     // Highest authenticated modern COF revision survives interleaved

@@ -32,9 +32,10 @@ class AuthenticatedSelfPose(unittest.TestCase):
                 "withdraw_self_object_on_kill(", "model.reset();"):
    self.assertIn(token,s)
   script=rd("scripts/pi5-headless-tests.sh")
-  self.assertIn("world_model_tests self_avatar_pose_authority_tests; do",script)
+  self.assertIn("world_model_tests self_avatar_pose_authority_tests",script)
+  self.assertIn("early_avatar_readback_tests; do",script)
   self.assertIn("nexverse-self-avatar-pose-authority-tests",rd("CMakeLists.txt"))
  def test_version_and_next(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.844")
-  self.assertIn("Alpha.845–854",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.854")
+  self.assertIn("Alpha.855–864",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

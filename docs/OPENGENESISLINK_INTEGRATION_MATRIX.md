@@ -804,3 +804,16 @@ Ein aktiver LLUDP-Circuit mit noch unbekannter Position
 darf keine Firestorm-Anatomie am Nullpunkt als verbundenen
 Avatar darstellen. Bei KillObject, Region/Logout und
 Circuitverlust wird die vorherige Bestätigung verworfen.
+
+
+## Alpha.845–854 – upstream #281 FastRez / Low158/Low382
+OpenGenesisLINK Servermain 8b3d80e gegenüber 7396897d
+9 Commits. FastRez WearablesRequestDelayMs=1000 (opt-in,
+Serverstandard 4000), initiale nahe Objekte innerhalb
+64m zuerst. Beide bestehenden LLUDP-Nachrichten Low158 und
+Low382 können vor der UI-Circuit-Statusspiegelung ankommen:
+ein strikt authentifiziertes Low158/Low382-Paket pro Typ
+wird bis zur echten Circuitfreigabe im WorldModel gehalten.
+Weder COF noch Skin wird allein durch den Empfang bestätigt.
+Andere Serverfeatures (OGL AssetService/mesh uploads) ändern
+nicht den Viewer-Wirevertrag; keine Migration ausführen.

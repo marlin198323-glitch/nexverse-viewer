@@ -903,3 +903,14 @@ Anmeldung und Region geliefert hat. Ohne Pose zeigt F3
 AgentPosition fehlt, während die eigentliche Terrain-
 und Weltdarstellung weiterlaufen darf. Kein erfundener
 Avatar-Live-/Outfit-/Skin-Erfolg.
+
+
+## Alpha.845–854 – FastRez OpenSim/Firestorm Login-Ereignisreihenfolge
+Firestorm Low158 AvatarAppearance und Low382
+AgentWearablesUpdate dürfen unmittelbar nach Login/Handshake
+vor der Hauptthread-Veröffentlichung von CircuitState::active
+eintreffen. Echtes, valides Self-Readback wird nicht
+weggeworfen: nur Agent/Session/Region/Generation-gebunden
+temporär gehalten und genau einmal über die bisherigen
+WorldModel-Gates nach Circuitfreigabe angewendet.
+FastRez ist Server-Opt-in, keine Viewer-Abhängigkeit.
