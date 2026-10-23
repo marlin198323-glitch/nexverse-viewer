@@ -177,5 +177,13 @@
     "workflow_runs_for_feature_sha": 0,
     "exact_feature_sha": "3c9745a10692bc3ce3cc619a602c38cdc3dc87ba",
     "note": "No CI success claim; x64 Mint full local gates pass."
+  },
+  "alpha1154_verified_feature_sha": "96827c2aa9a55b193457acb4c528a001895430b9",
+  "alpha1154_pi5_ci": {
+    "exact_feature_sha": "96827c2aa9a55b193457acb4c528a001895430b9",
+    "status": "unverified",
+    "runner_active": true,
+    "workflow_runs_for_feature_sha": 0,
+    "note": "Full Linux Mint x64 local tests passed; NO completed ARM64 CI success for this exact SHA."
   }
 }
