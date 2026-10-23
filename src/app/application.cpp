@@ -13983,6 +13983,12 @@ int Application::run(bool enable_developer_modules)
                             shell_view.avatar_bake_stream_status+=
                                 " | Alte Objekt-Bakes erneut verworfen:"+
                                 std::to_string(stale_object_bakes);
+                        const auto replay_guards=
+                            world_model.self_object_bake_replay_guards();
+                        if(replay_guards>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Alte Outfit-TE gesperrt:"+
+                                std::to_string(replay_guards);
                         const auto killed=world_model.self_object_kills();
                         if(killed>0U)
                             shell_view.avatar_bake_stream_status+=

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.974",
+  "viewer_version": "0.2.0-alpha.984",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.975–984",
-  "assessment": "Alpha974: Fixed authenticated self body-bake COF late UDP replay bug remaining after Alpha964 provisional TE retirement. A delayed exact former avatar ObjectUpdate LocalID and Head/Upper/Lower TE could repopulate stale baked skin after a newer modern Low158 COF, or evict a newer self LocalID texture. WorldModel now keeps a session/region scoped rejection-only fingerprint of the one withdrawn SelfAvatarObjectBakes source; exact old LocalID+TE is rejected before it can affect current renderer/HTTP/GetTexture source, including repeated out-of-order datagrams after fresh ObjectUpdate. Distinct new TE or actual new self local ID still admitted and original Low158 always authoritative. Fingerprint and saturated privacy-safe counter reset on reauth/region/reset/matching KillObject. Native real WorldModel/Firestorm-TE sequence COF100->101, late replay twice, new LocalID, new same-ID bake, late old replay and new session, Mint/Pi5 Worldlinked with Python live-source check. Full Linux Mint x64 GUI release gate. Prior Pi5 Alpha964 exact code SHA 7bf7308 Run 40011135542 success; OpenGenesisLINK upstream ccfc644d unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin GPU pixels and simulator-confirmed WASD/Yaw live E2E remain still open; no deploy.",
+  "next_five_blocks": "Alpha.985–994",
+  "assessment": "Alpha984: Self body ObjectUpdate TE replay protection retains up to eight distinct old LocalID+Head/Upper/Lower fingerprints across consecutive accepted COF switches, rather than one. Bounded FIFO, duplicate suppression, matching KillObject removal, region/login reset; F3 displays the count only without UUIDs. Native C++ multi-COF/old-packet/fixed-capacity tests and Python source contracts. Server-main f56e354 updates admin API key scope editor, not Avatar wire. Authenticated NexVerse live Avatar/COF/Skin GPU and server-acknowledged WASD/Yaw remain open. No production deployment. Authenticated live acceptance still open.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.975–984",
+  "next_batch": "Alpha.985–994",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

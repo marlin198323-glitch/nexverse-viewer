@@ -33,7 +33,7 @@ void WorldModel::reset()
     self_cof_by_format_highwater_.fill(0U);
     self_wearables_.reset();
     self_object_bakes_.reset();
-    retired_self_object_bakes_.reset();
+    retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
@@ -125,7 +125,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
     self_cof_by_format_highwater_.fill(0U);
         self_wearables_.reset();
         self_object_bakes_.reset();
-        retired_self_object_bakes_.reset();
+        retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
@@ -178,7 +178,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_cof_by_format_highwater_.fill(0U);
     self_wearables_.reset();
     self_object_bakes_.reset();
-    retired_self_object_bakes_.reset();
+    retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
@@ -225,7 +225,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
             ++region_.generation;
         }
         self_object_bakes_.reset();
-        retired_self_object_bakes_.reset();
+        retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
@@ -456,7 +456,19 @@ bool WorldModel::apply_self_appearance(
             // Preserve the *retired* simulator bake reference only as
             // a rejection fingerprint for late UDP ObjectUpdate replay.
             // It is never offered to the renderer, scene or HTTP queue.
-            retired_self_object_bakes_=self_object_bakes_;
+            const auto already_retired=std::any_of(
+                retired_self_object_bakes_.begin(),
+                retired_self_object_bakes_.end(),
+                [this](const SelfAvatarObjectBakes& old) {
+                    return old.local_id==self_object_bakes_->local_id&&
+                           old.visible_body==self_object_bakes_->visible_body;
+                });
+            if(!already_retired)
+            {
+                if(retired_self_object_bakes_.size()>=8U)
+                    retired_self_object_bakes_.pop_front();
+                retired_self_object_bakes_.push_back(*self_object_bakes_);
+            }
             self_object_bakes_.reset();
             if(self_object_bake_outfit_invalidations_<UINT32_MAX)
                 ++self_object_bake_outfit_invalidations_;
@@ -504,8 +516,11 @@ bool WorldModel::observe_self_object_bakes(
     // Rebound self local IDs must never reuse a previously bound
     // avatar body's texture even when that new packet omits the TE.
     if(self_object_bakes_&&self_object_bakes_->local_id!=local_id&&
-       !(retired_self_object_bakes_&&
-         retired_self_object_bakes_->local_id==local_id))
+       std::none_of(retired_self_object_bakes_.begin(),
+                    retired_self_object_bakes_.end(),
+                    [local_id](const SelfAvatarObjectBakes& old) {
+                        return old.local_id==local_id;
+                    }))
         self_object_bakes_.reset();
     // Malformed / absent TextureEntry must not clobber last valid skin:
     // the compressed avatar header often has no TE at all.
@@ -530,9 +545,12 @@ bool WorldModel::observe_self_object_bakes(
     // must not repopulate the just-retired skin. Match BOTH the old
     // simulator LocalID and all old baked faces: a genuinely different
     // current TE or a new self LocalID is admitted normally.
-    if(retired_self_object_bakes_&&
-       retired_self_object_bakes_->local_id==local_id&&
-       retired_self_object_bakes_->visible_body==bakes)
+    if(std::any_of(retired_self_object_bakes_.begin(),
+                   retired_self_object_bakes_.end(),
+                   [local_id,&bakes](const SelfAvatarObjectBakes& old) {
+                       return old.local_id==local_id&&
+                              old.visible_body==bakes;
+                   }))
     {
         if(self_object_bake_stale_replays_<UINT32_MAX)
             ++self_object_bake_stale_replays_;
@@ -541,8 +559,9 @@ bool WorldModel::observe_self_object_bakes(
     // Keep the retired fingerprint across a subsequent genuinely
     // different current TE. Otherwise an old UDP retransmission
     // arriving AFTER the new baked body could evict the new skin.
-    // Only region/login epoch change, explicit KillObject or a newer
-    // recorded retirement clears or replaces this old identity.
+    // The bounded eight-entry history retains older outfit transitions.
+    // Only epoch changes, a matching KillObject or history capacity evicts
+    // an old rejection fingerprint.
     // Store asset IDs solely inside the session-scoped model; F3/report
     // receives only counts. Modern Low158 overrides candidate rendering.
     if(self_object_bakes_&&self_object_bakes_->local_id==local_id&&
@@ -571,6 +590,11 @@ std::uint32_t WorldModel::self_object_bake_stale_replays()
 {
     return self_object_bake_stale_replays_;
 }
+std::uint32_t WorldModel::self_object_bake_replay_guards()
+    const noexcept
+{
+    return static_cast<std::uint32_t>(retired_self_object_bakes_.size());
+}
 bool WorldModel::withdraw_self_object_on_kill(
     std::string_view avatar_id,std::uint64_t region_handle,
     std::uint32_t local_id)
@@ -584,9 +608,10 @@ bool WorldModel::withdraw_self_object_on_kill(
     // KillObject is not counted once that binding was cleared.
     if(self_object_bakes_&&self_object_bakes_->local_id==local_id)
         self_object_bakes_.reset();
-    if(retired_self_object_bakes_&&
-       retired_self_object_bakes_->local_id==local_id)
-        retired_self_object_bakes_.reset();
+    std::erase_if(retired_self_object_bakes_,
+                  [local_id](const SelfAvatarObjectBakes& old) {
+                      return old.local_id==local_id;
+                  });
     self_pose_confirmed_=false; // killed body cannot remain confirmed
     if(self_object_kills_<UINT32_MAX)++self_object_kills_;
     return true;

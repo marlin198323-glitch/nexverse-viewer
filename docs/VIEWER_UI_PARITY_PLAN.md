@@ -1,3 +1,5 @@
+**Alpha.975–984 (23.10.2026):** Acht begrenzte alte Self-ObjectUpdate Bake-Fingerprints über mehrere bestätigte COF-Wechsel; F3 zeigt Alte Outfit-TE gesperrt N, native C++/Python-Contracts. Keine Live-Avatar-/WASD-Abnahme, Fortschritt 39 %. Servermain f56e354 ändert nur World-API-Key-Scopes. Details: docs/ALPHA975_984_MULTI_COF_REPLAY_HISTORY.md.
+
 # OGL Viewer – verbindlicher UI- und Funktionsparitätsplan
 
 Stand: 13.10.2026 / Alpha.97. Der Plan ist ab sofort

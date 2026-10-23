@@ -292,6 +292,57 @@ int main()
        rebaked.self_render_bakes()[0]!="77777777-7777-7777-7777-777777777777"||
        rebaked.self_object_bake_stale_replays()!=2U)
         return 57;
+    // Alpha.975-984: multiple successive confirmed COF changes must
+    // retain *each* retired LocalID+body TE, not just the most recent.
+    auto chained=model();
+    auto cof102=first_cof;
+    cof102.appearance_data={{1U,102U,0U}};
+    if(!chained.observe_self_object_bakes(avatar_id,region,70U,head_te)||
+       !chained.apply_self_appearance(first_cof)||
+       !chained.apply_self_appearance(protocol::AvatarAppearanceMessage(
+           protocol::AvatarAppearanceMessage(newer_cof))))
+        return 58;
+    // new101 was changed to format2 above; this still legitimately
+    // retires the first source. A third accepted format change retires B.
+    if(!chained.observe_self_object_bakes(avatar_id,region,71U,fresh_te)||
+       !chained.apply_self_appearance(cof102)||
+       !chained.observe_self_object_bakes(avatar_id,region,72U,head_te)||
+       chained.self_object_bake_replay_guards()!=2U)return 59;
+    if(chained.observe_self_object_bakes(avatar_id,region,70U,head_te)||
+       chained.observe_self_object_bakes(avatar_id,region,71U,fresh_te)||
+       !chained.self_object_bakes()||
+       chained.self_object_bakes()->local_id!=72U||
+       chained.self_object_bake_stale_replays()!=2U)return 60;
+    if(!chained.withdraw_self_object_on_kill(avatar_id,region,70U)||
+       chained.self_object_bake_replay_guards()!=1U)return 61;
+    // Bounded history: after ten unique retirement events retain eight,
+    // never unbounded UUID state across an extended appearance session.
+    auto bounded=model();
+    if(!bounded.apply_self_appearance(first_cof))return 62;
+    for(std::uint32_t k=0U;k<10U;++k)
+    {
+        auto te=head_te;
+        for(std::size_t j=18U;j<34U;++j)
+            te[j]=static_cast<std::uint8_t>(0x30U+k);
+        if(!bounded.observe_self_object_bakes(avatar_id,region,200U+k,te))
+            return 63;
+        auto next=first_cof;
+        next.appearance_data={{1U,101U+k,0U}};
+        if(!bounded.apply_self_appearance(next)||
+           bounded.self_object_bake_replay_guards()!=
+              (k<8U?k+1U:8U))return 64;
+    }
+    auto within=head_te;
+    for(std::size_t j=18U;j<34U;++j)within[j]=0x32U; // index 2
+    if(bounded.observe_self_object_bakes(avatar_id,region,202U,within)||
+       bounded.self_object_bake_stale_replays()!=1U)return 65;
+    // KillObject removes only matching retired history entries.
+    if(!bounded.withdraw_self_object_on_kill(avatar_id,region,209U)||
+       bounded.self_object_bake_replay_guards()!=7U)return 66;
+    bounded.apply_agent({avatar_id,"dddddddd-bbbb-cccc-dddd-eeeeeeeeeeee",
+                         {},{},true});
+    if(bounded.self_object_bake_replay_guards()!=0U||
+       bounded.self_object_bake_stale_replays()!=0U)return 67;
     // Unchanged COF does not trigger another retirement.
     if(!outfit.apply_self_appearance(newer_cof)||
        outfit.self_render_bakes()!=fallback||

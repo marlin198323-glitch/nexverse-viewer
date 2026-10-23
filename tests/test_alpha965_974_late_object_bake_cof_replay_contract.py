@@ -6,16 +6,16 @@ def rd(file):return (R/file).read_text()
 class OldOutfitTeReplay(unittest.TestCase):
  def test_exact_previous_te_and_localid_fingerprint(self):
   c=rd("src/world/world_model.cpp")
-  self.assertIn("retired_self_object_bakes_=self_object_bakes_;",c)
-  self.assertIn("retired_self_object_bakes_->local_id==local_id",c)
-  self.assertIn("retired_self_object_bakes_->visible_body==bakes",c)
+  self.assertIn("retired_self_object_bakes_.push_back(*self_object_bakes_);",c)
+  self.assertIn("old.local_id==local_id",c)
+  self.assertIn("old.visible_body==bakes",c)
   self.assertIn("++self_object_bake_stale_replays_;",c)
   self.assertIn("if(self_object_bake_stale_replays_<UINT32_MAX)",c)
-  self.assertLess(c.index("retired_self_object_bakes_->visible_body==bakes"),
+  self.assertLess(c.index("old.visible_body==bakes"),
                   c.index("self_object_bakes_=SelfAvatarObjectBakes{bakes,local_id};"))
  def test_new_provisional_source_allowed_and_old_replay_does_not_evict(self):
   c=rd("src/world/world_model.cpp")
-  self.assertIn("retired_self_object_bakes_->local_id==local_id))",c)
+  self.assertIn("old.local_id==local_id;",c)
   self.assertIn("self_object_bakes_->local_id!=local_id&&",c)
   self.assertIn("region_.handle!=region_handle",c)
   self.assertIn("avatar_id!=agent_.agent_id||local_id==0U",c)
@@ -41,6 +41,6 @@ class OldOutfitTeReplay(unittest.TestCase):
   self.assertIn("retired_self_object_bakes_",h)
   self.assertIn("self_render_bakes() const",h)
  def test_next_release(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.974")
-  self.assertIn("Alpha.975–984",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.984")
+  self.assertIn("Alpha.985–994",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

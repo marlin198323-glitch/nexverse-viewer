@@ -12,6 +12,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <unordered_map>
 #include <optional>
@@ -314,6 +315,8 @@ public:
     // evidence that the previous baked skin has become current again.
     [[nodiscard]] std::uint32_t self_object_bake_stale_replays()
         const noexcept;
+    [[nodiscard]] std::uint32_t self_object_bake_replay_guards()
+        const noexcept;
     // Current simulator explicitly withdrew the own avatar LocalID.
     // Invalidate ONLY ObjectUpdate provisional bakes; genuine Low158
     // remains authoritative until a new simulator appearance arrives.
@@ -440,9 +443,9 @@ private:
     std::array<std::uint32_t,256U> self_cof_by_format_highwater_{};
     std::optional<protocol::AgentWearablesUpdateMessage> self_wearables_;
     std::optional<SelfAvatarObjectBakes> self_object_bakes_;
-    // Only exact former LocalID + Head/Upper/Lower TE fingerprints;
-    // no client-generated outfit assets or remote user identifiers.
-    std::optional<SelfAvatarObjectBakes> retired_self_object_bakes_;
+    // At most eight exact old LocalID + Head/Upper/Lower fingerprints,
+    // scoped to the current agent/region. Never exposed to rendering.
+    std::deque<SelfAvatarObjectBakes> retired_self_object_bakes_;
     std::uint32_t self_object_bake_stale_replays_=0U;
     std::uint32_t self_object_bake_withdrawals_=0U;
     std::uint32_t self_object_bake_outfit_invalidations_=0U;
