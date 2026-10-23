@@ -21,4 +21,4 @@ Die Morph-/Framebuffer-Fälle nutzen tatsächliche originale Firestorm-LLM und n
 
 ## QA
 
-Original-Firestorm-Morph-/Framebuffer-Tests und fünf Python-Verträge lokal PASS. Gesamtgate sowie exakte Commit-SHA/CI nach Abschluss ergänzen. Fortschritt 39% gerundet, 38.65 gewichtet, nächste Alpha.1105–1114.
+Original-Firestorm-Morph-/Framebuffer-Tests und fünf Python-Verträge PASS. Vollständiger Linux-Mint-x64-vcpkg/CMake-Debug-Build PASS, 183/183 native CTests PASS, 521/521 Python-Tests PASS und echter isolierter Xvfb-Viewer-GUI-/Original-Firestorm-GPU-/133-Joint-Skelett-/128px-X11-Taskleistenicon-Test PASS. GitHub-verifizierte exakte Feature-Code-SHA 02bba7b4174beaceafe23f7f117a7404871610f3. GitHub meldet für diese SHA keine Commit-Status-Einträge und keine PR-Workflow-Runs. OGL Pi5 Runner.Listener/Worker laufen, ARM64 CI für diese SHA ist dennoch UNVERIFIZIERT, nicht PASS. Kein Produktivdeployment. Kein authentifizierter Grid-E2E-Beweis. Fortschritt 39% gerundet, 38.65 gewichtet, nächste Alpha.1105–1114.
