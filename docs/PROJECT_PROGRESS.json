@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.894",
+  "viewer_version": "0.2.0-alpha.904",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.895–904",
-  "assessment": "Alpha894: Fixed real High4 movement/CameraCenter authority bug: scene_ready and active circuit plus mathematically finite provisional (0,0,0) could send WASD/Yaw/Flight when AgentMovementComplete was invalid, foreign or had not been adopted by authenticated WorldModel. WorldModel self_avatar_controls_ready now demands a current genuine server self position and quaternion. Main UI checks it under world_mutex and binds AgentState identity/session to LoginSession before MovementController::step/outbound_queue.push. F3 shows explicit waiting for server confirmed self pose. Region-epoch change drops pending outbound controls, local yaw and flight and movement/turn feedback. Native WorldModel control gate and Pi5 ARM64 integration plus Python real production source contract, full Mint local x64 GUI gate. Previous Alpha884 exact SHA Pi5 7e43a2a Run 39982171338 success. OpenGenesisLINK upstream main 08f95e7 unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin GPU and simulator-confirmed WASD/Yaw live E2E still open; no deployment.",
+  "next_five_blocks": "Alpha.905–914",
+  "assessment": "Alpha904: Fixed actual AgentMovementComplete rotation provenance bug: real LLUDP packet carries Position and LookAt Vec3, not a BodyRotation quaternion. Viewer previously used provisional prior AgentState.rotation as if server verified it, so false High4 WASD/yaw success could occur even when LookAt was invalid. New MPL simulator_look_at_heading validates finite horizontal server LookAt and forms unit yaw quaternion; for zero/vertical/invalid LookAt new WorldModel authenticated accept_simulator_self_position accepts only the true position, preserving separately verified current BodyRotation without fabricating an initial quaternion or enabling High4 WASD. Actual LLUDP AgentMovementComplete handler dispatches true yaw or position-only. Native C++23 Mint/Pi5 tests include compass headings, invalid inputs, session/region admission, later genuine yaw and movement controls; Python app/decoder integration and full Mint x64 isolated GUI release gate. Servermain ccfc644d #286 adds only dedicated Voice Go bootstrap, no avatar protocol change. Authenticated NexVerse AvatarAppearance/COF/Skin/Outfit GPU pixels and simulator-confirmed WASD/yaw live E2E still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.895–904",
+  "next_batch": "Alpha.905–914",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7e43a2aca847525fa0a4a9cdaaec49db6e0283d7",
@@ -111,9 +111,9 @@
   "mint_x64_validation": {
     "status": "local_pass",
     "cmake_full_debug_build": true,
-    "native_ctest_passed": 179,
+    "native_ctest_passed": 180,
     "native_ctest_failed": 0,
-    "python_tests_passed": 428,
+    "python_tests_passed": 432,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +123,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "5247d3f9d775411a1af7137545062161af702668",
-    "version": "0.2.0-alpha.894",
+    "version": "0.2.0-alpha.904",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Full Mint x64 CMake/vcpkg viewer, 179/179 native CTests incl High4 authentic own simulator pose admission, 428/428 Python tests, original Firestorm rig bind joints 133, 3 GPU resident body meshes 7186 triangles, isolated Xvfb UI, branded X11 WM_CLASS 128px taskbar icon. No authenticated live Grid.",
+    "note": "Linux Mint full CMake/vcpkg x64 Viewer: 180/180 native CTests, 432/432 Python; genuine LLUDP AgentMovementComplete server LookAt heading vs position-only, C++ tests and Pi5 source check; isolated Xvfb GUI original Firestorm 133 joints/3 LLM GPU resident body meshes/7186 triangles, X11 icon 128px PASS. No live authenticated Grid.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -149,6 +149,8 @@
     "initial_worldmodel_generation_zero_valid": true,
     "high4_verified_simulator_origin_required": true,
     "region_epoch_outbound_queue_flight_heading_reset": true,
-    "f3_waiting_for_simulator_pose": true
+    "f3_waiting_for_simulator_pose": true,
+    "look_at_server_yaw_not_provisional_quaternion": true,
+    "position_only_missing_heading_no_high4": true
   }
 }

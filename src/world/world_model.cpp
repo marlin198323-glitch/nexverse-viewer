@@ -238,6 +238,23 @@ void WorldModel::apply_agent(const AgentUpdate& update)
     agent_.present = update.present;
 }
 
+bool WorldModel::accept_simulator_self_position(
+    std::string_view avatar_id,std::string_view session_id,
+    std::uint64_t region_handle,Vec3 position)
+{
+    if(avatar_id.empty()||session_id.empty()||region_handle==0U||
+       avatar_id!=agent_.agent_id||session_id!=agent_.session_id||
+       region_handle!=region_.handle||
+       !finite_simulator_position(position))
+        return false;
+    // Preserve an already independently verified BodyRotation if Full
+    // or Terse arrived first. But on initial login this position-only
+    // packet MUST NOT set self_pose_confirmed_ or release High4 controls.
+    apply_agent({agent_.agent_id,agent_.session_id,position,
+                 agent_.rotation,agent_.present});
+    return true;
+}
+
 bool WorldModel::accept_simulator_self_pose(
     std::string_view avatar_id,std::string_view session_id,
     std::uint64_t region_handle,Vec3 position,Quaternion rotation)

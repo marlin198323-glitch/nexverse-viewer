@@ -846,3 +846,10 @@ nicht in WorldModel übernommen wurde. (0,0,0) ist mathematisch gültig,
 aber kein bestätigter Spawn. High4-Kamera und WASD verlangen echte
 Agent/Session/Region-Pose. Auf Epochwechsel ausstehende Controls
 und Flug-/Yaw-Heading rücksetzen; OpenGenesisLINK LLUDP unverändert.
+
+## Alpha.895–904: AgentMovementComplete LookAt ist keine Quaternion
+LLUDP AgentMovementComplete liefert tatsächliche Simulatorposition und
+LookAt (Vec3), nicht BodyRotation. OGL leitet nur bei gültiger endlicher
+horizontaler LookAt eine Z-Yaw-Quaternion ab; sonst bleibt der
+Readback position-only und autorisiert keinen neuen High4-AgentUpdate-Yaw.
+Servermain ccfc644d #286 ändert nur OGLVoice-Go-Bootstrap.

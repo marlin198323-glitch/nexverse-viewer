@@ -939,3 +939,9 @@ OGL wartet auf bestätigte eigene Simulatorposition/Rotation, statt
 bei fehlender AgentMovementComplete-Dekodierung einen provisorischen
 CameraCenter/Body-Yaw zu senden. Alte Regionsbefehle werden verworfen,
 neuer Serverheading aus echter Pose übernommen.
+
+## Alpha.895–904: Firestorm AgentMovementComplete BodyRotation-Quelle
+Keine angenommene BodyQuat aus provisorischer Login-Agent.rotation.
+Gültige LookAt-Richtung liefert authentischen ersten Yaw. Andernfalls
+position-only und WASD wartet auf Full/Compressed/Terse Simulatorpose
+mit tatsächlicher Quaternion. LLUDP-Wire und Steuerbits unverändert.

@@ -254,6 +254,11 @@ public:
     [[nodiscard]] bool accept_simulator_self_pose(
         std::string_view avatar_id,std::string_view session_id,
         std::uint64_t region_handle,Vec3 position,Quaternion rotation);
+    // AgentMovementComplete with no usable horizontal LookAt confirms
+    // a server POSITION only. It cannot prove a BodyRotation/High4 yaw.
+    [[nodiscard]] bool accept_simulator_self_position(
+        std::string_view avatar_id,std::string_view session_id,
+        std::uint64_t region_handle,Vec3 position);
     [[nodiscard]] bool simulator_self_pose_confirmed() const noexcept
     { return self_pose_confirmed_; }
     [[nodiscard]] bool self_avatar_renderable() const noexcept

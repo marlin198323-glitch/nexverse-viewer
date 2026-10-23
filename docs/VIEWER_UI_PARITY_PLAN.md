@@ -583,3 +583,9 @@ WASD: warte auf bestaetigte Simulatorposition statt einer
 irreführenden Kein-Richtungsbefehl-Ausgabe. Das ist bewusst
 kein simuliertes WASD-Ergebnis, sondern eine Diagnose, warum
 MovementController und High4-Queue noch nicht senden.
+
+## Alpha.895–904: F3 schützt gegen erfundenen Avatar-Drehwinkel
+Bestehende F3 WASD-wartet-Simulatorposition-Anzeige bleibt aktiv, wenn
+AgentMovementComplete Koordinaten liefert, aber keine nutzbare horizontale
+LookAt-Blickrichtung. Kein künstlich aus Default-Quaternion abgeleiteter
+serverbestätigter Avatar-Heading oder Bewegungserfolg.

@@ -83,6 +83,7 @@
 #include "nexverse/world/attachment_state.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
 #include "nexverse/protocol/avatar_cof_revision.hpp"
+#include "nexverse/protocol/agent_movement_look_at.hpp"
 #include "nexverse/protocol/avatar_bake_evidence.hpp"
 #include "nexverse/protocol/self_appearance_admission.hpp"
 #include "nexverse/render/renderer.hpp"
@@ -5222,10 +5223,21 @@ int Application::run(bool enable_developer_modules)
             // AgentMovementComplete is the first genuine simulator
             // position; circuit readiness alone must not create a ghost
             // self avatar at its provisional (0,0,0) login position.
-            if(!world_model.accept_simulator_self_pose(
-                   movement->agent_id,movement->session_id,
-                   movement->region_handle,movement->position,
-                   agent.rotation))
+            // AgentMovementComplete supplies LookAt rather than an
+            // authoritative BodyRotation quaternion. Never certify
+            // the provisional login quaternion as a server readback.
+            // Recover horizontal yaw only from genuine simulator LookAt.
+            const auto server_heading=
+                protocol::simulator_look_at_heading(movement->look_at);
+            const bool accepted=server_heading
+                ?world_model.accept_simulator_self_pose(
+                    movement->agent_id,movement->session_id,
+                    movement->region_handle,movement->position,
+                    *server_heading)
+                :world_model.accept_simulator_self_position(
+                    movement->agent_id,movement->session_id,
+                    movement->region_handle,movement->position);
+            if(!accepted)
                 return;
 
             world_model.apply_region({
