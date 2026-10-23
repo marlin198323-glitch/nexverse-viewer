@@ -6683,6 +6683,23 @@ int Application::run(bool enable_developer_modules)
                                 "GPU validation failed; body unaffected");
                         }
                 }
+                // Firestorm avatar_lad.xml's *eyelash visibility* mask.
+                // The existing bounded local 8-bit RLE TGA decoder
+                // protects against malformed inputs; this is not full
+                // cosmetic/COF compositing and never makes a new HTTP.
+                const auto eyelash_mask=
+                    assets::load_firestorm_character_tga(
+                        *dir,"head_alpha.tga");
+                if(eyelash_mask.ok()&&
+                   world_renderer->set_avatar_eyelash_visibility_mask(
+                       {eyelash_mask.image.width,
+                        eyelash_mask.image.height,
+                        eyelash_mask.image.pixels}))
+                    core::info("Original Firestorm eyelash visibility "
+                        "mask GPU-resident; not full makeup compositor");
+                else
+                    core::warning("Local Firestorm eyelash visibility "
+                        "mask unavailable; fallback Head alpha only");
                 original_body_gpu_ready=true;
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
@@ -14126,6 +14143,12 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(render_diagnostics.self_avatar_eyelash_mask_gl_draws>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm Wimpern-TGA-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_eyelash_mask_gl_draws);
                 if(render_diagnostics.self_avatar_eyelash_head_gl_draws>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

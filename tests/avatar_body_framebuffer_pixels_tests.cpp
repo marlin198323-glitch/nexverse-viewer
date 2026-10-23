@@ -4,6 +4,7 @@
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
+#include "nexverse/assets/firestorm_tga.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <array>
@@ -636,6 +637,27 @@ int main()
               lash->skin_weights,*palette}))error=61;
         if(!error)
         {
+          render::RenderImageRgba8 zero_visibility{
+              8U,8U,std::vector<std::uint8_t>(8U*8U*4U,0U)};
+          if(!renderer->set_avatar_eyelash_visibility_mask(zero_visibility))
+              error=66;
+          const auto transparent_lashes=draw();
+          const auto masked_delta=difference(without_lashes,transparent_lashes);
+          std::cout<<"MASKED_OUT_EYELASH_PIXEL_DELTA="<<masked_delta<<"\n";
+          if(masked_delta!=0U||
+             renderer->diagnostics().self_avatar_eyelash_mask_gl_draws!=1U)
+              error=67;
+          // Reject invalid replacement: the zero-valued GPU mask survives.
+          if(renderer->set_avatar_eyelash_visibility_mask(
+                 render::RenderImageRgba8{}))error=68;
+          if(difference(without_lashes,draw())!=0U)error=69;
+          const auto original=assets::load_firestorm_character_tga(
+              *dir,"head_alpha.tga");
+          if(!original.ok()||
+             !renderer->set_avatar_eyelash_visibility_mask(
+                 {original.image.width,original.image.height,
+                  original.image.pixels}))
+              error=70;
           const auto with_lashes=draw();
           const auto actual=renderer->diagnostics();
           const auto delta=difference(without_lashes,with_lashes);
@@ -643,6 +665,7 @@ int main()
                    <<delta<<"; GL_LASH_DRAWS="
                    <<actual.self_avatar_eyelash_head_gl_draws<<"\n";
           if(actual.self_avatar_eyelash_head_gl_draws!=1U||
+             actual.self_avatar_eyelash_mask_gl_draws!=1U||
              actual.self_avatar_anatomical_mesh_draw_calls!=3U||
              actual.self_avatar_body_bake_gl_draws!=
                   (std::array<std::uint64_t,3U>{1U,0U,0U})||

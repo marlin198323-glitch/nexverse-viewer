@@ -2016,6 +2016,10 @@ uniform vec2 uObjectRepeat;
 uniform vec2 uObjectOffset;
 uniform float uObjectRotation;
 uniform sampler2D uObjectTexture;
+// Local Firestorm eyelash visibility mask, only enabled for the
+// original optional eyelash mesh. Not a second server bake.
+uniform bool uUseAvatarEyelashMask;
+uniform sampler2D uAvatarEyelashMask;
 uniform bool uUseLegacyNormalMap;
 uniform bool uUseLegacySpecularMap;
 uniform sampler2D uLegacyNormalMap;
@@ -2153,6 +2157,12 @@ void main()
             {
                 base += texel.rgb * texel.a * 0.15;
             }
+        }
+
+        if(uUseAvatarEyelashMask)
+        {
+            float visibility=texture(uAvatarEyelashMask,objectBaseUv()).r;
+            if(visibility<=0.03)discard;
         }
 
         // Legacy per-face normal/specular maps. Derivatives approximate a
@@ -3261,6 +3271,42 @@ public:
                 std::min(lights.size(), max_active_lights)));
     }
 
+    [[nodiscard]] bool set_avatar_eyelash_visibility_mask(
+        const RenderImageRgba8& mask) override
+    {
+        // This is a single *local* Firestorm asset. Do not route it
+        // through server GetTexture UUIDs or shared residency/COF.
+        if(!mask.valid()||mask.width>1024U||mask.height>1024U)
+            return false;
+        GLuint candidate=0U;
+        for(int i=0;i<8&&glGetError()!=GL_NO_ERROR;++i){}
+        glGenTextures(1,&candidate);
+        if(candidate==0U)return false;
+        glActiveTexture(GL_TEXTURE7);
+        glBindTexture(GL_TEXTURE_2D,candidate);
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,
+            static_cast<GLsizei>(mask.width),
+            static_cast<GLsizei>(mask.height),0,
+            GL_RGBA,GL_UNSIGNED_BYTE,mask.pixels.data());
+        const auto error=glGetError();
+        glBindTexture(GL_TEXTURE_2D,0U);
+        glActiveTexture(GL_TEXTURE0);
+        if(error!=GL_NO_ERROR)
+        {
+            glDeleteTextures(1,&candidate);
+            return false;
+        }
+        const auto previous=avatar_eyelash_visibility_texture_;
+        avatar_eyelash_visibility_texture_=candidate;
+        if(previous!=0U)glDeleteTextures(1,&previous);
+        return true;
+    }
+
     [[nodiscard]] bool set_avatar_body_mesh(
         std::size_t slot,const RenderMeshGeometry& geometry) override
     {
@@ -3418,6 +3464,7 @@ public:
         diagnostics_.self_avatar_eyes_bake_gl_draws=0U;
         diagnostics_.avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_eyelash_head_gl_draws=0U;
+        diagnostics_.self_avatar_eyelash_mask_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4342,6 +4389,10 @@ public:
         // Avatar proxy rendering is deliberately separate from object
         // meshes so it follows each server-authoritative avatar transform
         // every frame without rebuilding the scene-object cache.
+        // Local Firestorm alpha mask must NEVER leak into scene/terrain
+        // or unrelated Head/Body/Eyes/Hair GL shader branches.
+        glUniform1i(glGetUniformLocation(
+            program_,"uUseAvatarEyelashMask"),GL_FALSE);
         if (!avatar_proxies_.empty())
         {
             glEnable(GL_DEPTH_TEST);
@@ -4786,6 +4837,19 @@ public:
                                     program_,"uObjectAlphaMode"),2);
                                 glUniform1f(glGetUniformLocation(
                                     program_,"uObjectAlphaCutoff"),0.03f);
+                                const bool local_mask=
+                                    avatar_eyelash_visibility_texture_!=0U;
+                                if(local_mask)
+                                {
+                                    glActiveTexture(GL_TEXTURE7);
+                                    glBindTexture(GL_TEXTURE_2D,
+                                        avatar_eyelash_visibility_texture_);
+                                    glUniform1i(glGetUniformLocation(
+                                        program_,"uAvatarEyelashMask"),7);
+                                    glUniform1i(glGetUniformLocation(
+                                        program_,"uUseAvatarEyelashMask"),
+                                        GL_TRUE);
+                                }
                                 const float shade=avatar.is_self?0.13f:0.10f;
                                 glUniform3f(glGetUniformLocation(
                                     program_,"uOverrideColorValue"),
@@ -4797,7 +4861,20 @@ public:
                                 ++diagnostics_.draw_calls;
                                 ++diagnostics_.avatar_eyelash_head_gl_draws;
                                 if(avatar.is_self)
+                                {
                                     ++diagnostics_.self_avatar_eyelash_head_gl_draws;
+                                    if(local_mask)
+                                        ++diagnostics_.self_avatar_eyelash_mask_gl_draws;
+                                }
+                                if(local_mask)
+                                {
+                                    glUniform1i(glGetUniformLocation(
+                                        program_,"uUseAvatarEyelashMask"),
+                                        GL_FALSE);
+                                    glActiveTexture(GL_TEXTURE7);
+                                    glBindTexture(GL_TEXTURE_2D,0U);
+                                    glActiveTexture(GL_TEXTURE4);
+                                }
                                 diagnostics_.triangles+=
                                     static_cast<std::uint64_t>(
                                         eyelash_mesh.index_count/3);
@@ -5016,6 +5093,11 @@ public:
         clear_mesh_assets();
 
         clear_object_textures();
+        if(avatar_eyelash_visibility_texture_!=0U)
+        {
+            glDeleteTextures(1,&avatar_eyelash_visibility_texture_);
+            avatar_eyelash_visibility_texture_=0U;
+        }
 
         if (terrain_textures_[0] != 0U)
         {
@@ -5726,6 +5808,7 @@ private:
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
     std::unordered_map<std::string, GpuMesh> mesh_assets_;
+    GLuint avatar_eyelash_visibility_texture_=0U;
     std::unordered_map<std::string, GLuint> object_textures_;
     std::unordered_map<std::string, bool> object_texture_alpha_;
     RenderVec3 test_anchor_;

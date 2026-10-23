@@ -41,6 +41,6 @@ class Low15RegionIdentity(unittest.TestCase):
   self.assertIn("movement_complete_admission_tests",rd("scripts/pi5-headless-tests.sh"))
   self.assertIn("nexverse-movement-complete-admission-tests",rd("CMakeLists.txt"))
  def test_next_version(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1074")
-  self.assertIn("Alpha.1075–1084",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1084")
+  self.assertIn("Alpha.1085–1094",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

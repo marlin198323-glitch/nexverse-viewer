@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1074",
+  "viewer_version": "0.2.0-alpha.1084",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1075–1084",
-  "assessment": "Alpha1074: real original Firestorm optional avatar_eyelashes.llm from the locally installed Nightly character folder is parsed and uploaded as the sixth GPU avatar mesh (weighted original bind rig, palette verified) and drawn per-frame in the current avatar's authenticated Head (Low158/valid provisional ObjectUpdate) baked TextureEntry only when that exact ID is resident in OpenGL. No independent unverified eyelash UUID, no synthetic cosmetic texture, no extra GetTexture network request, and no pretense that eyelashes add an anatomical body/skin 3-of-3 proof. Eyelash alpha uses the currently selected baked Head TE alpha cutout and dark eyelash tint, not the FULL Firestorm local head_alpha.tga compositor/shape morph implementation. GPU draw uses original Firestorm vertex skin joint weights and per-avatar actual animation pose matrices; each frame resets a distinct F3 self eyelashes Head GL draw counter. Genuine Xvfb OpenGL framebuffer rendering with original Firestorm skeleton/Head/body/eyelash meshes and synthetic test-only baked Head RGBA shows 1062 distinct eyelash pixels and one GPU draw; the TE Head bake withdrawal and GPU asset removal each immediately suppress eyelash GL draws. Existing real eye, optional hair and three separate body baked draw evidence remain unchanged. Upstream OpenGenesisLINK Server main 99341d475b10 unchanged in this turn; commit is personal World-API authorization, not new avatar wire format. Original Firestorm eyelash local alpha layer and shape morph, final live pixel/COF/outfit and real authenticated WASD/Yaw server-motion E2E remain still open. No deployment.",
+  "next_five_blocks": "Alpha.1085–1094",
+  "assessment": "Alpha1084: Original locally installed Firestorm head_alpha.tga (8-bit grayscale RLE 512x512; referenced as eyelash visibility layer in avatar_lad.xml) is decoded via EXISTING bounded secure Firestorm character TGA parser and uploaded as a dedicated capped GPU visibility texture for original weighted eyelashMesh. This mask participates ONLY in the actual original Firestorm skinned eyelash GL shader branch and ONLY when the same current self/remote GPU-admitted avatar Head TE baked asset is still resident. Shader samples red luminance through original LLM UVs and discards masked-out fragments; it does not fabricate a server asset, request HTTP, change COF, download costumes, or claim full Firestorm makeup compositor and shape morph parity. Renderer method validates 1024x1024 max image and uploads a new GL texture transactionally; failures preserve the previous GPU mask and GL cleanup retires it. Shader uniform resets prevent effects on Head/Upper/Lower anatomy, Eyes, Hair, objects and next frame. Original Firestorm Xvfb OpenGL framebuffer and synthetic Head RGBA shows: all-black 8x8 test mask -> ZERO additional eyelash pixels without hiding Head, invalid-mask upload refused with previous GPU texture still active; subsequently real original head_alpha.tga -> 1062 visible eyelash pixels and separate one GL mask + one eyelash draw; current Head TE removal/eviction immediately stops both. Five Python contracts and native framebuffer regression. Full local Firestorm hair/shape/wearable alpha compositing still open, as are authenticated live-grid 3/3 body Skin/Outfit and server-confirmed WASD/Yaw E2E. Server main 99341d475b10 unchanged. No production deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1075–1084",
+  "next_batch": "Alpha.1085–1094",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
