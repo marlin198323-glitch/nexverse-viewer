@@ -343,6 +343,69 @@ int main()
                          {},{},true});
     if(bounded.self_object_bake_replay_guards()!=0U||
        bounded.self_object_bake_stale_replays()!=0U)return 67;
+    // Alpha.985-994: real ingress MUST reject a retired body packet
+    // BEFORE application.cpp rebinds self LocalID or confirms a pose.
+    auto ingress=model();
+    auto ingress101=first_cof;
+    ingress101.appearance_data={{1U,101U,0U}};
+    if(!ingress.observe_self_object_bakes(avatar_id,region,80U,head_te)||
+       !ingress.apply_self_appearance(first_cof)||
+       !ingress.apply_self_appearance(ingress101)||
+       ingress.self_object_bake_replay_guards()!=1U)return 68;
+    const auto stale_empty=std::vector<std::uint8_t>{};
+    // Exact old TE, missing TE, malformed TE and placeholder-only TE
+    // from the old LocalID cannot take ownership of movement/pose.
+    if(!ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,head_te)||
+       !ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,stale_empty)||
+       !ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,std::vector<std::uint8_t>{1U,2U})||
+       !ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,tex(false))||
+       ingress.retired_self_pose_packets_blocked()!=4U||
+       ingress.self_object_bake_stale_replays()!=1U||
+       ingress.self_object_bakes())return 69;
+    if(ingress.reject_retired_self_object_pose(
+           "foreign",region,80U,head_te)||
+       ingress.reject_retired_self_object_pose(
+           avatar_id,region+1U,80U,head_te)||
+       ingress.reject_retired_self_object_pose(
+           avatar_id,region,0U,head_te)||
+       ingress.retired_self_pose_packets_blocked()!=4U)return 70;
+    // A *different*, genuinely complete new TE may re-establish the
+    // same simulator LocalID under the new verified COF outfit.
+    if(ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,fresh_te)||
+       !ingress.observe_self_object_bakes(
+           avatar_id,region,80U,fresh_te)||
+       ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,stale_empty))return 71;
+    const auto current_ingress_bakes=ingress.self_render_bakes();
+    if(!ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,head_te)||
+       ingress.self_render_bakes()!=current_ingress_bakes||
+       ingress.retired_self_pose_packets_blocked()!=5U||
+       ingress.self_object_bake_stale_replays()!=2U)return 72;
+    // A late old LocalID may not invalidate a newly accepted LocalID
+    // on the next authentic simulator ObjectUpdate, either.
+    if(ingress.reject_retired_self_object_pose(
+           avatar_id,region,81U,head_te)||
+       !ingress.observe_self_object_bakes(
+           avatar_id,region,81U,head_te)||
+       !ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,head_te)||
+       !ingress.self_object_bakes()||
+       ingress.self_object_bakes()->local_id!=81U||
+       ingress.retired_self_pose_packets_blocked()!=6U)return 73;
+    // Reauthentication MUST clear previous avatar-identity leases.
+    ingress.apply_agent({avatar_id,"dddddddd-ffff-cccc-dddd-eeeeeeeeeeee",
+                         {},{},true});
+    if(ingress.retired_self_pose_packets_blocked()!=0U||
+       ingress.self_object_bake_stale_replays()!=0U||
+       ingress.self_object_bake_replay_guards()!=0U||
+       ingress.reject_retired_self_object_pose(
+           avatar_id,region,80U,head_te))return 74;
     // Unchanged COF does not trigger another retirement.
     if(!outfit.apply_self_appearance(newer_cof)||
        outfit.self_render_bakes()!=fallback||

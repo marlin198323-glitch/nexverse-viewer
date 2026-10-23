@@ -35,6 +35,7 @@ void WorldModel::reset()
     self_object_bakes_.reset();
     retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
+    retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
     self_object_kills_=0U;
@@ -127,6 +128,7 @@ void WorldModel::apply_region(const RegionUpdate& update)
         self_object_bakes_.reset();
         retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
+    retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
         self_object_kills_=0U;
@@ -180,6 +182,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_object_bakes_.reset();
     retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
+    retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
     self_object_kills_=0U;
@@ -227,6 +230,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         self_object_bakes_.reset();
         retired_self_object_bakes_.clear();
     self_object_bake_stale_replays_=0U;
+    retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
     self_object_bake_outfit_invalidations_=0U;
         self_object_kills_=0U;
@@ -594,6 +598,57 @@ std::uint32_t WorldModel::self_object_bake_replay_guards()
     const noexcept
 {
     return static_cast<std::uint32_t>(retired_self_object_bakes_.size());
+}
+
+// A stale UDP self-ObjectUpdate can otherwise rebind the app's current
+// avatar LocalID and confirm a false server pose BEFORE the bake path
+// rejects its retired body TE. The admission gate is read-only for valid
+// new simulator TE and never constructs/upload client appearance assets.
+bool WorldModel::reject_retired_self_object_pose(
+    std::string_view avatar_id,std::uint64_t region_handle,
+    std::uint32_t local_id,std::span<const std::uint8_t> texture_entry)
+{
+    if(!region_.connected||region_.handle!=region_handle||
+       agent_.agent_id.empty()||agent_.session_id.empty()||
+       avatar_id!=agent_.agent_id||local_id==0U)return false;
+    const auto retired_local=std::any_of(
+        retired_self_object_bakes_.begin(),retired_self_object_bakes_.end(),
+        [local_id](const SelfAvatarObjectBakes& old) {
+            return old.local_id==local_id;
+        });
+    if(!retired_local)return false;
+
+    // Exact old TE is a replay even after a newer real TE on the same
+    // LocalID was accepted. An absent/invalid/placeholder TE does not
+    // prove a new LocalID lease. Do not let it hijack current WASD.
+    bool exact_old=false;
+    bool fresh_body=false;
+    if(protocol::parse_texture_entry(texture_entry))
+    {
+        const auto bakes=
+            protocol::extract_avatar_bakes(texture_entry).visible_body();
+        exact_old=std::any_of(retired_self_object_bakes_.begin(),
+                              retired_self_object_bakes_.end(),
+                              [local_id,&bakes](const SelfAvatarObjectBakes& old) {
+                                  return old.local_id==local_id&&
+                                         old.visible_body==bakes;
+                              });
+        fresh_body=!bakes[0].empty()||!bakes[1].empty()||
+                   !bakes[2].empty();
+    }
+    const bool current_candidate=self_object_bakes_&&
+        self_object_bakes_->local_id==local_id;
+    if(!exact_old&&(fresh_body||current_candidate))return false;
+    if(retired_self_pose_packets_blocked_<UINT32_MAX)
+        ++retired_self_pose_packets_blocked_;
+    if(exact_old&&self_object_bake_stale_replays_<UINT32_MAX)
+        ++self_object_bake_stale_replays_;
+    return true;
+}
+
+std::uint32_t WorldModel::retired_self_pose_packets_blocked() const noexcept
+{
+    return retired_self_pose_packets_blocked_;
 }
 bool WorldModel::withdraw_self_object_on_kill(
     std::string_view avatar_id,std::uint64_t region_handle,

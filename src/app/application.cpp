@@ -5413,6 +5413,11 @@ int Application::run(bool enable_developer_modules)
                         if(entry.local_id==0U||
                            !world::valid_simulator_avatar_pose(
                                entry.position,entry.rotation))continue;
+                        // Inbound retired TE must not rebind LocalID or
+                        // turn a delayed pose into false WASD evidence.
+                        if(world_model.reject_retired_self_object_pose(
+                               entry.id,update->region_handle,
+                               entry.local_id,entry.texture_entry))continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle ||
                             self_avatar_region_generation !=
@@ -5540,6 +5545,11 @@ int Application::run(bool enable_developer_modules)
                         if(entry.local_id==0U||
                            !world::valid_simulator_avatar_pose(
                                entry.position,entry.rotation))continue;
+                        // Inbound retired TE must not rebind LocalID or
+                        // turn a delayed pose into false WASD evidence.
+                        if(world_model.reject_retired_self_object_pose(
+                               entry.id,update->region_handle,
+                               entry.local_id,entry.texture_entry))continue;
                         if (self_avatar_local_id != entry.local_id ||
                             self_avatar_region_handle != update->region_handle ||
                             self_avatar_region_generation !=
@@ -13983,6 +13993,12 @@ int Application::run(bool enable_developer_modules)
                             shell_view.avatar_bake_stream_status+=
                                 " | Alte Objekt-Bakes erneut verworfen:"+
                                 std::to_string(stale_object_bakes);
+                        const auto old_pose_packets=
+                            world_model.retired_self_pose_packets_blocked();
+                        if(old_pose_packets>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Alte Avatar-Pose vor WASD verworfen:"+
+                                std::to_string(old_pose_packets);
                         const auto replay_guards=
                             world_model.self_object_bake_replay_guards();
                         if(replay_guards>0U)

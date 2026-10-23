@@ -53,13 +53,13 @@ class SkinPixelRescue(unittest.TestCase):
   self.assertIn("plan_texture_slot_admission(",s)
   self.assertIn("object_texture_retries",s)
  def test_version_ten_blocks(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.984")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.994")
   j=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.984")
-  self.assertEqual(j["next_batch"],"Alpha.985–994")
+  self.assertEqual(j["viewer_version"],"0.2.0-alpha.994")
+  self.assertEqual(j["next_batch"],"Alpha.995–1004")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.985–994",read(f)[:1600])
+   self.assertIn("Alpha.995–1004",read(f)[:1600])
 if __name__=="__main__":unittest.main()

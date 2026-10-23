@@ -1,3 +1,5 @@
+**Alpha.985–994 (23.10.2026):** Alte Self-Avatar ObjectUpdate/Compressed LocalID-/Pose-Bindungen vor der Bewegungspipeline blockiert, auch ohne valides neues TE; gültige wirklich neue Outfit-Bake-TE erlaubt. F3 'Alte Avatar-Pose vor WASD verworfen' zählt sitzungsgebundene Ablehnungen. Nativer und Python-Handler-Order-Test, Servermain f56e354 unverändert. Live-Grid-E2E offen; Fortschritt 39 %. Details docs/ALPHA985_994_RETIRED_SELF_POSE_INGRESS_GUARD.md.
+
 **Alpha.975–984 (23.10.2026):** Acht begrenzte alte Self-ObjectUpdate Bake-Fingerprints über mehrere bestätigte COF-Wechsel; F3 zeigt Alte Outfit-TE gesperrt N, native C++/Python-Contracts. Keine Live-Avatar-/WASD-Abnahme, Fortschritt 39 %. Servermain f56e354 ändert nur World-API-Key-Scopes. Details: docs/ALPHA975_984_MULTI_COF_REPLAY_HISTORY.md.
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE MIT C++/GUI/TESTS/GITHUB/PI5-CI. Aktuelle OGL-Version 0.2.0-alpha.374, Gesamtfortschritt 39 % (38,65 % gewichtet), nächste Alpha.375–384.**

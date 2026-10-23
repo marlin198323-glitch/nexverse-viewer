@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.984",
+  "viewer_version": "0.2.0-alpha.994",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.985–994",
-  "assessment": "Alpha984: Self body ObjectUpdate TE replay protection retains up to eight distinct old LocalID+Head/Upper/Lower fingerprints across consecutive accepted COF switches, rather than one. Bounded FIFO, duplicate suppression, matching KillObject removal, region/login reset; F3 displays the count only without UUIDs. Native C++ multi-COF/old-packet/fixed-capacity tests and Python source contracts. Server-main f56e354 updates admin API key scope editor, not Avatar wire. Authenticated NexVerse live Avatar/COF/Skin GPU and server-acknowledged WASD/Yaw remain open. No production deployment. Authenticated live acceptance still open.",
+  "next_five_blocks": "Alpha.995–1004",
+  "assessment": "Alpha994: Corrects authenticated own-avatar ObjectUpdate / ObjectUpdateCompressed pre-admission. Previously a retired UDP body TE could rebind the self LocalID and confirm stale simulator pose/WASD before the existing baked-texture guard rejected it. New WorldModel rejection gate filters exact retired LocalID+Head/Upper/Lower TE and unproven retired LocalID packets lacking valid new TE before any app binding or movement feedback. A valid genuinely different new TE remains admitted, including reuse of the same LocalID. Separate privacy-safe F3 counter for ignored stale poses, resets with login, region and session, saturates. Native self-object replay and Python real-handler-order tests cover full/compressed ingress and COF chains. OpenGenesisLINK main f56e354 adds API-key-scope management only; no AvatarAppearance/LLUDP format change. Authenticated real-grid avatar/skin/outfit GPU and verified WASD/Yaw end-to-end are still open; no production deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.985–994",
+  "next_batch": "Alpha.995–1004",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

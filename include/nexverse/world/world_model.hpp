@@ -317,6 +317,14 @@ public:
         const noexcept;
     [[nodiscard]] std::uint32_t self_object_bake_replay_guards()
         const noexcept;
+    // Full/Compressed self avatar packets must be screened BEFORE they
+    // rebind LocalID, confirm simulator pose, or acknowledge WASD.
+    [[nodiscard]] bool reject_retired_self_object_pose(
+        std::string_view avatar_id,std::uint64_t region_handle,
+        std::uint32_t local_id,
+        std::span<const std::uint8_t> texture_entry);
+    [[nodiscard]] std::uint32_t retired_self_pose_packets_blocked()
+        const noexcept;
     // Current simulator explicitly withdrew the own avatar LocalID.
     // Invalidate ONLY ObjectUpdate provisional bakes; genuine Low158
     // remains authoritative until a new simulator appearance arrives.
@@ -447,6 +455,7 @@ private:
     // scoped to the current agent/region. Never exposed to rendering.
     std::deque<SelfAvatarObjectBakes> retired_self_object_bakes_;
     std::uint32_t self_object_bake_stale_replays_=0U;
+    std::uint32_t retired_self_pose_packets_blocked_=0U;
     std::uint32_t self_object_bake_withdrawals_=0U;
     std::uint32_t self_object_bake_outfit_invalidations_=0U;
     std::uint32_t self_object_kills_=0U;
