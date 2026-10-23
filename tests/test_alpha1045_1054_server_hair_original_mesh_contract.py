@@ -28,7 +28,7 @@ class OriginalHair(unittest.TestCase):
  def test_firestorm_gl_hair_draw_never_counts_as_fourth_body_bake(self):
   gl=read("src/render/opengl_renderer.cpp")
   hdr=read("include/nexverse/render/renderer.hpp")
-  self.assertIn("std::array<GpuMesh,6U> avatar_body_meshes_",gl)
+  self.assertIn("std::array<GpuMesh,7U> avatar_body_meshes_",gl)
   self.assertIn("avatar_body_meshes_.begin()+3",gl)
   self.assertIn("avatar_body_meshes_[3U]",gl)
   self.assertIn("object_textures_.find(\n                            avatar.hair_bake_texture_id)",gl)

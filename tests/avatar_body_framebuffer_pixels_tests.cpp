@@ -125,6 +125,65 @@ int main()
       }
       renderer->set_avatar_proxies({self});
     }
+    if(!error)
+    {
+      // Alpha.1094: a TRUE original Firestorm sparse MorphTarget must
+      // change the GPU raster of OWN Head, never REMOTE Head. Native
+      // test supplies a weight explicitly: not a fabricated COF packet.
+      auto original=assets::load_firestorm_avatar_llm(
+          *dir/"avatar_head.llm");
+      const auto transformed=original?
+          assets::morph_firestorm_avatar_mesh(
+              *original,{{"Elongate_Head",1.0f}}):std::nullopt;
+      const auto palette=original?
+          assets::firestorm_joint_render_palette(*rig,
+                                                  original->joint_names):
+          std::nullopt;
+      if(!transformed||!palette)error=71;
+      if(!error)
+      {
+        renderer->set_camera({{3.28f,0.0f,1.762f},
+             {-1,0,0},{0,-1,0},{0,0,1},55,0.01f,40});
+        renderer->set_avatar_proxies({self});
+        const auto self_original=draw();
+        auto remote=self;remote.is_self=false;
+        renderer->set_avatar_proxies({remote});
+        const auto remote_before=draw();
+        if(!renderer->set_avatar_body_mesh(6U,
+            {transformed->vertices,transformed->indices,{},
+             transformed->skin_weights,*palette}))error=72;
+        renderer->set_avatar_proxies({self});
+        const auto self_morphed=draw();
+        const auto stats=renderer->diagnostics();
+        const auto morph_pixels=difference(
+            self_original,self_morphed);
+        std::cout<<"ORIGINAL_FIRESTORM_SHAPE_MORPH_PIXELS="
+                 <<morph_pixels<<"; SELF_HEAD_MORPH_DRAWS="
+                 <<stats.self_avatar_shape_head_gl_draws<<"\n";
+        if(morph_pixels<2U||
+           stats.self_avatar_shape_head_gl_draws!=1U||
+           stats.self_avatar_anatomical_mesh_draw_calls!=3U)
+            error=73;
+        renderer->set_avatar_proxies({remote});
+        const auto remote_after=draw();
+        const auto remote_stale=difference(
+            remote_before,remote_after);
+        std::cout<<"REMOTE_UNAFFECTED_BY_SELF_SHAPE_PIXELS="
+                 <<remote_stale<<"\n";
+        if(remote_stale!=0U||
+           renderer->diagnostics().self_avatar_shape_head_gl_draws!=0U)
+            error=74;
+        renderer->clear_self_avatar_head_shape_preview();
+        renderer->set_avatar_proxies({self});
+        const auto after_clear=draw();
+        if(difference(self_original,after_clear)!=0U||
+           renderer->diagnostics().self_avatar_shape_head_gl_draws!=0U)
+            error=75;
+        renderer->set_camera(
+            {{0,0,1},{1,0,0},{0,1,0},{0,0,1},65,0.1f,40});
+        renderer->set_avatar_proxies({self});
+      }
+    }
     render::RenderImageRgba8 pixels{4,4,std::vector<std::uint8_t>(64,255)};
     for(std::size_t i=0;i<pixels.pixels.size();i+=4)
     {pixels.pixels[i]=20;pixels.pixels[i+1]=220;pixels.pixels[i+2]=60;}

@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <fstream>
+#include <iterator>
+#include <limits>
 int main()
 {
     using namespace nexverse::assets;
@@ -96,6 +99,74 @@ int main()
         // The input is immutable and file-decoder allocations are capped.
         if(decode_firestorm_avatar_llm({}).has_value())return 11;
     }
+    // Real alpha.1094 original Firestorm MorphTarget delta records.
+    // Read original immutable Head/Upper/Lower and sparse remaps, not
+    // fabricated body scaling. A COF visual param is NOT automatically
+    // a server-verified shape until the specific shape asset is validated.
+    const auto head=load_firestorm_avatar_llm(*dir/"avatar_head.llm");
+    const auto upper=load_firestorm_avatar_llm(*dir/"avatar_upper_body.llm");
+    const auto lower=load_firestorm_avatar_llm(*dir/"avatar_lower_body.llm");
+    const auto lash=load_firestorm_avatar_llm(*dir/"avatar_eyelashes.llm");
+    if(!head||!upper||!lower||!lash||
+       head->morph_targets.size()!=95U||
+       upper->morph_targets.size()!=30U||
+       lower->morph_targets.size()!=24U||
+       lash->morph_targets.size()!=34U)return 30;
+    const auto shape=morph_firestorm_avatar_mesh(
+        *head,{{"Elongate_Head",1.0f}});
+    const auto unchanged=morph_firestorm_avatar_mesh(
+        *head,{{"Elongate_Head",0.0f}});
+    const auto reversed=morph_firestorm_avatar_mesh(
+        *head,{{"Elongate_Head",-1.0f}});
+    if(!shape||!unchanged||!reversed||
+       unchanged->vertices!=head->vertices||
+       shape->indices!=head->indices||
+       shape->skin_weights!=head->skin_weights||
+       shape->joint_names!=head->joint_names||
+       shape->vertices==head->vertices||
+       reversed->vertices==head->vertices||
+       head->morph_targets.size()!=95U)return 31;
+    std::size_t altered=0U;
+    for(std::size_t i=0U;i<head->vertices.size();i+=8U)
+        if(shape->vertices[i]!=head->vertices[i]||
+           shape->vertices[i+1U]!=head->vertices[i+1U]||
+           shape->vertices[i+2U]!=head->vertices[i+2U])
+            ++altered;
+    if(altered<100U)return 32;
+    if(morph_firestorm_avatar_mesh(*head,{{"UNTRUSTED_MORPH",1.0f}})||
+       morph_firestorm_avatar_mesh(*head,{{"Elongate_Head",5.0f}})||
+       morph_firestorm_avatar_mesh(*head,{{"Elongate_Head",
+                                          std::numeric_limits<float>::infinity()}})||
+       morph_firestorm_avatar_mesh(*head,{{"Elongate_Head",0.3f},
+                                        {"Elongate_Head",0.4f}}))
+        return 33;
+    // Corrupt a single original sparse vertex index in a COPY:
+    // never silently read outside immutable Firestorm GPU mesh.
+    {
+        const auto file=*dir/"avatar_head.llm";
+        std::ifstream in(file,std::ios::binary);
+        std::vector<std::uint8_t> raw{
+           std::istreambuf_iterator<char>{in},
+           std::istreambuf_iterator<char>{}};
+        const std::string token="Elongate_Head";
+        const auto it=std::search(raw.begin(),raw.end(),
+                                  token.begin(),token.end());
+        if(it==raw.end())return 34;
+        const auto at=static_cast<std::size_t>(
+            std::distance(raw.begin(),it))+64U;
+        if(at+8U>raw.size())return 35;
+        raw[at]=255U;raw[at+1U]=255U;
+        raw[at+2U]=255U;raw[at+3U]=127U;
+        if(decode_firestorm_avatar_llm(raw))return 36;
+        raw.resize(at+10U);
+        if(decode_firestorm_avatar_llm(raw))return 37;
+    }
+    std::cout<<"FIRESTORM_REAL_MORPH_TARGETS_HEAD="
+             <<head->morph_targets.size()
+             <<"; UPPER="<<upper->morph_targets.size()
+             <<"; LOWER="<<lower->morph_targets.size()
+             <<"; LASH="<<lash->morph_targets.size()
+             <<"; DEFORMED_HEAD_VERTICES="<<altered<<"\n";
     if(vertices<2000U || faces<4500U)return 12;
     std::cout<<"Firestorm real avatar mesh parsed: vertices="<<vertices
              <<" triangles="<<faces<<"\n";

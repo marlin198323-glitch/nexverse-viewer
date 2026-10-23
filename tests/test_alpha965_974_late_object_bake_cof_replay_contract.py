@@ -41,6 +41,6 @@ class OldOutfitTeReplay(unittest.TestCase):
   self.assertIn("retired_self_object_bakes_",h)
   self.assertIn("self_render_bakes() const",h)
  def test_next_release(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1084")
-  self.assertIn("Alpha.1085–1094",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1094")
+  self.assertIn("Alpha.1095–1104",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

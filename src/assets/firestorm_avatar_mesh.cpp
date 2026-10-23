@@ -39,6 +39,16 @@ struct Reader
         cursor+=2U;
         return true;
     }
+    [[nodiscard]] bool u32(std::uint32_t& value)
+    {
+        if(!can(4U))return false;
+        value=static_cast<std::uint32_t>(bytes[cursor]) |
+            (static_cast<std::uint32_t>(bytes[cursor+1U])<<8U) |
+            (static_cast<std::uint32_t>(bytes[cursor+2U])<<16U) |
+            (static_cast<std::uint32_t>(bytes[cursor+3U])<<24U);
+        cursor+=4U;
+        return true;
+    }
     [[nodiscard]] bool f32(float& value)
     {
         if(!can(4U))return false;
@@ -141,11 +151,130 @@ std::optional<FirestormAvatarMesh> decode_firestorm_avatar_llm(
         // indices (e.g. upper body indices up to 14 with 12 entries).
         // Validating against numJointNames would reject original meshes.
     }
-    // The remaining optional MorphTarget records are deliberately not read:
-    // the original triangle indices, UVs and skin-joint weights suffice
-    // for the non-morphed bind-pose mesh. Never execute morph names as paths.
+    // Original Linden Binary Mesh 1.0 morph records:
+    // char name[64], S32 vertex count, sparse records of
+    // U32 index + vec3 coords/normals/binormals + vec2 UV (48 bytes).
+    // Existing Firestorm's "End Morphs" tag is mandatory. Never trust
+    // counts, names, offsets or sparse vertex indexes from disk.
+    bool morph_end=false;
+    constexpr std::size_t max_morph_targets=160U;
+    std::size_t total_morphed_vertices=0U;
+    constexpr std::size_t max_morph_vertices=60000U;
+    for(std::size_t target=0U;target<=max_morph_targets;++target)
+    {
+        if(!r.can(64U))return std::nullopt;
+        const auto first=r.cursor;
+        std::size_t length=0U;
+        while(length<64U&&data[first+length]!=0U)++length;
+        if(length==0U||length==64U)return std::nullopt;
+        const std::string name(reinterpret_cast<const char*>(
+            data.data()+first),length);
+        r.cursor+=64U;
+        if(name=="End Morphs")
+        {
+            morph_end=true;
+            break;
+        }
+        for(const unsigned char ch:name)
+            if(!((ch>='A'&&ch<='Z')||(ch>='a'&&ch<='z')||
+                 (ch>='0'&&ch<='9')||ch=='_'||ch=='.'||ch=='-'))
+                return std::nullopt;
+        if(target==max_morph_targets)return std::nullopt;
+        for(const auto& prior:out.morph_targets)
+            if(prior.name==name)return std::nullopt;
+        std::uint32_t count=0U;
+        if(!r.u32(count)||count==0U||count>n||
+           total_morphed_vertices+count>max_morph_vertices||
+           !r.can(static_cast<std::size_t>(count)*48U))
+            return std::nullopt;
+        total_morphed_vertices+=count;
+        FirestormMorphTarget record;
+        record.name=name;
+        record.vertices.reserve(count);
+        std::vector<bool> seen(n,false);
+        for(std::uint32_t j=0U;j<count;++j)
+        {
+            FirestormMorphVertex entry;
+            if(!r.u32(entry.index)||entry.index>=n||
+               seen[entry.index])return std::nullopt;
+            seen[entry.index]=true;
+            for(float& v:entry.position_delta)
+                if(!r.f32(v)||std::abs(v)>10.0f)
+                    return std::nullopt;
+            for(float& v:entry.normal_delta)
+                if(!r.f32(v)||std::abs(v)>10000.0f)
+                    return std::nullopt;
+            // Binormal deltas currently unused by the legacy renderer;
+            // still validate all bytes and bounds, never skip blindly.
+            for(std::size_t k=0U;k<3U;++k)
+                if(!r.f32(ignored)||std::abs(ignored)>10000.0f)
+                    return std::nullopt;
+            for(float& v:entry.uv_delta)
+                if(!r.f32(v)||std::abs(v)>10.0f)
+                    return std::nullopt;
+            record.vertices.push_back(entry);
+        }
+        out.morph_targets.push_back(std::move(record));
+    }
+    if(!morph_end)return std::nullopt;
+    // Optional U32 remap count + pairs from original Firestorm LLM.
+    // Out-of-bounds or truncated sections are NOT accepted. Preserve
+    // correct original base mesh + morph parsing without using remaps.
+    if(r.can(4U))
+    {
+        std::uint32_t remaps=0U;
+        if(!r.u32(remaps)||remaps>n||!r.can(
+               static_cast<std::size_t>(remaps)*8U))
+            return std::nullopt;
+        for(std::uint32_t i=0U;i<remaps;++i)
+        {
+            std::uint32_t from=0U,to=0U;
+            if(!r.u32(from)||!r.u32(to)||from>=n||to>=n)
+                return std::nullopt;
+        }
+    }
+    if(r.cursor!=data.size())return std::nullopt;
     return out.valid()?std::optional<FirestormAvatarMesh>{std::move(out)}
         :std::nullopt;
+}
+std::optional<FirestormAvatarMesh> morph_firestorm_avatar_mesh(
+    const FirestormAvatarMesh& base,
+    const std::vector<std::pair<std::string,float>>& weights)
+{
+    if(!base.valid()||weights.size()>8U)return std::nullopt;
+    FirestormAvatarMesh result=base;
+    // No accumulation into the input or other avatars sharing this .llm.
+    for(std::size_t i=0U;i<weights.size();++i)
+    {
+        const auto& [name,value]=weights[i];
+        if(name.empty()||!std::isfinite(value)||
+           std::abs(value)>3.0f)return std::nullopt;
+        for(std::size_t j=0U;j<i;++j)
+            if(weights[j].first==name)return std::nullopt;
+        const auto it=std::find_if(base.morph_targets.begin(),
+            base.morph_targets.end(),
+            [&](const auto& target){return target.name==name;});
+        if(it==base.morph_targets.end())return std::nullopt;
+        for(const auto& entry:it->vertices)
+        {
+            const std::size_t at=static_cast<std::size_t>(entry.index)*8U;
+            if(at+8U>result.vertices.size())return std::nullopt;
+            for(std::size_t k=0U;k<3U;++k)
+            {
+                result.vertices[at+k]+=
+                    entry.position_delta[k]*value;
+                result.vertices[at+k+3U]+=
+                    entry.normal_delta[k]*value;
+            }
+            for(std::size_t k=0U;k<2U;++k)
+                result.vertices[at+k+6U]+=
+                    entry.uv_delta[k]*value;
+        }
+    }
+    for(std::size_t i=0U;i<result.vertices.size();++i)
+        if(!std::isfinite(result.vertices[i])||
+           std::abs(result.vertices[i])>1e4f)return std::nullopt;
+    return result;
 }
 std::optional<FirestormAvatarMesh> load_firestorm_avatar_llm(
     const std::filesystem::path& file)

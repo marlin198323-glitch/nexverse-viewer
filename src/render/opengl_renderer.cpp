@@ -3271,6 +3271,12 @@ public:
                 std::min(lights.size(), max_active_lights)));
     }
 
+    void clear_self_avatar_head_shape_preview() override
+    {
+        destroy_mesh(avatar_body_meshes_[6U]);
+        avatar_body_meshes_[6U]={};
+    }
+
     [[nodiscard]] bool set_avatar_eyelash_visibility_mask(
         const RenderImageRgba8& mask) override
     {
@@ -3465,6 +3471,7 @@ public:
         diagnostics_.avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_eyelash_mask_gl_draws=0U;
+        diagnostics_.self_avatar_shape_head_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4503,7 +4510,12 @@ public:
                     // Only one GL_ANY_SAMPLES_PASSED can be active at once.
                     for(std::size_t slot=0U;slot<3U;++slot)
                     {
-                        const auto& gpu=avatar_body_meshes_[slot];
+                        const auto& gpu=
+                            avatar.is_self&&slot==0U&&
+                            avatar_body_meshes_[6U].vao!=0U&&
+                            avatar_body_meshes_[6U].index_count>0
+                                ?avatar_body_meshes_[6U]
+                                :avatar_body_meshes_[slot];
                         bool skin_valid=!posed.empty() &&
                             gpu.skin_vbo!=0U &&
                             gpu.skin_palette.size()>=2U &&
@@ -4601,6 +4613,10 @@ public:
                         }
                         ++diagnostics_.draw_calls;
                         ++diagnostics_.avatar_anatomical_mesh_draw_calls;
+                        if(avatar.is_self&&slot==0U&&
+                           avatar_body_meshes_[6U].vao!=0U&&
+                           &gpu==&avatar_body_meshes_[6U])
+                            ++diagnostics_.self_avatar_shape_head_gl_draws;
                         if(avatar.is_self)
                             ++diagnostics_.self_avatar_anatomical_mesh_draw_calls;
                         if(skin_valid)
@@ -5750,7 +5766,9 @@ private:
     // 4 original eye globe instanced at both mEyeLeft/mEyeRight joints.
     // Slot 5 original weighted Firestorm avatar_eyelashes.llm.
     // No bundled Firestorm binary or invented eyeliner/eyelash asset.
-    std::array<GpuMesh,6U> avatar_body_meshes_{};
+    // Slot 6 only replaces slot 0 when is_self=true: COF Shape
+    // morph preview cannot change any remote avatar's shared Head.
+    std::array<GpuMesh,7U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};

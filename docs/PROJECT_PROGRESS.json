@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1084",
+  "viewer_version": "0.2.0-alpha.1094",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1085–1094",
-  "assessment": "Alpha1084: Original locally installed Firestorm head_alpha.tga (8-bit grayscale RLE 512x512; referenced as eyelash visibility layer in avatar_lad.xml) is decoded via EXISTING bounded secure Firestorm character TGA parser and uploaded as a dedicated capped GPU visibility texture for original weighted eyelashMesh. This mask participates ONLY in the actual original Firestorm skinned eyelash GL shader branch and ONLY when the same current self/remote GPU-admitted avatar Head TE baked asset is still resident. Shader samples red luminance through original LLM UVs and discards masked-out fragments; it does not fabricate a server asset, request HTTP, change COF, download costumes, or claim full Firestorm makeup compositor and shape morph parity. Renderer method validates 1024x1024 max image and uploads a new GL texture transactionally; failures preserve the previous GPU mask and GL cleanup retires it. Shader uniform resets prevent effects on Head/Upper/Lower anatomy, Eyes, Hair, objects and next frame. Original Firestorm Xvfb OpenGL framebuffer and synthetic Head RGBA shows: all-black 8x8 test mask -> ZERO additional eyelash pixels without hiding Head, invalid-mask upload refused with previous GPU texture still active; subsequently real original head_alpha.tga -> 1062 visible eyelash pixels and separate one GL mask + one eyelash draw; current Head TE removal/eviction immediately stops both. Five Python contracts and native framebuffer regression. Full local Firestorm hair/shape/wearable alpha compositing still open, as are authenticated live-grid 3/3 body Skin/Outfit and server-confirmed WASD/Yaw E2E. Server main 99341d475b10 unchanged. No production deploy.",
+  "next_five_blocks": "Alpha.1095–1104",
+  "assessment": "Alpha1094: ORIGINAL Firestorm Linden Binary Mesh 1.0 sparse MorphTargets are parsed safely after original normals, UV, skin weights, face indices and joints. Actual avatar_head.llm contains 95 named targets, original upper_body 30, lower_body 24, eyelashes 34. Bounds for name/count/vertex index, duplicate sparse targets, total vertex allocation, NaN/Inf finite deltas, 48-byte records, canonical End Morphs sentinel and U32 remap table are validated. CPU morphology applies real named sparse position, normal and UV deltas to a COPY of original skinned mesh; no shared mutation or fabricated scale. Native real original Firestorm tests prove Elongate_Head (avatar_lad.xml wearable shape param ID 770) changes 708 Head vertices, weight 0 retains base, invalid/duplicate/out-of-range morph and poisoned binary indexes fail closed. Renderer gains a separate optional SELF-only skinned Head morphology GL mesh slot 6: remote avatar Head remains original. Real Xvfb Firestorm GL raster: 45582 changed own Head pixels with specific test 1.0 morph, zero changed pixels on remote avatar, full original pixels restored after reset and counters per frame. Current in-world COF Shape preview is only applied after explicitly fetching ALL original Wearable assets, in the authenticated same agent/epoch/region lease, exact COF-folder/version, verified inventory asset subtypes and no parse errors. Exactly one genuine shape asset type 0 with known visual_params[770] -1..1 is allowed. Any agent, login, region or COF version mismatch immediately destroys the self-only morph before avatar render. Source F3 counts actual self-morph GL Head only, never as full COF-bake proof. Server unlabelled Low158 VisualParams are never guessed to map to morph IDs; remote COF is never invented; full shape-morph binding and all shape/driver params, live authenticated movement and true RGB skin/COF/outfit end-to-end still open. OpenGenesisLINK upstream main 99341d475b10 unchanged. No production deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1085–1094",
+  "next_batch": "Alpha.1095–1104",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

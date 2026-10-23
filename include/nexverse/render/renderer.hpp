@@ -403,6 +403,7 @@ struct RenderDiagnostics
     // Actual local original Firestorm head_alpha visibility texture
     // enabled on an admitted Wimpern GL draw, not final makeup COF.
     std::uint64_t self_avatar_eyelash_mask_gl_draws=0U;
+    std::uint64_t self_avatar_shape_head_gl_draws=0U;
     // Actual Texture UUID used by the original LLM slot in this frame.
     // A GPU draw with yesterday's bake must not prove today's Low158 TE.
     std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};
@@ -487,6 +488,9 @@ public:
     // all required files have passed validation and GPU upload.
     [[nodiscard]] virtual bool set_avatar_body_mesh(
         std::size_t slot,const RenderMeshGeometry& geometry)=0;
+    // Optional authenticated COF Shape preview for OWN avatar only.
+    // Never deform the shared original Head mesh of other agents.
+    virtual void clear_self_avatar_head_shape_preview()=0;
     // Locally installed Firestorm head_alpha.tga *visibility* mask
     // for the original eyelashMesh, NOT a server downloaded asset.
     // An absent/invalid image leaves the previous GPU mask intact.
