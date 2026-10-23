@@ -25,3 +25,13 @@ with original Firestorm 133 bind joints, three
 GPU resident Body meshes / 7186 triangles and
 X11 taskbar WM_CLASS and system icon 128x128 PASS.
 No authenticated NexVerse Grid inworld session.
+
+## Github Feature-SHA and CI
+Feature code SHA 66e0211817709f6b6db96ec2fab25d68b7e679d6.
+Pi5 Source Check Run 39977723209 IN_PROGRESS at last check,
+not yet a Pi5 green claim. Hosted Linux x64 Run
+39977723207 completed FAILURE before runner allocation:
+Job 120496597862, runner_id 0, 0 steps, no compiler.
+Previous verified Pi5 Alpha854 code SHA 584ea15
+Run 39975553846 SUCCESS. Local Mint x64 validation
+EXIT 0: 178 CTests, 416 Python, isolated Firestorm UI and X11 icon.
