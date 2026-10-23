@@ -43,7 +43,7 @@ class FirestormMorph1094(unittest.TestCase):
               "caps_state.current_outfit_folder==gallery_asset_cof",
               "gallery_decoded_wearable_assets.size()==",
               "wearable.type!=0", "multiple_shape",
-              "firestorm_cof_shape_morph_preview(",
+              "firestorm_cof_shape_morph_from_original_lad(",
               "selection&&selection->active()",
               'morph_firestorm_avatar_mesh(',
                'upload("avatar_head.llm",6U,',

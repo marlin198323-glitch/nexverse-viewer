@@ -213,6 +213,45 @@ int main()
        firestorm_cof_shape_morph_preview({{151,-0.01f}})||
        firestorm_cof_shape_morph_preview({{152,1.51f}}))
         return 44;
+    // Alpha.1124 dynamic ORIGINAL LAD+LLM catalog (no permanent
+    // 8-param whitelist). These extra two torso/legs IDs are only
+    // accepted when both original XML param_morph AND the actual
+    // matching LLM MorphTarget name agree. Old helper knows only 8.
+    const auto dynamic=firestorm_cof_shape_morph_from_original_lad(
+        *dir,{{770,0.65f},{186,-0.4f},{686,0.9f},{518,0.7f},
+              {104,0.8f},{106,0.9f},{634,0.7f},
+              {151,0.65f},{152,1.1f},{635,0.8f}});
+    if(!dynamic||dynamic->head.size()!=3U||
+       dynamic->eyelashes.size()!=4U||
+       dynamic->upper.size()!=3U||
+       dynamic->lower.size()!=3U)return 45;
+    const auto dyn_upper=morph_firestorm_avatar_mesh(
+        *upper,dynamic->upper);
+    const auto dyn_lower=morph_firestorm_avatar_mesh(
+        *lower,dynamic->lower);
+    if(!dyn_upper||!dyn_lower||
+       dyn_upper->vertices==upper->vertices||
+       dyn_lower->vertices==lower->vertices)return 46;
+    if(firestorm_cof_shape_morph_from_original_lad(
+           *dir,{{634,1.01f}})||
+       firestorm_cof_shape_morph_from_original_lad(
+           *dir,{{635,1.01f}})||
+       firestorm_cof_shape_morph_from_original_lad(
+           *dir,{{634,std::numeric_limits<float>::infinity()}}))
+        return 47;
+    const auto absent=firestorm_cof_shape_morph_from_original_lad(
+        *dir,{{9999,0.5f}});
+    if(!absent||absent->active())return 48;
+    // Reject corrupt or missing character directory, not an
+    // unverified dictionary or fabricated default morph.
+    if(firestorm_cof_shape_morph_from_original_lad(
+           *dir/"missing-character-assets",{{104,0.8f}}))
+        return 49;
+    std::cout<<"FIRESTORM_ORIGINAL_LAD_DYNAMIC_MORPHS_HEAD="
+             <<dynamic->head.size()<<"; LASH="
+             <<dynamic->eyelashes.size()<<"; UPPER="
+             <<dynamic->upper.size()<<"; LOWER="
+             <<dynamic->lower.size()<<"\n";
     std::cout<<"FIRESTORM_ORIGINAL_COF_BODY_MORPHS_UPPER="
              <<body_shape->upper.size()
              <<"; LOWER="<<body_shape->lower.size()<<"\n";

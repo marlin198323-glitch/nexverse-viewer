@@ -241,7 +241,7 @@ std::optional<FirestormAvatarMesh> morph_firestorm_avatar_mesh(
     const FirestormAvatarMesh& base,
     const std::vector<std::pair<std::string,float>>& weights)
 {
-    if(!base.valid()||weights.size()>8U)return std::nullopt;
+    if(!base.valid()||weights.size()>96U)return std::nullopt;
     FirestormAvatarMesh result=base;
     // No accumulation into the input or other avatars sharing this .llm.
     for(std::size_t i=0U;i<weights.size();++i)

@@ -19,6 +19,6 @@ class Low382Wrap(unittest.TestCase):
    "w.apply_agent({other_id,session_id,{},{},true});"):
    self.assertIn(token,s)
  def test_project_version(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1114")
-  self.assertIn("Alpha.1115–1124",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1124")
+  self.assertIn("Alpha.1125–1134",read("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

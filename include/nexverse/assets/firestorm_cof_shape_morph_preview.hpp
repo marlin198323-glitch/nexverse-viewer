@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <string>
@@ -25,6 +26,14 @@ struct FirestormCofMorphPreview
 // A missing param has no morph applied (original bind pose).
 // Invalid/out-of-range/NaN parameters refuse the ENTIRE preview,
 // never leave a partially updated/stale previous GPU face.
+// Read bounded ORIGINAL Firestorm LAD XML and cross-check every
+// wearable=shape param_morph ID/name against original LLM MorphTargets.
+// Never use a synthetic Low158 VisualParam ordering or a remote shape.
+// Unsupported driver/bone morphs are not treated as completed.
+[[nodiscard]] std::optional<FirestormCofMorphPreview>
+firestorm_cof_shape_morph_from_original_lad(
+    const std::filesystem::path& character_directory,
+    const std::map<std::int32_t,float>& shape_params);
 [[nodiscard]] inline std::optional<FirestormCofMorphPreview>
 firestorm_cof_shape_morph_preview(
     const std::map<std::int32_t,float>& shape_params)

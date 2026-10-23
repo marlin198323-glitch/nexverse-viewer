@@ -49,6 +49,6 @@ class RegionHandshakeReplayContract(unittest.TestCase):
   self.assertIn("nexverse-region-handshake-replay-tests",rd("CMakeLists.txt"))
   self.assertIn("region_handshake_replay_tests wearables",rd("scripts/pi5-headless-tests.sh"))
  def test_version_and_next_batch(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1114")
-  self.assertIn("Alpha.1115–1124",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1124")
+  self.assertIn("Alpha.1125–1134",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

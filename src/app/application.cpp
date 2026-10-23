@@ -9616,13 +9616,20 @@ int Application::run(bool enable_developer_modules)
                             // Firestorm avatar_lad.xml. Head 770,186,686;
                             // eyelashes match these plus 518. All morphs
                             // apply to COPIES of the original assets.
-                            const auto selection=assets::
-                                firestorm_cof_shape_morph_preview(
-                                    shape->visual_params);
+                            // Use the original *installed* Firestorm
+                            // LAD mesh param_morph IDs/individual bounds
+                            // intersected with the actual LLM MorphTargets.
+                            // No hardcoded eight-param ceiling or Low158
+                            // byte-position inference. The old preview
+                            // was cleared above even if this fails.
+                            const auto root=assets::
+                                find_firestorm_avatar_character_directory();
+                            const auto selection=root?assets::
+                                firestorm_cof_shape_morph_from_original_lad(
+                                    *root,shape->visual_params)
+                                :std::nullopt;
                             if(selection&&selection->active())
                             {
-                                const auto root=assets::
-                                    find_firestorm_avatar_character_directory();
                                 const auto rig=root?assets::
                                     load_firestorm_avatar_rig(*root)
                                     :std::nullopt;
@@ -9683,9 +9690,21 @@ int Application::run(bool enable_developer_modules)
                                             gallery_asset_cof_version;
                                         shape_head_preview_owner=
                                             active_session->agent_id;
+                                        // These are VERIFIED local
+                                        // original LAD/LLM morph counts,
+                                        // not a fabricated final skin,
+                                        // outfit or simulator-render ACK.
                                         gallery_asset_status+=
-                                            "; original COF-Shape Head/"
-                                            "Wimpern/Upper/Lower lokal sichtbar";
+                                            "; Firestorm COF-LAD Preview "
+                                            "Head="+std::to_string(
+                                                selection->head.size())+
+                                            " Wimpern="+std::to_string(
+                                                selection->eyelashes.size())+
+                                            " Upper="+std::to_string(
+                                                selection->upper.size())+
+                                            " Lower="+std::to_string(
+                                                selection->lower.size())+
+                                            " (lokal, kein Bake-Beweis)";
                                     }
                                     else
                                     {

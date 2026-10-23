@@ -94,6 +94,7 @@ add_library(nexverse-assets
     src/assets/jpeg2000_decoder.cpp
     src/assets/mesh_loader.cpp
     src/assets/firestorm_avatar_mesh.cpp
+    src/assets/firestorm_cof_shape_catalog.cpp
     src/assets/firestorm_avatar_rig.cpp
     src/assets/firestorm_texlayer_manifest.cpp
     src/assets/firestorm_tga.cpp

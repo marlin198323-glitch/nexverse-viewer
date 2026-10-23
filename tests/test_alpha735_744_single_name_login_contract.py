@@ -31,6 +31,6 @@ class SingleNameLoginContract(unittest.TestCase):
   self.assertIn("if(start_last==std::string_view::npos)",header)
   self.assertIn("find_first_of",header)
  def test_version_and_handoff(self):
-  self.assertIn("Alpha.1115–1124",read("CHATUEBERGABE.md"))
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1114")
+  self.assertIn("Alpha.1125–1134",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1124")
 if __name__=="__main__":unittest.main()

@@ -260,6 +260,38 @@ int main()
                counts.self_avatar_shape_body_gl_draws[1U]!=1U||
                counts.self_avatar_anatomical_mesh_draw_calls!=3U)
                 error=84;
+            // Alpha.1124: the original Firestorm LAD+matching LLM
+            // permits two MORE true body morphs beyond the legacy
+            // eight-ID map, on live OpenGL triangles, not just a
+            // diagnostic counter. The 634/635 names are read from
+            // locally installed avatar_lad.xml, not invented.
+            const auto expanded=assets::
+                firestorm_cof_shape_morph_from_original_lad(
+                    *dir,{{104,0.95f},{106,1.25f},{634,0.85f},
+                          {151,0.9f},{152,1.3f},{635,0.85f}});
+            const auto up_extra=expanded&&upper?
+                assets::morph_firestorm_avatar_mesh(
+                    *upper,expanded->upper):std::nullopt;
+            const auto lo_extra=expanded&&lower?
+                assets::morph_firestorm_avatar_mesh(
+                    *lower,expanded->lower):std::nullopt;
+            if(!up_extra||!lo_extra||
+               !renderer->set_avatar_body_mesh(8U,
+                   {up_extra->vertices,up_extra->indices,{},
+                    up_extra->skin_weights,*up_palette})||
+               !renderer->set_avatar_body_mesh(9U,
+                   {lo_extra->vertices,lo_extra->indices,{},
+                    lo_extra->skin_weights,*lo_palette}))
+                error=87;
+            renderer->set_avatar_proxies({self});
+            const auto expanded_body=draw();
+            const auto expanded_pixels=difference(shaped,expanded_body);
+            std::cout<<"ORIGINAL_LAD_DYNAMIC_EXTRA_BODY_MORPH_PIXELS="
+                     <<expanded_pixels<<"\n";
+            if(expanded_pixels<2U||
+               renderer->diagnostics().self_avatar_shape_body_gl_draws[0U]!=1U||
+               renderer->diagnostics().self_avatar_shape_body_gl_draws[1U]!=1U)
+                error=88;
             renderer->set_avatar_proxies({remote});
             const auto untouched=difference(remote_base,draw());
             std::cout<<"REMOTE_BODY_SHAPE_GHOST_PIXELS="
