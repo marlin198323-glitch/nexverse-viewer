@@ -27,3 +27,15 @@ isolierter Xvfb-Viewer mit Firestorm Originalskelett 133 Joints,
 drei Original-LLM-Bodymeshes GPU-resident 7186 Dreiecke,
 OGL X11 WM_CLASS/Systemicon 128x128 PASS.
 Keine echte authentifizierte Live-Grid-Sitzung, kein Produktivdeploy.
+
+## Exakte GitHub Feature-SHA und CI
+Code-SHA c86977f978cc15d3495df6cc88af65c75ce0d7d6.
+Pi5 ARM64 Source Check Run 40008385875 IN_PROGRESS beim
+letzten Abruf; nicht als Erfolg behaupten.
+Hosted x64 Run 40008385892 COMPLETED/FAILURE,
+Job 120602080388 runner_id 0, steps 0, kein Compiler.
+Vorheriger Pi5 SUCCESS Alpha.944 SHA 7a97831,
+Run 39994940156. Separat Mint x64 voller Release-Gate
+EXIT 0: 183 CTests, 457 Python, Firestorm-LLM-Xvfb-GUI,
+OGL X11 Taskleisten-Icon 128px PASS.
+Kein Live-Grid-Login und kein Deployment.
