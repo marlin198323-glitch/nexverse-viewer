@@ -971,6 +971,13 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-legacy-wearables-cof-audit-tests
         COMMAND nexverse-legacy-wearables-cof-audit-tests)
 
+    add_executable(nexverse-wearables-readback-retry-tests
+        tests/wearables_readback_retry_tests.cpp)
+    target_link_libraries(nexverse-wearables-readback-retry-tests PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-wearables-readback-retry-tests)
+    add_test(NAME nexverse-wearables-readback-retry-tests
+        COMMAND nexverse-wearables-readback-retry-tests)
+
     add_executable(nexverse-agent-wearables-readback-tests
         tests/agent_wearables_readback_tests.cpp)
     target_link_libraries(nexverse-agent-wearables-readback-tests

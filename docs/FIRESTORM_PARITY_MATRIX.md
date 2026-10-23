@@ -945,3 +945,10 @@ Keine angenommene BodyQuat aus provisorischer Login-Agent.rotation.
 Gültige LookAt-Richtung liefert authentischen ersten Yaw. Andernfalls
 position-only und WASD wartet auf Full/Compressed/Terse Simulatorpose
 mit tatsächlicher Quaternion. LLUDP-Wire und Steuerbits unverändert.
+
+## Alpha.905–914 – Firestorm/Legacy Low381 Low382 Readback Recovery
+Der native OpenSim/Firestorm-Wirevertrag bleibt unverändert:
+Low381 AgentID+SessionID, zuverlässiger Versand, Low382
+Agent/Session/Serial/Wearables. Nach fehlender Antwort sind
+höchstens zwei read-only Wiederholungen erlaubt. Reply-Empfang
+beweist weder COF noch ein gerendertes Outfit.

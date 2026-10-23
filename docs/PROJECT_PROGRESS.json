@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.904",
+  "viewer_version": "0.2.0-alpha.914",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.905–914",
-  "assessment": "Alpha904: Fixed actual AgentMovementComplete rotation provenance bug: real LLUDP packet carries Position and LookAt Vec3, not a BodyRotation quaternion. Viewer previously used provisional prior AgentState.rotation as if server verified it, so false High4 WASD/yaw success could occur even when LookAt was invalid. New MPL simulator_look_at_heading validates finite horizontal server LookAt and forms unit yaw quaternion; for zero/vertical/invalid LookAt new WorldModel authenticated accept_simulator_self_position accepts only the true position, preserving separately verified current BodyRotation without fabricating an initial quaternion or enabling High4 WASD. Actual LLUDP AgentMovementComplete handler dispatches true yaw or position-only. Native C++23 Mint/Pi5 tests include compass headings, invalid inputs, session/region admission, later genuine yaw and movement controls; Python app/decoder integration and full Mint x64 isolated GUI release gate. Servermain ccfc644d #286 adds only dedicated Voice Go bootstrap, no avatar protocol change. Authenticated NexVerse AvatarAppearance/COF/Skin/Outfit GPU pixels and simulator-confirmed WASD/yaw live E2E still open; no deploy.",
+  "next_five_blocks": "Alpha.915–924",
+  "assessment": "Alpha914: Added missing read-only Legacy Low381 AgentWearablesRequest readback recovery to actual CircuitConnection worker. A reliable request ACK cannot prove receipt of Low382 wearables. If no valid wire-decoded matching AgentID+SessionID Low382 has arrived, bounded retry requests at 5 and 12 seconds after original initial request, maximum two per login circuit. Uses existing LLUDP reliable tracker and same authenticated LoginSession, never wears or mutates COF/Skin. Matching valid Low382 stops retries immediately; foreign/malformed responses are not accepted. CircuitStatus and F3 show retry count and true wire readback separately from actual WorldModel COF, outfit and GPU skin evidence. Native C++23 deterministic retry timing test registered in Mint CMake and Pi5 ARM64 standalone native checks. Python test guards actual circuit and F3 paths, full Linux Mint x64 GUI release gate. Last Pi5 Alpha904 code SHA 90bde59 Run 39986215063 completed success. OpenGenesisLINK servermain ccfc644d unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin GPU pixels and simulator-confirmed WASD/Yaw live E2E still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.905–914",
+  "next_batch": "Alpha.915–924",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "5247d3f9d775411a1af7137545062161af702668",
-    "run_id": 39984523949,
+    "tested_sha": "90bde599854eb805eec66ebe00f10c57d1b12594",
+    "run_id": 39986215063,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 source + Python/native checks only; no real Grid login"
+    "scope": "Pi5 ARM64 native and Python, not authenticated Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "90bde599854eb805eec66ebe00f10c57d1b12594",
-    "run_id": 39986215063,
-    "checked_status": "in_progress",
-    "note": "No green claim until completed/success on this exact feature SHA."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "90bde599854eb805eec66ebe00f10c57d1b12594",
     "run_id": 39986215086,
@@ -111,9 +106,9 @@
   "mint_x64_validation": {
     "status": "local_pass",
     "cmake_full_debug_build": true,
-    "native_ctest_passed": 180,
+    "native_ctest_passed": 181,
     "native_ctest_failed": 0,
-    "python_tests_passed": 432,
+    "python_tests_passed": 437,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "90bde599854eb805eec66ebe00f10c57d1b12594",
-    "version": "0.2.0-alpha.904",
+    "version": "0.2.0-alpha.914",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Linux Mint full CMake/vcpkg x64 Viewer: 180/180 native CTests, 432/432 Python; genuine LLUDP AgentMovementComplete server LookAt heading vs position-only, C++ tests and Pi5 source check; isolated Xvfb GUI original Firestorm 133 joints/3 LLM GPU resident body meshes/7186 triangles, X11 icon 128px PASS. No live authenticated Grid.",
+    "note": "Linux Mint x64 full CMake/vcpkg viewer, 181/181 native CTests, 437/437 Python, bounded 5s/12s Low381 read-only retries and exact Low382 wire status, Firestorm original 133 joints / 3 GPU .llm meshes 7186 triangles; isolated Xvfb GUI X11 128px OGL icon PASS, no live authenticated Grid session.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -151,6 +146,8 @@
     "region_epoch_outbound_queue_flight_heading_reset": true,
     "f3_waiting_for_simulator_pose": true,
     "look_at_server_yaw_not_provisional_quaternion": true,
-    "position_only_missing_heading_no_high4": true
+    "position_only_missing_heading_no_high4": true,
+    "wearables_read_only_retries_bounded": true,
+    "wearables_matching_low382_wire_stop": true
   }
 }

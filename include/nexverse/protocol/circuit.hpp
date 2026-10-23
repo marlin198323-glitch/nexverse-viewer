@@ -7,6 +7,7 @@
 #include "nexverse/net/udp_socket.hpp"
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/outbound_queue.hpp"
+#include "nexverse/protocol/wearables_readback_retry.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -44,6 +45,8 @@ struct CircuitStatus
     bool self_appearance_support_sent=false;
     // Legacy Low381 read-only bootstrap (socket-send, not ACK/reply).
     bool wearables_read_request_sent=false;
+    std::uint32_t wearables_read_retries_sent=0U;
+    bool wearables_valid_wire_received=false;
     // True only for an ACK matched by the reliable tracker to the LATEST
     // RegionHandshakeReply sequence. Not a simulator AvatarAppearance.
     bool self_appearance_support_acknowledged=false;

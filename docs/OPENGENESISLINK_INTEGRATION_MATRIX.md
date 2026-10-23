@@ -853,3 +853,11 @@ LookAt (Vec3), nicht BodyRotation. OGL leitet nur bei gültiger endlicher
 horizontaler LookAt eine Z-Yaw-Quaternion ab; sonst bleibt der
 Readback position-only und autorisiert keinen neuen High4-AgentUpdate-Yaw.
 Servermain ccfc644d #286 ändert nur OGLVoice-Go-Bootstrap.
+
+## Alpha.905–914 – nach fehlendem Low382-Wearables-Readback begrenzt Low381 erneut lesen
+Zuverlässige Zustellung eines Low381 ist nicht gleich einem erhaltenen
+Low382. CircuitConnection startet nach dem tatsächlichen ersten
+Low381-Request zwei zeitlich begrenzte read-only Wiederholungen nach
+5 und 12 Sekunden, solange keine korrekt decodierte Low382 mit
+passender AgentID/SessionID eingetroffen ist. Keine Skin-, COF-
+oder AgentIsNowWearing-Mutation, keine zusätzliche Server-API.

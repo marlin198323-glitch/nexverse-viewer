@@ -13855,6 +13855,16 @@ int Application::run(bool enable_developer_modules)
                     circuit_snapshot.wearables_read_request_sent
                     ?"Wearables: Legacy-Antwort ausstehend"
                     :"Wearables: Anfrage ausstehend";
+                if(circuit_snapshot.wearables_read_request_sent)
+                {
+                    shell_view.avatar_wearables_status+=
+                        " | Low381 Wiederholungen "+
+                        std::to_string(
+                            circuit_snapshot.wearables_read_retries_sent)+"/2";
+                    if(circuit_snapshot.wearables_valid_wire_received)
+                        shell_view.avatar_wearables_status+=
+                            " | Low382 empfangen (COF ungeprueft)";
+                }
                 shell_view.mesh_quality_status=
                     ui::describe_mesh_quality(mesh_quality_evidence);
                 shell_view.avatar_report_notice=avatar_report_notice;

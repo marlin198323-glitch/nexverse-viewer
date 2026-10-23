@@ -60,13 +60,13 @@ class MotionEvidenceContract(unittest.TestCase):
                 "server_position_stalled","awaiting_after_discontinuity"):
    self.assertIn(claim,native)
  def test_release_documentation(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.904")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.914")
   state=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(state["viewer_version"],"0.2.0-alpha.904")
-  self.assertEqual(state["next_batch"],"Alpha.905–914")
+  self.assertEqual(state["viewer_version"],"0.2.0-alpha.914")
+  self.assertEqual(state["next_batch"],"Alpha.915–924")
   self.assertEqual(state["default_blocks_per_run"],10)
   self.assertIn("still open",state["assessment"])
   for filename in ("CHATUEBERGABE.md","AGENTS.md","projectplan.md",
                    "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.905–914",read(filename)[:1100])
+   self.assertIn("Alpha.915–924",read(filename)[:1100])
 if __name__=="__main__":unittest.main()

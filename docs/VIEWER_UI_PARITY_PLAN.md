@@ -589,3 +589,9 @@ Bestehende F3 WASD-wartet-Simulatorposition-Anzeige bleibt aktiv, wenn
 AgentMovementComplete Koordinaten liefert, aber keine nutzbare horizontale
 LookAt-Blickrichtung. Kein künstlich aus Default-Quaternion abgeleiteter
 serverbestätigter Avatar-Heading oder Bewegungserfolg.
+
+## Alpha.905–914 – sichtbarer F3 Wearables-Readback Status
+F3 zeigt tatsächliche gesendete Low381-Nachfragen N/2 und
+einen gültigen Low382-Wire-Empfang. Dabei steht ausdrücklich
+COF ungeprueft. Separate WorldModel-/Skin-/GPU-Beweisführung
+bleibt erforderlich. Ohne Antwort bleibt Wearables offen.

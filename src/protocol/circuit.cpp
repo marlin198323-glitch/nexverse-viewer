@@ -292,6 +292,7 @@ CircuitStatus CircuitConnection::run(
 
     bool movement_sent = false;
     std::uint32_t movement_sequence = 0U;
+    WearablesReadbackRetry wearables_retry;
     const auto started = std::chrono::steady_clock::now();
     auto last_receive = started;
 
@@ -333,6 +334,24 @@ CircuitStatus CircuitConnection::run(
             status.message = "LLUDP reliable retry limit reached";
             notify();
             return status;
+        }
+
+        // A reliable request ACK is not a Low382 readback. Repeat the
+        // original read-only request at most twice if no matching reply.
+        if(status.state==CircuitState::active && wearables_retry.due(now))
+        {
+            const auto seq=next_sequence++;
+            auto request=encode_agent_wearables_request(seq,session_);
+            if(request.empty()||!send_reliable(
+                    socket,tracker,std::move(request),seq,status))
+            {
+                status.message="Low381 repeat send failed";
+                notify();
+                return status;
+            }
+            wearables_retry.note_retry_sent();
+            status.wearables_read_retries_sent=wearables_retry.retries();
+            notify();
         }
 
         if (status.state == CircuitState::active && outbound != nullptr)
@@ -475,6 +494,20 @@ CircuitStatus CircuitConnection::run(
             return status;
         }
 
+        if(status.wearables_read_request_sent)
+            wearables_retry.note_initial_sent(
+                std::chrono::steady_clock::now());
+        if(decoded.packet->header.message==msg_agent_wearables_update)
+        {
+            const auto reply=decode_agent_wearables_update(
+                decoded.packet->payload);
+            if(reply&&reply->agent_id==session_.agent_id&&
+               reply->session_id==session_.session_id)
+            {
+                wearables_retry.note_response();
+                status.wearables_valid_wire_received=true;
+            }
+        }
         if (on_packet)
         {
             on_packet(*decoded.packet);
