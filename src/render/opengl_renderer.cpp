@@ -3402,6 +3402,8 @@ public:
         diagnostics_.self_avatar_server_selected_skin_draw_calls=0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
+        diagnostics_.avatar_hair_bake_gl_draws=0U;
+        diagnostics_.self_avatar_hair_bake_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4389,7 +4391,7 @@ public:
                 {{0.0f, 0.0f, 0.77f}, {0.33f, 0.46f, 0.24f}, false, 1U}
             }};
             const bool anatomical_ready=std::all_of(
-                avatar_body_meshes_.begin(),avatar_body_meshes_.end(),
+                avatar_body_meshes_.begin(),avatar_body_meshes_.begin()+3,
                 [](const GpuMesh& mesh)
                 {return mesh.vao!=0U&&mesh.index_count>0;});
             for (const auto& avatar : avatar_proxies_)
@@ -4568,6 +4570,80 @@ public:
                         }
                         diagnostics_.triangles+=static_cast<std::uint64_t>(
                             gpu.index_count/3);
+                    }
+                    // Original Firestorm system-hair is an optional
+                    // distinct .llm (slot 3) and server Hair TE face (5),
+                    // NEVER an alias for Head/Upper/Lower. No local
+                    // synthetic hair is drawn without a GPU-resident
+                    // authenticated Hair bake. Keep all 3 body draw
+                    // counters and depth-query proof unchanged.
+                    const auto& hair_mesh=avatar_body_meshes_[3U];
+                    if(hair_mesh.vao!=0U&&hair_mesh.index_count>0&&
+                       !avatar.hair_bake_texture_id.empty())
+                    {
+                        const auto hair_texture=object_textures_.find(
+                            avatar.hair_bake_texture_id);
+                        if(hair_texture!=object_textures_.end()&&
+                           hair_texture->second!=0U)
+                        {
+                            bool hair_skinned=!posed.empty()&&
+                                hair_mesh.skin_vbo!=0U&&
+                                hair_mesh.skin_palette.size()>=2U&&
+                                hair_mesh.skin_palette.size()<=32U;
+                            std::array<Mat4,32U> hair_matrices;
+                            hair_matrices.fill(identity());
+                            if(hair_skinned)
+                                for(std::size_t j=0U;
+                                    j<hair_mesh.skin_palette.size();++j)
+                                {
+                                    const auto bone=
+                                        hair_mesh.skin_palette[j];
+                                    if(bone>=posed.size())
+                                    {
+                                        hair_skinned=false;
+                                        break;
+                                    }
+                                    const auto& rest=
+                                        avatar_bind_rig_.joints[bone].bind_world;
+                                    hair_matrices[j]=multiply(posed[bone],
+                                        translation({-rest.x,-rest.y,-rest.z}));
+                                }
+                            if(hair_skinned)
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uAvatarJointPalette[0]"),
+                                    32,GL_FALSE,
+                                    hair_matrices[0].value.data());
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uAvatarJointCount"),
+                                hair_skinned?static_cast<GLint>(
+                                    hair_mesh.skin_palette.size()):0);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uAvatarSkinEnabled"),
+                                hair_skinned?GL_TRUE:GL_FALSE);
+                            glActiveTexture(GL_TEXTURE4);
+                            glBindTexture(GL_TEXTURE_2D,hair_texture->second);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectTexture"),4);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uUseObjectTexture"),GL_TRUE);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectAlphaMode"),2);
+                            glUniform1f(glGetUniformLocation(
+                                program_,"uObjectAlphaCutoff"),0.015f);
+                            const float shade=avatar.is_self?1.0f:0.75f;
+                            glUniform3f(glGetUniformLocation(
+                                program_,"uOverrideColorValue"),
+                                shade,shade,shade);
+                            glBindVertexArray(hair_mesh.vao);
+                            glDrawElements(GL_TRIANGLES,
+                                hair_mesh.index_count,GL_UNSIGNED_INT,nullptr);
+                            ++diagnostics_.draw_calls;
+                            ++diagnostics_.avatar_hair_bake_gl_draws;
+                            if(avatar.is_self)
+                                ++diagnostics_.self_avatar_hair_bake_gl_draws;
+                            diagnostics_.triangles+=static_cast<std::uint64_t>(
+                                hair_mesh.index_count/3);
+                        }
                     }
                     glUniform1i(glGetUniformLocation(
                         program_,"uAvatarSkinEnabled"),GL_FALSE);
@@ -5427,7 +5503,9 @@ private:
     GpuMesh prism_mesh_;
     GpuMesh sphere_mesh_;
     GpuMesh torus_mesh_;
-    std::array<GpuMesh,3U> avatar_body_meshes_{};
+    // Original anatomical body 0..2 plus optional original Firestorm
+    // system-hair 3. Hair is NEVER required for base three-body readiness.
+    std::array<GpuMesh,4U> avatar_body_meshes_{};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};
     std::array<std::uint64_t,6U> self_avatar_visibility_query_epoch_{};

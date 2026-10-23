@@ -1,0 +1,24 @@
+# Alpha.1045–1054 – originales Firestorm-Systemhaar an Server-Hair-Bake und GPU anschließen
+
+2026-10-23 | Linux Mint jam-MS-7D28 | develop-current | OGL 0.2.0-alpha.1054
+
+## Zehn echte Entwicklungsblöcke
+
+1045. Desktop Commander Linux Mint jam-MS-7D28, GitHub develop-current am sauberen Baseline-HEAD 7beb541, mit origin identisch; zuerst CHATUEBERGABE.md, projectplan.md und Bericht Alpha.1035–1044 gelesen.
+1046. Referenz-Repository opengenesislink/opengenesislinkserver main mit GitHub geprüft: f56e354694a41adb2334884c21efc45db784cb92, unverändert. Kein neues Hair-Wire-Format erfunden.
+1047. Originale lokal vorhandene Firestorm-Nightly-Character-Assets untersucht: avatar_lad.xml weist hairMesh LOD0 auf avatar_hair.llm; Dateiformat und Original-Rig-Skinpalette bereits vorhanden. EyeLeft/EyeRight benötigen gesonderte Gelenk-/Transformlogik und werden NICHT blind übertragen. Keine Drittanbieter-Binaries in Git.
+1048. Avatar-Proxies um echten separaten Hair-Bake ergänzt: ausschließlich bestätigtes Self Low158 mit aktiver AgentID/SessionID, außerdem vom Simulator übernommene AvatarAppearance anderer sichtbar zugelassener Avatare. Hair ist TextureEntry Face 5, nicht aus Head/Upper/Lower abgeleitet.
+1049. Aktuelle einmalige Frame-GPU-Admission übergibt echten Hair-Bake samt geprüften Posen an die vorhandene GetTexture-Planung. Head/Upper/Lower bleiben immer zuerst; Hair folgt optional und respektiert Placeholder, Duplikate, Entfernung/Region, Capping, geteiltes VRAM, Retry/Backoff, CPU-Cache und GPU-Upload. Keine unbegrenzten Zusatzdownloads.
+1050. Original Firestorm avatar_hair.llm nach denselben UV-/Index-/Skinpalette-Prüfungen wie Body-Mesh in optionalen vierten GPU-Slot geladen. Nur die drei eigentlichen anatomischen Meshes bleiben verpflichtend, fehlendes Hair zerstört nicht die vorhandene Avatar-Darstellung.
+1051. OpenGL-Hair-Draw rendert die originalen Hair-Dreiecke nur mit wirklich auf der GPU residenter, serverseitig gelieferter Hair-Bake-Textur. GL-Skin-Matrizen, UV, Alphamaske und getrennte per-Frame GL-Counter; kein synthetischer Hair-Download, keine fälschliche Head-/Skin-E2E-Bestätigung.
+1052. F3-Hinweis für tatsächlich ausgeführte Self Hair-TE GPU-GL-Draws ergänzt. Neues Diagnosefeld setzt pro Frame zurück, zählt echte Draws und ist bewusst getrennt von originalen drei Head/Upper/Lower-Body-Skin- und Depth-Zählern.
+1053. Native Priorisierungsregression Self/Remote/ungültige Pose/Placeholder/Dedup/Maximum. Echter isolierter Xvfb-Framebuffer-Test mit ursprünglichem Firestorm-Haarmesh und künstlicher Testtextur: 232 veränderte Bildpunkte, 0 Hair-Ghost-Pixel nach Hair-TE-Rücknahme bei noch residentem GPU-Asset, 0 Hair-Ghost-Pixel/Draws nach Textur-Eviction; Original-Body weiter 3/3. Vier Python-Verträge für echte Pfade.
+1054. Vollständiger Mint-x64-Build, CTests, Python-Regression und isolierter GUI-/Firestorm-GPU-/X11-Icon-Test als Release-Gate. VERSION, Projektplan, Übergabe, AGENTS/info, Fortschritt-JSON und Firestorm-/Server-/UI-Parität aktualisiert, danach GitHub Feature-Code-SHA und Pi5 ARM64-Status separat verifizieren. Kein Deploy.
+
+## Grenzen
+
+Die GPU-Framebuffer-Pixelregression verwendet tatsächlich die Firestorm-Originalmeshes und echtes OpenGL, aber eine künstliche Test-Bake-Textur. Sie ist ausdrücklich KEIN aktueller authentifizierter NexVerse-Login oder finaler Haar-/COF-/Outfit-Beweis. Vollständiges Skin-/Outfit-/Augen-/Wimpern-System samt EyeLeft/EyeRight-Bindtransforms, Mesh-Hair-Attachments und Live-WASD/Yaw bleiben offen. Leere/fehlende oder entfernte Hair-IDs dürfen kein altes GPU-Haar weiterzeichnen. Kein produktives Deployment.
+
+## Validierung
+
+Vollständiger Linux-Mint-x64-Debug-Viewer-Build erfolgreich. scripts/mint-viewer-validation.sh EXIT 0: 183/183 native CTests, 498/498 Python-Tests sowie echter isolierter Xvfb-GUI-Start mit Original-Firestorm-Skelett 133 Joints, 3 ursprünglichen Body-GPU-LLM-Meshes/7186 Dreiecken, WM_CLASS und echtem 128x128 X11-Taskleistenicon PASS. Zusätzlicher echter Xvfb-Firestorm-Hair-Framebuffer-Test PASS: 232 Pixel des optionalen Original-Haars, 0 Hair-Ghost-Pixel nach TE-Rücknahme trotz weiterhin residentem GPU-Asset, 0 Ghost-Pixel und 0 Hair-Draws nach GPU-Textur-Eviction. Kein authentifizierter Grid-Login in den Testläufen und kein 3/3-Live-Skin-/Outfit-/WASD-E2E-Nachweis. Exakte GitHub-Feature-SHA und Pi5 ARM64-CI-Status nach Push ergänzen. Fortschritt weiterhin 38,65 % gewichtet / 39 % gerundet. Nächste Alpha.1055–1064.

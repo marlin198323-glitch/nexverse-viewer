@@ -12,14 +12,18 @@
 
 namespace nexverse::assets
 {
-// Original server AvatarAppearance TextureEntry references only. Render
-// Head/Upper/Lower are the three currently supported Firestorm .llm body
-// meshes; do NOT fetch eight accessory bake slots as if renderable geometry.
+// Original server AvatarAppearance TextureEntry references only. The
+// Head/Upper/Lower original Firestorm .llm meshes have highest priority;
+// only the genuinely supported optional Firestorm Hair face is streamed
+// after those three. Do NOT fetch arbitrary unrendered accessory slots.
 struct AvatarBakeStreamCandidate
 {
     bool is_self = false;
     std::array<std::string,3U> body{};
     float x = 0.0f, y = 0.0f, z = 0.0f;
+    // Optional original Firestorm avatar_hair.llm baked Hair slot 5.
+    // Lower priority than the three anatomical body bakes.
+    std::string hair_bake_id;
 };
 
 [[nodiscard]] inline std::vector<std::string>
@@ -38,17 +42,20 @@ prioritize_avatar_body_bakes(
     std::unordered_set<std::string> used;
     const auto append=[&](const AvatarBakeStreamCandidate& avatar)
     {
-        for(const auto& id:avatar.body)
+        const auto add=[&](const std::string& id)
         {
-            if(result.size()>=max_assets)break;
-            if(id.empty()||id==null_texture_asset_id||
+            if(result.size()>=max_assets||id.empty()||
+               id==null_texture_asset_id||
                std::find(nexverse::protocol::baked_placeholders.begin(),
                          nexverse::protocol::baked_placeholders.end(),id)!=
                    nexverse::protocol::baked_placeholders.end()||
-               !used.insert(id).second)
-                continue;
+               !used.insert(id).second)return;
             result.push_back(id);
-        }
+        };
+        // Skin always wins; hair cannot displace Head/Upper/Lower
+        // from the bounded highest-priority queue.
+        for(const auto& id:avatar.body)add(id);
+        add(avatar.hair_bake_id);
     };
     // Authentication/epoch contract is enforced by the caller: these are
     // simulator-owned refs from the current WorldModel, NEVER guessed UUIDs.

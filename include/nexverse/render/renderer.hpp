@@ -229,6 +229,9 @@ struct RenderAvatarProxy
     // Seconds since this server animation sequence began, not app uptime.
     // Negative = procedural fallback / no known server clip start.
     float keyframe_elapsed_seconds=-1.0f;
+    // Authenticated AvatarAppearance baked Hair face, NOT a fabricated
+    // head bake or client-generated mesh clothing texture.
+    std::string hair_bake_texture_id;
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
@@ -382,6 +385,10 @@ struct RenderDiagnostics
     // Actual original three Firestorm .llm body GL submissions with a baked
     // server texture bound, Head/Upper/Lower. Proxy fallback excluded.
     std::array<std::uint64_t,3U> self_avatar_body_bake_gl_draws{};
+    // Real Firestorm optional system-hair, never counted as a fourth
+    // Head/Upper/Lower skin-proof draw.
+    std::uint64_t avatar_hair_bake_gl_draws=0U;
+    std::uint64_t self_avatar_hair_bake_gl_draws=0U;
     // Actual Texture UUID used by the original LLM slot in this frame.
     // A GPU draw with yesterday's bake must not prove today's Low158 TE.
     std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};

@@ -6610,6 +6610,34 @@ int Application::run(bool enable_developer_modules)
             }
             if(uploaded==3U)
             {
+                // Optional original Firestorm system-hair mesh. Do NOT
+                // replace a missing Body mesh or bundle the locally
+                // supplied Firestorm .llm in our repository. Render only
+                // when the CURRENT server Hair bake actually arrives.
+                if(const auto hair=assets::load_firestorm_avatar_llm(
+                       *dir/"avatar_hair.llm");
+                   hair&&hair->valid())
+                {
+                    render::RenderMeshGeometry geometry;
+                    geometry.vertices=hair->vertices;
+                    geometry.indices=hair->indices;
+                    if(const auto rig=assets::load_firestorm_avatar_rig(*dir);
+                       rig)
+                        if(const auto palette=
+                               assets::firestorm_joint_render_palette(
+                                   *rig,hair->joint_names);
+                           palette)
+                        {
+                            geometry.skin_weights=hair->skin_weights;
+                            geometry.skin_palette=*palette;
+                        }
+                    if(world_renderer->set_avatar_body_mesh(3U,geometry))
+                        core::info(
+                            "Original Firestorm system-hair mesh uploaded "
+                            "to GPU; render gated by actual server Hair TE");
+                    else core::warning("Original Firestorm hair .llm "
+                        "failed validation/GPU admission; body unaffected");
+                }
                 original_body_gpu_ready=true;
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
@@ -10990,6 +11018,17 @@ int Application::run(bool enable_developer_modules)
                             world_model.region().generation),
                         {},false,protocol::AvatarMotion::idle,false,
                         nullptr,-1.0f});
+                    // System-hair is a separate baked TE face (index 5),
+                    // not Head/Upper/Lower and never a server-invented ID.
+                    if(active_session&&
+                       world_model.agent().agent_id==active_session->agent_id&&
+                       world_model.agent().session_id==active_session->session_id)
+                        if(const auto& appearance=world_model.self_appearance();
+                           appearance&&
+                           appearance->avatar_id==active_session->agent_id)
+                            avatar_proxy_update.back().hair_bake_texture_id=
+                                protocol::extract_avatar_bakes(
+                                    appearance->texture_entry).ids[5U];
                     avatar_proxy_update.back().moving=
                         (last_reported_control_flags &
                          (protocol::control_at_pos | protocol::control_at_neg |
@@ -11080,6 +11119,9 @@ int Application::run(bool enable_developer_modules)
                         avatar.local_id,
                         {},false,protocol::AvatarMotion::idle,false,
                         nullptr,-1.0f});
+                    avatar_proxy_update.back().hair_bake_texture_id=
+                        protocol::extract_avatar_bakes(
+                            avatar.texture_entry).ids[5U];
                     avatar_proxy_update.back().moving=
                         avatar.last_translation_at!=
                             std::chrono::steady_clock::time_point{} &&
@@ -12288,10 +12330,22 @@ int Application::run(bool enable_developer_modules)
                         admitted_bakes.accepted,render_agent.position.x,
                         render_agent.position.y,render_agent.position.z);
                 for(const auto& avatar:admitted_bakes.accepted)
+                {
                     for(const auto& baked:avatar.body)
                         if(!baked.empty())
                             resident_texture_samples.push_back({
                                 baked,avatar.x,avatar.y,avatar.z});
+                    // Same current-frame GPU position admission for
+                    // authenticated server-selected Hair TE face.
+                    if(!avatar.hair_bake_id.empty()&&
+                       avatar.hair_bake_id!=assets::null_texture_asset_id&&
+                       std::find(protocol::baked_placeholders.begin(),
+                                 protocol::baked_placeholders.end(),
+                                 avatar.hair_bake_id)==
+                           protocol::baked_placeholders.end())
+                        resident_texture_samples.push_back({
+                            avatar.hair_bake_id,avatar.x,avatar.y,avatar.z});
+                }
                 const std::unordered_set<std::string> active_particles{
                     emitter_texture_ids.begin(),emitter_texture_ids.end()};
                 auto planned_mips = assets::plan_texture_mip_levels(
@@ -14017,6 +14071,12 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(render_diagnostics.self_avatar_hair_bake_gl_draws>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm Hair-TE GPU-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_hair_bake_gl_draws);
                 if(self_avatar_mip_rescued_uploads>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

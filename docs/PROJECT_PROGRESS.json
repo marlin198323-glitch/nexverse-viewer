@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1044",
+  "viewer_version": "0.2.0-alpha.1054",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1045–1054",
-  "assessment": "Alpha1044: Implemented bounded GPU-pressure fallback for CURRENT authenticated self Head/Upper/Lower baked RGBA textures that otherwise remain deferred when Firestorm's mip0 self-body pin exceeds the transactional staging or family byte budget. Only an exact CURRENT-SESSION/REGION GPU-admitted self avatar body ID can qualify, after the normal slot-admission preflight; ordinary world textures are unchanged. A pure planner first checks that full quality actually fails and then selects the first safe lower mip up to mip3 using both existing staging reserve and family byte admission. It downsamples the ALREADY DOWNLOADED/DECODED memory image, launches NO new HTTP, never clears GetTexture error/backoff or bypasses GPU slot/budget. Only AFTER successful transactional GPU upload is the lower mip committed to texture_gpu_mips, desired mip, and the per-region 60-second cooldown floor. A later retry can restore full mip0 when headroom improves; a region/material epoch resets this state. Current self F3 shows total body-mip rescue admissions (no UUIDs). Native regression for real 4096x4096/384MiB pressure selecting mip2, adequate headroom no downgrade, impossible rescue deferral, max mip bound, timing and epoch reset; Python real application path contracts. This remedies one GPU-budget cause of absent/partially visible own avatar skin without claiming server low158/COF correctness. Authenticated NexVerse real-world full skin/outfit RGB pixel and fresh WASD/Yaw end-to-end are still open. No production deploy.",
+  "next_five_blocks": "Alpha.1055–1064",
+  "assessment": "Alpha1054: expanded actual Firestorm anatomical avatar visual scope with native original optional system-hair .llm geometry (locally available Nightly character assets only; NO redistributed binaries). The viewer now passes authenticated self Low158 TextureEntry Hair face index 5 and current remote AvatarAppearance hair through RenderAvatarProxy and the SAME single frame GPU pose admission as Head/Upper/Lower. Current-region hair GetTexture is scheduled behind all three body baked textures and obeys the same placeholder/dedup/radius, shared residency, cap and failure/backoff. Original rigged hair geometry is uploaded as optional fourth GL mesh; the three Head/Upper/Lower original draw counters and fallback readiness remain independent. Hair is only drawn if the current server's Hair bake is genuinely GPU resident; texture removal or outfit Hair TE withdrawal instantly stops drawing. The renderer uses alpha mask and optional original Firestorm GPU skinning and tracks actual per-frame hair GL draws separately. Native tests cover self/remote stream priority, cap, placeholder, dedup and invalid GPU pose, plus a REAL Xvfb OpenGL framebuffer comparison of actual original .llm hair pixels and zero stale pixels on withdrawal/eviction. Four source path/privacy/GL contracts. Original Firestorm eyes, eyelashes, sculpted/mesh hair attachment and server COF outfit parity are still open, as is authentic live Grid 3/3 skin pixel and WASD/Yaw E2E. No production deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1045–1054",
+  "next_batch": "Alpha.1055–1064",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

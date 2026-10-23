@@ -422,6 +422,83 @@ int main()
       if(stale_pixels!=0U || evicted.self_avatar_baked_texture_draw_calls!=0U)
         error=13;
     }
+    if(!error)
+    {
+      // Alpha.1054: actual Firestorm system-hair geometry / Hair TE
+      // uses a FOURTH optional GPU mesh, but it is never a fourth
+      // Head/Upper/Lower baked-skin draw. Verify real framebuffer
+      // pixels, texture withdrawal, and no synthetic fallback hair.
+      const auto hair=assets::load_firestorm_avatar_llm(
+          *dir/"avatar_hair.llm");
+      if(!hair||!hair->valid())error=44;
+      if(!error)
+      {
+        auto palette=assets::firestorm_joint_render_palette(
+            *rig,hair->joint_names);
+        if(!palette||!renderer->set_avatar_body_mesh(3U,
+           {hair->vertices,hair->indices,{},hair->skin_weights,*palette}))
+          error=45;
+      }
+      if(!error)
+      {
+        render::RenderImageRgba8 hair_color{
+            4U,4U,std::vector<std::uint8_t>(64U,255U)};
+        for(std::size_t i=0U;i<hair_color.pixels.size();i+=4U)
+        {
+            hair_color.pixels[i]=240U;
+            hair_color.pixels[i+1]=22U;
+            hair_color.pixels[i+2]=200U;
+        }
+        if(!renderer->set_object_texture("hair-bake",hair_color))
+            error=46;
+        else
+        {
+          self.baked_texture_ids={};
+          self.hair_bake_texture_id="hair-bake";
+          renderer->set_avatar_proxies({self});
+          const auto hair_frame=draw();
+          const auto actual=renderer->diagnostics();
+          const auto actual_pixels=difference(plain,hair_frame);
+          std::cout<<"ORIGINAL_FIRESTORM_HAIR_BAKE_PIXELS="
+                   <<actual_pixels<<"\n";
+          if(actual.self_avatar_hair_bake_gl_draws!=1U||
+             actual.self_avatar_anatomical_mesh_draw_calls!=3U||
+             actual.self_avatar_body_bake_gl_draws!=
+                 (std::array<std::uint64_t,3U>{0U,0U,0U})||
+             actual_pixels<5U)
+             error=47;
+          // Hair TE withdrawn on outfit change. A still GPU-resident
+          // previous texture must NOT paint ghost hair in the next frame.
+          self.hair_bake_texture_id.clear();
+          renderer->set_avatar_proxies({self});
+          const auto withdrawn_hair=draw();
+          const auto withdrawn_count=difference(plain,withdrawn_hair);
+          std::cout<<"WITHDRAWN_HAIR_TE_GHOST_PIXELS="
+                   <<withdrawn_count<<"\n";
+          if(withdrawn_count!=0U||
+             renderer->diagnostics().self_avatar_hair_bake_gl_draws!=0U)
+              error=50;
+          self.hair_bake_texture_id="hair-bake";
+          renderer->set_avatar_proxies({self});
+          (void)draw();
+          renderer->remove_object_texture("hair-bake");
+          renderer->set_avatar_proxies({self});
+          const auto evicted_hair=draw();
+          const auto hair_eviction_pixels=difference(plain,evicted_hair);
+          std::cout<<"ORIGINAL_HAIR_EVICTION_STALE_PIXELS="
+                   <<hair_eviction_pixels<<"; GL_HAIR_DRAWS="
+                   <<renderer->diagnostics().self_avatar_hair_bake_gl_draws
+                   <<"\n";
+          if(hair_eviction_pixels!=0U||
+             renderer->diagnostics().self_avatar_hair_bake_gl_draws!=0U)
+              error=48;
+          self.hair_bake_texture_id.clear();
+          renderer->set_avatar_proxies({self});
+          if(difference(plain,draw())!=0U)
+              error=49;
+        }
+      }
+    }
     if(glGetError()!=GL_NO_ERROR)error=9;
   }
   if(renderer)renderer->shutdown();

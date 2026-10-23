@@ -128,6 +128,41 @@ int main()
         invalid_self.accepted,0.0f,0.0f,30.0f);
     if(no_self_priority.size()!=3U||
        no_self_priority.front()!="remote-head")return 14;
+    // The actual separate OpenSim Hair baked face (5) streams only
+    // after the three real anatomical body faces. It must not override
+    // a higher-priority Head/Upper/Lower bake or accept placeholder
+    // and invalid-pose UUIDs from the current frame.
+    auto hair_proxies=proxies;
+    hair_proxies[0].hair_bake_texture_id="invalid-pose-hair";
+    hair_proxies[1].hair_bake_texture_id="remote-hair";
+    hair_proxies[2].position={0.0f,0.0f,30.0f};
+    hair_proxies[2].hair_bake_texture_id="self-hair";
+    const auto hair_admission=admit_avatar_bake_gpu_candidates(hair_proxies);
+    if(hair_admission.accepted.size()!=2U||
+       hair_admission.accepted[1].hair_bake_id!="self-hair")
+        return 15;
+    const auto hair_priority=prioritize_avatar_body_bakes(
+        hair_admission.accepted,0.0f,0.0f,30.0f);
+    const std::vector<std::string> hair_order{
+        "self-head","self-upper","self-lower","self-hair",
+        "remote-head","remote-upper","remote-lower","remote-hair"};
+    if(hair_priority!=hair_order)return 16;
+    hair_proxies[2].hair_bake_texture_id=
+        std::string{nexverse::protocol::baked_placeholders[0]};
+    const auto placeholder_admission=
+        admit_avatar_bake_gpu_candidates(hair_proxies);
+    if(prioritize_avatar_body_bakes(
+           placeholder_admission.accepted,0.0f,0.0f,30.0f).size()!=7U)
+        return 17;
+    hair_proxies[2].hair_bake_texture_id="self-head";
+    const auto dedup_admission=admit_avatar_bake_gpu_candidates(hair_proxies);
+    if(prioritize_avatar_body_bakes(
+           dedup_admission.accepted,0.0f,0.0f,30.0f).size()!=7U)
+        return 18;
+    if(prioritize_avatar_body_bakes(
+           hair_admission.accepted,0.0f,0.0f,30.0f,3U)!=
+       std::vector<std::string>{"self-head","self-upper","self-lower"})
+        return 19;
     // All names are synthetic fixtures: no network or upload involved.
     std::cout<<"Avatar baked body stream priority and GPU eviction PASSED\n";
     return 0;

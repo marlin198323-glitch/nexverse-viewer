@@ -39,7 +39,8 @@ admit_avatar_bake_gpu_candidates(
         }
         admitted.accepted.push_back({
             proxy.is_self,proxy.baked_texture_ids,
-            checked.position.x,checked.position.y,checked.position.z});
+            checked.position.x,checked.position.y,checked.position.z,
+            proxy.hair_bake_texture_id});
     }
     return admitted;
 }
