@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
+#include "nexverse/assets/firestorm_cof_shape_morph_preview.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <algorithm>
 #include <cmath>
@@ -161,6 +162,37 @@ int main()
         raw.resize(at+10U);
         if(decode_firestorm_avatar_llm(raw))return 37;
     }
+    // Alpha1104 verified Firestorm avatar_lad.xml multi-Shape mapping.
+    // Same OWN COF Shape controls three Head morphs and FOUR
+    // eyelash-original morphs, not a fabricated cross-avatar profile.
+    const auto selected=firestorm_cof_shape_morph_preview({
+        {770,0.8f},{186,-0.65f},{686,1.1f},{518,0.9f}});
+    if(!selected||selected->head.size()!=3U||
+       selected->eyelashes.size()!=4U||!selected->active())
+        return 38;
+    const auto compound_head=morph_firestorm_avatar_mesh(
+        *head,selected->head);
+    const auto compound_lash=morph_firestorm_avatar_mesh(
+        *lash,selected->eyelashes);
+    if(!compound_head||!compound_lash||
+       compound_head->vertices==shape->vertices||
+       compound_head->vertices==head->vertices||
+       compound_lash->vertices==lash->vertices||
+       compound_head->indices!=head->indices||
+       compound_lash->skin_weights!=lash->skin_weights)
+        return 39;
+    if(firestorm_cof_shape_morph_preview({{686,2.01f}})||
+       firestorm_cof_shape_morph_preview({{186,-1.31f}})||
+       firestorm_cof_shape_morph_preview({{518,1.51f}})||
+       firestorm_cof_shape_morph_preview({
+           {770,std::numeric_limits<float>::quiet_NaN()}}))
+        return 40;
+    const auto reset=firestorm_cof_shape_morph_preview({
+        {770,0.0f},{186,0.0f},{686,0.0f},{518,0.0f}});
+    if(!reset||reset->active())return 41;
+    std::cout<<"ORIGINAL_FIRESTORM_MULTI_COF_SHAPE_HEAD_MORPHS="
+             <<selected->head.size()<<"; LASH_MORPHS="
+             <<selected->eyelashes.size()<<"\n";
     std::cout<<"FIRESTORM_REAL_MORPH_TARGETS_HEAD="
              <<head->morph_targets.size()
              <<"; UPPER="<<upper->morph_targets.size()

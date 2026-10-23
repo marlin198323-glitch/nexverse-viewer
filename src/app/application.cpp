@@ -14,6 +14,7 @@
 #include "nexverse/assets/texture_distance.hpp"
 #include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
+#include "nexverse/assets/firestorm_cof_shape_morph_preview.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include "nexverse/assets/mesh_cache.hpp"
@@ -9576,13 +9577,14 @@ int Application::run(bool enable_developer_modules)
                         std::to_string(references[1])+"/"+
                         std::to_string(references[2])+
                         " Referenzen; echte Bakes fehlen";
-                    // VisualParam ID 770 "Elongate_Head" is mapped by
-                    // Firestorm avatar_lad.xml to the ORIGINAL Head LLM
-                    // sparse morph (range -1..1, default 0). Never derive
-                    // parameter IDs from unlabelled Low158 bytes.
-                    // Only the explicitly requested, complete, error-free
-                    // owner-verified COF LLWearables may change the SELF
-                    // GPU Head mesh. Other avatars retain base geometry.
+                    // An entirely resolved LLWearable snapshot supersedes
+                    // the old preview EVEN if a Shape is missing, has an
+                    // out-of-range parameter or any asset failed. No ghost
+                    // body form from previously selected COF/Shape.
+                    world_renderer->clear_self_avatar_head_shape_preview();
+                    shape_head_preview_active=false;
+                    shape_head_preview_cof.clear();
+                    shape_head_preview_owner.clear();
                     if(gallery_asset_errors==0U&&active_session&&
                        login_ui.authenticated&&simulation_ready&&
                        gallery_wearables_fetch_owner==
@@ -9594,6 +9596,10 @@ int Application::run(bool enable_developer_modules)
                        gallery_decoded_wearable_assets.size()==
                            gallery_asset_total)
                     {
+                        // Never interpret unlabelled Low158 visual-param
+                        // bytes as LAD identifiers. Only ONE current
+                        // owner-verified original type-0 Shape wearable
+                        // provides explicit parameter ids.
                         const assets::FirestormWearableAsset* shape=nullptr;
                         bool multiple_shape=false;
                         for(const auto& [asset_id,wearable]:
@@ -9606,62 +9612,81 @@ int Application::run(bool enable_developer_modules)
                         }
                         if(shape&&!multiple_shape)
                         {
-                            const auto value=shape->visual_params.find(770);
-                            if(value!=shape->visual_params.end()&&
-                               std::isfinite(value->second)&&
-                               std::abs(value->second)<=1.0f)
+                            // IDs + bounds are audited against original
+                            // Firestorm avatar_lad.xml. Head 770,186,686;
+                            // eyelashes match these plus 518. All morphs
+                            // apply to COPIES of the original assets.
+                            const auto selection=assets::
+                                firestorm_cof_shape_morph_preview(
+                                    shape->visual_params);
+                            if(selection&&selection->active())
                             {
-                                if(std::abs(value->second)<0.0001f)
+                                const auto root=assets::
+                                    find_firestorm_avatar_character_directory();
+                                const auto rig=root?assets::
+                                    load_firestorm_avatar_rig(*root)
+                                    :std::nullopt;
+                                if(root&&rig)
                                 {
-                                    world_renderer->
-                                        clear_self_avatar_head_shape_preview();
-                                    shape_head_preview_active=false;
-                                }
-                                else if(const auto root=assets::
-                                            find_firestorm_avatar_character_directory();
-                                        root)
-                                {
-                                    const auto original=assets::
-                                        load_firestorm_avatar_llm(
-                                            *root/"avatar_head.llm");
-                                    const auto shape_mesh=original
-                                        ?assets::morph_firestorm_avatar_mesh(
-                                            *original,
-                                            {{"Elongate_Head",
-                                              value->second}})
-                                        :std::nullopt;
-                                    const auto rig=assets::
-                                        load_firestorm_avatar_rig(*root);
-                                    if(shape_mesh&&rig)
-                                        if(const auto palette=assets::
-                                               firestorm_joint_render_palette(
-                                                   *rig,
-                                                   shape_mesh->joint_names);
-                                           palette)
-                                        {
-                                            render::RenderMeshGeometry geom;
-                                            geom.vertices=shape_mesh->vertices;
-                                            geom.indices=shape_mesh->indices;
-                                            geom.skin_weights=
-                                                shape_mesh->skin_weights;
-                                            geom.skin_palette=*palette;
-                                            if(world_renderer->
-                                                set_avatar_body_mesh(6U,geom))
-                                            {
-                                                shape_head_preview_active=true;
-                                                shape_head_preview_epoch=
-                                                    current_firestorm_epoch;
-                                                shape_head_preview_cof=
-                                                    gallery_asset_cof;
-                                                shape_head_preview_cof_version=
-                                                    gallery_asset_cof_version;
-                                                shape_head_preview_owner=
-                                                    active_session->agent_id;
-                                                gallery_asset_status+=
-                                                    "; original COF-Shape-"
-                                                    "Head lokal sichtbar";
-                                            }
-                                        }
+                                    const auto upload=
+                                        [&](const char* filename,
+                                            std::size_t slot,
+                                            const std::vector<
+                                                std::pair<std::string,float>>&
+                                                    weights)
+                                    {
+                                        const auto original=assets::
+                                            load_firestorm_avatar_llm(
+                                                *root/filename);
+                                        const auto mesh=original
+                                            ?assets::
+                                                morph_firestorm_avatar_mesh(
+                                                    *original,weights)
+                                            :std::nullopt;
+                                        if(!mesh)return false;
+                                        const auto palette=assets::
+                                            firestorm_joint_render_palette(
+                                                *rig,mesh->joint_names);
+                                        if(!palette)return false;
+                                        render::RenderMeshGeometry geom;
+                                        geom.vertices=mesh->vertices;
+                                        geom.indices=mesh->indices;
+                                        geom.skin_weights=mesh->skin_weights;
+                                        geom.skin_palette=*palette;
+                                        return world_renderer->
+                                            set_avatar_body_mesh(slot,geom);
+                                    };
+                                    const bool head_ok=
+                                        selection->head.empty()||
+                                        upload("avatar_head.llm",6U,
+                                               selection->head);
+                                    const bool lash_ok=
+                                        selection->eyelashes.empty()||
+                                        upload("avatar_eyelashes.llm",7U,
+                                               selection->eyelashes);
+                                    if(head_ok&&lash_ok)
+                                    {
+                                        shape_head_preview_active=true;
+                                        shape_head_preview_epoch=
+                                            current_firestorm_epoch;
+                                        shape_head_preview_cof=
+                                            gallery_asset_cof;
+                                        shape_head_preview_cof_version=
+                                            gallery_asset_cof_version;
+                                        shape_head_preview_owner=
+                                            active_session->agent_id;
+                                        gallery_asset_status+=
+                                            "; original COF-Shape Head/"
+                                            "Wimpern lokal sichtbar";
+                                    }
+                                    else
+                                    {
+                                        // Reject partial GPU uploads.
+                                        world_renderer->
+                                            clear_self_avatar_head_shape_preview();
+                                        gallery_asset_status+=
+                                            "; COF-Shape-Morph GPU abgelehnt";
+                                    }
                                 }
                             }
                         }
@@ -14264,6 +14289,13 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(render_diagnostics.self_avatar_shape_eyelash_gl_draws>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm COF-Shape-Wimpern-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_shape_eyelash_gl_draws)+
+                        " (lokal, kein Bake-Beweis)";
                 if(render_diagnostics.self_avatar_shape_head_gl_draws>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

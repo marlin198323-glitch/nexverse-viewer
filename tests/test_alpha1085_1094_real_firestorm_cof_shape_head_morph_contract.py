@@ -32,7 +32,7 @@ class FirestormMorph1094(unittest.TestCase):
    self.assertIn(key,test)
  def test_inworld_is_exact_authenticated_owner_scope_and_shape_asset(self):
   app=read("src/app/application.cpp")
-  start=app.index("VisualParam ID 770")
+  start=app.index("An entirely resolved LLWearable snapshot supersedes")
   end=app.index("if(!gallery_asset_active_id.empty()&&",start)
   sub=app[start:end]
   for key in ("gallery_asset_errors==0U", "login_ui.authenticated",
@@ -43,16 +43,16 @@ class FirestormMorph1094(unittest.TestCase):
               "caps_state.current_outfit_folder==gallery_asset_cof",
               "gallery_decoded_wearable_assets.size()==",
               "wearable.type!=0", "multiple_shape",
-              "shape->visual_params.find(770)",
-              "std::abs(value->second)<=1.0f",
+              "firestorm_cof_shape_morph_preview(",
+              "selection&&selection->active()",
               'morph_firestorm_avatar_mesh(',
-              'set_avatar_body_mesh(6U,geom)',
+               'upload("avatar_head.llm",6U,',
               'shape_head_preview_active=true'):
    self.assertIn(key,sub)
   self.assertIn("clear_self_avatar_head_shape_preview()",app)
  def test_actual_gpu_draw_is_self_only_and_reset_before_render(self):
   gl=read("src/render/opengl_renderer.cpp")
-  for key in ("std::array<GpuMesh,7U>",
+  for key in ("std::array<GpuMesh,8U>",
               "avatar.is_self&&slot==0U",
               "avatar_body_meshes_[6U].vao",
               "clear_self_avatar_head_shape_preview() override",

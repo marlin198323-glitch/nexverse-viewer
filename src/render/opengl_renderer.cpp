@@ -3275,6 +3275,8 @@ public:
     {
         destroy_mesh(avatar_body_meshes_[6U]);
         avatar_body_meshes_[6U]={};
+        destroy_mesh(avatar_body_meshes_[7U]);
+        avatar_body_meshes_[7U]={};
     }
 
     [[nodiscard]] bool set_avatar_eyelash_visibility_mask(
@@ -3472,6 +3474,7 @@ public:
         diagnostics_.self_avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_eyelash_mask_gl_draws=0U;
         diagnostics_.self_avatar_shape_head_gl_draws=0U;
+        diagnostics_.self_avatar_shape_eyelash_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4794,7 +4797,11 @@ public:
                     // texture-gated by the CURRENT avatar's Head bake
                     // (face8). Never invent an eyelash asset or draw
                     // stale cosmetics after Head-TE withdrawal.
-                    const auto& eyelash_mesh=avatar_body_meshes_[5U];
+                    const auto& eyelash_mesh=
+                        avatar.is_self&&avatar_body_meshes_[7U].vao!=0U&&
+                        avatar_body_meshes_[7U].index_count>0
+                            ?avatar_body_meshes_[7U]
+                            :avatar_body_meshes_[5U];
                     if(eyelash_mesh.vao!=0U&&
                        eyelash_mesh.index_count>0&&
                        !avatar.baked_texture_ids[0].empty())
@@ -4876,6 +4883,9 @@ public:
                                     nullptr);
                                 ++diagnostics_.draw_calls;
                                 ++diagnostics_.avatar_eyelash_head_gl_draws;
+                                if(avatar.is_self&&
+                                   &eyelash_mesh==&avatar_body_meshes_[7U])
+                                    ++diagnostics_.self_avatar_shape_eyelash_gl_draws;
                                 if(avatar.is_self)
                                 {
                                     ++diagnostics_.self_avatar_eyelash_head_gl_draws;
@@ -5768,7 +5778,9 @@ private:
     // No bundled Firestorm binary or invented eyeliner/eyelash asset.
     // Slot 6 only replaces slot 0 when is_self=true: COF Shape
     // morph preview cannot change any remote avatar's shared Head.
-    std::array<GpuMesh,7U> avatar_body_meshes_{};
+    // Optional slot 6 SELF Head, slot 7 SELF eyelashes from one
+    // authenticated current-COF Shape: remote anatomy stays original.
+    std::array<GpuMesh,8U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};

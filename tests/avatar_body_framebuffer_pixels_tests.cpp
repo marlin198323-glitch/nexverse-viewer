@@ -3,6 +3,7 @@
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
+#include "nexverse/assets/firestorm_cof_shape_morph_preview.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include "nexverse/assets/firestorm_tga.hpp"
 #include <glad/glad.h>
@@ -164,6 +165,27 @@ int main()
            stats.self_avatar_shape_head_gl_draws!=1U||
            stats.self_avatar_anatomical_mesh_draw_calls!=3U)
             error=73;
+        // Now replace the same PRIVATE Head slot with MULTIPLE original
+        // Firestorm MORPH sparse delta sets. The raster must differ from
+        // the earlier one-param head, still never update remote geometry.
+        const auto selection=assets::firestorm_cof_shape_morph_preview(
+            {{770,0.65f},{186,-0.7f},{686,0.8f},{518,0.6f}});
+        const auto compound=selection
+            ?assets::morph_firestorm_avatar_mesh(
+                *original,selection->head):std::nullopt;
+        if(!compound||!renderer->set_avatar_body_mesh(6U,
+            {compound->vertices,compound->indices,{},
+             compound->skin_weights,*palette}))
+            error=76;
+        renderer->set_avatar_proxies({self});
+        const auto mixed_morphed=draw();
+        const auto mixed_pixels=difference(
+            self_morphed,mixed_morphed);
+        std::cout<<"ORIGINAL_FIRESTORM_COMPOUND_HEAD_PIXELS="
+                 <<mixed_pixels<<"\n";
+        if(mixed_pixels<2U||
+           renderer->diagnostics().self_avatar_shape_head_gl_draws!=1U)
+            error=77;
         renderer->set_avatar_proxies({remote});
         const auto remote_after=draw();
         const auto remote_stale=difference(
@@ -730,6 +752,41 @@ int main()
                   (std::array<std::uint64_t,3U>{1U,0U,0U})||
              delta<2U)
             error=62;
+          // New original composite-COF Shape affects the Wimpern
+          // geometry TOO, using the exact original eyelashMesh morphs.
+          // Self-only slot 7 cannot alter another avatar's eyelid.
+          auto remote=self;remote.is_self=false;
+          renderer->set_avatar_proxies({remote});
+          const auto remote_baseline=draw();
+          const auto selection=assets::firestorm_cof_shape_morph_preview(
+              {{770,0.6f},{186,-0.6f},{686,0.8f},{518,1.1f}});
+          const auto morphed_lashes=selection?
+              assets::morph_firestorm_avatar_mesh(
+                  *lash,selection->eyelashes):std::nullopt;
+          if(!morphed_lashes||
+             !renderer->set_avatar_body_mesh(7U,
+                 {morphed_lashes->vertices,morphed_lashes->indices,{},
+                  morphed_lashes->skin_weights,*palette}))
+              error=78;
+          renderer->set_avatar_proxies({self});
+          const auto changed_lashes=draw();
+          const auto changed_lash_pixels=difference(
+              with_lashes,changed_lashes);
+          std::cout<<"ORIGINAL_FIRESTORM_COMPOUND_LASH_PIXELS="
+                   <<changed_lash_pixels<<"\n";
+          if(changed_lash_pixels<2U||
+             renderer->diagnostics().self_avatar_shape_eyelash_gl_draws!=1U)
+              error=79;
+          renderer->set_avatar_proxies({remote});
+          const auto remote_after=draw();
+          if(difference(remote_baseline,remote_after)!=0U||
+             renderer->diagnostics().self_avatar_shape_eyelash_gl_draws!=0U)
+              error=80;
+          renderer->clear_self_avatar_head_shape_preview();
+          renderer->set_avatar_proxies({self});
+          if(difference(with_lashes,draw())!=0U||
+             renderer->diagnostics().self_avatar_shape_eyelash_gl_draws!=0U)
+              error=81;
           // No stale eyelashes after the Head TE disappears while the
           // original GPU Head texture is still resident.
           self.baked_texture_ids={};

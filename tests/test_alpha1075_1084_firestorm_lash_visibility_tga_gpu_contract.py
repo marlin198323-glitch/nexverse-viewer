@@ -31,7 +31,7 @@ class FirestormLashMask(unittest.TestCase):
   self.assertIn("uniform bool uUseAvatarEyelashMask;",gl)
   self.assertIn("uniform sampler2D uAvatarEyelashMask;",gl)
   self.assertIn("if(visibility<=0.03)discard;",gl)
-  a=gl.index("const auto& eyelash_mesh=avatar_body_meshes_[5U]")
+  a=gl.index("const auto& eyelash_mesh=")
   b=gl.index("for (const auto& part : parts)",a)
   lash=gl[a:b]
   for needle in ("avatar.baked_texture_ids[0]",

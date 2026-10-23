@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1094",
+  "viewer_version": "0.2.0-alpha.1104",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1095–1104",
-  "assessment": "Alpha1094: ORIGINAL Firestorm Linden Binary Mesh 1.0 sparse MorphTargets are parsed safely after original normals, UV, skin weights, face indices and joints. Actual avatar_head.llm contains 95 named targets, original upper_body 30, lower_body 24, eyelashes 34. Bounds for name/count/vertex index, duplicate sparse targets, total vertex allocation, NaN/Inf finite deltas, 48-byte records, canonical End Morphs sentinel and U32 remap table are validated. CPU morphology applies real named sparse position, normal and UV deltas to a COPY of original skinned mesh; no shared mutation or fabricated scale. Native real original Firestorm tests prove Elongate_Head (avatar_lad.xml wearable shape param ID 770) changes 708 Head vertices, weight 0 retains base, invalid/duplicate/out-of-range morph and poisoned binary indexes fail closed. Renderer gains a separate optional SELF-only skinned Head morphology GL mesh slot 6: remote avatar Head remains original. Real Xvfb Firestorm GL raster: 45582 changed own Head pixels with specific test 1.0 morph, zero changed pixels on remote avatar, full original pixels restored after reset and counters per frame. Current in-world COF Shape preview is only applied after explicitly fetching ALL original Wearable assets, in the authenticated same agent/epoch/region lease, exact COF-folder/version, verified inventory asset subtypes and no parse errors. Exactly one genuine shape asset type 0 with known visual_params[770] -1..1 is allowed. Any agent, login, region or COF version mismatch immediately destroys the self-only morph before avatar render. Source F3 counts actual self-morph GL Head only, never as full COF-bake proof. Server unlabelled Low158 VisualParams are never guessed to map to morph IDs; remote COF is never invented; full shape-morph binding and all shape/driver params, live authenticated movement and true RGB skin/COF/outfit end-to-end still open. OpenGenesisLINK upstream main 99341d475b10 unchanged. No production deploy.",
+  "next_five_blocks": "Alpha.1105–1114",
+  "assessment": "Alpha1104: original Firestorm avatar_lad.xml Shape IDs 770 Elongate_Head [-1,1], 186 Egg_Head [-1.3,1], 686 Head_Eyes_Big [-2,2], 518 Eyelashes_Long [-.3,1.5], all independently verified. Exactly one authenticated owner-scoped complete error-free current-COF Shape LLWearable produces 3 original Head morphs and 4 original weighted eyelash sparse morphs on COPIES of immutable Firestorm LLM assets. Optional self-only Head GPU slot6 and eyelash GPU slot7; remote Head slot0 and eyelash slot5 unchanged. Every complete new wearable snapshot clears old preview before validating shape, including missing, duplicate and invalid params; any partial GL upload failure clears both. Session, region, COF change also clears preview. Xvfb real OpenGL framebuffer with original Firestorm geometry shows compound Head 46432 pixel difference compared with prior solo shape and compound eyelashes 3698 pixel difference, remote pixel differences 0 and reset exact originals. No unauthorized Low158 mapping, no server wire change, no production deploy. Full shape drivers, live NexVerse COF skin appearance and WASD/Yaw E2E still open.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1095–1104",
+  "next_batch": "Alpha.1105–1114",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

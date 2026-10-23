@@ -404,6 +404,9 @@ struct RenderDiagnostics
     // enabled on an admitted Wimpern GL draw, not final makeup COF.
     std::uint64_t self_avatar_eyelash_mask_gl_draws=0U;
     std::uint64_t self_avatar_shape_head_gl_draws=0U;
+    // Optional current verified owner COF shape lash geometry, never
+    // counts as Head/Upper/Lower authenticated skin or a remote mesh.
+    std::uint64_t self_avatar_shape_eyelash_gl_draws=0U;
     // Actual Texture UUID used by the original LLM slot in this frame.
     // A GPU draw with yesterday's bake must not prove today's Low158 TE.
     std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};
