@@ -4,6 +4,7 @@
  */
 #include "nexverse/protocol/circuit.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/movement_complete_admission.hpp"
 
 #include <algorithm>
 #include <thread>
@@ -209,8 +210,19 @@ bool CircuitConnection::handle_packet(
 
     if (packet.header.message == msg_agent_movement_complete)
     {
+        if(!valid_circuit_movement_complete(
+               packet.payload,session_,movement_sent))
+        {
+            if(status.movement_complete_rejected<9999U)
+                ++status.movement_complete_rejected;
+            if(status.movement_complete_rejected==1U)
+                status.message="AgentMovementComplete rejected: "
+                    "invalid payload, login identity or position";
+            return true; // The datagram is still ACKed when reliable.
+        }
+        status.movement_complete_validated=true;
         status.state = CircuitState::active;
-        status.message = "LLUDP circuit active; AgentMovementComplete received";
+        status.message = "LLUDP circuit active; authenticated AgentMovementComplete";
         // Send exactly one authenticated, read-only legacy wearables
         // request per circuit. No AgentIsNowWearing or AgentSetAppearance
         // mutation; the reply can be a legacy dummy on modern OpenSim.

@@ -427,6 +427,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-packet-dispatcher-tests)
     add_test(NAME nexverse-packet-dispatcher-tests COMMAND nexverse-packet-dispatcher-tests)
 
+    add_executable(nexverse-movement-complete-admission-tests
+        tests/movement_complete_admission_tests.cpp)
+    target_link_libraries(nexverse-movement-complete-admission-tests
+        PRIVATE NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-movement-complete-admission-tests)
+    add_test(NAME nexverse-movement-complete-admission-tests
+        COMMAND nexverse-movement-complete-admission-tests)
+
     add_executable(nexverse-viewer-messages-tests tests/viewer_messages_tests.cpp)
     target_link_libraries(nexverse-viewer-messages-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-viewer-messages-tests)

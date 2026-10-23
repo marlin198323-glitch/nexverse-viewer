@@ -595,3 +595,11 @@ F3 zeigt tatsächliche gesendete Low381-Nachfragen N/2 und
 einen gültigen Low382-Wire-Empfang. Dabei steht ausdrücklich
 COF ungeprueft. Separate WorldModel-/Skin-/GPU-Beweisführung
 bleibt erforderlich. Ohne Antwort bleibt Wearables offen.
+
+## Alpha.915–924 – F3 diagnostiziert ungültige Circuit-Handshakes
+Nach erfolgreichem Login dokumentiert F3 jetzt verworfene
+AgentMovementComplete Low15 als Low15 abgewiesen: N,
+ohne Erfolg für COF/Skin/Avatar oder WASD zu fingieren.
+Die Login-/Weltbereitschaft bleibt bis zur gültigen
+Simulatorantwort blockiert; vorherige Avatar-F3- und
+Fallback-Welcome-Ansicht erhalten.

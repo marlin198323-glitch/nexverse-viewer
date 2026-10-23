@@ -54,13 +54,13 @@ class F3F9OutfitNavigation(unittest.TestCase):
   self.assertIn("gallery_wearables_status,legacy_cof_status",app)
   self.assertIn("kein Wear-Beweis",read("include/nexverse/protocol/legacy_wearables_cof_audit.hpp"))
  def test_version_progress_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.914")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.924")
   obj=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(obj["viewer_version"],"0.2.0-alpha.914")
-  self.assertEqual(obj["next_batch"],"Alpha.915–924")
+  self.assertEqual(obj["viewer_version"],"0.2.0-alpha.924")
+  self.assertEqual(obj["next_batch"],"Alpha.925–934")
   self.assertEqual(obj["default_blocks_per_run"],10)
   self.assertIn("still open",obj["assessment"])
   for f in ("CHATUEBERGABE.md","AGENTS.md","projectplan.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.915–924",read(f)[:1300])
+   self.assertIn("Alpha.925–934",read(f)[:1300])
 if __name__=="__main__":unittest.main()

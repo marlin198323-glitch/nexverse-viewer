@@ -952,3 +952,10 @@ Low381 AgentID+SessionID, zuverlässiger Versand, Low382
 Agent/Session/Serial/Wearables. Nach fehlender Antwort sind
 höchstens zwei read-only Wiederholungen erlaubt. Reply-Empfang
 beweist weder COF noch ein gerendertes Outfit.
+
+## Alpha.915–924 – Firestorm Circuit-Aktivierung nur nach echtem LLUDP
+Packet-ID Low AgentMovementComplete genügt nicht. Originale
+Nachricht vollständig decodieren, authentifizierte AgentID und
+SessionID samt plausibler Position prüfen. Erst dann einen aktiven
+Circuit und den lesenden Low381-Outfit-Readback starten.
+Ablehnung ist keine Aussage über tatsächliche Avatar-GPU-Pixel.

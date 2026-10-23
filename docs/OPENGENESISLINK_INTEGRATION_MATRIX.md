@@ -861,3 +861,14 @@ Low381-Request zwei zeitlich begrenzte read-only Wiederholungen nach
 5 und 12 Sekunden, solange keine korrekt decodierte Low382 mit
 passender AgentID/SessionID eingetroffen ist. Keine Skin-, COF-
 oder AgentIsNowWearing-Mutation, keine zusätzliche Server-API.
+
+## Alpha.915–924 – AgentMovementComplete authentifiziert CircuitState
+OpenSim/Firestorm AgentMovementComplete ist eine LLUDP-Nachricht
+mit tatsächlichem Agent/Session/Pose/RegionHandle. Ihre Message-ID
+alleine darf den Circuit nicht freigeben oder Low381 auslösen.
+Vor CircuitState::active wird das vollständige Paket decodiert
+und AgentID/SessionID der aktuellen LoginSession, ein
+RegionHandle und plausible endliche Position verlangt.
+Vorheriges CompleteAgentMovement muss wirklich gesendet sein.
+Position-only bei fehlendem horizontalen LookAt bleibt legal.
+Upstream OpenGenesisLINK main ccfc644d ohne neue Avatar-Wireänderung.

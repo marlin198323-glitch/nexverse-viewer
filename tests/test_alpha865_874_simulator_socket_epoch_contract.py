@@ -37,6 +37,6 @@ class SimulatorEndpointEpochContract(unittest.TestCase):
    self.assertIn(marker,s)
   self.assertIn("early_avatar_readback_tests; do",read("scripts/pi5-headless-tests.sh"))
  def test_next_phase(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.914")
-  self.assertIn("Alpha.915–924",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.924")
+  self.assertIn("Alpha.925–934",read("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

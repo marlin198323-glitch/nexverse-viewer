@@ -13817,6 +13817,11 @@ int Application::run(bool enable_developer_modules)
                 if(early_readbacks[1])
                     shell_view.avatar_handshake_status+=
                         " | Low382 gepuffert (warte Circuit)";
+                if(circuit_snapshot.movement_complete_rejected>0U)
+                    shell_view.avatar_handshake_status+=
+                        " | Low15 abgewiesen: "+
+                        std::to_string(
+                            circuit_snapshot.movement_complete_rejected);
                 shell_view.avatar_bake_stream_status=
                     (texture_recovered_j2c_transfers>0U
                         ?"J2C-Retry gerettet: "+
