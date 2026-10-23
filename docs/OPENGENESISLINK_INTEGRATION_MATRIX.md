@@ -838,3 +838,11 @@ WorldModel generation and RegionHandle must match the binding
 made by authenticated Full/Compressed ObjectUpdate before
 High9 can confirm avatar position/turn/WASD. No server API
 or LLUDP message format changed.
+
+## Alpha.885–894 – High4 AgentUpdate erst nach bestätigtem Simulator-Self-Readback
+Ein LLUDP-Circuit kann bei AgentMovementComplete aktiv werden, obwohl
+die eigentliche Simulatorposition wegen fehlender/ungültiger Daten
+nicht in WorldModel übernommen wurde. (0,0,0) ist mathematisch gültig,
+aber kein bestätigter Spawn. High4-Kamera und WASD verlangen echte
+Agent/Session/Region-Pose. Auf Epochwechsel ausstehende Controls
+und Flug-/Yaw-Heading rücksetzen; OpenGenesisLINK LLUDP unverändert.

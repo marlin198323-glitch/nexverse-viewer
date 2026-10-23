@@ -6052,6 +6052,7 @@ int Application::run(bool enable_developer_modules)
     // Local yaw is only a bounded visual preview; never Model authority.
     std::optional<protocol::LocalHeadingPreview> local_heading_preview;
     bool invalid_movement_position_logged = false;
+    bool waiting_movement_server_pose_logged = false;
 
     std::atomic_bool circuit_stop{false};
     std::future<protocol::CircuitStatus> circuit_future;
@@ -8129,10 +8130,20 @@ int Application::run(bool enable_developer_modules)
                 keys.toggle_fly = pressed(GLFW_KEY_F);
 
                 world::AgentState agent_for_camera;
+                bool verified_self_controls=false;
                 {
                     std::scoped_lock lock{world_mutex};
                     agent_for_camera = world_model.agent();
+                    verified_self_controls=
+                        world_model.self_avatar_controls_ready()&&
+                        active_session&&
+                        agent_for_camera.agent_id==active_session->agent_id&&
+                        agent_for_camera.session_id==active_session->session_id;
                 }
+                // A CircuitState::active can be true for a decoded
+                // AgentMovementComplete frame which failed strict WorldModel
+                // position validation. Finite provisional origin (0,0,0)
+                // is NOT a verified spawn or a license to send High4 WASD.
                 // Never transmit a High4 AgentUpdate whose camera is
                 // derived from NaN/Infinity in simulator AgentPosition.
                 // No invented coordinates: pause until a valid readback.
@@ -8146,10 +8157,27 @@ int Application::run(bool enable_developer_modules)
                         invalid_movement_position_logged=true;
                     }
                     movement_feedback.reset();
+                    movement_heading_initialized=false;
+                }
+                else if(!verified_self_controls)
+                {
+                    // Do not synthesize a server spawn/heading to satisfy
+                    // movement or UI tests. This is an observable missing
+                    // simulator readback, not a keyboard failure.
+                    if(!waiting_movement_server_pose_logged)
+                    {
+                        core::warning(
+                            "AgentUpdate paused: no verified simulator self "
+                            "position/rotation for current session and region");
+                        waiting_movement_server_pose_logged=true;
+                    }
+                    movement_feedback.reset();
+                    movement_heading_initialized=false;
                 }
                 else
                 {
                     invalid_movement_position_logged=false;
+                    waiting_movement_server_pose_logged=false;
                 if (!movement_heading_initialized)
                 {
                     movement_controller.reset(agent_for_camera.rotation);
@@ -8343,12 +8371,19 @@ int Application::run(bool enable_developer_modules)
                         self_avatar_region_generation=0U;
                     }
                 }
-                // Server positions, a pending socket send and movement
-                // proof are all scoped to the same region lease. A
-                // teleport changes coordinates discontinuously; never
-                // count that movement as a successful WASD response.
+                // High4 outbound controls, flight toggle, local heading
+                // preview and motion evidence belong to exactly ONE
+                // simulator epoch. A new circuit can reuse the same
+                // RegionHandle; never send old-epoch WASD or yaw.
+                outbound_queue.clear();
+                movement_controller.reset();
+                movement_heading_initialized=false;
+                local_heading_preview.reset();
+                last_reported_control_flags=0U;
+                waiting_movement_server_pose_logged=false;
+                invalid_movement_position_logged=false;
                 movement_feedback.reset();
-                        turn_feedback.reset();
+                turn_feedback.reset();
                 // The self-appearance diagnostic is a CURRENT SIMULATOR
                 // counter; never carry events from a prior region/agent.
                 avatar_appearance_received.store(0U,std::memory_order_relaxed);
@@ -13738,6 +13773,16 @@ int Application::run(bool enable_developer_modules)
                     turn_feedback.turn_active()
                         ?turn_feedback.status()
                         :movement_feedback.status();
+                // F3 must tell the operator WHY movement is paused,
+                // not report "no input" on an active circuit while the
+                // simulator has not supplied a valid authenticated pose.
+                {
+                    std::scoped_lock lock{world_mutex};
+                    if(simulation_ready&&
+                       !world_model.self_avatar_controls_ready())
+                        shell_view.avatar_movement_status=
+                            "WASD: warte auf bestaetigte Simulatorposition";
+                }
                 shell_view.avatar_udp_directional_sent=
                     circuit_snapshot.directional_agent_updates_sent;
                 shell_view.avatar_handshake_status=

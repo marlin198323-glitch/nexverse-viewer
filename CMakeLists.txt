@@ -1099,6 +1099,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-world-direct-region-invalidation-tests
         COMMAND nexverse-world-direct-region-invalidation-tests)
 
+    add_executable(nexverse-self-agent-high4-pose-gate-tests
+        tests/self_agent_high4_pose_gate_tests.cpp)
+    target_link_libraries(nexverse-self-agent-high4-pose-gate-tests
+        PRIVATE NexVerse::World)
+    nexverse_enable_warnings(nexverse-self-agent-high4-pose-gate-tests)
+    add_test(NAME nexverse-self-agent-high4-pose-gate-tests
+        COMMAND nexverse-self-agent-high4-pose-gate-tests)
+
     add_executable(nexverse-self-avatar-pose-authority-tests
         tests/self_avatar_pose_authority_tests.cpp)
     target_link_libraries(nexverse-self-avatar-pose-authority-tests

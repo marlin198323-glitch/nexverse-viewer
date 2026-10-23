@@ -1066,6 +1066,12 @@ WorldSnapshot WorldModel::snapshot() const
     return value;
 }
 
+bool WorldModel::self_avatar_controls_ready() const noexcept
+{
+    return self_avatar_renderable()&&
+        valid_simulator_avatar_pose(agent_.position,agent_.rotation);
+}
+
 bool WorldModel::scene_ready() const noexcept
 {
     return region_.connected &&

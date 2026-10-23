@@ -932,3 +932,10 @@ The native avatar body, High9 position readback, KillObject
 and attachments only honor generation-current Self LocalID.
 Initial valid generation 0 is allowed. New Full/Compressed
 bind of same numeric ID on new generation is valid.
+
+## Alpha.885–894 – Firestorm High4 CameraCenter und WASD-Posefreigabe
+Originaler High4 AgentUpdate/WASD bleibt unverändert im Wireformat.
+OGL wartet auf bestätigte eigene Simulatorposition/Rotation, statt
+bei fehlender AgentMovementComplete-Dekodierung einen provisorischen
+CameraCenter/Body-Yaw zu senden. Alte Regionsbefehle werden verworfen,
+neuer Serverheading aus echter Pose übernommen.

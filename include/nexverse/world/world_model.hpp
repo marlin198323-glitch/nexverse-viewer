@@ -258,6 +258,9 @@ public:
     { return self_pose_confirmed_; }
     [[nodiscard]] bool self_avatar_renderable() const noexcept
     { return scene_ready()&&self_pose_confirmed_; }
+    // SceneReady/UseCircuitCode alone never authorizes a High4
+    // AgentUpdate camera or WASD/flight commands from provisional origin.
+    [[nodiscard]] bool self_avatar_controls_ready() const noexcept;
     void set_agent_profile(AgentProfileState profile);
     // Authenticated self appearance is not a second avatar entity.
     [[nodiscard]] bool apply_self_appearance(

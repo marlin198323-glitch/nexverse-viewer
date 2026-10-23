@@ -576,3 +576,10 @@ current region generation, avoiding phantom own attachments
 after reconnect. User-sent AgentUpdate remains speculative;
 High9 readback only confirms WASD after a valid current
 Self LocalID binding. No live E2E claimed.
+
+## Alpha.885–894 – F3 WASD wartet auf tatsächliche Simulatorposition
+Aktiver Circuit ohne gültigen aktuellen Selbst-Posebeweis zeigt
+WASD: warte auf bestaetigte Simulatorposition statt einer
+irreführenden Kein-Richtungsbefehl-Ausgabe. Das ist bewusst
+kein simuliertes WASD-Ergebnis, sondern eine Diagnose, warum
+MovementController und High4-Queue noch nicht senden.
