@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1034",
+  "viewer_version": "0.2.0-alpha.1044",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1035–1044",
-  "assessment": "Alpha1034: discovered an attribution bug in Alpha1024: GetTexture H/U/L stages were based solely on authenticated Low158 IDs, while the ACTUAL Firestorm self renderer may select an authenticated current ObjectUpdate TextureEntry for missing individual Low158 baked faces. Read-only per-face provenance-aware inspector now uses the exact WorldModel::self_bake_selection IDs plus from_low158 and from_object_update flags, matched to CURRENT GPU-admitted self proxy and current agent/session/region lease before any F3 or private report diagnostic. Low158 wins on the same face; ObjectUpdate-only face is explicitly provisional (not COF, not authoritative skin). Matching current epoch GetTexture retry/GPU status is reported per source; a missing/placeholder or unlabeled source cannot inherit old 404s. F3 shows short L=Low158/O=ObjTE prefixes for Head Upper Lower; private 0600 report adds three numeric source provenance and three numeric effective GetTexture stage fields, preserving earlier independent Low158-only fields. Native mixed-source, old/new outfit exact UUID, ObjTE-only, missing placeholder, 404, ready, epoch reset and Python real handler/provenance/privacy tests. This repairs diagnostics for real partial outfits but full RGB avatar skin and new authenticated WASD/Yaw live E2E are still open. No production deployment.",
+  "next_five_blocks": "Alpha.1045–1054",
+  "assessment": "Alpha1044: Implemented bounded GPU-pressure fallback for CURRENT authenticated self Head/Upper/Lower baked RGBA textures that otherwise remain deferred when Firestorm's mip0 self-body pin exceeds the transactional staging or family byte budget. Only an exact CURRENT-SESSION/REGION GPU-admitted self avatar body ID can qualify, after the normal slot-admission preflight; ordinary world textures are unchanged. A pure planner first checks that full quality actually fails and then selects the first safe lower mip up to mip3 using both existing staging reserve and family byte admission. It downsamples the ALREADY DOWNLOADED/DECODED memory image, launches NO new HTTP, never clears GetTexture error/backoff or bypasses GPU slot/budget. Only AFTER successful transactional GPU upload is the lower mip committed to texture_gpu_mips, desired mip, and the per-region 60-second cooldown floor. A later retry can restore full mip0 when headroom improves; a region/material epoch resets this state. Current self F3 shows total body-mip rescue admissions (no UUIDs). Native regression for real 4096x4096/384MiB pressure selecting mip2, adequate headroom no downgrade, impossible rescue deferral, max mip bound, timing and epoch reset; Python real application path contracts. This remedies one GPU-budget cause of absent/partially visible own avatar skin without claiming server low158/COF correctness. Authenticated NexVerse real-world full skin/outfit RGB pixel and fresh WASD/Yaw end-to-end are still open. No production deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1035–1044",
+  "next_batch": "Alpha.1045–1054",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

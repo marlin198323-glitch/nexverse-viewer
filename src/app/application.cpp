@@ -6470,6 +6470,8 @@ int Application::run(bool enable_developer_modules)
     std::uint8_t object_texture_loading_mip = 0U;
     std::unordered_map<std::string, std::uint8_t> texture_desired_mips;
     std::unordered_map<std::string, std::uint8_t> texture_gpu_mips;
+    assets::SelfAvatarMipRescueCooldown self_avatar_mip_rescue;
+    std::size_t self_avatar_mip_rescued_uploads=0U;
     assets::AssetLodDwell<std::uint8_t> texture_lod_dwell;
     std::unordered_map<std::string, std::size_t> texture_gpu_bytes;
     std::size_t texture_gpu_used_bytes = 0U;
@@ -10530,6 +10532,8 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_retries.enter(material_scope.epoch());
+                self_avatar_mip_rescue.enter(material_scope.epoch());
+                self_avatar_mip_rescued_uploads=0U;
                 texture_recovered_j2c_transfers=0U;
                 texture_desired_mips.clear();
                 texture_gpu_mips.clear();
@@ -11805,6 +11809,12 @@ int Application::run(bool enable_developer_modules)
                 }
             }
 
+            // Exactly ONE current-frame GPU-admission snapshot must
+            // serve GetTexture GPU rescue, residency, F3 and rendering.
+            // Two independently computed lists risk divergent sources.
+            const auto admitted_bakes=
+                assets::admit_avatar_bake_gpu_candidates(
+                    avatar_proxy_update);
             if (object_texture_loading &&
                 object_texture_future.valid() &&
                 object_texture_future.wait_for(
@@ -11865,6 +11875,64 @@ int Application::run(bool enable_developer_modules)
                     result.image.valid() &&
                     !object_texture_loading_id.empty())
                 {
+                    // When full-res OWN body bakes cannot fit the safe
+                    // transactional GPU peak or family byte budget, try
+                    // the smallest extra downsample already in RAM. Never
+                    // fetch again, bypass admission, or change HTTP backoff.
+                    // Only the *current* authenticated region/session self
+                    // proxy may use this rescue; other scene assets retain
+                    // the original policy and all GPU slot checks.
+                    std::optional<std::uint8_t> rescued_self_mip;
+                    const auto own_proxy=std::find_if(
+                        admitted_bakes.accepted.begin(),
+                        admitted_bakes.accepted.end(),
+                        [](const auto& proxy){return proxy.is_self;});
+                    const bool current_self_bake=active_session&&
+                        login_ui.authenticated&&simulation_ready&&
+                        render_agent.present&&
+                        active_session->agent_id==render_agent.agent_id&&
+                        firestorm_region_lease.matches(current_firestorm_epoch)&&
+                        own_proxy!=admitted_bakes.accepted.end()&&
+                        std::find(own_proxy->body.begin(),
+                                  own_proxy->body.end(),
+                                  object_texture_loading_id)!=
+                            own_proxy->body.end()&&
+                        texture_residency.desired_ids.contains(
+                            object_texture_loading_id);
+                    if(current_self_bake)
+                    {
+                        const auto slot_preflight=
+                            assets::plan_texture_slot_admission(
+                                texture_residency.preferred_ids,
+                                object_texture_loaded_ids,
+                                texture_residency.eviction_ids,
+                                object_texture_loading_id,
+                                max_object_texture_assets);
+                        if(slot_preflight.fits)
+                        {
+                            const auto extra=
+                                assets::choose_self_avatar_budget_mip_rescue(
+                                    result.image.width,result.image.height,
+                                    object_texture_loading_mip,
+                                    texture_gpu_used_bytes,
+                                    mesh_gpu_estimated_bytes,
+                                    shared_gpu_budget_bytes,
+                                    texture_gpu_budget_bytes,
+                                    texture_residency.preferred_ids,
+                                    texture_gpu_bytes,
+                                    object_texture_loading_id);
+                            if(extra)
+                                if(auto reduced=assets::texture_mip_image(
+                                       result.image,*extra))
+                                {
+                                    result.image=std::move(*reduced);
+                                    object_texture_loading_mip=
+                                        static_cast<std::uint8_t>(
+                                            object_texture_loading_mip+*extra);
+                                    rescued_self_mip=object_texture_loading_mip;
+                                }
+                        }
+                    }
                     const std::size_t next_bytes =
                         assets::gpu_rgba8_mip_bytes(result.image.width,
                                                     result.image.height);
@@ -12007,6 +12075,22 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
+                        if(rescued_self_mip)
+                        {
+                            // Commit the quality floor ONLY after the
+                            // renderer accepted the transactional upload.
+                            // Retry full-resolution after 60s of headroom.
+                            self_avatar_mip_rescue.admitted(
+                                object_texture_loading_id,*rescued_self_mip,
+                                gpu_submission_end);
+                            texture_desired_mips[object_texture_loading_id]=
+                                *rescued_self_mip;
+                            ++self_avatar_mip_rescued_uploads;
+                            core::info("Self avatar body GetTexture GPU rescue "
+                                "admitted in current region; smaller mip="+
+                                std::to_string(*rescued_self_mip)+
+                                "; full quality will be rechecked later");
+                        }
                         if(result.recovered_j2c_transfer)
                             ++texture_recovered_j2c_transfers;
                         object_texture_retries.success(object_texture_loading_id);
@@ -12071,9 +12155,6 @@ int Application::run(bool enable_developer_modules)
             avatar_bake_recheck.enter(material_scope.epoch());
             // One frame-consistent GPU admission applies to replan,
             // self-bake fallback, HTTP queue and full mip priority.
-            const auto admitted_bakes=
-                assets::admit_avatar_bake_gpu_candidates(
-                    avatar_proxy_update);
             const auto self_bake_it=std::find_if(
                 admitted_bakes.accepted.begin(),
                 admitted_bakes.accepted.end(),
@@ -12231,14 +12312,28 @@ int Application::run(bool enable_developer_modules)
                     admitted_bakes.accepted.begin(),
                     admitted_bakes.accepted.end(),
                     [](const auto& avatar){return avatar.is_self;});
+                self_avatar_mip_rescue.enter(material_scope.epoch());
                 if(mip_self!=admitted_bakes.accepted.end()&&active_session&&
                    active_session->agent_id==render_agent.agent_id)
+                {
                     (void)assets::pin_self_avatar_body_full_mip(
                         planned_mips,
                         mip_self->body,
                         simulation_ready&&
                         firestorm_region_lease.matches(
                             current_firestorm_epoch));
+                    // If a smaller self body texture was GPU-admitted
+                    // under actual pressure, honor it for 60s rather
+                    // than immediately pinning mip0 and thrashing.
+                    for(const auto& id:mip_self->body)
+                    {
+                        if(const auto it=planned_mips.find(id);
+                           it!=planned_mips.end())
+                            it->second=std::max(it->second,
+                                self_avatar_mip_rescue.minimum_mip(
+                                    id,texture_plan_now));
+                    }
+                }
                 if (planned_mips != texture_desired_mips)
                 {
                     for(const auto& [id,quality]:planned_mips)
@@ -13922,6 +14017,11 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(self_avatar_mip_rescued_uploads>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Body-Mip-GPU-Rettung:"+
+                        std::to_string(self_avatar_mip_rescued_uploads);
                 if(avatar_diagnostic.authenticated&&
                    avatar_diagnostic.region_connected&&
                    avatar_diagnostic.agent_present&&

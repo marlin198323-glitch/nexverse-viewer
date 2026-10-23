@@ -30,6 +30,6 @@ class CofMultiRecordGuard(unittest.TestCase):
             "difference(new_skin,actually_newer)<100U"):
    self.assertIn(x,s)
  def test_version_and_handoff(self):
-  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1034")
-  self.assertIn("Alpha.1035–1044",src("CHATUEBERGABE.md"))
+  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1044")
+  self.assertIn("Alpha.1045–1054",src("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

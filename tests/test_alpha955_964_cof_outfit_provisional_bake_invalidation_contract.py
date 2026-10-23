@@ -46,6 +46,6 @@ class CofOutfitBakeLease(unittest.TestCase):
   self.assertIn('self_object_bake_outfit_invalidations_=0U;',h)
   self.assertIn('world_model.self_render_bakes()',s)
  def test_release(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1034")
-  self.assertIn("Alpha.1035–1044",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1044")
+  self.assertIn("Alpha.1045–1054",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

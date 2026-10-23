@@ -29,6 +29,6 @@ class SelfLocalIdGeneration(unittest.TestCase):
   native=rd("tests/self_avatar_pose_authority_tests.cpp")
   self.assertIn("local(avatar_local_id,region,0U,region,0U)!=avatar_local_id",native)
  def test_version_and_next_ten(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1034")
-  self.assertIn("Alpha.1035–1044",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1044")
+  self.assertIn("Alpha.1045–1054",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()
