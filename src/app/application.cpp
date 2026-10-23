@@ -6767,6 +6767,9 @@ int Application::run(bool enable_developer_modules)
             handle=0U;
         }
         gallery_local_te_rgba.clear();
+        // A stale COF/region must not leave someone else's local
+        // unbaked Layer preview on own Firestorm Head/Upper/Lower.
+        world_renderer->clear_self_avatar_local_layer_previews();
         gallery_composite_version=0U;
         gallery_composite_cof.clear();
         gallery_local_slot_previews.fill(0U);
@@ -10224,6 +10227,10 @@ int Application::run(bool enable_developer_modules)
                         if(handle)renderer.destroy_texture(handle);
                         handle=0U;
                     }
+                    // Replace all three LOCAL self-avatar layer slots.
+                    // A missing/unsupported original layer must not keep
+                    // an outdated image from the former COF composition.
+                    world_renderer->clear_self_avatar_local_layer_previews();
                     gallery_composite_cof=id;
                     gallery_composite_version=v->second;
                     std::map<int,float> weights;
@@ -10325,11 +10332,26 @@ int Application::run(bool enable_developer_modules)
                         if(composed.preview_ready()&&
                            composed.image.width<=128U&&
                            composed.image.height<=128U)
+                        {
                             gallery_partial_layer_gpu[group]=
                                 renderer.create_rgba_texture(
                                     static_cast<int>(composed.image.width),
                                     static_cast<int>(composed.image.height),
                                     composed.image.pixels.data());
+                            // Actual original Head/Upper/Lower .llm GL
+                            // fallback for SELF while the SIMULATOR bake
+                            // is not resident. This is PARTIAL COF COLOR,
+                            // never a server TextureEntry bake ID. The
+                            // renderer gives real baked GPU textures
+                            // absolute priority and keeps remote avatars
+                            // completely unmodified.
+                            (void)world_renderer->
+                                set_self_avatar_local_layer_preview(
+                                    group,
+                                    {composed.image.width,
+                                     composed.image.height,
+                                     composed.image.pixels});
+                        }
                     }
                     const auto coverage=
                         assets::audit_firestorm_bake_sources(
@@ -10344,7 +10366,8 @@ int Application::run(bool enable_developer_modules)
                         " Regionen "+std::to_string(coverage.covered_regions)+
                         "/11, Offen "+std::to_string(unsupported+missing+
                             failed_masks+unresolved_colors)+
-                        " - Bake NICHT freigegeben";
+                        " - lokale Teilfarben am eigenen Avatar; "
+                        "Server-Bake NICHT freigegeben";
                 }
             }
             if(gallery_appearance_check_requested)
@@ -14531,6 +14554,15 @@ int Application::run(bool enable_developer_modules)
                                 " | COF Auto: Inventar-/Asset-Beleg fehlt";
                     }
                 }
+                const auto local_draws=
+                    render_diagnostics.self_avatar_local_layer_gl_draws;
+                if(local_draws[0U]+local_draws[1U]+local_draws[2U]>0U)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm lokale COF-Farben GL:"+
+                        std::to_string(local_draws[0U])+"/"+
+                        std::to_string(local_draws[1U])+"/"+
+                        std::to_string(local_draws[2U])+
+                        " (SELF, unvollstaendig, kein Server-Bake)";
                 if((render_diagnostics.self_avatar_shape_body_gl_draws[0U]+
                     render_diagnostics.self_avatar_shape_body_gl_draws[1U])>0U&&
                    avatar_diagnostic.authenticated)

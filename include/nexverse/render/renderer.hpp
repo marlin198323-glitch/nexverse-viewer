@@ -374,6 +374,10 @@ struct RenderDiagnostics
     std::uint64_t self_avatar_server_selected_skin_draw_calls=0U;
     std::uint64_t self_avatar_anatomical_mesh_draw_calls = 0U;
     std::uint64_t self_avatar_baked_texture_draw_calls = 0U;
+    // Own avatar only: LOCAL partial Firestorm COF Layer preview bound
+    // to actual original Head/Upper/Lower triangles when no authentic
+    // server-baked texture is resident. Not a simulator bake proof.
+    std::array<std::uint64_t,3U> self_avatar_local_layer_gl_draws{};
     // GL_ANY_SAMPLES_PASSED on original self head/upper/lower, resolved
     // asynchronously from a preceding frame. Not a completed bake or
     // a post-UI pixel readback. Explicit validity avoids fake 0-pixel
@@ -497,6 +501,13 @@ public:
     // Optional authenticated COF Shape preview for OWN avatar only.
     // Never deform the shared original Head mesh of other agents.
     virtual void clear_self_avatar_head_shape_preview()=0;
+    // Unbaked LOCAL Firestorm COF layer fallback on original SELF only.
+    // The simulator's resident Head/Upper/Lower bakes always take
+    // precedence. Never share local previews with remote avatars.
+    // Passing a bad RGBA image preserves the existing GPU image.
+    [[nodiscard]] virtual bool set_self_avatar_local_layer_preview(
+        std::size_t slot,const RenderImageRgba8& image)=0;
+    virtual void clear_self_avatar_local_layer_previews()=0;
     // Locally installed Firestorm head_alpha.tga *visibility* mask
     // for the original eyelashMesh, NOT a server downloaded asset.
     // An absent/invalid image leaves the previous GPU mask intact.

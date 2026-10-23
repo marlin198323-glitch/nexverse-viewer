@@ -80,6 +80,85 @@ int main()
        d.self_avatar_weighted_skin_draw_calls!=3)error=6;
     if(!error)
     {
+      // Alpha.1164: locally composed COF preview now visibly colors
+      // original Firestorm Head/Upper/Lower GL meshes for SELF only.
+      // These 3 test-color sources are synthetic and must NEVER count
+      // as simulator bakes. Authentic server texture wins on residency.
+      const render::RenderImageRgba8 local{
+          16U,16U,std::vector<std::uint8_t>(16U*16U*4U,255U)};
+      for(std::size_t slot=0;slot<3U;++slot)
+      {
+        auto colored=local;
+        const std::array<std::array<unsigned char,3U>,3U> rgb{{
+           {{238U,29U,63U}},{{26U,232U,49U}},{{41U,69U,244U}}}};
+        for(std::size_t i=0;i<colored.pixels.size();i+=4U)
+        {
+          colored.pixels[i]=rgb[slot][0U];
+          colored.pixels[i+1U]=rgb[slot][1U];
+          colored.pixels[i+2U]=rgb[slot][2U];
+        }
+        if(!renderer->set_self_avatar_local_layer_preview(slot,colored))
+            error=92;
+      }
+      const auto local_pixels=draw();
+      const auto local_diff=difference(plain,local_pixels);
+      const auto local_diag=renderer->diagnostics();
+      std::cout<<"ORIGINAL_FIRESTORM_LOCAL_COF_RGB_SELF_PIXELS="
+               <<local_diff<<"; GL="
+               <<local_diag.self_avatar_local_layer_gl_draws[0U]<<"/"
+               <<local_diag.self_avatar_local_layer_gl_draws[1U]<<"/"
+               <<local_diag.self_avatar_local_layer_gl_draws[2U]<<"\n";
+      if(local_diff<20U||
+         local_diag.self_avatar_local_layer_gl_draws!=
+            (std::array<std::uint64_t,3U>{1U,1U,1U})||
+         local_diag.self_avatar_body_bake_gl_draws!=
+            (std::array<std::uint64_t,3U>{0U,0U,0U}))
+          error=93;
+      // Failed/oversized replacement must preserve accepted pixels.
+      const render::RenderImageRgba8 invalid{129U,129U,
+           std::vector<std::uint8_t>(129U*129U*4U,255U)};
+      if(renderer->set_self_avatar_local_layer_preview(0U,invalid)||
+         difference(local_pixels,draw())!=0U)
+          error=94;
+      // A REAL uploaded simulator bake (simulated fixture UUID here)
+      // overrides the local layer on corresponding original mesh.
+      auto real=local;
+      for(std::size_t i=0;i<real.pixels.size();i+=4U)
+      {real.pixels[i]=17U;real.pixels[i+1U]=205U;real.pixels[i+2U]=234U;}
+      if(!renderer->set_object_texture("test-server-head-bake",real))
+          error=95;
+      self.baked_texture_ids[0U]="test-server-head-bake";
+      renderer->set_avatar_proxies({self});
+      const auto real_head=draw();
+      const auto real_stats=renderer->diagnostics();
+      if(difference(real_head,local_pixels)<2U||
+         real_stats.self_avatar_body_bake_gl_draws[0U]!=1U||
+         real_stats.self_avatar_local_layer_gl_draws[0U]!=0U||
+         real_stats.self_avatar_local_layer_gl_draws[1U]!=1U)
+          error=96;
+      self.baked_texture_ids[0U].clear();
+      renderer->set_avatar_proxies({self});
+      // Remote avatar never inherits the owner's local layer colors.
+      auto remote=self;remote.is_self=false;
+      renderer->set_avatar_proxies({remote});
+      const auto remote_with_local=draw();
+      if(renderer->diagnostics().self_avatar_local_layer_gl_draws[0U]!=0U)
+          error=97;
+      renderer->clear_self_avatar_local_layer_previews();
+      if(difference(remote_with_local,draw())!=0U)
+          error=98;
+      renderer->set_avatar_proxies({self});
+      const auto cleared=draw();
+      const auto after_clear=renderer->diagnostics();
+      const auto ghosts=difference(plain,cleared);
+      std::cout<<"ORIGINAL_FIRESTORM_LOCAL_COF_RESET_GHOST_PIXELS="
+               <<ghosts<<"\n";
+      if(ghosts!=0U||
+         after_clear.self_avatar_local_layer_gl_draws[0U]!=0U)
+          error=99;
+    }
+    if(!error)
+    {
       // Real framebuffer, not a mock: malformed own position must never
       // produce GL pixels or a false original-skin draw. Recovery on the
       // next valid frame must restore original Firestorm body pixels.

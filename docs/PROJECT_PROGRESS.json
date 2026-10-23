@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-24",
-  "viewer_version": "0.2.0-alpha.1154",
+  "viewer_version": "0.2.0-alpha.1164",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1155–1164",
-  "assessment": "Alpha1154 /goal: The existing authenticated original COF original FetchInventory2/LLWearable auto read without F9 now chains into bounded original GetTexture source downloading and the existing partial Firestorm LAD mask/color/global composite preview, also without opening F9. Only a complete error-free current owner/region/COF-version immutable server LLWearable transfer originally triggered by the real auto path allows automatic texture fetch (manual F9 re-fetch provenance remains separate). Existing cap HTTP validation, 12 unique local source max, decoding and 128x128 RGBA image preview, original TextureEntry owner/type and shared UUID references, 1 async request at a time, old epoch discard, valid current COF and owner-bound auto admission remain mandatory. Auto original avatar_lad.xml texlayer manifest is loaded read-only. Once current local RGBA pixels and original LAD layer manifest are available and all transfer futures finish, the existing bounded local Firestorm global color, alpha mask TGA and 3 preview region compositor runs ONE time for that source/COF. Missing all local pixel sources leads to a clear fail-closed status without false bake success or retry loops. F3 reports owner/epoch/COF-scoped 0..12 local RGBA source progress and explicitly only local Firestorm Layer-Preview, NOT simulator-baked skin. 10 new Python integration contracts, existing native Firestorm mask/color/texture tests. NOT full Firestorm wearable layering, final server bake, live 3/3 RGB skin proof or server-verified WASD/Yaw. OpenGenesisLINK server latest main e63c586aec7d84761754a4cf31b300f22d602076. 100% final release evidence gate stays BLOCKED; no deploy. Real authenticated Grid Skin/Outfit and server-confirmed WASD/Yaw E2E still open.",
+  "next_five_blocks": "Alpha.1165–1174",
+  "assessment": "Alpha1164: ACTUAL local original Firestorm COF mask/color layer composites from authenticated owner/region/COF and actual bounded GetTexture source pixels now reach the original Head/Upper/Lower weighted skeletal GL triangles as a SELF-only visual fallback. The renderer uses three independent bounded (<=128x128) transactional RGBA GPU images, one per original anatomical LLM. A resident genuine simulator Head/Upper/Lower baked TextureEntry GPU asset ALWAYS has higher priority on that specific mesh and continues to increment only original server-bake proof counters. The unbaked local sources never affect remote avatars, never produce server-bake proof, use separate actual GL draw counters and are cleared at logout/COF/region changes and before new compositions so a missing or failed new source cannot show the previous outfit. Automatic pre-existing F9-free COF/LLWearable/GetTexture/Firerstorm LAD/TGA/GlobalColor/Masks composer now uploads each valid Head/Upper/Lower local composite to the own viewer mesh; F3 states 'lokale COF-Farben' and explicitly 'kein Server-Bake'. Native ORIGINAL Firestorm Xvfb/OpenGL framebuffer regression proves 3398 changed SELF body RGB pixels, Head/Upper/Lower local GL draws exactly 1/1/1, no simulator-bake increments, invalid oversized replacement leaves valid preview intact, resident authentic bake (test UUID) wins over local on Head, remote avatar draws zero local and reset has 0 ghost pixels. Ten Python original source/scope/GL/cleanup regressions. Not full authenticated real-grid 3/3 Skin/COF RGB proof, not full Body/Clothing/Alpha composite parity and server-confirmed WASD/Yaw E2E still open. OpenGenesisLINK upstream main e63c586aec7d84761754a4cf31b300f22d602076. Real release readiness remains BLOCKED; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1155–1164",
+  "next_batch": "Alpha.1165–1174",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
@@ -113,7 +113,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 183,
     "native_ctest_failed": 0,
-    "python_tests_passed": 554,
+    "python_tests_passed": 564,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -166,10 +166,10 @@
     "interleaved_legacy_cof_highwater_retirement": true,
     "cof_outfit_late_udp_object_bake_replay_rejected": true,
     "latest_localid_body_not_evicted_by_retired_replay": true,
-    "validated_viewer_version": "0.2.0-alpha.1154"
+    "validated_viewer_version": "0.2.0-alpha.1164"
   },
   "final_release_evidence": {},
-  "goal_100_release_status": "BLOCKED: real authenticated Grid 3/3 Skin/Outfit/WASD E2E, full Firestorm UI and platform CI remain open.",
+  "goal_100_release_status": "BLOCKED: real authenticated final Grid 3/3 Skin/Outfit/WASD E2E, full Firestorm UI and platforms remain open.",
   "alpha1144_verified_feature_sha": "3c9745a10692bc3ce3cc619a602c38cdc3dc87ba",
   "alpha1144_pi5_ci": {
     "status": "unverified",

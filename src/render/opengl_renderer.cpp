@@ -3271,6 +3271,50 @@ public:
                 std::min(lights.size(), max_active_lights)));
     }
 
+    void clear_self_avatar_local_layer_previews() override
+    {
+        for(auto& handle:self_avatar_local_layer_textures_)
+        {
+            if(handle!=0U)glDeleteTextures(1,&handle);
+            handle=0U;
+        }
+    }
+
+    [[nodiscard]] bool set_self_avatar_local_layer_preview(
+        std::size_t slot,const RenderImageRgba8& image) override
+    {
+        if(slot>=self_avatar_local_layer_textures_.size()||
+           !image.valid()||image.width>128U||image.height>128U)
+            return false;
+        GLuint candidate=0U;
+        for(int tries=0;tries<8&&glGetError()!=GL_NO_ERROR;++tries){}
+        glGenTextures(1,&candidate);
+        if(candidate==0U)return false;
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D,candidate);
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,
+            static_cast<GLsizei>(image.width),
+            static_cast<GLsizei>(image.height),0,
+            GL_RGBA,GL_UNSIGNED_BYTE,image.pixels.data());
+        const GLenum err=glGetError();
+        glBindTexture(GL_TEXTURE_2D,0U);
+        glActiveTexture(GL_TEXTURE0);
+        if(err!=GL_NO_ERROR)
+        {
+            glDeleteTextures(1,&candidate);
+            return false;
+        }
+        auto& existing=self_avatar_local_layer_textures_[slot];
+        if(existing!=0U)glDeleteTextures(1,&existing);
+        existing=candidate;
+        return true;
+    }
+
     void clear_self_avatar_head_shape_preview() override
     {
         destroy_mesh(avatar_body_meshes_[6U]);
@@ -3470,6 +3514,7 @@ public:
         diagnostics_.self_avatar_server_selected_skin_draw_calls=0U;
         diagnostics_.self_avatar_anatomical_mesh_draw_calls = 0U;
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
+        diagnostics_.self_avatar_local_layer_gl_draws.fill(0U);
         diagnostics_.avatar_hair_bake_gl_draws=0U;
         diagnostics_.self_avatar_hair_bake_gl_draws=0U;
         diagnostics_.avatar_eyes_bake_gl_draws=0U;
@@ -4575,9 +4620,23 @@ public:
                                 baked=true;
                             }
                         }
+                        // Unbaked Firestorm partial-local-COF colors can
+                        // now ACTUALLY be seen on own anatomical triangles.
+                        // A resident REAL simulator bake ALWAYS wins.
+                        // No local texture is ever applied to another avatar.
+                        const bool local_layer=!baked&&avatar.is_self&&
+                            self_avatar_local_layer_textures_[slot]!=0U;
+                        if(local_layer)
+                        {
+                            glActiveTexture(GL_TEXTURE4);
+                            glBindTexture(GL_TEXTURE_2D,
+                                self_avatar_local_layer_textures_[slot]);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectTexture"),4);
+                        }
                         glUniform1i(glGetUniformLocation(
                             program_,"uUseObjectTexture"),
-                            baked?GL_TRUE:GL_FALSE);
+                            (baked||local_layer)?GL_TRUE:GL_FALSE);
                         glUniform2f(glGetUniformLocation(
                             program_,"uObjectRepeat"),1.0f,1.0f);
                         glUniform2f(glGetUniformLocation(
@@ -4588,7 +4647,7 @@ public:
                             program_,"uObjectAlphaMode"),2);
                         glUniform1f(glGetUniformLocation(
                             program_,"uObjectAlphaCutoff"),0.015f);
-                        const RenderVec3 tint=baked
+                        const RenderVec3 tint=(baked||local_layer)
                             ? RenderVec3{1.0f,1.0f,1.0f}
                             : (slot==1U ? RenderVec3{0.70f,0.67f,0.63f}
                                :RenderVec3{0.83f,0.73f,0.68f});
@@ -4651,6 +4710,8 @@ public:
                                     ++diagnostics_.self_avatar_keyframe_skin_draw_calls;
                             }
                         }
+                        if(local_layer)
+                            ++diagnostics_.self_avatar_local_layer_gl_draws[slot];
                         if(baked)
                         {
                             ++diagnostics_.avatar_baked_texture_draw_calls;
@@ -5130,6 +5191,7 @@ public:
         clear_mesh_assets();
 
         clear_object_textures();
+        clear_self_avatar_local_layer_previews();
         if(avatar_eyelash_visibility_texture_!=0U)
         {
             glDeleteTextures(1,&avatar_eyelash_visibility_texture_);
@@ -5852,6 +5914,7 @@ private:
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
     std::unordered_map<std::string, GpuMesh> mesh_assets_;
     GLuint avatar_eyelash_visibility_texture_=0U;
+    std::array<GLuint,3U> self_avatar_local_layer_textures_{};
     std::unordered_map<std::string, GLuint> object_textures_;
     std::unordered_map<std::string, bool> object_texture_alpha_;
     RenderVec3 test_anchor_;

@@ -46,13 +46,13 @@ class LegacyCofComparison(unittest.TestCase):
        "result.can_prove_worn()","result.label().find(u1)"):
    self.assertIn(t,s)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1154")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1164")
   data=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(data["viewer_version"],"0.2.0-alpha.1154")
-  self.assertEqual(data["next_batch"],"Alpha.1155–1164")
+  self.assertEqual(data["viewer_version"],"0.2.0-alpha.1164")
+  self.assertEqual(data["next_batch"],"Alpha.1165–1174")
   self.assertEqual(data["default_blocks_per_run"],10)
   self.assertIn("still open",data["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.1155–1164",read(f)[:1200])
+   self.assertIn("Alpha.1165–1174",read(f)[:1200])
 if __name__=="__main__":unittest.main()
