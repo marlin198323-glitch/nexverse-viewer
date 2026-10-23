@@ -6170,6 +6170,7 @@ int Application::run(bool enable_developer_modules)
     assets::FirestormAutoCofRead auto_cof_read;
     bool auto_cof_items_fetching=false;
     bool auto_cof_asset_requested=false;
+    bool auto_cof_wearable_assets_active=false;
     input_context.outfit_wearable_check_requested=&gallery_wearables_requested;
     std::string gallery_wearables_status=
         "Originalinventar noch nicht abgeglichen";
@@ -6195,6 +6196,9 @@ int Application::run(bool enable_developer_modules)
     std::string shape_head_preview_cof;
     std::string shape_head_preview_owner;
     bool gallery_texture_requested=false;
+    bool auto_cof_texture_requested=false;
+    bool auto_cof_layer_armed=false;
+    bool auto_cof_compose_requested=false;
     input_context.outfit_wearable_texture_requested=&gallery_texture_requested;
     std::future<assets::WearableTexturePreviewResult>
         gallery_local_texture_future;
@@ -6742,6 +6746,13 @@ int Application::run(bool enable_developer_modules)
     // discarded on the render thread before another batch may start.
     auto clear_gallery_local_texture_previews=[&]()
     {
+        // Abort pending automatic local layer work at every new COF,
+        // logout or region lease. Async old replies are discarded by
+        // the existing epoch/folder/version checks.
+        auto_cof_texture_requested=false;
+        auto_cof_wearable_assets_active=false;
+        auto_cof_layer_armed=false;
+        auto_cof_compose_requested=false;
         gallery_local_texture_pending.clear();
         gallery_local_texture_expected.clear();
         for(const auto& [id,handle]:gallery_local_gpu_textures)
@@ -9579,6 +9590,10 @@ int Application::run(bool enable_developer_modules)
                     else
                     {
                         gallery_asset_total=gallery_asset_pending.size();
+                        // Do not label a manual F9 retry as automatic
+                        // solely because this owner/COF once had a
+                        // separate automatic FetchInventory2 admission.
+                        auto_cof_wearable_assets_active=was_auto_cof_asset;
                         gallery_asset_epoch=current_firestorm_epoch;
                         gallery_asset_cof_version=v->second;
                         gallery_asset_cof=id;
@@ -9652,6 +9667,25 @@ int Application::run(bool enable_developer_modules)
                         std::to_string(references[1])+"/"+
                         std::to_string(references[2])+
                         " Referenzen; echte Bakes fehlen";
+                    // After an authenticated complete original COF
+                    // wearable snapshot, automatically request bounded
+                    // original GetTexture local layer previews as well,
+                    // without requiring F9. No simulator bake upload.
+                    if(auto_cof_wearable_assets_active&&
+                       gallery_asset_errors==0U&&active_session&&
+                       login_ui.authenticated&&simulation_ready&&
+                       !gallery_texture_cap.empty()&&
+                       protocol::is_valid_http_uri(gallery_texture_cap)&&
+                       auto_cof_read.matches(active_session->agent_id,
+                           current_firestorm_epoch,gallery_asset_cof,
+                           gallery_asset_cof_version)&&
+                       gallery_decoded_wearable_assets.size()==
+                           gallery_asset_total)
+                    {
+                        gallery_texture_requested=true;
+                        auto_cof_texture_requested=true;
+                    }
+                    auto_cof_wearable_assets_active=false;
                     // An entirely resolved LLWearable snapshot supersedes
                     // the old preview EVEN if a Shape is missing, has an
                     // out-of-range parameter or any asset failed. No ghost
@@ -9885,9 +9919,12 @@ int Application::run(bool enable_developer_modules)
             if(gallery_texture_requested)
             {
                 gallery_texture_requested=false;
+                const bool from_auto_cof=auto_cof_texture_requested;
+                auto_cof_texture_requested=false;
                 const auto& id=caps_state.current_outfit_folder;
                 const auto v=gallery_inventory_sync.versions().find(id);
-                if(!outfit_gallery_open||!active_session||
+                if((!outfit_gallery_open&&!from_auto_cof)||
+                   !active_session||
                    !simulation_ready||!login_ui.authenticated||
                    gallery_plan_visible||gallery_texture_cap.empty()||
                    !protocol::is_valid_http_uri(gallery_texture_cap)||
@@ -9919,6 +9956,9 @@ int Application::run(bool enable_developer_modules)
                         for(const auto& ref:plan.candidates)
                             gallery_local_texture_expected.insert(ref.uuid);
                         gallery_local_total=plan.candidates.size();
+                        auto_cof_layer_armed=from_auto_cof;
+                        if(from_auto_cof)
+                            gallery_texlayer_analyze_requested=true;
                         gallery_local_epoch=current_firestorm_epoch;
                         gallery_local_cof_version=v->second;
                         gallery_local_cof=id;
@@ -10074,7 +10114,8 @@ int Application::run(bool enable_developer_modules)
             if(gallery_texlayer_analyze_requested)
             {
                 gallery_texlayer_analyze_requested=false;
-                if(!outfit_gallery_open||!active_session)
+                if((!outfit_gallery_open&&!auto_cof_layer_armed)||
+                   !active_session)
                     gallery_texlayer_status="F9/Login fuer TexLayer Analyse noetig";
                 else if(const auto root=
                             assets::find_firestorm_avatar_character_directory())
@@ -10110,12 +10151,57 @@ int Application::run(bool enable_developer_modules)
                         "avatar_lad.xml fehlt: NEXVERSE_AVATAR_ASSETS setzen";
                 }
             }
+            // All bounded source downloads failed or were rejected.
+            // Never loop forever or report skin from an empty local
+            // texture set. Manual F9 stays available to retry.
+            if(auto_cof_layer_armed&&gallery_local_total>0U&&
+               gallery_local_texture_pending.empty()&&
+               !gallery_local_texture_future.valid()&&
+               gallery_local_te_rgba.empty())
+            {
+                auto_cof_layer_armed=false;
+                gallery_texlayer_status=
+                    "COF Auto: keine echte lokale RGBA-Quelle; "
+                    "manuelle F9-Diagnose moeglich, kein Bake";
+            }
+            // Begin ONE local, bounded original Firestorm Layer
+            // composition as soon as automatic GetTexture downloads
+            // finish for this exact owner/region/COF version. This is
+            // diagnostics/preview only: no AgentSetAppearance or
+            // new simulator Bake ID. Manual F9 recomposition remains.
+            if(auto_cof_layer_armed&&
+               !gallery_local_texture_future.valid()&&
+               gallery_local_texture_pending.empty()&&
+               !gallery_local_te_rgba.empty()&&
+               gallery_texlayer_manifest&&
+               gallery_texlayer_manifest->valid()&&
+               active_session&&login_ui.authenticated&&simulation_ready&&
+               firestorm_region_lease.matches(gallery_local_epoch)&&
+               current_firestorm_epoch==gallery_local_epoch&&
+               caps_state.current_outfit_folder==gallery_local_cof)
+            {
+                const auto v=gallery_inventory_sync.versions().find(
+                    gallery_local_cof);
+                if(v!=gallery_inventory_sync.versions().end()&&
+                   v->second==gallery_local_cof_version&&
+                   auto_cof_read.matches(active_session->agent_id,
+                       gallery_local_epoch,gallery_local_cof,
+                       gallery_local_cof_version))
+                {
+                    gallery_texlayer_compose_requested=true;
+                    auto_cof_compose_requested=true;
+                    auto_cof_layer_armed=false;
+                }
+            }
             if(gallery_texlayer_compose_requested)
             {
                 gallery_texlayer_compose_requested=false;
+                const bool from_auto_cof=auto_cof_compose_requested;
+                auto_cof_compose_requested=false;
                 const auto& id=caps_state.current_outfit_folder;
                 const auto v=gallery_inventory_sync.versions().find(id);
-                if(!outfit_gallery_open||!active_session||
+                if((!outfit_gallery_open&&!from_auto_cof)||
+                   !active_session||
                    !login_ui.authenticated||!simulation_ready||
                    !gallery_texlayer_manifest||
                    !gallery_texlayer_manifest->valid()||
@@ -14417,12 +14503,29 @@ int Application::run(bool enable_developer_modules)
                             shell_view.avatar_bake_stream_status+=
                                 " | COF Auto: Original-Wearables werden geladen";
                         else if(gallery_asset_total>0U)
+                        {
                             shell_view.avatar_bake_stream_status+=
                                 " | COF Auto: Original-Wearables "+
                                 std::to_string(
                                     gallery_decoded_wearable_assets.size())+
                                 "/"+std::to_string(gallery_asset_total)+
                                 ", Bake/Outfit-E2E offen";
+                            if(gallery_local_cof==cof&&
+                               gallery_local_epoch==current_firestorm_epoch&&
+                               gallery_local_cof_version==ver->second)
+                            {
+                                shell_view.avatar_bake_stream_status+=
+                                    " | lokale RGBA-Quellen "+
+                                    std::to_string(
+                                        gallery_local_gpu_textures.size())+
+                                    "/"+std::to_string(gallery_local_total);
+                                if(gallery_composite_cof==cof&&
+                                   gallery_composite_version==ver->second)
+                                    shell_view.avatar_bake_stream_status+=
+                                        " | Firestorm Layer-Preview lokal; "
+                                        "kein Simulator-Bake";
+                            }
+                        }
                         else
                             shell_view.avatar_bake_stream_status+=
                                 " | COF Auto: Inventar-/Asset-Beleg fehlt";
