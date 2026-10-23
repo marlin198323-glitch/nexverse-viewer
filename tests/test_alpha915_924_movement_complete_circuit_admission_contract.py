@@ -43,6 +43,6 @@ class CircuitMovementAdmission(unittest.TestCase):
   self.assertIn("nexverse-movement-complete-admission-tests",rd("CMakeLists.txt"))
   self.assertIn("movement_complete_admission_tests",rd("scripts/pi5-headless-tests.sh"))
  def test_version_and_next_batch(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.924")
-  self.assertIn("Alpha.925–934",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.934")
+  self.assertIn("Alpha.935–944",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

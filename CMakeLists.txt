@@ -409,6 +409,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-appearance-admission-tests
         COMMAND nexverse-self-appearance-admission-tests)
 
+    add_executable(nexverse-region-handshake-replay-tests
+        tests/region_handshake_replay_tests.cpp)
+    target_link_libraries(nexverse-region-handshake-replay-tests PRIVATE
+        NexVerse::Protocol)
+    nexverse_enable_warnings(nexverse-region-handshake-replay-tests)
+    add_test(NAME nexverse-region-handshake-replay-tests
+        COMMAND nexverse-region-handshake-replay-tests)
+
     add_executable(nexverse-self-appearance-ack-receipt-tests
         tests/self_appearance_ack_receipt_tests.cpp)
     target_link_libraries(nexverse-self-appearance-ack-receipt-tests

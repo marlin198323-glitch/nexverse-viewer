@@ -8,6 +8,7 @@
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/outbound_queue.hpp"
 #include "nexverse/protocol/wearables_readback_retry.hpp"
+#include "nexverse/protocol/region_handshake_replay.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -43,6 +44,10 @@ struct CircuitStatus
     // True only after reliable RegionHandshakeReply datagram was accepted
     // for sending. Does not prove ACK or server AvatarAppearance delivery.
     bool self_appearance_support_sent=false;
+    // Duplicate inbound RegionHandshake is ACKed but cannot regress
+    // current simulator state or invalidate a real SSA reply ACK.
+    std::uint32_t region_handshake_duplicates=0U;
+    std::uint32_t region_handshake_refreshes=0U;
     // Legacy Low381 read-only bootstrap (socket-send, not ACK/reply).
     // A packet ID is not a simulator handshake. These counters expose
     // real Low15 admission, not a confirmed rendered avatar.
@@ -103,6 +108,7 @@ private:
     LoginSession session_;
     PacketThrottle throttle_;
     SelfAppearanceHandshakeReceipt self_appearance_receipt_;
+    RegionHandshakeReplay region_handshake_replay_;
     bool wearables_initial_requested_=false;
 };
 }

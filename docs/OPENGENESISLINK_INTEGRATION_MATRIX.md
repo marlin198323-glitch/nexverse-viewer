@@ -872,3 +872,11 @@ RegionHandle und plausible endliche Position verlangt.
 Vorheriges CompleteAgentMovement muss wirklich gesendet sein.
 Position-only bei fehlendem horizontalen LookAt bleibt legal.
 Upstream OpenGenesisLINK main ccfc644d ohne neue Avatar-Wireänderung.
+
+## Alpha.925–934 – LLUDP reliable RegionHandshake Replay / SSA bit2
+Gleiche eingehende Handshake-Sequenz wird transport-ACKed, aber
+kein zweites RegionHandshakeReply und keine Ruecknahme eines bereits
+aktiven Circuits oder bestaetigten SSA-Bit2. Bounded 16er Historie
+verhindert auch verspaetete out-of-order Retransmits. Neue Sequenzen
+werden weiter verlaesslich mit Firestorm SSA bit2 beantwortet.
+Servermain ccfc644d unveraendert.

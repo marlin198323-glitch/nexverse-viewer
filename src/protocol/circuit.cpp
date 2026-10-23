@@ -179,33 +179,65 @@ bool CircuitConnection::handle_packet(
 
     if (packet.header.message == msg_region_handshake)
     {
-        const std::uint32_t reply_sequence = next_sequence++;
-        // Explicit Firestorm/SSA negotiation: self AvatarAppearance is
-        // not sent by compatible regions until bit 2 is advertised.
-        // This is only a capability declaration, NOT an appearance upload.
-        self_appearance_receipt_.reset();
-        status.self_appearance_support_sent=false;
-        status.self_appearance_support_acknowledged=false;
-        status.self_appearance_ack_at={};
-        auto reply = encode_region_handshake_reply(
-            reply_sequence,session_,ogl_region_handshake_flags);
-        if (!send_reliable(
-                socket,
-                tracker,
-                std::move(reply),
-                reply_sequence,
-                status))
+        // A reliable simulator retransmission has ALREADY been ACKed above.
+        // Its original RegionHandshakeReply is tracked and resent by LLUDP.
+        // Do not reset SSA ack evidence, resend a second reply or downgrade
+        // the active world/camera just because the inbound sequence repeats.
+        if(region_handshake_replay_.already_replied(packet.header.sequence))
         {
-            status.message = "Failed to send RegionHandshakeReply";
-            return false;
+            if(status.region_handshake_duplicates<9999U)
+                ++status.region_handshake_duplicates;
         }
-
-        self_appearance_receipt_.note_sent(reply_sequence);
-        status.self_appearance_support_sent=self_appearance_receipt_.sent;
-        status.state = CircuitState::awaiting_region_ready;
-        status.message =
-            "RegionHandshakeReply sent: supports SELF AvatarAppearance "
-            "(SSA bit2); simulator appearance reply not yet verified";
+        else
+        {
+            const bool was_active=status.state==CircuitState::active;
+            const bool prior_ack=status.self_appearance_support_acknowledged;
+            const std::uint32_t reply_sequence=next_sequence++;
+            // Advertise SSA bit2 on each distinct RegionHandshake.
+            // This negotiates capability, not a new skin or COF upload.
+            auto reply=encode_region_handshake_reply(
+                reply_sequence,session_,ogl_region_handshake_flags);
+            if(!send_reliable(socket,tracker,std::move(reply),
+                              reply_sequence,status))
+            {
+                status.message="Failed to send RegionHandshakeReply";
+                return false;
+            }
+            region_handshake_replay_.note_replied(packet.header.sequence);
+            if(!was_active)
+            {
+                // During initial negotiation use the exact latest
+                // reliable sequence to establish real ACK provenance.
+                self_appearance_receipt_.reset();
+                status.self_appearance_support_sent=false;
+                status.self_appearance_support_acknowledged=false;
+                status.self_appearance_ack_at={};
+                self_appearance_receipt_.note_sent(reply_sequence);
+                status.self_appearance_support_sent=
+                    self_appearance_receipt_.sent;
+                status.state=CircuitState::awaiting_region_ready;
+                status.message=
+                    "RegionHandshakeReply sent: supports SELF AvatarAppearance "
+                    "(SSA bit2); simulator appearance reply not yet verified";
+            }
+            else
+            {
+                // New region metadata within same active circuit can
+                // legitimately be refreshed. The previous verified SSA
+                // ACK is still authoritative; do not make the active
+                // world disappear or restart Low381/WASD bootstrapping.
+                if(!prior_ack)
+                {
+                    self_appearance_receipt_.note_sent(reply_sequence);
+                    status.self_appearance_support_sent=true;
+                }
+                if(status.region_handshake_refreshes<9999U)
+                    ++status.region_handshake_refreshes;
+                status.message=
+                    "RegionHandshakeReply refreshed: active circuit kept, "
+                    "existing SSA/appearance evidence not invalidated";
+            }
+        }
     }
 
     if (packet.header.message == msg_agent_movement_complete)
@@ -253,6 +285,7 @@ CircuitStatus CircuitConnection::run(
 {
     CircuitStatus status;
     self_appearance_receipt_.reset();
+    region_handshake_replay_.reset();
     wearables_initial_requested_=false;
     const auto notify = [&]
     {

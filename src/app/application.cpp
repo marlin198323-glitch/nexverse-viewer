@@ -13822,6 +13822,16 @@ int Application::run(bool enable_developer_modules)
                         " | Low15 abgewiesen: "+
                         std::to_string(
                             circuit_snapshot.movement_complete_rejected);
+                if(circuit_snapshot.region_handshake_duplicates>0U)
+                    shell_view.avatar_handshake_status+=
+                        " | RegionHandshake Duplikate: "+
+                        std::to_string(
+                            circuit_snapshot.region_handshake_duplicates);
+                if(circuit_snapshot.region_handshake_refreshes>0U)
+                    shell_view.avatar_handshake_status+=
+                        " | RegionHandshake Aktualisierung: "+
+                        std::to_string(
+                            circuit_snapshot.region_handshake_refreshes);
                 shell_view.avatar_bake_stream_status=
                     (texture_recovered_j2c_transfers>0U
                         ?"J2C-Retry gerettet: "+

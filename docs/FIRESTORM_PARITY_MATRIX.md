@@ -959,3 +959,9 @@ Nachricht vollständig decodieren, authentifizierte AgentID und
 SessionID samt plausibler Position prüfen. Erst dann einen aktiven
 Circuit und den lesenden Low381-Outfit-Readback starten.
 Ablehnung ist keine Aussage über tatsächliche Avatar-GPU-Pixel.
+
+## Alpha.925–934 – Firestorm SSA-ACK bei doppeltem RegionHandshake
+Duplicate reliable Simulator-RegionHandshake darf eine echte,
+bereits ACKed Firestorm-SSA-Handshake-Antwort nicht entwerten.
+Bei neuer RegionHandshake-Sequenz antwortet Viewer erneut, bewahrt
+aber bestehenden aktiven Inworld-Circuit und bestaetigte Low158-/COF-Beweise.

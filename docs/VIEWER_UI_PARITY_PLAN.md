@@ -603,3 +603,9 @@ ohne Erfolg für COF/Skin/Avatar oder WASD zu fingieren.
 Die Login-/Weltbereitschaft bleibt bis zur gültigen
 Simulatorantwort blockiert; vorherige Avatar-F3- und
 Fallback-Welcome-Ansicht erhalten.
+
+## Alpha.925–934 – F3 RegionHandshake-Transport-Diagnostik
+F3 zeigt RegionHandshake Duplikate N und Aktualisierung N.
+Keine Fake-COF-/Avatar-GPU-Bestaetigung aus Transportdaten.
+Wiederholungen derselben eingehenden Sequenz unterbrechen
+eine bereits aktive Welt und das Avatar-Fenster nicht mehr.
