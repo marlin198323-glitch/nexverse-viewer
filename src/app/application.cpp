@@ -12049,8 +12049,8 @@ int Application::run(bool enable_developer_modules)
                     texture_missing_unique.observe(
                         object_texture_loading_id,kind);
                     core::warning(
-                        "GetTexture failed for " + object_texture_loading_id +
-                        ": " + result.message +
+                        "GetTexture failed for [asset id omitted]" +
+                        std::string{": "} + result.message +
                         "; failure=" +
                         std::string(assets::asset_failure_name(kind)) +
                         "; retry_delay_ms=" + std::to_string(delay.count()) +
@@ -13520,6 +13520,8 @@ int Application::run(bool enable_developer_modules)
                    ap&&login_ui.authenticated&&active_session&&
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
                    ap->avatar_id==active_session->agent_id&&
+                   world_model.agent().session_id==
+                       active_session->session_id&&
                    world_model.region().connected)
                 {
                     const auto bakes=protocol::extract_avatar_bakes(
@@ -13528,8 +13530,18 @@ int Application::run(bool enable_developer_modules)
                     avatar_diagnostic.self_low158_valid_bake_refs=
                         static_cast<std::uint32_t>(bakes.valid_count());
                     const auto body=bakes.visible_body();
+                    // Correlate ONLY authentic CURRENT-SESSION Low158
+                    // Head/Upper/Lower source IDs against the shared
+                    // current-region GetTexture retry table. Global 404s
+                    // from terrain/scene materials are never blamed on
+                    // avatar skin, even if they happen simultaneously.
+                    const auto body_stages=assets::inspect_self_bake_gettexture(
+                        body,object_texture_loaded_ids,object_texture_retries,
+                        texture_plan_now);
                     for(std::size_t i=0U;i<body.size();++i)
                     {
+                        avatar_diagnostic.self_low158_body_gettexture_stages[i]=
+                            static_cast<std::uint8_t>(body_stages[i]);
                         const bool valid=!body[i].empty();
                         avatar_diagnostic.self_low158_head_upper_lower_refs[i]=valid;
                         if(valid)
@@ -13876,6 +13888,16 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(avatar_diagnostic.self_low158_texture_entry_received)
+                {
+                    std::array<assets::SelfBakeGetTextureStage,3U> stages{};
+                    for(std::size_t i=0U;i<stages.size();++i)
+                        stages[i]=static_cast<assets::SelfBakeGetTextureStage>(
+                            avatar_diagnostic.self_low158_body_gettexture_stages[i]);
+                    shell_view.avatar_bake_stream_status=
+                        assets::self_bake_gettexture_summary(stages)+" | "+
+                        shell_view.avatar_bake_stream_status;
+                }
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();
                 viewer_shell.terrain_retry_available=

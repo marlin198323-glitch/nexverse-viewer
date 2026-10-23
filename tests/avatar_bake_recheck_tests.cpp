@@ -23,6 +23,44 @@ int main()
     if(assets::avatar_bake_ready_missing(ids,gpu,retry,t)!=2U)return 3;
     (void)retry.failure("upper",assets::AssetFailure::missing,t);
     if(assets::avatar_bake_ready_missing(ids,gpu,retry,t)!=1U)return 4;
+    // Alpha.1015-1024: only EXACT current self Low158 body UUIDs
+    // inherit a GetTexture failure, never unrelated scene HTTP 404s.
+    (void)retry.failure("unrelated-scene",assets::AssetFailure::missing,t);
+    auto stages=assets::inspect_self_bake_gettexture(ids,gpu,retry,t);
+    using S=assets::SelfBakeGetTextureStage;
+    if(stages!=std::array<S,3>{S::gpu_resident,
+                              S::http_missing_backoff,
+                              S::ready_to_retry}||
+       assets::self_bake_gettexture_summary(stages)!=
+           "Body-GetTexture H:GPU U:HTTP404 L:bereit")return 31;
+    auto alternate=ids;
+    alternate[1]="new-upper";
+    // Old outfit/scene failure must not be promoted to a NEW body UUID.
+    stages=assets::inspect_self_bake_gettexture(alternate,gpu,retry,t);
+    if(stages[1]!=S::ready_to_retry)return 32;
+    (void)retry.failure("lower",assets::AssetFailure::transient,t);
+    if(assets::inspect_self_bake_gettexture(ids,gpu,retry,t)[2]!=
+       S::transient_backoff)return 33;
+    (void)retry.failure("lower",assets::AssetFailure::configuration,t);
+    if(assets::inspect_self_bake_gettexture(ids,gpu,retry,t)[2]!=
+       S::configuration_backoff)return 34;
+    (void)retry.failure("lower",assets::AssetFailure::invalid,t);
+    if(assets::inspect_self_bake_gettexture(ids,gpu,retry,t)[2]!=
+       S::invalid_backoff)return 35;
+    auto placeholder=ids;
+    placeholder[2]=std::string{protocol::baked_placeholders[0]};
+    if(assets::inspect_self_bake_gettexture(placeholder,gpu,retry,t)[2]!=
+       S::no_server_reference)return 36;
+    if(assets::inspect_self_bake_gettexture(ids,gpu,retry,
+           t+std::chrono::minutes{31})[1]!=
+       S::ready_to_retry)return 37;
+    retry.enter(24U);
+    if(assets::inspect_self_bake_gettexture(ids,gpu,retry,t)[1]!=
+       S::ready_to_retry)return 38;
+    retry.enter(23U);
+    (void)retry.failure("upper",assets::AssetFailure::missing,t);
+    // Read-only evidence must not clear or override live retry backoff.
+    if(retry.ready("upper",t))return 39;
     policy.observe_source(23U,true,true,ids);
     if(!policy.request(true,true,true,false,true,t)||
        policy.request(true,true,true,false,true,t+

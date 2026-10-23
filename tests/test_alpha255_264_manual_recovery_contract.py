@@ -51,14 +51,14 @@ class TerrainManualRecoveryContract(unittest.TestCase):
         self.assertIn("KEIN",report)
     def test_release_and_progress_accounting(self):
         data=json.loads(src("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1014")
+        self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1024")
         self.assertEqual(data["viewer_version"],src("VERSION").strip())
-        self.assertEqual(data["next_batch"],"Alpha.1015–1024")
+        self.assertEqual(data["next_batch"],"Alpha.1025–1034")
         self.assertEqual(data["default_blocks_per_run"],10)
         for f in ("AGENTS.md","projectplan.md","info.md","CHATUEBERGABE.md",
                   "docs/PROJEKTFORTSCHRITT.md"):
             with self.subTest(file=f):
                 head=src(f)[:2400]
                 self.assertIn("39 %",head)
-                self.assertIn("Alpha.1015–1024",head)
+                self.assertIn("Alpha.1025–1034",head)
 if __name__=="__main__": unittest.main()

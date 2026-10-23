@@ -46,13 +46,13 @@ class Low158Attachments(unittest.TestCase):
   self.assertIn("view.attachments=85U",cpp)
   self.assertIn("view.avatar_self_attachment_packet=false",cpp)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1014")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1024")
   meta=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.1014")
-  self.assertEqual(meta["next_batch"],"Alpha.1015–1024")
+  self.assertEqual(meta["viewer_version"],"0.2.0-alpha.1024")
+  self.assertEqual(meta["next_batch"],"Alpha.1025–1034")
   self.assertEqual(meta["default_blocks_per_run"],10)
   self.assertIn("still open",meta["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.1015–1024",read(f)[:1200])
+   self.assertIn("Alpha.1025–1034",read(f)[:1200])
 if __name__=="__main__":unittest.main()

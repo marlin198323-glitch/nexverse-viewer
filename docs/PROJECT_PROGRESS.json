@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1014",
+  "viewer_version": "0.2.0-alpha.1024",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1015–1024",
-  "assessment": "Alpha1014: Real Linux Mint viewer.log on 2026-10-21 17:57:19 confirms authenticated Self AvatarAppearance Low158 (64 byte TE, 253 VisualParams), original Firestorm GPU weighted-skin server AnimationAsset, and Low382 with five wearables. Outdated claim that Self Low158 never arrives is corrected. Contemporaneous GetTexture 404s cannot be attributed to avatar Head/Upper/Lower without asset correlation. New privacy-safe current-state blocker classifier separates no Low158, missing/partial server body 0-3, provisional ObjectUpdate fallback, asset GPU residency, original LLM draw, depth test and final skin pixel still unverified. F3 and 0600 private AvatarDiagnosticReport expose only actionable stages, never UUIDs; accepted Low158 logs count of bona fide body bake UUIDs without printing IDs. Native C++ state-matrix and Python realpath contracts. Full authenticated live skin/COF RGB pixel proof and current server-confirmed WASD/Yaw still open; no deploy.",
+  "next_five_blocks": "Alpha.1025–1034",
+  "assessment": "Alpha1024: diagnosed true shared GetTexture 404 attribution gap. Actual Linux Mint 2026-10-21 authenticated Low158 evidence exists, and coincident world GetTexture HTTP 404s were observed, but no body-UUID match was provable from existing logs. Added READ-ONLY per-current agent/session/region Low158 Head/Upper/Lower mapping to current-region AssetRetrySchedule failure kinds and GPU residency, without changing the retry/backoff or texture queue. Separate stages cover absent/placeholder body ref, resident GPU, eligible retry, 404/410 missing cooldown, transient, config and invalid backoff. An unrelated scene asset failure cannot appear as a body 404. F3 shows H/U/L class names first on the bake streaming diagnostic line; private 0600 avatar report prints only three numeric stages, not UUIDs. Raw GetTexture failed log now omits the source UUID. Native C++ scene-mismatch, valid source, placeholder, retry-expiry, epoch reset tests and Python real-world-handler/source contracts. Exact current-body source failures still require an authenticated live viewer run to measure; no full COF/skin RGB pixel or verified latest WASD/Yaw end-to-end proof. still open. No production deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1015–1024",
+  "next_batch": "Alpha.1025–1034",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

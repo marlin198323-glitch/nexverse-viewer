@@ -46,6 +46,10 @@ struct AvatarDiagnosticReport
     std::uint32_t self_low158_valid_bake_refs=0U;
     std::uint32_t self_low158_body_bake_refs=0U;
     std::array<bool,3U> self_low158_head_upper_lower_refs{};
+    // Per-head/upper/lower GetTexture outcome (numeric only, no asset UUID):
+    // 0 absent, 1 GPU, 2 ready, 3 HTTP 404/410,
+    // 4 transient, 5 configuration, 6 invalid backoff.
+    std::array<std::uint8_t,3U> self_low158_body_gettexture_stages{};
     bool self_attachment_block_received=false;
     std::uint32_t self_attachment_block_count=0U;
     std::uint32_t self_object_attachment_roots=0U;

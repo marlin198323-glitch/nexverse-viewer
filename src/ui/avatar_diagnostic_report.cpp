@@ -131,6 +131,12 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "self_low158_head_ref="+yn(r.self_low158_head_upper_lower_refs[0])+"\n"
        "self_low158_upper_ref="+yn(r.self_low158_head_upper_lower_refs[1])+"\n"
        "self_low158_lower_ref="+yn(r.self_low158_head_upper_lower_refs[2])+"\n"
+       "self_low158_head_gettexture_stage="+
+           std::to_string(r.self_low158_body_gettexture_stages[0])+"\n"
+       "self_low158_upper_gettexture_stage="+
+           std::to_string(r.self_low158_body_gettexture_stages[1])+"\n"
+       "self_low158_lower_gettexture_stage="+
+           std::to_string(r.self_low158_body_gettexture_stages[2])+"\n"
        "self_attachment_block_received="+yn(r.self_attachment_block_received)+"\n"
        "self_attachment_block_count="+
            std::to_string(r.self_attachment_block_count)+"\n"

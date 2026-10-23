@@ -11,6 +11,85 @@
 
 namespace nexverse::assets
 {
+// Per-current authenticated self body source evidence. This inspects
+// existing GPU residency and region-epoch failure schedules ONLY. A scene
+// asset's HTTP 404 cannot be blamed on Head/Upper/Lower unless its exact
+// UUID matches the CURRENT source. Never export those UUIDs to the UI.
+enum class SelfBakeGetTextureStage : std::uint8_t
+{
+    no_server_reference=0, gpu_resident=1, ready_to_retry=2,
+    http_missing_backoff=3, transient_backoff=4,
+    configuration_backoff=5, invalid_backoff=6
+};
+[[nodiscard]] inline std::array<SelfBakeGetTextureStage,3U>
+inspect_self_bake_gettexture(
+    const std::array<std::string,3U>& body,
+    const std::unordered_set<std::string>& resident,
+    const AssetRetrySchedule& retry,
+    AssetRetrySchedule::Clock::time_point now)
+{
+    std::array<SelfBakeGetTextureStage,3U> out{};
+    for(std::size_t i=0U;i<body.size();++i)
+    {
+        const auto& id=body[i];
+        if(id.empty()||
+           id=="00000000-0000-0000-0000-000000000000"||
+           std::find(protocol::baked_placeholders.begin(),
+                     protocol::baked_placeholders.end(),id)!=
+               protocol::baked_placeholders.end())
+            continue;
+        if(resident.contains(id))
+        {
+            out[i]=SelfBakeGetTextureStage::gpu_resident;
+            continue;
+        }
+        // When the backoff expired, don't claim this is a NEW HTTP 404:
+        // the asset is now eligible for the standard shared retry plan.
+        if(retry.ready(id,now))
+        {
+            out[i]=SelfBakeGetTextureStage::ready_to_retry;
+            continue;
+        }
+        switch(retry.failure_kind(id))
+        {
+        case AssetFailure::missing:
+            out[i]=SelfBakeGetTextureStage::http_missing_backoff;break;
+        case AssetFailure::configuration:
+            out[i]=SelfBakeGetTextureStage::configuration_backoff;break;
+        case AssetFailure::invalid:
+            out[i]=SelfBakeGetTextureStage::invalid_backoff;break;
+        case AssetFailure::transient:
+            out[i]=SelfBakeGetTextureStage::transient_backoff;break;
+        case AssetFailure::none:
+            out[i]=SelfBakeGetTextureStage::ready_to_retry;break;
+        }
+    }
+    return out;
+}
+[[nodiscard]] inline const char* self_bake_gettexture_label(
+    SelfBakeGetTextureStage stage) noexcept
+{
+    switch(stage)
+    {
+    case SelfBakeGetTextureStage::no_server_reference:return "-";
+    case SelfBakeGetTextureStage::gpu_resident:return "GPU";
+    case SelfBakeGetTextureStage::ready_to_retry:return "bereit";
+    case SelfBakeGetTextureStage::http_missing_backoff:return "HTTP404";
+    case SelfBakeGetTextureStage::transient_backoff:return "retry";
+    case SelfBakeGetTextureStage::configuration_backoff:return "auth/cfg";
+    case SelfBakeGetTextureStage::invalid_backoff:return "ungueltig";
+    }
+    return "?";
+}
+[[nodiscard]] inline std::string self_bake_gettexture_summary(
+    const std::array<SelfBakeGetTextureStage,3U>& states)
+{
+    return std::string{"Body-GetTexture H:"}+
+        self_bake_gettexture_label(states[0])+
+        " U:"+self_bake_gettexture_label(states[1])+
+        " L:"+self_bake_gettexture_label(states[2]);
+}
+
 // An explicit local request to reevaluate current, authentic self-bake
 // texture priorities. It never clears the shared failure/backoff schedule,
 // never invents an AvatarAppearance, and never uploads a client bake.

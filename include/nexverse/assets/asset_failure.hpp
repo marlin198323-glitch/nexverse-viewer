@@ -84,6 +84,13 @@ public:
     {
         return failures_.contains(std::string{key});
     }
+    // Current material/region epoch only. Does not reveal/request IDs,
+    // change backoff, or conflate global 404s with own avatar bakes.
+    [[nodiscard]] AssetFailure failure_kind(std::string_view key) const
+    {
+        const auto it=failures_.find(std::string{key});
+        return it==failures_.end()?AssetFailure::none:it->second.kind;
+    }
     void success(std::string_view key)
     {
         failures_.erase(std::string{key});
