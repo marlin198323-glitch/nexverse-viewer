@@ -6638,6 +6638,24 @@ int Application::run(bool enable_developer_modules)
                     else core::warning("Original Firestorm hair .llm "
                         "failed validation/GPU admission; body unaffected");
                 }
+                // avatar_eye.llm uses LOCAL eye-space coordinates; GL
+                // must instance it separately under both official
+                // mEyeLeft/mEyeRight posed skeleton transforms.
+                if(const auto eyes=assets::load_firestorm_avatar_llm(
+                       *dir/"avatar_eye.llm");
+                   eyes&&eyes->valid()&&!eyes->has_weights)
+                {
+                    render::RenderMeshGeometry eye_geometry;
+                    eye_geometry.vertices=eyes->vertices;
+                    eye_geometry.indices=eyes->indices;
+                    if(world_renderer->set_avatar_body_mesh(
+                           4U,eye_geometry))
+                        core::info("Original Firestorm dual-eye local mesh "
+                            "GPU-ready; actual Eyes TE and both eye joints "
+                            "required for drawing");
+                    else core::warning("Firestorm eye .llm GPU upload "
+                        "failed; three-part original body unaffected");
+                }
                 original_body_gpu_ready=true;
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
@@ -11026,9 +11044,14 @@ int Application::run(bool enable_developer_modules)
                         if(const auto& appearance=world_model.self_appearance();
                            appearance&&
                            appearance->avatar_id==active_session->agent_id)
+                        {
+                            const auto confirmed=protocol::extract_avatar_bakes(
+                                appearance->texture_entry);
                             avatar_proxy_update.back().hair_bake_texture_id=
-                                protocol::extract_avatar_bakes(
-                                    appearance->texture_entry).ids[5U];
+                                confirmed.ids[5U];
+                            avatar_proxy_update.back().eyes_bake_texture_id=
+                                confirmed.ids[3U];
+                        }
                     avatar_proxy_update.back().moving=
                         (last_reported_control_flags &
                          (protocol::control_at_pos | protocol::control_at_neg |
@@ -11119,9 +11142,12 @@ int Application::run(bool enable_developer_modules)
                         avatar.local_id,
                         {},false,protocol::AvatarMotion::idle,false,
                         nullptr,-1.0f});
+                    const auto remote_bakes=protocol::extract_avatar_bakes(
+                        avatar.texture_entry);
                     avatar_proxy_update.back().hair_bake_texture_id=
-                        protocol::extract_avatar_bakes(
-                            avatar.texture_entry).ids[5U];
+                        remote_bakes.ids[5U];
+                    avatar_proxy_update.back().eyes_bake_texture_id=
+                        remote_bakes.ids[3U];
                     avatar_proxy_update.back().moving=
                         avatar.last_translation_at!=
                             std::chrono::steady_clock::time_point{} &&
@@ -12337,14 +12363,16 @@ int Application::run(bool enable_developer_modules)
                                 baked,avatar.x,avatar.y,avatar.z});
                     // Same current-frame GPU position admission for
                     // authenticated server-selected Hair TE face.
-                    if(!avatar.hair_bake_id.empty()&&
-                       avatar.hair_bake_id!=assets::null_texture_asset_id&&
-                       std::find(protocol::baked_placeholders.begin(),
-                                 protocol::baked_placeholders.end(),
-                                 avatar.hair_bake_id)==
-                           protocol::baked_placeholders.end())
-                        resident_texture_samples.push_back({
-                            avatar.hair_bake_id,avatar.x,avatar.y,avatar.z});
+                    for(const auto& accessory:
+                        {avatar.eyes_bake_id,avatar.hair_bake_id})
+                        if(!accessory.empty()&&
+                           accessory!=assets::null_texture_asset_id&&
+                           std::find(protocol::baked_placeholders.begin(),
+                                     protocol::baked_placeholders.end(),
+                                     accessory)==
+                               protocol::baked_placeholders.end())
+                            resident_texture_samples.push_back({
+                                accessory,avatar.x,avatar.y,avatar.z});
                 }
                 const std::unordered_set<std::string> active_particles{
                     emitter_texture_ids.begin(),emitter_texture_ids.end()};
@@ -14071,6 +14099,12 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(render_diagnostics.self_avatar_eyes_bake_gl_draws>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm Eyes-TE GPU-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_eyes_bake_gl_draws);
                 if(render_diagnostics.self_avatar_hair_bake_gl_draws>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

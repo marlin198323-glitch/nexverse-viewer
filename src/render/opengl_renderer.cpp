@@ -3335,6 +3335,16 @@ public:
         const RenderAvatarBindRig& rig) override
     {
         avatar_bind_rig_=rig;
+        avatar_eye_joint_indices_.fill(-1);
+        // Exactly the official Firestorm base-skeleton mEye joints.
+        // An absent rig must never put anonymous globes at world origin.
+        for(std::size_t joint=0U;joint<rig.joints.size();++joint)
+        {
+            if(rig.joints[joint].name=="mEyeLeft")
+                avatar_eye_joint_indices_[0]=static_cast<int>(joint);
+            else if(rig.joints[joint].name=="mEyeRight")
+                avatar_eye_joint_indices_[1]=static_cast<int>(joint);
+        }
     }
 
     void set_avatar_proxies(
@@ -3404,6 +3414,8 @@ public:
         diagnostics_.self_avatar_baked_texture_draw_calls = 0U;
         diagnostics_.avatar_hair_bake_gl_draws=0U;
         diagnostics_.self_avatar_hair_bake_gl_draws=0U;
+        diagnostics_.avatar_eyes_bake_gl_draws=0U;
+        diagnostics_.self_avatar_eyes_bake_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4645,6 +4657,68 @@ public:
                                 hair_mesh.index_count/3);
                         }
                     }
+                    // Native Firestorm eyeBallLeft/Right joint meshes:
+                    // ONE local-origin avatar_eye.llm instanced using
+                    // each ORIGINAL animated mEye bone matrix. Texture
+                    // is the genuine EYES TE face (11), never Head/skin.
+                    // Absent current Eye TE/GPU asset/joints -> NO draw.
+                    const auto& eye_mesh=avatar_body_meshes_[4U];
+                    if(eye_mesh.vao!=0U&&eye_mesh.index_count>0&&
+                       !avatar.eyes_bake_texture_id.empty())
+                    {
+                        const auto eye_texture=object_textures_.find(
+                            avatar.eyes_bake_texture_id);
+                        if(eye_texture!=object_textures_.end()&&
+                           eye_texture->second!=0U)
+                        {
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uAvatarSkinEnabled"),GL_FALSE);
+                            glActiveTexture(GL_TEXTURE4);
+                            glBindTexture(GL_TEXTURE_2D,
+                                eye_texture->second);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectTexture"),4);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uUseObjectTexture"),GL_TRUE);
+                            glUniform1i(glGetUniformLocation(
+                                program_,"uObjectAlphaMode"),2);
+                            glUniform1f(glGetUniformLocation(
+                                program_,"uObjectAlphaCutoff"),0.015f);
+                            const float tint=avatar.is_self?1.0f:0.75f;
+                            glUniform3f(glGetUniformLocation(
+                                program_,"uOverrideColorValue"),
+                                tint,tint,tint);
+                            for(const auto joint:avatar_eye_joint_indices_)
+                            {
+                                if(joint<0||
+                                   static_cast<std::size_t>(joint)>=
+                                       posed.size())
+                                    continue;
+                                const auto eye_model=multiply(
+                                    parent,posed[static_cast<std::size_t>(
+                                        joint)]);
+                                const auto eye_mvp=multiply(
+                                    projection,multiply(view,eye_model));
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uMvp"),
+                                    1,GL_FALSE,eye_mvp.value.data());
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uModel"),
+                                    1,GL_FALSE,eye_model.value.data());
+                                glBindVertexArray(eye_mesh.vao);
+                                glDrawElements(GL_TRIANGLES,
+                                    eye_mesh.index_count,GL_UNSIGNED_INT,
+                                    nullptr);
+                                ++diagnostics_.draw_calls;
+                                ++diagnostics_.avatar_eyes_bake_gl_draws;
+                                if(avatar.is_self)
+                                    ++diagnostics_.self_avatar_eyes_bake_gl_draws;
+                                diagnostics_.triangles+=
+                                    static_cast<std::uint64_t>(
+                                        eye_mesh.index_count/3);
+                            }
+                        }
+                    }
                     glUniform1i(glGetUniformLocation(
                         program_,"uAvatarSkinEnabled"),GL_FALSE);
                     continue;
@@ -5505,7 +5579,10 @@ private:
     GpuMesh torus_mesh_;
     // Original anatomical body 0..2 plus optional original Firestorm
     // system-hair 3. Hair is NEVER required for base three-body readiness.
-    std::array<GpuMesh,4U> avatar_body_meshes_{};
+    // Slots 0..2 real anatomical Body, 3 system hair,
+    // 4 original eye globe instanced at both mEyeLeft/mEyeRight joints.
+    std::array<GpuMesh,5U> avatar_body_meshes_{};
+    std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};
     std::array<std::uint64_t,6U> self_avatar_visibility_query_epoch_{};

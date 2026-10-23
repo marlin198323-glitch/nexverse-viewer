@@ -24,6 +24,8 @@ struct AvatarBakeStreamCandidate
     // Optional original Firestorm avatar_hair.llm baked Hair slot 5.
     // Lower priority than the three anatomical body bakes.
     std::string hair_bake_id;
+    // Firestorm original eye-ball meshes, same EYES bake both sockets.
+    std::string eyes_bake_id;
 };
 
 [[nodiscard]] inline std::vector<std::string>
@@ -55,6 +57,7 @@ prioritize_avatar_body_bakes(
         // Skin always wins; hair cannot displace Head/Upper/Lower
         // from the bounded highest-priority queue.
         for(const auto& id:avatar.body)add(id);
+        add(avatar.eyes_bake_id);
         add(avatar.hair_bake_id);
     };
     // Authentication/epoch contract is enforced by the caller: these are

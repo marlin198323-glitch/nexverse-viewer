@@ -29,6 +29,6 @@ class OutfitRecheckRefresh(unittest.TestCase):
               "policy.enter(24U)"):
    self.assertIn(key,s)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1054")
-  self.assertIn("Alpha.1055–1064",read("CHATUEBERGABE.md"))
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1064")
+  self.assertIn("Alpha.1065–1074",read("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

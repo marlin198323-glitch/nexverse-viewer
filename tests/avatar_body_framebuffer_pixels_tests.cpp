@@ -499,6 +499,109 @@ int main()
         }
       }
     }
+    if(!error)
+    {
+      // Alpha.1064: two ORIGINAL eyeBall meshes use the SAME actual
+      // server EYES bake, but each is placed at its own animated
+      // mEyeLeft/mEyeRight skeleton joint. No synthetic fallback eyes
+      // and no ghost image after current TE changes/asset eviction.
+      const auto eye=assets::load_firestorm_avatar_llm(
+          *dir/"avatar_eye.llm");
+      if(!eye||!eye->valid()||eye->has_weights)error=51;
+      if(!error)
+      {
+        render::RenderMeshGeometry eye_geometry;
+        eye_geometry.vertices=eye->vertices;
+        eye_geometry.indices=eye->indices;
+        if(!renderer->set_avatar_body_mesh(4U,eye_geometry))
+           error=52;
+      }
+      if(!error)
+      {
+        // Look directly at the face; the old +X camera sees the back.
+        renderer->set_camera({{3.28f,0.0f,1.762f},{-1,0,0},{0,-1,0},
+            {0,0,1},55,0.01f,40});
+        self.hair_bake_texture_id.clear();
+        self.baked_texture_ids={};
+        self.eyes_bake_texture_id.clear();
+        renderer->set_avatar_proxies({self});
+        const auto no_eye=draw();
+        render::RenderImageRgba8 eye_color{
+            8U,8U,std::vector<std::uint8_t>(256U,255U)};
+        for(std::size_t i=0U;i<eye_color.pixels.size();i+=4U)
+        {
+            eye_color.pixels[i]=20U;
+            eye_color.pixels[i+1]=250U;
+            eye_color.pixels[i+2]=230U;
+        }
+        if(!renderer->set_object_texture("eyes-current",eye_color))
+            error=53;
+        if(!error)
+        {
+          self.eyes_bake_texture_id="eyes-current";
+          renderer->set_avatar_proxies({self});
+          const auto both_eyes=draw();
+          const auto actual=renderer->diagnostics();
+          const auto delta=difference(no_eye,both_eyes);
+          std::cout<<"ORIGINAL_FIRESTORM_DUAL_EYE_PIXELS="
+                   <<delta<<"; GL_EYE_DRAWS="
+                   <<actual.self_avatar_eyes_bake_gl_draws<<"\n";
+          if(actual.self_avatar_eyes_bake_gl_draws!=2U||
+             actual.self_avatar_anatomical_mesh_draw_calls!=3U||
+             actual.self_avatar_body_bake_gl_draws!=
+                 (std::array<std::uint64_t,3U>{0U,0U,0U})||
+             delta<2U)
+              error=54;
+          // Prove two DISTINCT original eye-joint placements, not
+          // twice drawing one sphere in the same socket.
+          render::RenderAvatarBindRig one_eye_rig;
+          for(const auto& bone:rig->joints)
+          {
+            one_eye_rig.joints.push_back({
+              bone.name=="mEyeRight"
+                ?std::string{"mEyeRightMissing"}:bone.name,
+              bone.parent,
+              {bone.local[0],bone.local[1],bone.local[2]},
+              {bone.bind_world[0],bone.bind_world[1],
+               bone.bind_world[2]}});
+          }
+          renderer->set_avatar_bind_rig(one_eye_rig);
+          const auto left_only=draw();
+          const auto different_sockets=
+              difference(left_only,both_eyes);
+          std::cout<<"DUAL_EYE_SEPARATE_JOINT_PIXELS="
+                   <<different_sockets<<"; ONE_EYE_DRAWS="
+                   <<renderer->diagnostics().self_avatar_eyes_bake_gl_draws
+                   <<"\n";
+          if(renderer->diagnostics().self_avatar_eyes_bake_gl_draws!=1U||
+             different_sockets<2U)
+              error=57;
+          // Restore the original Firestorm rig before testing TE
+          // withdrawal; future head/outfit poses remain unchanged.
+          for(std::size_t i=0U;i<rig->joints.size();++i)
+            one_eye_rig.joints[i].name=rig->joints[i].name;
+          renderer->set_avatar_bind_rig(one_eye_rig);
+          self.eyes_bake_texture_id.clear();
+          renderer->set_avatar_proxies({self});
+          const auto withdrawn=draw();
+          std::cout<<"WITHDRAWN_EYES_TE_GHOST_PIXELS="
+                   <<difference(no_eye,withdrawn)<<"\n";
+          if(difference(no_eye,withdrawn)!=0U||
+             renderer->diagnostics().self_avatar_eyes_bake_gl_draws!=0U)
+              error=55;
+          self.eyes_bake_texture_id="eyes-current";
+          renderer->set_avatar_proxies({self});
+          (void)draw();
+          renderer->remove_object_texture("eyes-current");
+          const auto evicted=draw();
+          if(difference(no_eye,evicted)!=0U||
+             renderer->diagnostics().self_avatar_eyes_bake_gl_draws!=0U)
+              error=56;
+          self.eyes_bake_texture_id.clear();
+          renderer->set_avatar_proxies({self});
+        }
+      }
+    }
     if(glGetError()!=GL_NO_ERROR)error=9;
   }
   if(renderer)renderer->shutdown();

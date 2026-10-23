@@ -163,6 +163,28 @@ int main()
            hair_admission.accepted,0.0f,0.0f,30.0f,3U)!=
        std::vector<std::string>{"self-head","self-upper","self-lower"})
         return 19;
+    // Original baked EYES TE (11) streams after Head/Upper/Lower
+    // but before optional system Hair. Only one UUID for both eye
+    // sockets, regardless of number of real GL draws.
+    hair_proxies[2].hair_bake_texture_id="self-hair";
+    hair_proxies[2].eyes_bake_texture_id="self-eyes";
+    hair_proxies[1].eyes_bake_texture_id="remote-eyes";
+    hair_proxies[0].eyes_bake_texture_id="invalid-eyes";
+    const auto eyed=admit_avatar_bake_gpu_candidates(hair_proxies);
+    if(eyed.accepted.size()!=2U||
+       eyed.accepted[1].eyes_bake_id!="self-eyes")return 20;
+    const auto eyed_priority=prioritize_avatar_body_bakes(
+        eyed.accepted,0.0f,0.0f,30.0f);
+    const std::vector<std::string> eye_order{
+        "self-head","self-upper","self-lower","self-eyes","self-hair",
+        "remote-head","remote-upper","remote-lower","remote-eyes",
+        "remote-hair"};
+    if(eyed_priority!=eye_order)return 21;
+    hair_proxies[2].eyes_bake_texture_id=
+        std::string{nexverse::protocol::baked_placeholders[3]};
+    if(prioritize_avatar_body_bakes(
+           admit_avatar_bake_gpu_candidates(hair_proxies).accepted,
+           0.0f,0.0f,30.0f).size()!=9U)return 22;
     // All names are synthetic fixtures: no network or upload involved.
     std::cout<<"Avatar baked body stream priority and GPU eviction PASSED\n";
     return 0;

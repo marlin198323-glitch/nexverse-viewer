@@ -232,6 +232,9 @@ struct RenderAvatarProxy
     // Authenticated AvatarAppearance baked Hair face, NOT a fabricated
     // head bake or client-generated mesh clothing texture.
     std::string hair_bake_texture_id;
+    // Original Firestorm eyeBallLeft/Right pair shares real BAKED_EYES
+    // (TE face 11). Never alias head skin as an eyeball texture.
+    std::string eyes_bake_texture_id;
 };
 
 // Firestorm avatar_skeleton.xml and avatar_lad.xml bind transforms. HUD
@@ -389,6 +392,10 @@ struct RenderDiagnostics
     // Head/Upper/Lower skin-proof draw.
     std::uint64_t avatar_hair_bake_gl_draws=0U;
     std::uint64_t self_avatar_hair_bake_gl_draws=0U;
+    // Independent original Firestorm left/right eye GL submissions:
+    // never counted as anatomical body, false skin or Hair proof.
+    std::uint64_t avatar_eyes_bake_gl_draws=0U;
+    std::uint64_t self_avatar_eyes_bake_gl_draws=0U;
     // Actual Texture UUID used by the original LLM slot in this frame.
     // A GPU draw with yesterday's bake must not prove today's Low158 TE.
     std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};
