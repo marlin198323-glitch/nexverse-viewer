@@ -93,3 +93,14 @@ Firestorm Original-Skelett 133 Joints,
 drei GPU-residente LLM Bodymeshes/7186 Dreiecke,
 X11 WM_CLASS + Originalicon 128x128 PASS.
 Kein Live-Login oder Produktivdeploy.
+
+## Exakter Code-Commit / CI-Läufe nach GitHub-Push
+Code-SHA 584ea1519dd176fb311597673d6fe2f8f9eb71fc.
+Pi5 Source Check Run 39975553846 IN_PROGRESS;
+Host Linux-x64 Run 39975554311 QUEUED, beide noch
+kein positives Endergebnis. Bisheriger exakt
+verifizierter Pi5 SUCCESS: Alpha.844 Feature-SHA
+712dbe9 Run 39840873191. Separat voller lokaler
+Mint-x64 Test EXIT 0 mit 178 native, 412 Python,
+Xvfb GUI, Original-Firestorm-Meshes und X11-Icon.
+Kein Live-Login/Produktivdeploy.
