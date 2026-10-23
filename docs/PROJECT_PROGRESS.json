@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1064",
+  "viewer_version": "0.2.0-alpha.1074",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1065–1074",
-  "assessment": "Alpha1064: native Firestorm avatar_eye.llm (non-weighted LOCAL eye geometry) now loaded in optional GPU slot 4, while existing three anatomical Firestorm body meshes (0..2) and optional Hair slot 3 are unchanged. Original mEyeLeft/mEyeRight BASE skeleton joints are resolved by exact name in the active original bind rig and the same eye geometry is drawn at each separately ANIMATED joint pose. An actual current authenticated self Low158 Eyes baked TE FACE11 (extract_avatar_bakes ids[3]) or current remote AvatarAppearance is required: no default/head UUID guesses or ghost eye geometry. The already existing single CURRENT GPU-admission snapshot carries Eyes UUID, schedules at most one Eyes texture after the 3 body bakes and before optional Hair, and obeys existing distance, placeholder, shared VRAM/HTTP/epoch/retry and dedup constraints. Eyes are drawn only if that exact current TE asset is resident in OpenGL. Separate per-frame Eyes GL counters shown in F3, never added to original 3/3 body bake proof. Real Xvfb framebuffers using original Firestorm eye + body geometry show 1106 differing frontal closeup pixels with BOTH eye bones, 553 different pixels attributable to the second joint, 0 eye ghosts after TE withdrawal and after texture GPU eviction. Real Xvfb test fixture has synthetic color bake: NOT authenticated live NexVerse final eye appearance proof. Upstream OpenGenesisLINK server main moved to 99341d475b10 with personal World API read scopes change, no viewer Eye-wire change. Original eyelashes (and eyelash alpha texture), physical eye morphs, system outfit/COF and a new logged-in Grid skin/WASD/Yaw E2E remain still open. No production deployment.",
+  "next_five_blocks": "Alpha.1075–1084",
+  "assessment": "Alpha1074: real original Firestorm optional avatar_eyelashes.llm from the locally installed Nightly character folder is parsed and uploaded as the sixth GPU avatar mesh (weighted original bind rig, palette verified) and drawn per-frame in the current avatar's authenticated Head (Low158/valid provisional ObjectUpdate) baked TextureEntry only when that exact ID is resident in OpenGL. No independent unverified eyelash UUID, no synthetic cosmetic texture, no extra GetTexture network request, and no pretense that eyelashes add an anatomical body/skin 3-of-3 proof. Eyelash alpha uses the currently selected baked Head TE alpha cutout and dark eyelash tint, not the FULL Firestorm local head_alpha.tga compositor/shape morph implementation. GPU draw uses original Firestorm vertex skin joint weights and per-avatar actual animation pose matrices; each frame resets a distinct F3 self eyelashes Head GL draw counter. Genuine Xvfb OpenGL framebuffer rendering with original Firestorm skeleton/Head/body/eyelash meshes and synthetic test-only baked Head RGBA shows 1062 distinct eyelash pixels and one GPU draw; the TE Head bake withdrawal and GPU asset removal each immediately suppress eyelash GL draws. Existing real eye, optional hair and three separate body baked draw evidence remain unchanged. Upstream OpenGenesisLINK Server main 99341d475b10 unchanged in this turn; commit is personal World-API authorization, not new avatar wire format. Original Firestorm eyelash local alpha layer and shape morph, final live pixel/COF/outfit and real authenticated WASD/Yaw server-motion E2E remain still open. No deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1065–1074",
+  "next_batch": "Alpha.1075–1084",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

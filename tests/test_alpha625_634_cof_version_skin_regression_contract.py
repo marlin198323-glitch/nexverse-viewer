@@ -70,14 +70,14 @@ class CofVersionRollback(unittest.TestCase):
   self.assertNotIn('"current_cof_uuid=',r)
   self.assertNotIn('"old_skin_uuid=',r)
  def test_release_handoff(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1064")
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1074")
   j=json.loads(rd("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.1064")
-  self.assertEqual(j["next_batch"],"Alpha.1065–1074")
+  self.assertEqual(j["viewer_version"],"0.2.0-alpha.1074")
+  self.assertEqual(j["next_batch"],"Alpha.1075–1084")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",rd(f)[:350])
-   self.assertIn("Alpha.1065–1074",rd(f)[:1800])
+   self.assertIn("Alpha.1075–1084",rd(f)[:1800])
 if __name__=="__main__":unittest.main()

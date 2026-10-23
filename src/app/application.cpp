@@ -6656,6 +6656,33 @@ int Application::run(bool enable_developer_modules)
                     else core::warning("Firestorm eye .llm GPU upload "
                         "failed; three-part original body unaffected");
                 }
+                // Eyelash geometry uses original head-space .llm
+                // weights; visible only with the current Head baked
+                // skin and its baked alpha. Not a fake makeup/wearable.
+                if(const auto eyelashes=assets::load_firestorm_avatar_llm(
+                       *dir/"avatar_eyelashes.llm");
+                   eyelashes&&eyelashes->valid()&&eyelashes->has_weights)
+                {
+                    if(const auto rig=assets::load_firestorm_avatar_rig(*dir);
+                       rig)
+                        if(const auto palette=
+                               assets::firestorm_joint_render_palette(
+                                   *rig,eyelashes->joint_names);
+                           palette)
+                        {
+                            render::RenderMeshGeometry geom;
+                            geom.vertices=eyelashes->vertices;
+                            geom.indices=eyelashes->indices;
+                            geom.skin_weights=eyelashes->skin_weights;
+                            geom.skin_palette=*palette;
+                            if(world_renderer->set_avatar_body_mesh(5U,geom))
+                                core::info("Original Firestorm eyelash "
+                                    "geometry GPU-ready, current Head bake "
+                                    "required for drawing");
+                            else core::warning("Original Firestorm eyelashes "
+                                "GPU validation failed; body unaffected");
+                        }
+                }
                 original_body_gpu_ready=true;
                 core::info("OGLRenderer Firestorm ORIGINAL three-part "
                     "avatar bind-pose meshes GPU-resident; triangles="+
@@ -14099,6 +14126,12 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                if(render_diagnostics.self_avatar_eyelash_head_gl_draws>0U&&
+                   avatar_diagnostic.authenticated)
+                    shell_view.avatar_bake_stream_status+=
+                        " | Firestorm Wimpern-Head-GL:"+
+                        std::to_string(
+                            render_diagnostics.self_avatar_eyelash_head_gl_draws);
                 if(render_diagnostics.self_avatar_eyes_bake_gl_draws>0U&&
                    avatar_diagnostic.authenticated)
                     shell_view.avatar_bake_stream_status+=

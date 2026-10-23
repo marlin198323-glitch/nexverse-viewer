@@ -3416,6 +3416,8 @@ public:
         diagnostics_.self_avatar_hair_bake_gl_draws=0U;
         diagnostics_.avatar_eyes_bake_gl_draws=0U;
         diagnostics_.self_avatar_eyes_bake_gl_draws=0U;
+        diagnostics_.avatar_eyelash_head_gl_draws=0U;
+        diagnostics_.self_avatar_eyelash_head_gl_draws=0U;
         diagnostics_.self_avatar_body_bake_gl_draws.fill(0U);
         diagnostics_.self_avatar_body_drawn_bake_ids.fill({});
         // Query availability is polled before GL_QUERY_RESULT to avoid
@@ -4719,6 +4721,89 @@ public:
                             }
                         }
                     }
+                    // Original Firestorm eyelashMesh is separate from
+                    // eyeBall meshes. Its original head-world geometry
+                    // follows the same real skinned head joints. It is
+                    // texture-gated by the CURRENT avatar's Head bake
+                    // (face8). Never invent an eyelash asset or draw
+                    // stale cosmetics after Head-TE withdrawal.
+                    const auto& eyelash_mesh=avatar_body_meshes_[5U];
+                    if(eyelash_mesh.vao!=0U&&
+                       eyelash_mesh.index_count>0&&
+                       !avatar.baked_texture_ids[0].empty())
+                    {
+                        const auto current_head=object_textures_.find(
+                            avatar.baked_texture_ids[0]);
+                        if(current_head!=object_textures_.end()&&
+                           current_head->second!=0U&&
+                           eyelash_mesh.skin_vbo!=0U&&
+                           eyelash_mesh.skin_palette.size()>=2U&&
+                           eyelash_mesh.skin_palette.size()<=32U&&
+                           !posed.empty())
+                        {
+                            bool valid=true;
+                            std::array<Mat4,32U> matrices;
+                            matrices.fill(identity());
+                            for(std::size_t j=0U;
+                                j<eyelash_mesh.skin_palette.size();++j)
+                            {
+                                const auto bone=eyelash_mesh.skin_palette[j];
+                                if(bone>=posed.size()||
+                                   bone>=avatar_bind_rig_.joints.size())
+                                {
+                                    valid=false;
+                                    break;
+                                }
+                                const auto& rest=
+                                    avatar_bind_rig_.joints[bone].bind_world;
+                                matrices[j]=multiply(posed[bone],
+                                    translation({-rest.x,-rest.y,-rest.z}));
+                            }
+                            if(valid)
+                            {
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uMvp"),1,GL_FALSE,mvp.value.data());
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uModel"),1,GL_FALSE,
+                                    parent.value.data());
+                                glUniformMatrix4fv(glGetUniformLocation(
+                                    program_,"uAvatarJointPalette[0]"),
+                                    32,GL_FALSE,matrices[0].value.data());
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uAvatarJointCount"),
+                                    static_cast<GLint>(
+                                        eyelash_mesh.skin_palette.size()));
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uAvatarSkinEnabled"),GL_TRUE);
+                                glActiveTexture(GL_TEXTURE4);
+                                glBindTexture(GL_TEXTURE_2D,
+                                    current_head->second);
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uObjectTexture"),4);
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uUseObjectTexture"),GL_TRUE);
+                                glUniform1i(glGetUniformLocation(
+                                    program_,"uObjectAlphaMode"),2);
+                                glUniform1f(glGetUniformLocation(
+                                    program_,"uObjectAlphaCutoff"),0.03f);
+                                const float shade=avatar.is_self?0.13f:0.10f;
+                                glUniform3f(glGetUniformLocation(
+                                    program_,"uOverrideColorValue"),
+                                    shade,shade,shade);
+                                glBindVertexArray(eyelash_mesh.vao);
+                                glDrawElements(GL_TRIANGLES,
+                                    eyelash_mesh.index_count,GL_UNSIGNED_INT,
+                                    nullptr);
+                                ++diagnostics_.draw_calls;
+                                ++diagnostics_.avatar_eyelash_head_gl_draws;
+                                if(avatar.is_self)
+                                    ++diagnostics_.self_avatar_eyelash_head_gl_draws;
+                                diagnostics_.triangles+=
+                                    static_cast<std::uint64_t>(
+                                        eyelash_mesh.index_count/3);
+                            }
+                        }
+                    }
                     glUniform1i(glGetUniformLocation(
                         program_,"uAvatarSkinEnabled"),GL_FALSE);
                     continue;
@@ -5581,7 +5666,9 @@ private:
     // system-hair 3. Hair is NEVER required for base three-body readiness.
     // Slots 0..2 real anatomical Body, 3 system hair,
     // 4 original eye globe instanced at both mEyeLeft/mEyeRight joints.
-    std::array<GpuMesh,5U> avatar_body_meshes_{};
+    // Slot 5 original weighted Firestorm avatar_eyelashes.llm.
+    // No bundled Firestorm binary or invented eyeliner/eyelash asset.
+    std::array<GpuMesh,6U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};

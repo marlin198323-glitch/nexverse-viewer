@@ -396,6 +396,10 @@ struct RenderDiagnostics
     // never counted as anatomical body, false skin or Hair proof.
     std::uint64_t avatar_eyes_bake_gl_draws=0U;
     std::uint64_t self_avatar_eyes_bake_gl_draws=0U;
+    // Optional ORIGINAL Firestorm eyelashMesh; only draw with current
+    // real GPU Head bake and never as a fourth anatomical skin proof.
+    std::uint64_t avatar_eyelash_head_gl_draws=0U;
+    std::uint64_t self_avatar_eyelash_head_gl_draws=0U;
     // Actual Texture UUID used by the original LLM slot in this frame.
     // A GPU draw with yesterday's bake must not prove today's Low158 TE.
     std::array<std::string,3U> self_avatar_body_drawn_bake_ids{};

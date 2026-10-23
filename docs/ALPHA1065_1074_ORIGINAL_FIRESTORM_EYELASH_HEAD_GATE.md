@@ -1,0 +1,24 @@
+# Alpha.1065–1074 – originale Firestorm-Wimpern auf Head-Bake-Renderpfad
+
+24.10.2026 | Linux Mint jam-MS-7D28 | develop-current | 0.2.0-alpha.1074
+
+## Zehn überprüfbare Entwicklungsblöcke
+
+1065. Desktop Commander Linux Mint jam-MS-7D28 als Entwicklungsmaschine gewählt, Pi5 NICHT benutzt. Develop-current sauber am HEAD e86bda7b9c2b53aea1ad976812c5bd768264b66e == origin. CHATUEBERGABE.md vor projectplan.md gelesen.
+1066. Original Firestorm assets in lokal installiertem Firestorm Nightly untersucht: avatar_lad.xml benennt eyelashMesh mit avatar_eyelashes.llm, Originalmesh hat 48 gewichtete Vertices, Kopf-Weltkoordinaten und separate rigged Morphs; es gibt eine Head-Alpha-Kompositionsschicht, die nicht unzulässig als bereits implementiert erklärt wird.
+1067. OpenGenesisLINK upstream main erneut mit git ls-remote geprüft: 99341d475b1089a5762e529c5a3c0a06171074e0. Die letzte Serveränderung betraf persönliche World-API-Scopes, nicht das Avatar-/Head-/Wimpernprotokoll. Kein Server-Modul ohne Bedarf geschrieben.
+1068. Originales gewichtiges avatar_eyelashes.llm aus Firestorm Asset-Pfad lokal gelesen, mit dem bereits vorhandenen sicheren .llm-Parser/UV-Index-GPU-Validator/Firestorm-133-Joint-Rig und palette-Prüfung als optionalen sechsten Avatar-GL-Meshslot hochgeladen. Kein Original-Drittanbieterbinary im Git.
+1069. Realer OpenGL-Skin-Renderpfad um original gewichtiges Wimpernmesh erweitert. Nutzt vorhandene Pose/Joints und tatsächliche Head-Bake-UUID des aktuell GPU-zugelassenen Avatars (nicht Eyes/Hair), inklusive per Frame animierter GPU-Matrizen. Fehlende Head-TE-Referenz/GPU-Residency/fehlerhafte Skin-Jointliste verhindert Draw.
+1070. Head-Bake-Alphakanal als Alpha-Cutout genutzt; dunkle Wimpern-Tönung in Shader. Kein zusätzliches erfundenes Textur-Asset oder Head-TE-Alias und keine neuen HTTP-, Backoff-, Residenz- oder Port-Abhängigkeiten. Lokale vollständige Firestorm head_alpha.tga/Makeup-Komposition noch NICHT implementiert.
+1071. Von den drei anatomischen Head/Upper/Lower-Bake- und Visibility-Beweisen getrennte pro-Frame-Diagnostik avatar_eyelash_head_gl_draws/self_avatar_eyelash_head_gl_draws eingebaut. F3 zeigt tatsächliche GL-Draws ohne Head-UUID/Agent-IDs. Kein falsches COF-/Skin-3/3-Erfolgssignal.
+1072. Echter GPU-/Xvfb-Framebuffer-Test mit Original-Firestorm-Head/Körper-/Wimpernmesh plus künstlicher Test-Head-Bake-Farbe: 1062 nachgewiesene Wimpernpixel, 1 realer GL-Wimpern-Draw, Body weiterhin 3 Original-Draws und Head-Skin unverändert. Nach Head-TE-Rücknahme trotz noch residenter Textur sowie GPU-Textureviction jeweils 0 Wimpern-Draws.
+1073. Vier Python-Verträge für originale lokale Asset-Nutzung, echtes Head-UUID-Gating und GPU-Fail-Closed/Skinned-Joints, vom Body getrennte GL-Framezähler und wirklichen Framebuffer-/Withdrawal-Test ergänzt. CMake Debug Viewer gebaut, native Tests geprüft. Vorherige Tests dürfen echten Pixelfehler nicht als Erfolg deklarieren.
+1074. VERSION, projektplan.md, CHATUEBERGABE.md, AGENTS/info, Fortschritt-JSON, technische Paritätsmatrizen und nächste zehn Blöcke Alpha.1075–1084 aktualisiert. Vollständiger Linux-Mint-x64-Build/alle nativen CTests/Python und isolierter Xvfb-Viewer-GUI-/Taskleistenicon-Test sind vor Feature-GitHub-Push Pflicht. Pi5 ARM64 CI nach exakter Feature-SHA separat verifizieren; KEIN Produktivdeploy.
+
+## Grenzen
+
+Aktuell tatsächliche OpenGL-Originalmeshes/Firestorm-Skeleton, jedoch Test-Bake-Farbe synthetisch, daher ausdrücklich kein neuer authentifizierter NexVerse-Grid-Live-Beweis für tatsächlich hochgeladenen Outfit-/Wimpern-/Skin-COF-Kompositor. Ohne vollständige lokale Head-Alpha-TGA-Komposition können Wimpernstil und Transparenz vom Firestorm-Endbild abweichen. Morph/Wearables/Attachment-Outfits sowie E2E-WASD/Yaw bleiben offen. Region-Epoch/COF-Failclose und serverseitige sichere Head-Textur-IDs bleiben in der bestehenden Pipeline verankert.
+
+## Validierung
+
+Gezielter Firestorm-Eyelash-OpenGL-Framebuffer-Test PASS: 1062 sichtbare Original-Firestorm-Lash-Pixel und 1 echter Lash-GL-Draw; Head-TE-Rücknahme/GPU-Textur-Eviction jeweils 0 neue Lash-Draws, anatomisches 3/3-Body-Proof unverändert. Vier neue Python-Realpath-Tests PASS. Vollständiger Linux-Mint-x64-Debug-Viewer-/CTest-Neubuild PASS. Erste Gesamtprüfung meldete zwei ältere Python-Quellverträge mit auf fünf fixierter Mesharray-Größe; nach fachlicher Aktualisierung auf sechs Slots: scripts/mint-viewer-validation.sh --tests-only EXIT 0, 183/183 native CTests, 506/506 Python-Tests, isolierter Xvfb-Viewer-GUI mit 133-Joint-Original-Firestorm-Skelett, drei GPU-LLM-Bodymeshes/7186 Dreiecken, X11 WM_CLASS und echtem 128x128-Taskleistenicon PASS. Keine authentifizierte Grid-Session in diesem Test. Exakte GitHub-Code-SHA und Pi5 ARM64-CI-Status nach Push ergänzen. Projektfortschritt unverändert 38,65 % gewichtet, gerundet 39%.

@@ -602,6 +602,77 @@ int main()
         }
       }
     }
+    if(!error)
+    {
+      // Alpha.1074: authentic original Firestorm eyelashMesh, weighted
+      // to the Firestorm Head rig. It must not fabricate visible
+      // lashes without a CURRENT GPU-resident Head TE baked texture,
+      // and cannot leave ghost pixels on texture withdrawal.
+      const auto lash=assets::load_firestorm_avatar_llm(
+          *dir/"avatar_eyelashes.llm");
+      if(!lash||!lash->valid()||!lash->has_weights)error=58;
+      const auto palette=lash
+          ?assets::firestorm_joint_render_palette(*rig,lash->joint_names)
+          :std::nullopt;
+      if(!error&&(!palette||palette->size()<2U))error=59;
+      if(!error)
+      {
+        render::RenderImageRgba8 head{
+          8U,8U,std::vector<std::uint8_t>(256U,255U)};
+        for(std::size_t i=0U;i<head.pixels.size();i+=4U)
+        {
+          head.pixels[i]=242U;head.pixels[i+1U]=130U;
+          head.pixels[i+2U]=50U;
+        }
+        if(!renderer->set_object_texture("lash-head-current",head))
+          error=60;
+        self.baked_texture_ids={"lash-head-current","",""};
+        self.eyes_bake_texture_id.clear();
+        self.hair_bake_texture_id.clear();
+        renderer->set_avatar_proxies({self});
+        const auto without_lashes=draw();
+        if(!renderer->set_avatar_body_mesh(5U,
+             {lash->vertices,lash->indices,{},
+              lash->skin_weights,*palette}))error=61;
+        if(!error)
+        {
+          const auto with_lashes=draw();
+          const auto actual=renderer->diagnostics();
+          const auto delta=difference(without_lashes,with_lashes);
+          std::cout<<"ORIGINAL_FIRESTORM_EYELASH_VISIBLE_PIXELS="
+                   <<delta<<"; GL_LASH_DRAWS="
+                   <<actual.self_avatar_eyelash_head_gl_draws<<"\n";
+          if(actual.self_avatar_eyelash_head_gl_draws!=1U||
+             actual.self_avatar_anatomical_mesh_draw_calls!=3U||
+             actual.self_avatar_body_bake_gl_draws!=
+                  (std::array<std::uint64_t,3U>{1U,0U,0U})||
+             delta<2U)
+            error=62;
+          // No stale eyelashes after the Head TE disappears while the
+          // original GPU Head texture is still resident.
+          self.baked_texture_ids={};
+          renderer->set_avatar_proxies({self});
+          const auto without_head=draw();
+          const auto current=renderer->diagnostics();
+          std::cout<<"WITHDRAWN_HEAD_EYELASH_GL_DRAWS="
+                   <<current.self_avatar_eyelash_head_gl_draws<<"\n";
+          if(current.self_avatar_eyelash_head_gl_draws!=0U)
+            error=63;
+          self.baked_texture_ids={"lash-head-current","",""};
+          renderer->set_avatar_proxies({self});
+          (void)draw();
+          renderer->remove_object_texture("lash-head-current");
+          const auto after_evict=draw();
+          if(renderer->diagnostics().self_avatar_eyelash_head_gl_draws!=0U)
+            error=64;
+          self.baked_texture_ids={};
+          renderer->set_avatar_proxies({self});
+          if(difference(without_head,draw())!=0U)
+            error=65;
+          (void)after_evict;
+        }
+      }
+    }
     if(glGetError()!=GL_NO_ERROR)error=9;
   }
   if(renderer)renderer->shutdown();

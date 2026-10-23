@@ -29,6 +29,6 @@ class LocalHeadingAuthority(unittest.TestCase):
   self.assertIn('nexverse-local-heading-preview-tests',r('CMakeLists.txt'))
   self.assertIn('local_heading_preview_tests',r('scripts/pi5-headless-tests.sh'))
  def test_next_version(self):
-  self.assertEqual(r('VERSION').strip(),'0.2.0-alpha.1064')
-  self.assertIn('Alpha.1065–1074',r('CHATUEBERGABE.md'))
+  self.assertEqual(r('VERSION').strip(),'0.2.0-alpha.1074')
+  self.assertIn('Alpha.1075–1084',r('CHATUEBERGABE.md'))
 if __name__=='__main__':unittest.main()
