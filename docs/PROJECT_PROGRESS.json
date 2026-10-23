@@ -185,5 +185,13 @@
     "runner_active": true,
     "workflow_runs_for_feature_sha": 0,
     "note": "Full Linux Mint x64 local tests passed; NO completed ARM64 CI success for this exact SHA."
+  },
+  "alpha1164_verified_feature_sha": "6aa8618bb8434d7746b2f52527d130a2ac4ee7b4",
+  "alpha1164_pi5_ci": {
+    "exact_feature_sha": "6aa8618bb8434d7746b2f52527d130a2ac4ee7b4",
+    "status": "unverified",
+    "runner_active": true,
+    "workflow_runs_for_feature_sha": 0,
+    "note": "Mint x64 full local tests pass; no completed GitHub ARM64 CI for this exact feature SHA."
   }
 }
