@@ -60,6 +60,53 @@ int main()
     if(current_self_local_id!=0U||w.self_object_bakes()||
        w.self_render_bakes()!=std::array<std::string,3U>{}||
        w.self_object_kills()!=1U)return 5;
+    // Alpha.995-1004: late full/compressed self ObjectUpdate packets
+    // from a killed LocalID must not recreate own movement/pose binding.
+    // This is separate from the old COF outfit TE replay guard.
+    if(w.killed_self_local_id_guards()!=1U||
+       !w.reject_retired_self_object_pose(own,region,51U,te)||
+       !w.reject_retired_self_object_pose(own,region,51U,{})||
+       !w.reject_retired_self_object_pose(
+            own,region,51U,std::vector<std::uint8_t>{1U,2U})||
+       w.killed_self_pose_packets_blocked()!=3U||
+       w.retired_self_pose_packets_blocked()!=3U||
+       w.self_object_bakes())return 16;
+    if(w.reject_retired_self_object_pose(another,region,51U,te)||
+       w.reject_retired_self_object_pose(own,region+1U,51U,te)||
+       w.reject_retired_self_object_pose(own,region,0U,te)||
+       w.killed_self_pose_packets_blocked()!=3U)return 17;
+    // Genuine new baked TE on same numerical LocalID is permitted:
+    // the original old TE remains rejected AFTER the new TE is bound.
+    auto rebind_te=te;
+    for(std::size_t j=18U;j<34U;++j)
+        rebind_te[j]=0x77U;
+    if(w.reject_retired_self_object_pose(own,region,51U,rebind_te)||
+       !w.observe_self_object_bakes(own,region,51U,rebind_te)||
+       w.reject_retired_self_object_pose(own,region,51U,{})||
+       !w.reject_retired_self_object_pose(own,region,51U,te)||
+       !w.self_object_bakes()||
+       w.killed_self_pose_packets_blocked()!=4U||
+       w.killed_self_local_id_guards()!=1U)return 18;
+    // Repeated real KillObject of reused numeric LocalID retains both
+    // old body fingerprints, deduplicates and stays bounded.
+    if(!w.withdraw_self_object_on_kill(own,region,51U)||
+       w.killed_self_local_id_guards()!=2U||
+       !w.reject_retired_self_object_pose(own,region,51U,rebind_te)||
+       !w.reject_retired_self_object_pose(own,region,51U,te))
+        return 19;
+    // The extra test kill is a direct authenticated model event, not a
+    // dispatcher duplicate; reconcile its count for the following
+    // existing true-KillObject assertions.
+    w.apply_agent({own,"eeeeeeee-bbbb-cccc-dddd-eeeeeeeeeeee",{}, {},true});
+    w.apply_agent({own,session,{},{},true});
+    if(w.killed_self_local_id_guards()!=0U||
+       w.killed_self_pose_packets_blocked()!=0U||
+       w.reject_retired_self_object_pose(own,region,51U,te))
+        return 20;
+    // A fresh session has no prior Low158 or killed ID lease.
+    if(!w.observe_self_object_bakes(own,region,51U,te))return 21;
+    if(!w.withdraw_self_object_on_kill(own,region,51U)||
+       w.self_object_kills()!=1U)return 22;
     // Duplicate kill is handled by dispatcher local-ID binding, not
     // counted twice; old terse local 51 must no longer match current 0.
     if(current_self_local_id==decoded->local_ids[0]&&
@@ -94,5 +141,25 @@ int main()
     w.apply_agent({another,session,{},{},true});
     if(w.withdraw_self_object_on_kill(own,region,54U)||
        w.self_object_kills()!=0U)return 15;
+    // Bounded quarantine on many distinct authentic self root kills.
+    // Real dispatcher verifies each currently bound LocalID separately.
+    world::WorldModel many;
+    many.apply_region(region_packet());
+    many.apply_agent({own,session,{},{},true});
+    for(std::uint32_t local=100U;local<120U;++local)
+    {
+        if(!many.observe_self_object_bakes(own,region,local,te)||
+           !many.withdraw_self_object_on_kill(own,region,local)||
+           many.killed_self_local_id_guards()!=
+               (local<116U?local-99U:16U))return 23;
+    }
+    if(many.reject_retired_self_object_pose(own,region,100U,te)||
+       !many.reject_retired_self_object_pose(own,region,104U,te)||
+       !many.reject_retired_self_object_pose(own,region,119U,te))
+        return 24;
+    many.apply_region(region_packet(false));
+    if(many.killed_self_local_id_guards()!=0U||
+       many.killed_self_pose_packets_blocked()!=0U)return 25;
+
     std::cout<<"OWN_KILLOBJECT_LOCALID_TERSE_PROVISIONAL_LOW158_LEASE_PASS\n";
 }

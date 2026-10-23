@@ -325,6 +325,11 @@ public:
         std::span<const std::uint8_t> texture_entry);
     [[nodiscard]] std::uint32_t retired_self_pose_packets_blocked()
         const noexcept;
+    // Authenticated KillObject LocalIDs remain quarantined against
+    // out-of-order full/compressed self packets, not only High9 terse.
+    [[nodiscard]] std::uint32_t killed_self_local_id_guards() const noexcept;
+    [[nodiscard]] std::uint32_t killed_self_pose_packets_blocked()
+        const noexcept;
     // Current simulator explicitly withdrew the own avatar LocalID.
     // Invalidate ONLY ObjectUpdate provisional bakes; genuine Low158
     // remains authoritative until a new simulator appearance arrives.
@@ -454,6 +459,11 @@ private:
     // At most eight exact old LocalID + Head/Upper/Lower fingerprints,
     // scoped to the current agent/region. Never exposed to rendering.
     std::deque<SelfAvatarObjectBakes> retired_self_object_bakes_;
+    // Bounded simulator KillObject tombstones. A body TE fingerprint,
+    // when known, distinguishes stale retransmission from a verified
+    // new TE rebind of the same numeric LocalID. Not render assets.
+    std::deque<SelfAvatarObjectBakes> killed_self_local_ids_;
+    std::uint32_t killed_self_pose_packets_blocked_=0U;
     std::uint32_t self_object_bake_stale_replays_=0U;
     std::uint32_t retired_self_pose_packets_blocked_=0U;
     std::uint32_t self_object_bake_withdrawals_=0U;

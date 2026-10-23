@@ -34,6 +34,8 @@ void WorldModel::reset()
     self_wearables_.reset();
     self_object_bakes_.reset();
     retired_self_object_bakes_.clear();
+    killed_self_local_ids_.clear();
+    killed_self_pose_packets_blocked_=0U;
     self_object_bake_stale_replays_=0U;
     retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
@@ -127,6 +129,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
         self_wearables_.reset();
         self_object_bakes_.reset();
         retired_self_object_bakes_.clear();
+    killed_self_local_ids_.clear();
+    killed_self_pose_packets_blocked_=0U;
     self_object_bake_stale_replays_=0U;
     retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
@@ -181,6 +185,8 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
     self_wearables_.reset();
     self_object_bakes_.reset();
     retired_self_object_bakes_.clear();
+    killed_self_local_ids_.clear();
+    killed_self_pose_packets_blocked_=0U;
     self_object_bake_stale_replays_=0U;
     retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
@@ -229,6 +235,8 @@ void WorldModel::apply_agent(const AgentUpdate& update)
         }
         self_object_bakes_.reset();
         retired_self_object_bakes_.clear();
+    killed_self_local_ids_.clear();
+    killed_self_pose_packets_blocked_=0U;
     self_object_bake_stale_replays_=0U;
     retired_self_pose_packets_blocked_=0U;
     self_object_bake_withdrawals_=0U;
@@ -611,6 +619,57 @@ bool WorldModel::reject_retired_self_object_pose(
     if(!region_.connected||region_.handle!=region_handle||
        agent_.agent_id.empty()||agent_.session_id.empty()||
        avatar_id!=agent_.agent_id||local_id==0U)return false;
+    // A genuine KillObject explicitly withdraws this simulator
+    // LocalID. Do not allow a delayed full or compressed ObjectUpdate
+    // to recreate a false self-pose lease just because it carries a UUID.
+    // A valid, demonstrably different new body TE can rebind the same
+    // numeric ID; absent/malformed/placeholder or exact old TE cannot.
+    const bool killed_local=std::any_of(
+        killed_self_local_ids_.begin(),killed_self_local_ids_.end(),
+        [local_id](const SelfAvatarObjectBakes& old) {
+            return old.local_id==local_id;
+        });
+    if(killed_local)
+    {
+        bool valid_new_body=false;
+        bool exact_killed_body=false;
+        if(protocol::parse_texture_entry(texture_entry))
+        {
+            const auto bakes=
+                protocol::extract_avatar_bakes(texture_entry).visible_body();
+            const bool complete_body=!bakes[0].empty()||
+                !bakes[1].empty()||!bakes[2].empty();
+            exact_killed_body=std::any_of(
+                killed_self_local_ids_.begin(),killed_self_local_ids_.end(),
+                [local_id,&bakes](const SelfAvatarObjectBakes& old) {
+                    return old.local_id==local_id&&
+                           old.visible_body==bakes;
+                });
+            valid_new_body=complete_body&&!exact_killed_body;
+        }
+        // After a demonstrably fresh simulator TE was accepted, normal
+        // TE-less compressed pose updates on the active rebind may resume.
+        // All killed fingerprints stay remembered: old Full ObjectUpdate
+        // replay must never reclaim the freshly accepted movement lease.
+        const bool active_rebind=self_object_bakes_&&
+            self_object_bakes_->local_id==local_id&&
+            std::none_of(killed_self_local_ids_.begin(),
+                         killed_self_local_ids_.end(),
+                         [this](const SelfAvatarObjectBakes& old) {
+                             return old.local_id==self_object_bakes_->local_id&&
+                                    old.visible_body==
+                                        self_object_bakes_->visible_body;
+                         });
+        if(!valid_new_body&&
+           (exact_killed_body||!active_rebind))
+        {
+            if(killed_self_pose_packets_blocked_<UINT32_MAX)
+                ++killed_self_pose_packets_blocked_;
+            if(retired_self_pose_packets_blocked_<UINT32_MAX)
+                ++retired_self_pose_packets_blocked_;
+            return true;
+        }
+    }
     const auto retired_local=std::any_of(
         retired_self_object_bakes_.begin(),retired_self_object_bakes_.end(),
         [local_id](const SelfAvatarObjectBakes& old) {
@@ -650,6 +709,14 @@ std::uint32_t WorldModel::retired_self_pose_packets_blocked() const noexcept
 {
     return retired_self_pose_packets_blocked_;
 }
+std::uint32_t WorldModel::killed_self_local_id_guards() const noexcept
+{
+    return static_cast<std::uint32_t>(killed_self_local_ids_.size());
+}
+std::uint32_t WorldModel::killed_self_pose_packets_blocked() const noexcept
+{
+    return killed_self_pose_packets_blocked_;
+}
 bool WorldModel::withdraw_self_object_on_kill(
     std::string_view avatar_id,std::uint64_t region_handle,
     std::uint32_t local_id)
@@ -661,8 +728,37 @@ bool WorldModel::withdraw_self_object_on_kill(
     // The dispatcher additionally authenticates this LocalID against
     // its own current ObjectUpdate binding before calling. A duplicate
     // KillObject is not counted once that binding was cleared.
+    // Preserve every known killed LocalID+body fingerprint. One numeric
+    // LocalID may have carried multiple retired COF outfits; dropping
+    // those earlier fingerprints would reopen a replay vulnerability.
+    // A 16-slot FIFO bounds this non-rendered, session-scoped history.
+    const auto remember_killed=[this](const SelfAvatarObjectBakes& source) {
+        const bool duplicate=std::any_of(
+            killed_self_local_ids_.begin(),killed_self_local_ids_.end(),
+            [&source](const SelfAvatarObjectBakes& old) {
+                return old.local_id==source.local_id&&
+                       old.visible_body==source.visible_body;
+            });
+        if(duplicate)return;
+        if(killed_self_local_ids_.size()>=16U)
+            killed_self_local_ids_.pop_front();
+        killed_self_local_ids_.push_back(source);
+    };
+    bool had_known_source=false;
+    for(const auto& retired : retired_self_object_bakes_)
+    {
+        if(retired.local_id!=local_id)continue;
+        remember_killed(retired);
+        had_known_source=true;
+    }
     if(self_object_bakes_&&self_object_bakes_->local_id==local_id)
+    {
+        remember_killed(*self_object_bakes_);
         self_object_bakes_.reset();
+        had_known_source=true;
+    }
+    if(!had_known_source)
+        remember_killed(SelfAvatarObjectBakes{{},local_id});
     std::erase_if(retired_self_object_bakes_,
                   [local_id](const SelfAvatarObjectBakes& old) {
                       return old.local_id==local_id;

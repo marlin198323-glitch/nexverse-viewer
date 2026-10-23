@@ -13999,6 +13999,18 @@ int Application::run(bool enable_developer_modules)
                             shell_view.avatar_bake_stream_status+=
                                 " | Alte Avatar-Pose vor WASD verworfen:"+
                                 std::to_string(old_pose_packets);
+                        const auto killed_pose_packets=
+                            world_model.killed_self_pose_packets_blocked();
+                        if(killed_pose_packets>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Späte KillObject-Posen verworfen:"+
+                                std::to_string(killed_pose_packets);
+                        const auto killed_local_guards=
+                            world_model.killed_self_local_id_guards();
+                        if(killed_local_guards>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | KillObject-IDs gesperrt:"+
+                                std::to_string(killed_local_guards);
                         const auto replay_guards=
                             world_model.self_object_bake_replay_guards();
                         if(replay_guards>0U)
