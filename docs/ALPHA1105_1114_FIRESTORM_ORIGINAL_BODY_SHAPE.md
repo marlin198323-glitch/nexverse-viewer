@@ -21,4 +21,4 @@ Echte originale Firestorm-Meshes, echte GPU und echte COF-Parameterpfade im Code
 
 ## QA
 
-Echter OpenGL-Original-Firestorm-Morph-Test 833 Pixel / Upper/Lower je 1 Draw, 0 Remote-Pixel und 0 Reset-Pixel PASS; voller CMake/vcpkg-x64-Build aller 423 Ziele PASS; 183/183 native CTests, 526/526 Python-Tests, isolierter Xvfb-GUI-Start, originaler Firestorm-133-Joint-Skeleton-/GPU-Pfad und 128x128-X11-Taskleistenicon PASS. Exakte Feature-SHA und Pi5-ARM64-CI nach Push ergänzen.
+Echter OpenGL-Original-Firestorm-Morph-Test 833 Pixel / Upper/Lower je 1 Draw, 0 Remote-Pixel und 0 Reset-Pixel PASS; voller CMake/vcpkg-x64-Build aller 423 Ziele PASS; 183/183 native CTests, 526/526 Python-Tests, isolierter Xvfb-GUI-Start, originaler Firestorm-133-Joint-Skeleton-/GPU-Pfad und 128x128-X11-Taskleistenicon PASS. Exakte GitHub-verifizierte Feature-Code-SHA 076f5dd4f6dbd12da68d03e2bff7014ba33c63f3. GitHub Status-/PR-Workflow-Abfragen liefern für diese SHA keine abgeschlossenen Prüfergebnisse. Pi5 OGL Runner.Listener/Worker aktiv, ARM64 CI für diese exakte SHA UNVERIFIZIERT, nicht PASS. Kein Produktivdeployment.
