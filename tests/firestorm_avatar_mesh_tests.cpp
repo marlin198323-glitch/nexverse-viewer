@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
+#include "nexverse/assets/firestorm_auto_cof_read.hpp"
 #include "nexverse/assets/firestorm_cof_shape_morph_preview.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
 #include <algorithm>
@@ -276,6 +277,30 @@ int main()
         *dir,{{2,0.9f},{20002,0.9f}});
     if(!compatible||compatible->head.size()!=1U)
         return 53;
+    // Alpha.1144 automatic login COF bootstrap: exactly once for
+    // the same authenticated owner+lease+COF-version; a manual F9
+    // reread remains independent. Invalid scope never arms the gate.
+    FirestormAutoCofRead auto_read;
+    if(auto_read.begin("",1U,"cof-a",10U)||
+       auto_read.begin("owner",0U,"cof-a",10U)||
+       auto_read.begin("owner",1U,"",10U)||
+       auto_read.begin("owner",1U,"cof-a",0U))
+        return 60;
+    if(!auto_read.begin("owner",1U,"cof-a",10U)||
+       auto_read.begin("owner",1U,"cof-a",10U)||
+       !auto_read.matches("owner",1U,"cof-a",10U)||
+       auto_read.matches("owner-b",1U,"cof-a",10U)||
+       !auto_read.begin("owner",1U,"cof-a",11U)||
+       !auto_read.begin("owner",2U,"cof-a",11U)||
+       !auto_read.begin("owner-b",2U,"cof-a",11U)||
+       auto_read.begin("owner-b",2U,"cof-a",11U)||
+       // Revisiting an old COF must not silently bypass the
+       // 'one auto read per exact owner/lease/version' guarantee.
+       auto_read.begin("owner",1U,"cof-a",10U))
+        return 61;
+    auto_read.reset();
+    if(!auto_read.begin("owner",1U,"cof-a",10U))return 62;
+    std::cout<<"AUTO_COF_AUTHENTICATED_ONCE_PER_OWNER_LEASE_VERSION_PASS\n";
     std::cout<<"ORIGINAL_FIRESTORM_DRIVER_HEAD_MORPHS="
              <<driven->head.size()
              <<"; SKELETON_DRIVER_REMAINS_OPEN=1\n";

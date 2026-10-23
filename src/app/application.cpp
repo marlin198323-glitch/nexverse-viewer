@@ -14,6 +14,7 @@
 #include "nexverse/assets/texture_distance.hpp"
 #include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/assets/mesh_loader.hpp"
+#include "nexverse/assets/firestorm_auto_cof_read.hpp"
 #include "nexverse/assets/firestorm_cof_shape_morph_preview.hpp"
 #include "nexverse/assets/firestorm_avatar_mesh.hpp"
 #include "nexverse/assets/firestorm_avatar_rig.hpp"
@@ -6163,6 +6164,12 @@ int Application::run(bool enable_developer_modules)
     // them, even if a later session reuses the same region epoch/folder.
     std::string gallery_wearables_fetch_owner;
     bool gallery_wearables_requested=false;
+    // Bootstrap the ORIGINAL read-only CurrentOutfitFolder wearables
+    // after login automatically. F9 remains an explicit manual retry;
+    // no server inventory mutation or AgentSetAppearance is issued.
+    assets::FirestormAutoCofRead auto_cof_read;
+    bool auto_cof_items_fetching=false;
+    bool auto_cof_asset_requested=false;
     input_context.outfit_wearable_check_requested=&gallery_wearables_requested;
     std::string gallery_wearables_status=
         "Originalinventar noch nicht abgeglichen";
@@ -8569,6 +8576,9 @@ int Application::run(bool enable_developer_modules)
                 gallery_bake_preview_open=false;
                 gallery_appearance_live_checked_at={};
                 gallery_wearables_requested=false;
+                auto_cof_items_fetching=false;
+                auto_cof_asset_requested=false;
+                auto_cof_read.reset();
                 gallery_wearables_fetch_cof.clear();
                 gallery_wearables_status=
                     "Regionswechsel: Wearable-Status unbestimmt";
@@ -9291,7 +9301,21 @@ int Application::run(bool enable_developer_modules)
                     last_cof_link_refresh=cof_poll_now;
                 }
             }
-            if((outfit_gallery_open||gallery_link_consent.awaiting_server()||
+            // Login should not require F9 merely to fetch current
+            // original CurrentOutfitFolder metadata. If the initial
+            // region read omitted/failed COF entries, use the SAME
+            // read-only, owner/epoch-bound CAPS poll at most once per
+            // existing 30-second cadence. Never mutate an outfit.
+            const auto& bootstrap_cof=caps_state.current_outfit_folder;
+            const auto bootstrap_items=
+                caps_state.outfit_folder_items.find(bootstrap_cof);
+            const bool auto_cof_metadata_missing=
+                login_ui.authenticated&&simulation_ready&&active_session&&
+                !bootstrap_cof.empty()&&
+                (bootstrap_items==caps_state.outfit_folder_items.end()||
+                 bootstrap_items->second.empty());
+            if((outfit_gallery_open||auto_cof_metadata_missing||
+                gallery_link_consent.awaiting_server()||
                 gallery_cof_batch.awaiting_readback()||
                 gallery_cof_unlink.awaiting_server()) &&
                !gallery_sync_future.valid() &&
@@ -9386,15 +9410,56 @@ int Application::run(bool enable_developer_modules)
                                 slots.attachment_count)+
                             " Attachments, "+std::to_string(
                                 slots.unresolved_count)+" unaufgeloest";
+                        if(auto_cof_items_fetching&&
+                           slots.readiness==protocol::WearableReadiness::
+                               ready_for_appearance_pipeline)
+                        {
+                            gallery_wearable_asset_requested=true;
+                            auto_cof_asset_requested=true;
+                            gallery_asset_status=
+                                "COF-Autostart: Original-Wearables pruefen";
+                        }
                     }
                     else
                         gallery_wearables_status=
                             "Wearable-Abfrage veraltet/ungueltig; COF erneut lesen";
+                    auto_cof_items_fetching=false;
                 }
                 catch(const std::exception&)
                 {
+                    auto_cof_items_fetching=false;
                     gallery_wearables_status=
                         "FetchInventory2 der Originalitems fehlgeschlagen";
+                }
+            }
+            // One bounded, READ-ONLY original COF fetch per authenticated
+            // agent/region/COF version. This is intentionally independent
+            // of the F9 floater visibility: normal Login can show the
+            // user's genuine COF Shape without an extra manual click.
+            // Failed automatic attempts are not retried in a frame loop.
+            if(!gallery_wearables_requested&&
+               !gallery_wearables_fetch_future.valid()&&
+               !gallery_wearables_visible&&
+               !gallery_plan_visible&&
+               active_session&&simulation_ready&&login_ui.authenticated&&
+               firestorm_region_lease.matches(current_firestorm_epoch)&&
+               !gallery_inventory_items_cap.empty())
+            {
+                const auto& cof=caps_state.current_outfit_folder;
+                const auto ver=gallery_inventory_sync.versions().find(cof);
+                const auto items=caps_state.outfit_folder_items.find(cof);
+                if(ver!=gallery_inventory_sync.versions().end()&&
+                   ver->second>0U&&
+                   items!=caps_state.outfit_folder_items.end()&&
+                   !items->second.empty()&&items->second.size()<=32U&&
+                   auto_cof_read.begin(active_session->agent_id,
+                                       current_firestorm_epoch,cof,
+                                       ver->second))
+                {
+                    auto_cof_items_fetching=true;
+                    gallery_wearables_requested=true;
+                    gallery_wearables_status=
+                        "COF-Autostart: Originalinventar lesen";
                 }
             }
             if(gallery_wearables_requested)
@@ -9403,7 +9468,8 @@ int Application::run(bool enable_developer_modules)
                 const auto& id=caps_state.current_outfit_folder;
                 const auto v=gallery_inventory_sync.versions().find(id);
                 const auto contents=caps_state.outfit_folder_items.find(id);
-                if(!outfit_gallery_open||!active_session||
+                if((!outfit_gallery_open&&!auto_cof_items_fetching)||
+                   !active_session||
                    !simulation_ready||!login_ui.authenticated||
                    gallery_inventory_items_cap.empty()||
                    !firestorm_region_lease.matches(current_firestorm_epoch)||
@@ -9413,8 +9479,11 @@ int Application::run(bool enable_developer_modules)
                    contents==caps_state.outfit_folder_items.end()||
                    contents->second.empty()||
                    contents->second.size()>32U)
+                {
+                    auto_cof_items_fetching=false;
                     gallery_wearables_status=
                         "Wearable-Abfrage gesperrt: Login/CAPS/COF/Limit";
+                }
                 else
                 {
                     std::vector<std::string> ids;
@@ -9429,8 +9498,11 @@ int Application::run(bool enable_developer_modules)
                         ids.push_back(link.asset_id);
                     }
                     if(!valid)
+                    {
+                        auto_cof_items_fetching=false;
                         gallery_wearables_status=
                             "COF-Linkziele fehlen/dupliziert";
+                    }
                     else
                     {
                         gallery_wearables_snapshot={};
@@ -9466,10 +9538,13 @@ int Application::run(bool enable_developer_modules)
             if(gallery_wearable_asset_requested)
             {
                 gallery_wearable_asset_requested=false;
+                const bool was_auto_cof_asset=auto_cof_asset_requested;
+                auto_cof_asset_requested=false;
                 const auto& id=caps_state.current_outfit_folder;
                 const auto& versions=gallery_inventory_sync.versions();
                 const auto v=versions.find(id);
-                if(!outfit_gallery_open||!active_session||!simulation_ready||
+                if((!outfit_gallery_open&&!was_auto_cof_asset)||
+                   !active_session||!simulation_ready||
                    !login_ui.authenticated||gallery_plan_visible||
                    !firestorm_region_lease.matches(current_firestorm_epoch)||
                    !gallery_wearables_visible||
@@ -14322,6 +14397,37 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
+                // The automatic COF read is a real, owner-bound
+                // INVENTORY/LLWearable path, not proof of baked skin
+                // pixels or an actual AvatarAppearance acknowledgement.
+                if(active_session&&login_ui.authenticated&&
+                   firestorm_region_lease.matches(current_firestorm_epoch))
+                {
+                    const auto& cof=caps_state.current_outfit_folder;
+                    const auto ver=gallery_inventory_sync.versions().find(cof);
+                    if(ver!=gallery_inventory_sync.versions().end()&&
+                       auto_cof_read.matches(active_session->agent_id,
+                           current_firestorm_epoch,cof,ver->second))
+                    {
+                        if(auto_cof_items_fetching)
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF Auto: Originalinventar wird geladen";
+                        else if(!gallery_asset_pending.empty()||
+                                !gallery_asset_active_id.empty())
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF Auto: Original-Wearables werden geladen";
+                        else if(gallery_asset_total>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF Auto: Original-Wearables "+
+                                std::to_string(
+                                    gallery_decoded_wearable_assets.size())+
+                                "/"+std::to_string(gallery_asset_total)+
+                                ", Bake/Outfit-E2E offen";
+                        else
+                            shell_view.avatar_bake_stream_status+=
+                                " | COF Auto: Inventar-/Asset-Beleg fehlt";
+                    }
+                }
                 if((render_diagnostics.self_avatar_shape_body_gl_draws[0U]+
                     render_diagnostics.self_avatar_shape_body_gl_draws[1U])>0U&&
                    avatar_diagnostic.authenticated)

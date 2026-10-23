@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1134",
+  "as_of": "2026-10-24",
+  "viewer_version": "0.2.0-alpha.1144",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1135–1144",
-  "assessment": "Alpha1134: original Firestorm avatar_lad.xml driver_parameters user-facing Shape sliders now traverse their original <driven id> targets in the installed character XML. Accept only identity-compatible driver target with the same finite original min/max and exactly matching param_morph/LLM sparse target name in Head/Upper/Lower/Lash original assets. Explicitly skip custom piecewise driver intervals and param_skeleton/Joint/Bone adjustments. Record real count of admitted DriverMorph targets and mark any original linked skeleton part as PENDING in the avatar/COF UI ('Bone-Driver offen', LOCAL only, no Bake proof). Invalid/out-of-range/NaN and contradictory repeated morph inputs fail closed, bounded 32 linked drivers per active Shape slider and original 512-wearable/1MiB-LAD and 96 per-original mesh limits. Verified from original installed Firestorm LAD that visible Shape slider id2 Nose_Big_Out drives original head LLM param_morph 20002 plus skeleton 30002, id35 Big_Ears drives 20035/30035. Native original Firestorm test accepts two original Head morph targets, detects two admitted driver mesh links and pending Skeleton; out-of-range slider weights rejected. Original GL Xvfb framebuffer shows 45811 DIFFERENT self Head pixels relative to preceding compound morph and exactly 0 remote avatar pixel changes, zero stale pixels after removing preview. Five extra Python realpath tests. Source-specific COF authorization checks and no server wire/asset fetching changes. Not full Firestorm skeletal driver composition, not live Grid Skin/Outfit/COF and server-confirmed WASD/Yaw. Upstream OpenGenesisLINK server main debdcce15d6175a3adc1cd81fd5bd0715317080b unchanged. No production deployment. Authenticated live Grid Skin/Outfit/COF and server-confirmed WASD/Yaw E2E still open.",
+  "next_five_blocks": "Alpha.1145–1154",
+  "assessment": "Alpha1144 /goal implementable milestone: normal authenticated Login now starts a read-only current COF original wearable bootstrap even with F9 outfit gallery CLOSED. Only current owner agent, active region epoch and lease, current COF folder and version, valid CAPS FetchInventory2 with <=32 valid linked IDs. A FirestormAutoCofRead pure admission guard allows one AUTO item attempt per exact owner/region/COF/version; no frame-loop automatic retries or automated inventory mutation. On complete, verified original FetchInventory2 readiness, automatically begin the EXISTING bounded sequential 1..16 server LLWearable asset transfer, original Shape/LLM-LAD GPU morphs, subject to current owner/epoch/COF-version and zero error checks. Failed/expired sources do not gain acceptance; F9 remains manual retry. Region changes reset auto flags and guard, prevent cross-region leaked state. If initial CAPS COF folder metadata was missing, the existing owner/region-scoped READ-ONLY CAPS outfit folder sync may run with its existing 30sec retry ceiling even without F9. F3 shows actual autobootstrap original item/asset progress without agent/session/asset UUIDs and explicitly distinguishes 'Bake/Outfit-E2E offen'. Original Firestorm native tests prove one-per-owner/version/lease, negative scope and reset; 8 new Python contracts include owner, region, automatic Stage1+Stage2 and F3. Added strict scripts/ogl-release-readiness.py verifying all 7 weighted project areas and 7 explicit REAL end-to-end acceptance evidence scopes; it correctly reports RELEASE BLOCKED at 38.65%, never claims 100% from local synthetic GPU assets or 183 green CTests. No authenticated real-grid self 3/3 RGB bakes/Outfit or server readback WASD/Yaw was executed this turn, real live integration still open. No production deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1135–1144",
+  "next_batch": "Alpha.1145–1154",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
@@ -113,7 +113,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 183,
     "native_ctest_failed": 0,
-    "python_tests_passed": 467,
+    "python_tests_passed": 544,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -165,6 +165,9 @@
     "current_outfit_cof_clears_prior_object_te": true,
     "interleaved_legacy_cof_highwater_retirement": true,
     "cof_outfit_late_udp_object_bake_replay_rejected": true,
-    "latest_localid_body_not_evicted_by_retired_replay": true
-  }
+    "latest_localid_body_not_evicted_by_retired_replay": true,
+    "validated_viewer_version": "0.2.0-alpha.1144"
+  },
+  "final_release_evidence": {},
+  "goal_100_release_status": "BLOCKED: authenticated real Grid 3/3 Skin/Outfit/WASD E2E, full Firestorm UI, Windows/macOS and exact SHA CI remain open."
 }
