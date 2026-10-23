@@ -44,10 +44,10 @@ class TrueMotionReadback(unittest.TestCase):
   self.assertIn("MovementPositionSource::compressed_object",test)
   self.assertIn("wartet auf UDP-Versand",test)
  def test_updated_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1024")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1034")
   progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(progress["next_batch"],"Alpha.1025–1034")
+  self.assertEqual(progress["next_batch"],"Alpha.1035–1044")
   self.assertEqual(progress["default_blocks_per_run"],10)
   for f in ["CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md"]:
-   self.assertIn("Alpha.1025–1034",read(f)[:1100])
+   self.assertIn("Alpha.1035–1044",read(f)[:1100])
 if __name__=="__main__": unittest.main()

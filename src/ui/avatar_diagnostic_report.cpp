@@ -137,6 +137,18 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.self_low158_body_gettexture_stages[1])+"\n"
        "self_low158_lower_gettexture_stage="+
            std::to_string(r.self_low158_body_gettexture_stages[2])+"\n"
+       "self_render_head_bake_source="+
+           std::to_string(r.self_render_body_bake_sources[0])+"\n"
+       "self_render_upper_bake_source="+
+           std::to_string(r.self_render_body_bake_sources[1])+"\n"
+       "self_render_lower_bake_source="+
+           std::to_string(r.self_render_body_bake_sources[2])+"\n"
+       "self_render_head_gettexture_stage="+
+           std::to_string(r.self_render_body_gettexture_stages[0])+"\n"
+       "self_render_upper_gettexture_stage="+
+           std::to_string(r.self_render_body_gettexture_stages[1])+"\n"
+       "self_render_lower_gettexture_stage="+
+           std::to_string(r.self_render_body_gettexture_stages[2])+"\n"
        "self_attachment_block_received="+yn(r.self_attachment_block_received)+"\n"
        "self_attachment_block_count="+
            std::to_string(r.self_attachment_block_count)+"\n"

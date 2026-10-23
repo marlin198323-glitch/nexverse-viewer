@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1024",
+  "viewer_version": "0.2.0-alpha.1034",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1025–1034",
-  "assessment": "Alpha1024: diagnosed true shared GetTexture 404 attribution gap. Actual Linux Mint 2026-10-21 authenticated Low158 evidence exists, and coincident world GetTexture HTTP 404s were observed, but no body-UUID match was provable from existing logs. Added READ-ONLY per-current agent/session/region Low158 Head/Upper/Lower mapping to current-region AssetRetrySchedule failure kinds and GPU residency, without changing the retry/backoff or texture queue. Separate stages cover absent/placeholder body ref, resident GPU, eligible retry, 404/410 missing cooldown, transient, config and invalid backoff. An unrelated scene asset failure cannot appear as a body 404. F3 shows H/U/L class names first on the bake streaming diagnostic line; private 0600 avatar report prints only three numeric stages, not UUIDs. Raw GetTexture failed log now omits the source UUID. Native C++ scene-mismatch, valid source, placeholder, retry-expiry, epoch reset tests and Python real-world-handler/source contracts. Exact current-body source failures still require an authenticated live viewer run to measure; no full COF/skin RGB pixel or verified latest WASD/Yaw end-to-end proof. still open. No production deploy.",
+  "next_five_blocks": "Alpha.1035–1044",
+  "assessment": "Alpha1034: discovered an attribution bug in Alpha1024: GetTexture H/U/L stages were based solely on authenticated Low158 IDs, while the ACTUAL Firestorm self renderer may select an authenticated current ObjectUpdate TextureEntry for missing individual Low158 baked faces. Read-only per-face provenance-aware inspector now uses the exact WorldModel::self_bake_selection IDs plus from_low158 and from_object_update flags, matched to CURRENT GPU-admitted self proxy and current agent/session/region lease before any F3 or private report diagnostic. Low158 wins on the same face; ObjectUpdate-only face is explicitly provisional (not COF, not authoritative skin). Matching current epoch GetTexture retry/GPU status is reported per source; a missing/placeholder or unlabeled source cannot inherit old 404s. F3 shows short L=Low158/O=ObjTE prefixes for Head Upper Lower; private 0600 report adds three numeric source provenance and three numeric effective GetTexture stage fields, preserving earlier independent Low158-only fields. Native mixed-source, old/new outfit exact UUID, ObjTE-only, missing placeholder, 404, ready, epoch reset and Python real handler/provenance/privacy tests. This repairs diagnostics for real partial outfits but full RGB avatar skin and new authenticated WASD/Yaw live E2E are still open. No production deployment.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1025–1034",
+  "next_batch": "Alpha.1035–1044",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

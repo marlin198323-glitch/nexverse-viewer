@@ -61,6 +61,57 @@ int main()
     (void)retry.failure("upper",assets::AssetFailure::missing,t);
     // Read-only evidence must not clear or override live retry backoff.
     if(retry.ready("upper",t))return 39;
+    (void)retry.failure("lower",assets::AssetFailure::invalid,t);
+    // Alpha.1025-1034: the current renderer can use different sources
+    // per body slot. Low158 Head wins, while missing Low158 Upper can
+    // use provisional ObjectUpdate Upper. Never label ObjTE as a COF.
+    using B=assets::SelfBakeSource;
+    const std::array<std::string,3U> chosen{"head","upper","lower"};
+    const std::array<bool,3U> low_source{true,false,false};
+    const std::array<bool,3U> obj_source{false,true,true};
+    const auto mixed=assets::inspect_self_render_bake_gettexture(
+        chosen,low_source,obj_source,gpu,retry,t);
+    if(mixed.sources!=std::array<B,3>{B::self_low158,
+             B::provisional_object_te,B::provisional_object_te}||
+       mixed.stages!=std::array<S,3>{S::gpu_resident,
+             S::http_missing_backoff,S::invalid_backoff}||
+       assets::self_render_bake_gettexture_summary(mixed)!=
+        "Body H:L/GPU U:O/HTTP404 L:O/ungueltig (L=Low158 O=ObjTE)")
+        return 40;
+    // A newer outfit Low158 Upper immediately supersedes ObjTE Upper;
+    // only the new exact UUID may inherit an HTTP failure.
+    const std::array<std::string,3U> next_cof{"head","new-upper","lower"};
+    auto low_new=low_source;
+    low_new[1]=true;
+    const auto new_outfit=assets::inspect_self_render_bake_gettexture(
+        next_cof,low_new,obj_source,gpu,retry,t);
+    if(new_outfit.sources[1]!=B::self_low158||
+       new_outfit.stages[1]!=S::ready_to_retry||
+       assets::self_render_bake_gettexture_summary(new_outfit).find(
+           "U:L/bereit")==std::string::npos)return 41;
+    // Missing/placeholder IDs with a false or spoofed authority flag
+    // cannot claim a download or emit any body source.
+    const auto empty_source=assets::inspect_self_render_bake_gettexture(
+        {"",std::string{protocol::baked_placeholders[0]},"lower"},
+        {false,false,false},{true,true,false},gpu,retry,t);
+    if(empty_source.sources!=std::array<B,3>{B::none,B::none,B::none}||
+       empty_source.stages!=std::array<S,3>{S::no_server_reference,
+           S::no_server_reference,S::no_server_reference})return 42;
+    // Object-only pre-Low158 candidate may be inspected, but must
+    // remain explicitly provisional and must not alter retry backoff.
+    auto provisional_probe=assets::inspect_self_render_bake_gettexture(
+        chosen,{false,false,false},{true,true,true},gpu,retry,t);
+    if(provisional_probe.sources[0]!=B::provisional_object_te||
+       provisional_probe.sources[1]!=B::provisional_object_te||
+       provisional_probe.stages[1]!=S::http_missing_backoff||
+       retry.ready("upper",t))return 43;
+    // Region-epoch retirement atomically drops old retry attribution.
+    retry.enter(25U);
+    provisional_probe=assets::inspect_self_render_bake_gettexture(
+        chosen,{false,false,false},{true,true,true},gpu,retry,t);
+    if(provisional_probe.stages[1]!=S::ready_to_retry)return 44;
+    retry.enter(23U);
+    (void)retry.failure("upper",assets::AssetFailure::missing,t);
     policy.observe_source(23U,true,true,ids);
     if(!policy.request(true,true,true,false,true,t)||
        policy.request(true,true,true,false,true,t+

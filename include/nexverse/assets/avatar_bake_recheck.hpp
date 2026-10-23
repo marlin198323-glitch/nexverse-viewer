@@ -90,6 +90,71 @@ inspect_self_bake_gettexture(
         " L:"+self_bake_gettexture_label(states[2]);
 }
 
+// Explain the EXACT current avatar renderer source without upgrading
+// provisional ObjectUpdate TE into authoritative Low158/COF evidence.
+enum class SelfBakeSource : std::uint8_t
+{
+    none=0, self_low158=1, provisional_object_te=2
+};
+struct SelfRenderBakeGetTextureEvidence
+{
+    std::array<SelfBakeGetTextureStage,3U> stages{};
+    std::array<SelfBakeSource,3U> sources{};
+};
+[[nodiscard]] inline SelfRenderBakeGetTextureEvidence
+inspect_self_render_bake_gettexture(
+    const std::array<std::string,3U>& selected_body,
+    const std::array<bool,3U>& from_low158,
+    const std::array<bool,3U>& from_object_update,
+    const std::unordered_set<std::string>& resident,
+    const AssetRetrySchedule& retry,
+    AssetRetrySchedule::Clock::time_point now)
+{
+    SelfRenderBakeGetTextureEvidence out;
+    // Invalid/conflicting source flags cannot be used to claim a
+    // server-authenticated GPU download. A validated model selection
+    // marks each slot by its actual winning source (Low158 precedence).
+    std::array<std::string,3U> admitted{};
+    for(std::size_t i=0U;i<selected_body.size();++i)
+    {
+        if(selected_body[i].empty())continue;
+        if(from_low158[i])
+            out.sources[i]=SelfBakeSource::self_low158;
+        else if(from_object_update[i])
+            out.sources[i]=SelfBakeSource::provisional_object_te;
+        else continue;
+        admitted[i]=selected_body[i];
+    }
+    out.stages=inspect_self_bake_gettexture(admitted,resident,retry,now);
+    for(std::size_t i=0U;i<out.stages.size();++i)
+        if(out.stages[i]==SelfBakeGetTextureStage::no_server_reference)
+            out.sources[i]=SelfBakeSource::none;
+    return out;
+}
+[[nodiscard]] inline const char* self_render_bake_source_label(
+    SelfBakeSource source) noexcept
+{
+    switch(source)
+    {
+    case SelfBakeSource::none:return "-";
+    case SelfBakeSource::self_low158:return "L";
+    case SelfBakeSource::provisional_object_te:return "O";
+    }
+    return "?";
+}
+[[nodiscard]] inline std::string self_render_bake_gettexture_summary(
+    const SelfRenderBakeGetTextureEvidence& info)
+{
+    const auto face=[&info](std::size_t i)
+    {
+        if(info.sources[i]==SelfBakeSource::none)return std::string{"-"};
+        return std::string{self_render_bake_source_label(info.sources[i])}+
+            "/"+self_bake_gettexture_label(info.stages[i]);
+    };
+    return "Body H:"+face(0)+" U:"+face(1)+" L:"+face(2)+
+        " (L=Low158 O=ObjTE)";
+}
+
 // An explicit local request to reevaluate current, authentic self-bake
 // texture priorities. It never clears the shared failure/backoff schedule,
 // never invents an AvatarAppearance, and never uploads a client bake.

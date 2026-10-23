@@ -11,7 +11,7 @@ class BodyGetTextureCorrelation(unittest.TestCase):
   self.assertIn("assets::inspect_self_bake_gettexture(",segment)
   self.assertIn("object_texture_loaded_ids,object_texture_retries,",segment)
   self.assertIn("avatar_diagnostic.self_low158_body_gettexture_stages[i]",segment)
-  self.assertIn("self_bake_gettexture_summary(stages)",app)
+  self.assertIn("self_render_bake_gettexture_summary(effective)",app)
  def test_shared_retry_is_read_only_epoch_scoped_and_privacy_safe(self):
   a=rd("include/nexverse/assets/avatar_bake_recheck.hpp")
   b=rd("include/nexverse/assets/asset_failure.hpp")

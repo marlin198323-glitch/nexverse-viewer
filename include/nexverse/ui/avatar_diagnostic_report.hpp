@@ -50,6 +50,11 @@ struct AvatarDiagnosticReport
     // 0 absent, 1 GPU, 2 ready, 3 HTTP 404/410,
     // 4 transient, 5 configuration, 6 invalid backoff.
     std::array<std::uint8_t,3U> self_low158_body_gettexture_stages{};
+    // Renderer-selected body slot provenance, kept independent of true
+    // Low158 evidence: 0 none, 1 Low158, 2 provisional ObjectUpdate.
+    // Per selected slot: same 0..6 GetTexture stage as above.
+    std::array<std::uint8_t,3U> self_render_body_bake_sources{};
+    std::array<std::uint8_t,3U> self_render_body_gettexture_stages{};
     bool self_attachment_block_received=false;
     std::uint32_t self_attachment_block_count=0U;
     std::uint32_t self_object_attachment_roots=0U;

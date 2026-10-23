@@ -13553,6 +13553,40 @@ int Application::run(bool enable_developer_modules)
                         static_cast<std::uint32_t>(ap->attachments.size());
                 }
                 if(login_ui.authenticated&&active_session&&
+                   simulation_ready&&render_agent.present&&
+                   self_bake_it!=admitted_bakes.accepted.end()&&
+                   !avatar_proof.self_gpu_pose_dropped&&
+                   world_model.region().connected&&
+                   firestorm_region_lease.matches(current_firestorm_epoch)&&
+                   active_session->agent_id==render_agent.agent_id&&
+                   world_model.agent().agent_id==active_session->agent_id&&
+                   world_model.agent().session_id==active_session->session_id)
+                {
+                    // The renderer uses SelfRenderBakeSelection, NOT just
+                    // Low158. If a face falls back to ObjectUpdate TE,
+                    // expose that provisional source instead of falsely
+                    // reporting no attempted texture download. This never
+                    // turns ObjTE into a simulator COF confirmation.
+                    const auto selected=world_model.self_bake_selection();
+                    // Reject source snapshots which diverged from the
+                    // current frame GPU-admitted self avatar body proxy.
+                    if(selected.ids==self_bake_ids)
+                    {
+                    const auto effective=assets::inspect_self_render_bake_gettexture(
+                        selected.ids,selected.from_low158,
+                        selected.from_object_update,
+                        object_texture_loaded_ids,object_texture_retries,
+                        texture_plan_now);
+                    for(std::size_t i=0U;i<effective.stages.size();++i)
+                    {
+                        avatar_diagnostic.self_render_body_bake_sources[i]=
+                            static_cast<std::uint8_t>(effective.sources[i]);
+                        avatar_diagnostic.self_render_body_gettexture_stages[i]=
+                            static_cast<std::uint8_t>(effective.stages[i]);
+                    }
+                    }
+                }
+                if(login_ui.authenticated&&active_session&&
                    world_model.region().connected&&
                    firestorm_region_lease.matches(current_firestorm_epoch)&&
                    world_model.agent().agent_id==active_session->agent_id&&
@@ -13888,15 +13922,26 @@ int Application::run(bool enable_developer_modules)
                             std::to_string(texture_recovered_j2c_transfers)+
                             " | "
                         :std::string{})+avatar_bake_stream_status;
-                if(avatar_diagnostic.self_low158_texture_entry_received)
+                if(avatar_diagnostic.authenticated&&
+                   avatar_diagnostic.region_connected&&
+                   avatar_diagnostic.agent_present&&
+                   firestorm_region_lease.matches(current_firestorm_epoch))
                 {
-                    std::array<assets::SelfBakeGetTextureStage,3U> stages{};
-                    for(std::size_t i=0U;i<stages.size();++i)
-                        stages[i]=static_cast<assets::SelfBakeGetTextureStage>(
-                            avatar_diagnostic.self_low158_body_gettexture_stages[i]);
+                    // Short, source-labelled current renderer H/U/L row.
+                    // Show *both* actual ObjTE fallback and true Low158
+                    // without suggesting ObjTE establishes a new COF.
+                    assets::SelfRenderBakeGetTextureEvidence effective{};
+                    for(std::size_t i=0U;i<effective.stages.size();++i)
+                    {
+                        effective.sources[i]=static_cast<assets::SelfBakeSource>(
+                            avatar_diagnostic.self_render_body_bake_sources[i]);
+                        effective.stages[i]=static_cast<
+                            assets::SelfBakeGetTextureStage>(
+                            avatar_diagnostic.self_render_body_gettexture_stages[i]);
+                    }
                     shell_view.avatar_bake_stream_status=
-                        assets::self_bake_gettexture_summary(stages)+" | "+
-                        shell_view.avatar_bake_stream_status;
+                        assets::self_render_bake_gettexture_summary(effective)+
+                        " | "+shell_view.avatar_bake_stream_status;
                 }
                 shell_view.avatar_animation_status=
                     avatar_proof.animation_stage();

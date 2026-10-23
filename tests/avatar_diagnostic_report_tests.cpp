@@ -34,6 +34,8 @@ int main()
     r.self_low158_body_bake_refs=2U;
     r.self_low158_head_upper_lower_refs={true,true,false};
     r.self_low158_body_gettexture_stages={1U,3U,0U};
+    r.self_render_body_bake_sources={1U,2U,0U};
+    r.self_render_body_gettexture_stages={1U,3U,0U};
     r.self_attachment_block_received=true;
     r.self_attachment_block_count=85U;
     r.self_object_attachment_roots=3U;
@@ -137,6 +139,12 @@ int main()
        text.find("self_low158_head_gettexture_stage=1")==std::string::npos||
        text.find("self_low158_upper_gettexture_stage=3")==std::string::npos||
        text.find("self_low158_lower_gettexture_stage=0")==std::string::npos||
+       text.find("self_render_head_bake_source=1")==std::string::npos||
+       text.find("self_render_upper_bake_source=2")==std::string::npos||
+       text.find("self_render_lower_bake_source=0")==std::string::npos||
+       text.find("self_render_head_gettexture_stage=1")==std::string::npos||
+       text.find("self_render_upper_gettexture_stage=3")==std::string::npos||
+       text.find("self_render_lower_gettexture_stage=0")==std::string::npos||
        text.find("self_attachment_block_received=yes")==std::string::npos||
        text.find("self_attachment_block_count=85")==std::string::npos||
        text.find("self_object_attachment_roots=3")==std::string::npos||
