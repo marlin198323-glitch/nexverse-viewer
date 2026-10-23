@@ -28,3 +28,15 @@ mit Original Firestorm Skeleton 133 Joints,
 drei GPU-residenten Original-Bodymeshes und 7186 Dreiecken,
 OGL X11 WM_CLASS/Systemicon 128x128 PASS.
 Kein echter NexVerse-Login, kein Produktivdeploy.
+
+## Exakte GitHub SHA / getrennte CI-Ergebnisse
+Feature-Code-SHA 90bde599854eb805eec66ebe00f10c57d1b12594.
+Pi5 Source Check Run 39986215063 IN_PROGRESS beim letzten Abruf;
+nicht grün ohne abgeschlossenen SHA-genauen Test.
+Hosted Linux-x64 Run 39986215086 COMPLETED/FAILURE,
+Job 120525941955, runner_id=0, steps=0:
+kein Compilerprozess gestartet. Voriger Pi5 Alpha.894
+Feature-SHA 5247d3f Run 39984523949 SUCCESS.
+Lokales Mint-x64-Gate grün mit 180 native CTests,
+432 Python, Xvfb Original-Firestorm-Körper und X11-Icon.
+Keine Live-Grid-Sitzung/kein Deployment.
