@@ -985,3 +985,10 @@ provisorische Self ObjectUpdate TE-Skin verworfen, bevor seine Slots
 mit dem neuen Low158-Body vermischt werden könnten. Erstlogin- und
 Legacy-Bake-Fallback bleibt, aktuelle spätere ObjectUpdate-TE darf
 wieder fehlende Slots ergänzen. Keine Low158-/COF-Mutation vom Viewer.
+
+## Alpha.965–974 – Firestorm Bake-Quellen nach COF-Revision gegen Replay
+Originales Firestorm Low158 Outfit/COF bleibt die autoritative
+Bodytexturquelle. Old ObjectUpdate Head/Upper/Lower Bakes aus der
+verlassenen COF-Epoch duerfen durch verzoegertes UDP-Replay nicht
+wieder als Fallback gelten. Identische alte LocalID+TE wird
+sitzungsgebunden verworfen, echte neue TE bleibt erlaubt.

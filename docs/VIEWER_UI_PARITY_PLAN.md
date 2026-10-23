@@ -629,3 +629,10 @@ nachgewiesener angekommener neuer Version und zurückgenommenen
 alten provisorischen Body-TE-Daten. Der Zähler ist getrennt
 von serverseitig gelieferten neuen Low158-/GetTexture-/GPU-Pixeln.
 Keine behauptete gerenderte Haut bei reinem Revisionswechsel.
+
+## Alpha.965–974 – F3 zaehlt alte ObjectUpdate-TE-Replays
+F3 Avatar Bake Stream zeigt Alte Objekt-Bakes erneut verworfen N
+als bis UINT32_MAX begrenzten, sessiongebundenen Zaehler.
+GetTexture-Fetch, GPU-Pixel, COF-Highwater und wirksame
+Live-Outfit-Texturen werden unabhaengig beurteilt.
+Keine privaten Asset-UUIDs/AgentIDs ausgeben.

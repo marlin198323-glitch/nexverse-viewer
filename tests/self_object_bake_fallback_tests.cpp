@@ -237,6 +237,15 @@ int main()
        outfit.self_object_bakes()||
        outfit.self_render_bakes()!=std::array<std::string,3U>{}||
        outfit.self_object_bake_outfit_invalidations()!=1U)return 43;
+    // A delayed identical old self ObjectUpdate from the RETIRED
+    // LocalID can arrive after the newer COF over unordered UDP.
+    // It must never restore the old outfit's skin.
+    if(outfit.observe_self_object_bakes(avatar_id,region,60U,head_te)||
+       outfit.self_object_bakes()||
+       outfit.self_object_bake_stale_replays()!=1U)return 51;
+    // A duplicate late retransmission is rejected, not an upload.
+    if(outfit.observe_self_object_bakes(avatar_id,region,60U,head_te)||
+       outfit.self_object_bake_stale_replays()!=2U)return 52;
     // A delayed prior revision cannot erase the newly accepted
     // outfit or count a second invalidation.
     if(outfit.apply_self_appearance(first_cof)||
@@ -244,6 +253,12 @@ int main()
     // Fresh verified ObjectUpdate TE can provision new bakes again.
     if(!outfit.observe_self_object_bakes(avatar_id,region,61U,head_te)||
        outfit.self_render_bakes()!=fallback)return 45;
+    // An OLD local60 retransmission cannot evict the newer local61,
+    // even though both happened to carry identical old asset UUIDs.
+    if(outfit.observe_self_object_bakes(avatar_id,region,60U,head_te)||
+       outfit.self_render_bakes()!=fallback||
+       outfit.self_object_bakes()->local_id!=61U||
+       outfit.self_object_bake_stale_replays()!=3U)return 53;
     // Legacy unversioned Low158 isn't a distinct COF outfit and must
     // keep genuine provisional fallback for Firestorm/OpenSim.
     if(!outfit.apply_self_appearance(authoritative)||
@@ -257,6 +272,26 @@ int main()
        outfit.self_object_bake_outfit_invalidations()!=2U)return 47;
     if(!outfit.observe_self_object_bakes(avatar_id,region,62U,head_te))
         return 48;
+    // Once a DIFFERENT genuine TE on the SAME LocalID is received
+    // after an outfit switch, allow it, but still reject a subsequent
+    // retransmission of the earlier outfit's exact TE.
+    auto rebaked=model();
+    if(!rebaked.observe_self_object_bakes(avatar_id,region,60U,head_te)||
+       !rebaked.apply_self_appearance(first_cof)||
+       !rebaked.apply_self_appearance(protocol::AvatarAppearanceMessage(newer_cof)))
+        return 54;
+    // The first modern COF after the old one has different format here.
+    if(rebaked.observe_self_object_bakes(avatar_id,region,60U,head_te))
+        return 55;
+    auto fresh_te=head_te;
+    for(std::size_t k=18U;k<34U;++k)fresh_te[k]=0x77U;
+    if(!rebaked.observe_self_object_bakes(avatar_id,region,60U,fresh_te)||
+       rebaked.self_render_bakes()[0]!="77777777-7777-7777-7777-777777777777")
+        return 56;
+    if(rebaked.observe_self_object_bakes(avatar_id,region,60U,head_te)||
+       rebaked.self_render_bakes()[0]!="77777777-7777-7777-7777-777777777777"||
+       rebaked.self_object_bake_stale_replays()!=2U)
+        return 57;
     // Unchanged COF does not trigger another retirement.
     if(!outfit.apply_self_appearance(newer_cof)||
        outfit.self_render_bakes()!=fallback||
@@ -266,6 +301,7 @@ int main()
     outfit.apply_agent({avatar_id,"cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee",
                         {},{},true});
     if(outfit.self_object_bake_outfit_invalidations()!=0U||
+       outfit.self_object_bake_stale_replays()!=0U||
        outfit.self_object_bakes()||outfit.self_appearance())return 50;
     std::cout<<"OGL_SELF_OBJECT_BAKE_CANDIDATE_AND_LO158_PRECEDENCE_PASS\n";
 }

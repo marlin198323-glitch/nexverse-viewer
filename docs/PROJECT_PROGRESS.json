@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.964",
+  "viewer_version": "0.2.0-alpha.974",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.965–974",
-  "assessment": "Alpha964: Fixed real self baked-skin outfit source mix in WorldModel.self_bake_selection: missing modern Low158 Head/Upper/Lower could inherit older provisional ObjectUpdate TE bakes after the simulator had accepted a genuinely new COF/AppearanceVersion outfit. Model now retires previous provisional body TE at accepted modern COF revision/format transition while preserving authoritative Low158 body refs. The prior accepted COF highwater identifies the previous outfit even across interleaved legacy count=0 packets; first modern version, equal/rejected old revision and unknown-version legacy appearance retain Firestorm/OpenSim provisional fallback. New genuine ObjectUpdate may supply missing slots later. Bounded world session-scoped retirement count appears in F3 separately from texture HTTP/cache/GPU and COF stale-packet counters. Native WorldModel real TE/regression covers 100->101, format switch, legacy intervening, rollback, fresh TE and reauth, integrated Pi5 ARM64 headless and Python source gate; full Mint x64 GUI release test. Prior Pi5 Alpha954 code c86977f Run 40008385875 completed success. OpenGenesisLINK main ccfc644d unchanged. Authenticated NexVerse Live AvatarAppearance/COF/Outfit/Skin GPU pixels and simulator-confirmed WASD/Yaw E2E remain still open; no deployment.",
+  "next_five_blocks": "Alpha.975–984",
+  "assessment": "Alpha974: Fixed authenticated self body-bake COF late UDP replay bug remaining after Alpha964 provisional TE retirement. A delayed exact former avatar ObjectUpdate LocalID and Head/Upper/Lower TE could repopulate stale baked skin after a newer modern Low158 COF, or evict a newer self LocalID texture. WorldModel now keeps a session/region scoped rejection-only fingerprint of the one withdrawn SelfAvatarObjectBakes source; exact old LocalID+TE is rejected before it can affect current renderer/HTTP/GetTexture source, including repeated out-of-order datagrams after fresh ObjectUpdate. Distinct new TE or actual new self local ID still admitted and original Low158 always authoritative. Fingerprint and saturated privacy-safe counter reset on reauth/region/reset/matching KillObject. Native real WorldModel/Firestorm-TE sequence COF100->101, late replay twice, new LocalID, new same-ID bake, late old replay and new session, Mint/Pi5 Worldlinked with Python live-source check. Full Linux Mint x64 GUI release gate. Prior Pi5 Alpha964 exact code SHA 7bf7308 Run 40011135542 success; OpenGenesisLINK upstream ccfc644d unchanged. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin GPU pixels and simulator-confirmed WASD/Yaw live E2E remain still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,13 +58,13 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.965–974",
+  "next_batch": "Alpha.975–984",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "c86977f978cc15d3495df6cc88af65c75ce0d7d6",
-    "run_id": 40008385875,
+    "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
+    "run_id": 40011135542,
     "conclusion": "success",
-    "scope": "Pi5 ARM64 native Python headless; not authenticated live Grid"
+    "scope": "Pi5 ARM64 native/Python headless; no authenticated Grid"
   },
   "alpha454_feature_sha": "9360106596ac437f97fbc626909eb9d4361a223a",
   "alpha454_pi5_test": {
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
-    "run_id": 40011135542,
-    "checked_status": "in_progress",
-    "note": "Never assert Pi5 success before completed/success on exact feature code SHA."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
     "run_id": 40011135336,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 183,
     "native_ctest_failed": 0,
-    "python_tests_passed": 462,
+    "python_tests_passed": 467,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
-    "version": "0.2.0-alpha.964",
+    "version": "0.2.0-alpha.974",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Mint full x64 CMake/vcpkg viewer alpha964, 183/183 native CTests with real WorldModel COF100->101 mixed provisional bake retire, 462/462 Python, isolated Xvfb GUI Firestorm 133 skeleton joints/3 GPU LLM body meshes 7186 triangles, OGL X11 WM_CLASS and 128px taskbar icon PASS. No authenticated NexVerse live session.",
+    "note": "Linux Mint full CMake/vcpkg x64 Viewer alpha974 183/183 native CTests including real COF late ObjectUpdate retransmission rejection, 467/467 Python, Xvfb isolated GUI original Firestorm skeleton 133 bind joints/3 GPU .llm body meshes/7186 triangles, branded X11 WM_CLASS and OGL taskbar icon 128px PASS. No live authenticated Grid session.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -163,6 +158,8 @@
     "ssa_ack_preserved_before_inworld": true,
     "ssa_unacked_current_sequence_only": true,
     "current_outfit_cof_clears_prior_object_te": true,
-    "interleaved_legacy_cof_highwater_retirement": true
+    "interleaved_legacy_cof_highwater_retirement": true,
+    "cof_outfit_late_udp_object_bake_replay_rejected": true,
+    "latest_localid_body_not_evicted_by_retired_replay": true
   }
 }

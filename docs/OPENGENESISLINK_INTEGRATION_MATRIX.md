@@ -907,3 +907,12 @@ dürfen vorherige provisorische TE-IDs nicht mehr in neue Head/Upper/Lower
 gemischt werden. Bereits verifizierte Low158 Bakes bleiben erhalten;
 Legacy count=0 und gleiche/rejected Version führen keinen Reset aus.
 OpenGenesisLINK Servermain ccfc644d Wire unverändert.
+
+## Alpha.965–974 – verspaetetes altes Avatar-ObjectUpdate nach COF-Wechsel
+Ein neuer authentifizierter Firestorm/Low158-COF darf keine alten
+eigenen Body-Bake-Faces aus verspaeteten ObjectUpdate-UDP-Datagrammen
+erneut aufnehmen. Ein einziger zurückgezogener LocalID+Head/Upper/Lower
+Fingerprint blockiert nur identische alte TE-Daten, auch nach einer neuen
+gültigen TE/LocalID. Neue echte TE und Low158 bleiben zugelassen.
+Eine UDP-Transportbestätigung ist kein Skin-/GPU-Erfolg.
+OpenGenesisLINK Servermain ccfc644d unverändert.

@@ -13977,6 +13977,12 @@ int Application::run(bool enable_developer_modules)
                             shell_view.avatar_bake_stream_status+=
                                 " | COF-Wechsel: alte Objekt-Bakes verworfen:"+
                                 std::to_string(changed_outfits);
+                        const auto stale_object_bakes=
+                            world_model.self_object_bake_stale_replays();
+                        if(stale_object_bakes>0U)
+                            shell_view.avatar_bake_stream_status+=
+                                " | Alte Objekt-Bakes erneut verworfen:"+
+                                std::to_string(stale_object_bakes);
                         const auto killed=world_model.self_object_kills();
                         if(killed>0U)
                             shell_view.avatar_bake_stream_status+=
