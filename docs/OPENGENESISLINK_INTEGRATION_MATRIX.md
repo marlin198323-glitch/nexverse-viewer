@@ -880,3 +880,13 @@ aktiven Circuits oder bestaetigten SSA-Bit2. Bounded 16er Historie
 verhindert auch verspaetete out-of-order Retransmits. Neue Sequenzen
 werden weiter verlaesslich mit Firestorm SSA bit2 beantwortet.
 Servermain ccfc644d unveraendert.
+
+## Alpha.935–944 – Low15 muss erwarteter XML-RPC Login-Region entsprechen
+Eine vollständig decodierte LLUDP AgentMovementComplete kann richtige
+Agent/Session und endliche Position, aber falschen nichtleeren RegionHandle
+haben. Der LLUDP-Circuit muss wie das WorldModel den vollen
+(region_x<<32)|region_y Handle der LoginSession erwarten.
+Nur wenn beide Login-Koordinaten explizit fehlen, bleibt der Legacy-
+Login kompatibel und die anschließende WorldModel-Prüfung maßgeblich.
+Unterschiedliche tatsächliche Regionen dürfen kein Low381/WASD freigeben.
+OpenGenesisLINK Servermain ccfc644d bleibt wire-kompatibel.

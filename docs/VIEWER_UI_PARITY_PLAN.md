@@ -609,3 +609,10 @@ F3 zeigt RegionHandshake Duplikate N und Aktualisierung N.
 Keine Fake-COF-/Avatar-GPU-Bestaetigung aus Transportdaten.
 Wiederholungen derselben eingehenden Sequenz unterbrechen
 eine bereits aktive Welt und das Avatar-Fenster nicht mehr.
+
+## Alpha.935–944 – F3 Low15 Fremdregion von ungültigem Paket unterscheiden
+F3 zeigt generische Low15-Ablehnungen und die getrennte, bis 9999
+begrenzte Anzahl Low15 falsche Login-Region. Gleicher Agent und Session
+bei fremder Region lassen den Circuit nicht aktiv werden. Keine
+sensiblen UUID-/Session-/Simulatorendpunkte in der Diagnose und kein
+falscher Avatar/COF/GPU-/Bewegungserfolg.

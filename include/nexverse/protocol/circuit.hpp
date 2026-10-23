@@ -53,6 +53,7 @@ struct CircuitStatus
     // real Low15 admission, not a confirmed rendered avatar.
     bool movement_complete_validated=false;
     std::uint32_t movement_complete_rejected=0U;
+    std::uint32_t movement_complete_wrong_region=0U;
     bool wearables_read_request_sent=false;
     std::uint32_t wearables_read_retries_sent=0U;
     bool wearables_valid_wire_received=false;

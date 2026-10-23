@@ -13822,6 +13822,11 @@ int Application::run(bool enable_developer_modules)
                         " | Low15 abgewiesen: "+
                         std::to_string(
                             circuit_snapshot.movement_complete_rejected);
+                if(circuit_snapshot.movement_complete_wrong_region>0U)
+                    shell_view.avatar_handshake_status+=
+                        " | Low15 falsche Login-Region: "+
+                        std::to_string(
+                            circuit_snapshot.movement_complete_wrong_region);
                 if(circuit_snapshot.region_handshake_duplicates>0U)
                     shell_view.avatar_handshake_status+=
                         " | RegionHandshake Duplikate: "+

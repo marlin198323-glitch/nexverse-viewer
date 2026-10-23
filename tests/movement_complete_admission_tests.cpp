@@ -40,6 +40,10 @@ int main()
     LoginSession login{};
     login.agent_id=std::string(agent);
     login.session_id=std::string(session);
+    // Region handle (256 << 32) | 512 matches login's XML-RPC
+    // region coordinates. A wrong region cannot activate the circuit.
+    login.region_x=256U;
+    login.region_y=512U;
     const auto p=movement();
     const auto packet=encode_packet(packet_reliable,4U,
         msg_agent_movement_complete,p);
@@ -89,5 +93,27 @@ int main()
     if(!valid_circuit_movement_complete(mutated,login,true))return 12;
     mutated=p;mutated[69U]=1U; // malformed variable2 length
     if(valid_circuit_movement_complete(mutated,login,true))return 13;
+    mutated=p;
+    // Same login AgentID and SessionID, finite position, nonzero
+    // RegionHandle, but DIFFERENT simulator region. Must reject.
+    mutated[56U]^=1U;
+    if(valid_circuit_movement_complete(mutated,login,true))return 14;
+    if(!movement_complete_wrong_login_region(mutated,login))return 19;
+    auto wrong_login_region=login;
+    wrong_login_region.region_y=768U;
+    if(valid_circuit_movement_complete(p,wrong_login_region,true))return 15;
+    wrong_login_region=login;
+    wrong_login_region.region_x=0U;
+    if(valid_circuit_movement_complete(p,wrong_login_region,true))return 16;
+    // Genuine legacy grids that omit BOTH login coordinates can still
+    // start LLUDP; WorldModel separately admits only the real region.
+    wrong_login_region.region_y=0U;
+    if(!valid_circuit_movement_complete(p,wrong_login_region,true))return 17;
+    if(movement_complete_wrong_login_region(p,wrong_login_region))return 20;
+    if(movement_complete_wrong_login_region(p,login))return 21;
+    // A legitimate x=0 edge-of-world region must NOT be treated as
+    // unknown when y is supplied.
+    wrong_login_region.region_y=512U;
+    if(valid_circuit_movement_complete(p,wrong_login_region,true))return 18;
     std::cout<<"OGL_LLUDP_MOVEMENT_COMPLETE_CURRENT_LOGIN_ADMISSION_PASS\n";
 }

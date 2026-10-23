@@ -247,6 +247,9 @@ bool CircuitConnection::handle_packet(
         {
             if(status.movement_complete_rejected<9999U)
                 ++status.movement_complete_rejected;
+            if(movement_complete_wrong_login_region(packet.payload,session_)&&
+               status.movement_complete_wrong_region<9999U)
+                ++status.movement_complete_wrong_region;
             if(status.movement_complete_rejected==1U)
                 status.message="AgentMovementComplete rejected: "
                     "invalid payload, login identity or position";

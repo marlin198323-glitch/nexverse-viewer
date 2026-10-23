@@ -965,3 +965,10 @@ Duplicate reliable Simulator-RegionHandshake darf eine echte,
 bereits ACKed Firestorm-SSA-Handshake-Antwort nicht entwerten.
 Bei neuer RegionHandshake-Sequenz antwortet Viewer erneut, bewahrt
 aber bestehenden aktiven Inworld-Circuit und bestaetigte Low158-/COF-Beweise.
+
+## Alpha.935–944 – Firestorm-Region Identity konsistent zum Circuit
+AgentMovementComplete wird nur als aktuelle Simulatorregion akzeptiert,
+wenn seine volle RegionHandle-64bit-Kennung mit dem erwarteten Login
+Region-x/y-Paar übereinstimmt. Fehlende beide Loginregion-Koordinaten
+sind als alte Kompatibilität erlaubt; Welt- und Avatarpose benötigen
+weiterhin eine eigene echte WorldModel-Annahme. Keine Änderung am Wire.
