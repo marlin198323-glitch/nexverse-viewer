@@ -30,3 +30,15 @@ isolierter Xvfb-GUI-Start mit Firestorm-Originalskelett
 133 Gelenke und 3 GPU Bodymeshes/7186 Dreiecke,
 OGL X11 WM_CLASS/Systemicon 128x128 PASS.
 Kein authentifizierter Grid-Live-Login und kein Deploy.
+
+## Exakte GitHub Code-SHA und CI
+Code Feature-SHA 5247d3f9d775411a1af7137545062161af702668.
+Pi5 Source Check Run 39984523949 IN_PROGRESS bei letzter
+Prüfung, kein Grünerfolg vor Abschluss behaupten.
+Hosted Linux-x64 Run 39984524067 COMPLETED/FAILURE
+Job 120520137562 runner_id 0, steps 0 (kein Compiler).
+Letzte verifizierte Pi5-SUCCESS Alpha.884 SHA 7e43a2a
+Run 39982171338. Separat Mint-Gate EXIT 0 mit
+179 nativen CTests, 428 Python, Xvfb-GUI,
+Firestorm Original-LLM Bodymeshes und OGL-Systemicon.
+Kein Live-Login/Produktivdeploy.
