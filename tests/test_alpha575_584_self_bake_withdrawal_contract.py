@@ -54,13 +54,13 @@ class BakeWithdrawalContract(unittest.TestCase):
   self.assertIn("region_.handle!=update.handle",model)
   self.assertIn("self_render_bakes()",model)
  def test_version_and_next(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1004")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1014")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"0.2.0-alpha.1004")
-  self.assertEqual(p["next_batch"],"Alpha.1005–1014")
+  self.assertEqual(p["viewer_version"],"0.2.0-alpha.1014")
+  self.assertEqual(p["next_batch"],"Alpha.1015–1024")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])
   for fn in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
               "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.1005–1014",read(fn)[:1800])
+   self.assertIn("Alpha.1015–1024",read(fn)[:1800])
 if __name__=="__main__":unittest.main()

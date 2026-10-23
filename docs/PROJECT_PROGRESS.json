@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.1004",
+  "viewer_version": "0.2.0-alpha.1014",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1005–1014",
-  "assessment": "Alpha1004: Fixes stale self Avatar ObjectUpdate/Compressed after a simulator-authenticated KillObject. Even with own local ID and terse lease invalidated, delayed Full/Compressed packets with own avatar UUID could restore outdated local ID and pose/WASD evidence. Bounded 16-fingerprint session/region KillObject LocalID quarantine now checks before self-binding on both paths. Valid genuinely new body TE may rebind the same numeric ID; exact killed body fingerprints stay blocked across new rebinding and repeated kills. Terse without TE resumes only on an active accepted fresh body candidate. Preserves all matching retired COF fingerprints during Kill, deduplicates, FIFO-bound memory. Native C++ wire/kill/new body/multi-kill/boundary tests and Python handler-order/source contracts. F3 shows blocked KillObject poses and active tombstones, never UUIDs. OpenGenesisLINK server main f56e354 unchanged. Authenticated NexVerse live avatar/COF/skin GPU and server-confirmed WASD/Yaw are still open, no prod deploy.",
+  "next_five_blocks": "Alpha.1015–1024",
+  "assessment": "Alpha1014: Real Linux Mint viewer.log on 2026-10-21 17:57:19 confirms authenticated Self AvatarAppearance Low158 (64 byte TE, 253 VisualParams), original Firestorm GPU weighted-skin server AnimationAsset, and Low382 with five wearables. Outdated claim that Self Low158 never arrives is corrected. Contemporaneous GetTexture 404s cannot be attributed to avatar Head/Upper/Lower without asset correlation. New privacy-safe current-state blocker classifier separates no Low158, missing/partial server body 0-3, provisional ObjectUpdate fallback, asset GPU residency, original LLM draw, depth test and final skin pixel still unverified. F3 and 0600 private AvatarDiagnosticReport expose only actionable stages, never UUIDs; accepted Low158 logs count of bona fide body bake UUIDs without printing IDs. Native C++ state-matrix and Python realpath contracts. Full authenticated live skin/COF RGB pixel proof and current server-confirmed WASD/Yaw still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -25,7 +25,7 @@
       "name": "Avatar, Server-Bakes, Outfits und Animationen",
       "weight_pct": 20,
       "completion_pct": 25,
-      "basis": "Originale Firestorm-LLM-Meshes sichtbar; aktuelles Self-AvatarAppearance fehlt, Bakes/Kleidung/Animation nicht vollständig."
+      "basis": "Historischer authentifizierter Live-Login vom 21.10.2026: Self Low158 64 Byte TE / 253 VisualParams angenommen und serverseitiges Animationsasset auf originalem Firestorm-GPU-Koerper gezeichnet; Head/Upper/Lower Skin-Assets, vollstaendiges Outfit und finaler GPU-Pixelnachweis weiter offen. Neue Diagnose trennt Server-Bakes von GetTexture/GPU/Depth."
     },
     {
       "id": "assets",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1005–1014",
+  "next_batch": "Alpha.1015–1024",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",

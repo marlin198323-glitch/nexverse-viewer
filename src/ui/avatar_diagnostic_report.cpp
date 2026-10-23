@@ -10,6 +10,57 @@
 #endif
 namespace nexverse::ui
 {
+const char* avatar_skin_blocker_key(const AvatarDiagnosticReport& r) noexcept
+{
+    if(!r.authenticated||!r.simulator_circuit_active||!r.region_connected)
+        return "session_or_circuit_missing";
+    if(!r.appearance_received)return "self_low158_missing";
+    if(!r.self_low158_texture_entry_received)
+        return "self_low158_texture_not_verified";
+    if(r.self_low158_body_bake_refs==0U)
+        return r.self_object_bake_candidate_faces>0U
+            ?"server_body_missing_object_fallback"
+            :"server_body_bakes_missing";
+    if(r.self_low158_body_bake_refs<3U)
+        return "server_body_bakes_partial";
+    if(r.avatar_body_bakes_gpu<3U)
+        return "body_bake_assets_not_gpu_resident";
+    if(r.avatar_body_bakes_gl<3U)
+        return "original_body_bake_gl_draw_missing";
+    if(!r.gpu_fragment_result_known)
+        return "depth_visibility_unverified";
+    if(!r.gpu_fragments_passed)
+        return "avatar_depth_fragments_zero";
+    // Depth query is not an image readback of the final RGB skin.
+    return "depth_visible_final_skin_pixels_unverified";
+}
+std::string avatar_skin_blocker_hint(const AvatarDiagnosticReport& r)
+{
+    const auto* key=avatar_skin_blocker_key(r);
+    if(std::strcmp(key,"session_or_circuit_missing")==0)
+        return "Avatar: Login/Simulatorverbindung pruefen";
+    if(std::strcmp(key,"self_low158_missing")==0)
+        return "Avatar: Self-Low158 vom Simulator fehlt";
+    if(std::strcmp(key,"self_low158_texture_not_verified")==0)
+        return "Avatar: Self-Low158 TextureEntry nicht bestaetigt";
+    if(std::strcmp(key,"server_body_missing_object_fallback")==0)
+        return "Avatar: Self-Low158 0/3 Body-Bakes; Objekt-TE nur vorlaeufig";
+    if(std::strcmp(key,"server_body_bakes_missing")==0)
+        return "Avatar: Self-Low158 0/3 Body-Bakes; Server-Outfit pruefen";
+    if(std::strcmp(key,"server_body_bakes_partial")==0)
+        return "Avatar: Self-Low158 nur "+
+            std::to_string(r.self_low158_body_bake_refs)+
+            "/3 Body-Bakes; Server-Outfit pruefen";
+    if(std::strcmp(key,"body_bake_assets_not_gpu_resident")==0)
+        return "Avatar: Server-Bakes 3/3; GetTexture/GPU-Residency pruefen";
+    if(std::strcmp(key,"original_body_bake_gl_draw_missing")==0)
+        return "Avatar: Bakes auf GPU, Original-Body-Draw fehlt";
+    if(std::strcmp(key,"depth_visibility_unverified")==0)
+        return "Avatar: GL-Draw vorhanden, Depth-Test noch ausstehend";
+    if(std::strcmp(key,"avatar_depth_fragments_zero")==0)
+        return "Avatar: GL-Draw vorhanden, 0 sichtbare Depth-Fragmente";
+    return "Avatar: Depth-Fragmente ja; finale Skin-Pixel nicht geprueft";
+}
 std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
 {
     const auto yn=[](bool v){return v?"yes":"no";};
@@ -28,6 +79,7 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
        "identity_pair_present="+yn(r.agent_identity_present)+"\n"
        "agent_present="+yn(r.agent_present)+"\n"
        "appearance_received="+yn(r.appearance_received)+"\n"
+       "self_skin_blocker_stage="+std::string(avatar_skin_blocker_key(r))+"\n"
        "region_handshake_self_appearance_bit2_sent="+
            std::string(yn(r.self_appearance_support_sent))+"\n"
        "region_handshake_self_appearance_bit2_acked="+

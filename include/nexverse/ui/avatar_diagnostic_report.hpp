@@ -109,6 +109,13 @@ struct AvatarDiagnosticReport
     bool caps_event_queue_available=false;
     std::uint32_t frame_width=0,frame_height=0;
 };
+// Stable, privacy-safe classification of the *first missing live proof*.
+// A decoded Low158 proves reception, not baked Head/Upper/Lower textures,
+// successful GetTexture download, GL submission or visible final pixels.
+[[nodiscard]] const char* avatar_skin_blocker_key(
+    const AvatarDiagnosticReport& report) noexcept;
+[[nodiscard]] std::string avatar_skin_blocker_hint(
+    const AvatarDiagnosticReport& report);
 [[nodiscard]] std::string avatar_diagnostic_text(
     const AvatarDiagnosticReport& report);
 [[nodiscard]] std::string avatar_diagnostic_trace_text(

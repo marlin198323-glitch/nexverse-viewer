@@ -74,7 +74,47 @@ int main()
     r.frame_height=1440U;
     r.gpu_fragment_result_known=true;
     r.gpu_fragments_passed=false;
+    // Real stage matrix: a decoded Low158 alone never proves bake sources.
+    auto stage=r;
+    using nexverse::ui::avatar_skin_blocker_key;
+    using nexverse::ui::avatar_skin_blocker_hint;
+    if(std::string(avatar_skin_blocker_key(stage))!="self_low158_missing")
+        return 25;
+    stage.appearance_received=true;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "server_body_bakes_partial"||
+       avatar_skin_blocker_hint(stage).find("2/3")==std::string::npos)
+        return 26;
+    stage.self_low158_body_bake_refs=0U;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "server_body_missing_object_fallback"||
+       avatar_skin_blocker_hint(stage).find("Objekt-TE")==std::string::npos)
+        return 27;
+    stage.self_object_bake_candidate_faces=0U;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "server_body_bakes_missing"||
+       avatar_skin_blocker_hint(stage).find("Server-Outfit")==std::string::npos)
+        return 28;
+    stage.self_low158_body_bake_refs=3U;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "body_bake_assets_not_gpu_resident")return 29;
+    stage.avatar_body_bakes_gpu=3U;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "original_body_bake_gl_draw_missing")return 30;
+    stage.avatar_body_bakes_gl=3U;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "avatar_depth_fragments_zero")return 31;
+    stage.gpu_fragments_passed=true;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "depth_visible_final_skin_pixels_unverified")return 32;
+    stage.gpu_fragment_result_known=false;
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "depth_visibility_unverified")return 33;
+    stage.gpu_fragment_result_known=true;
+    stage.gpu_fragments_passed=false;
     const std::string text=nexverse::ui::avatar_diagnostic_text(r);
+    if(text.find("self_skin_blocker_stage=self_low158_missing")==
+       std::string::npos)return 34;
     if(text.find("visibility_stage=zero_depth_fragments")==
        std::string::npos||text.find("rendered_original_llm_draws=3")==
        std::string::npos)return 1;

@@ -5972,6 +5972,23 @@ int Application::run(bool enable_developer_modules)
                         1U,std::memory_order_relaxed);
                 }
                 if (accepted && first)
+                {
+                    // An authentic Low158 with a valid TE may STILL carry
+                    // zero server-baked Head/Upper/Lower references. This
+                    // cannot be fixed by retrying HTTP textures: the
+                    // simulator must provide the actual current outfit.
+                    const auto body_refs=protocol::extract_avatar_bakes(
+                        appearance->texture_entry).visible_body();
+                    const auto count=std::count_if(
+                        body_refs.begin(),body_refs.end(),
+                        [](const auto& id){return !id.empty();});
+                    core::info("AvatarAppearance SELF body-bake evidence: "+
+                        std::to_string(count)+"/3 from Low158; "+
+                        (count==0
+                            ?"no server body bake UUIDs; GetTexture cannot "
+                             "invent skin or outfit"
+                            :"GetTexture/GPU/render validation still required")+
+                        "; UUIDs omitted for privacy");
                     core::info("AvatarAppearance SELF server readback accepted; "
                                "texture_entry_bytes="+
                                std::to_string(appearance->texture_entry.size())+
@@ -5984,6 +6001,7 @@ int Application::run(bool enable_developer_modules)
                                     :"; legacy_attachment_block=omitted")+
                                "; original weighted body rig used when installed; "
                                "morphs/COF not verified");
+                }
                 return;
             }
 
@@ -13877,6 +13895,11 @@ int Application::run(bool enable_developer_modules)
                     ui::terrain_recovery_layers(terrain_detail_retry,
                                                  terrain_detail_ids);
                 shell_view.avatar_skin_status=avatar_proof.skin_stage();
+                // Show actionable source-vs-download-vs-GPU cause in F3;
+                // no agent, asset, simulator or session identifiers.
+                shell_view.avatar_skin_status=
+                    ui::avatar_skin_blocker_hint(avatar_diagnostic)+
+                    " | "+shell_view.avatar_skin_status;
                 shell_view.avatar_skinning_status=
                     "Weight-GL "+std::to_string(
                       render_diagnostics.self_avatar_weighted_skin_draw_calls)+
