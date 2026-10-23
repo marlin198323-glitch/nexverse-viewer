@@ -29,3 +29,15 @@ LLM-Körpermeshes/7186 Dreiecke sowie
 OGL X11 WM_CLASS/Taskleistenicon 128x128 PASS.
 Kein authentifizierter NexVerse Live-Grid-Login
 und kein Produktivdeploy.
+
+## Exakte GitHub Feature-SHA und CI-Prüfung
+Code SHA 6be966b3cd090d6cb3315f612f4dc158bc7d4315.
+Pi5 ARM64 Source Check Run 39991058245 IN_PROGRESS zuletzt;
+vor completed/success keine Pi5-Behauptung.
+Hosted GitHub x64 Run 39991058331 COMPLETED/FAILURE,
+Job 120542614653 runner_id 0 und Schritte 0: kein Compiler.
+Letzter erfolgreicher Pi5 Alpha.914 SHA 55b719e,
+Run 39989404270. Lokales Mint-x64-Gate EXIT 0:
+182 native CTests, 442 Python, Xvfb Original-Firestorm-
+GPU-Bodymeshes und 128px X11-Systemicon.
+Keine authentifizierte NexVerse-Live-Sitzung/kein Deploy.
