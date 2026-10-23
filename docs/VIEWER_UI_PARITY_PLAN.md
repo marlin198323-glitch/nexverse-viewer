@@ -558,3 +558,10 @@ UI-CircuitState::active eintreffen, erfolgt die gültige
 Übernahme nach Freigabe und erst dann erscheinen
 COF-/Outfit-Status und aktualisierte F3-Accepted-Zähler.
 Keine Anzeige von Skin-GPU-Success vor echtem GL-Readback.
+
+## Alpha.855-864 F3 early Low158/Low382 pending visibility
+F3 reports Low158 gepuffert (warte Circuit) and
+Low382 gepuffert (warte Circuit) from locked WorldModel.
+Pending delivery is separate from authenticated avatar
+appearance, COF, GPU resident skin or original body GL draws.
+No new interactive login or network requests.

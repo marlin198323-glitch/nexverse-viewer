@@ -13696,6 +13696,19 @@ int Application::run(bool enable_developer_modules)
                         circuit_snapshot.self_appearance_support_sent,
                         circuit_snapshot.self_appearance_support_acknowledged,
                         avatar_proof.appearance_received,ack_wait);
+                // Show authentic early Low158/Low382 receipt on F3,
+                // WITHOUT marking pending packets as GPU skin/COF success.
+                const auto early_readbacks=[&]()
+                {
+                    std::scoped_lock lock{world_mutex};
+                    return world_model.early_self_readbacks_pending();
+                }();
+                if(early_readbacks[0])
+                    shell_view.avatar_handshake_status+=
+                        " | Low158 gepuffert (warte Circuit)";
+                if(early_readbacks[1])
+                    shell_view.avatar_handshake_status+=
+                        " | Low382 gepuffert (warte Circuit)";
                 shell_view.avatar_bake_stream_status=
                     (texture_recovered_j2c_transfers>0U
                         ?"J2C-Retry gerettet: "+

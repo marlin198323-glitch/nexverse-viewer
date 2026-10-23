@@ -276,6 +276,13 @@ public:
         bool wearables=false;
     };
     [[nodiscard]] EarlySelfReadbackResult flush_early_self_readbacks();
+    // Read-only F3 badge: receipt is NOT accepted appearance/COF/Skin.
+    [[nodiscard]] std::array<bool,2U>
+        early_self_readbacks_pending() const noexcept
+    {
+        return {early_self_appearance_.has_value(),
+                early_self_wearables_.has_value()};
+    }
     // Read-only legacy wearable references (no wear/set-appearance writes).
     [[nodiscard]] bool apply_self_wearables(
         protocol::AgentWearablesUpdateMessage update);
@@ -391,6 +398,10 @@ private:
         std::string session_id;
         std::uint64_t region_handle=0U;
         std::uint32_t region_generation=0U;
+        // Same-region reconnects can target a different simulator socket.
+        // Generation alone cannot tie an early packet to that circuit.
+        std::string simulator_ip;
+        std::uint16_t simulator_port=0U;
     };
     template<class Packet> struct EarlySelfPacket
     {

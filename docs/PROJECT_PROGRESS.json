@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-23",
-  "viewer_version": "0.2.0-alpha.854",
+  "viewer_version": "0.2.0-alpha.864",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.855–864",
-  "assessment": "Alpha.854: OpenGenesisLINK upstream main 8b3d80e, nine new commits including opt-in FastRez #281 with WearablesRequestDelayMs=1000 and near-first 64m object queue; unchanged LLUDP Low158/Low382 formats. Fixed actual pre-circuit-readiness race: genuine self AvatarAppearance and AgentWearablesUpdate could be dispatched from circuit thread before UI published region.connected, so Low158 was discarded and Low382 readback rejected indefinitely (only initial request). WorldModel now stages one strict validated self Low158 and Low382 bound to agent/session/region generation; latest meaningful COF and modulo serial guards prevent early replay. Main thread consumes each once only after authenticated circuit/region ready and updates existing F3 accepted counters; region/session/reset invalidates stage. Native WorldModel tests wired Mint and Pi5 ARM64 plus Python production integration and full local Mint x64 GUI release gate. Previous exact SHA Pi5 Alpha844 712dbe9 Run 39840873191 success. Authenticated NexVerse AvatarAppearance/COF/Outfit/Skin actual GPU and simulator-confirmed WASD/yaw E2E still open. No deployment.",
+  "next_five_blocks": "Alpha.865–874",
+  "assessment": "Alpha864: Fixed early FastRez Low158 late flush race: buffered Low158 could overwrite more recent directly accepted live self appearance when later legacy packet had unversioned/unknown COF. WorldModel now replays staged self appearance only if none is already accepted for current session; Low382 still uses U32 modulo serial. Early self packets additionally bind real simulator IP and port besides agent/session/region/generation, preventing cross-socket replay on same region handle. Read-only F3 handshake shows Low158/Low382 pending without falsely claiming accepted COF or GPU skin. Native replay tests direct COF42 after staged COF17, direct serial9 after staged serial7, unversioned direct legacy and same-handle port change; Python source contract and Mint x64 GUI gate. Prior Pi5 Alpha854 exact code SHA 584ea15 Run 39975553846 completed success. Upstream server main 08f95e7 only dedicated OGLVoice WebRTC deployment. Authenticated NexVerse avatar/COF/outfit/skin GPU and simulator-confirmed WASD/yaw E2E still open; no deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,11 +58,11 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.855–864",
+  "next_batch": "Alpha.865–874",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
-    "tested_sha": "712dbe92f0809116b45c74d6b837df993ad741db",
-    "run_id": 39840873191,
+    "tested_sha": "584ea1519dd176fb311597673d6fe2f8f9eb71fc",
+    "run_id": 39975553846,
     "conclusion": "success",
     "scope": "Pi5 ARM64 native headless and Python, not authenticated Grid"
   },
@@ -87,12 +87,7 @@
     "ci_success_verified": false,
     "scope": "Native headless Pi5 ARM64, not GUI/OpenGL on Pi"
   },
-  "pending_pi5_ci": {
-    "feature_sha": "584ea1519dd176fb311597673d6fe2f8f9eb71fc",
-    "run_id": 39975553846,
-    "checked_status": "in_progress",
-    "note": "Pi5 must complete with success on this exact feature SHA before claiming green."
-  },
+  "pending_pi5_ci": null,
   "linux_x64_gui_ci": {
     "feature_sha": "584ea1519dd176fb311597673d6fe2f8f9eb71fc",
     "run_id": 39975554311,
@@ -113,7 +108,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 178,
     "native_ctest_failed": 0,
-    "python_tests_passed": 412,
+    "python_tests_passed": 416,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -123,10 +118,10 @@
     "live_grid_avatar_e2e": false,
     "script": "scripts/mint-viewer-validation.sh",
     "feature_sha": "584ea1519dd176fb311597673d6fe2f8f9eb71fc",
-    "version": "0.2.0-alpha.854",
+    "version": "0.2.0-alpha.864",
     "full_gate_exit": 0,
     "single_username_xmlrpc_transport_test": true,
-    "note": "Complete Linux Mint CMake/vcpkg x64 Viewer: 178/178 native CTests, 412/412 Python, source-bound fast early Low158/382 replay with strict agent/session/region and COF/Serial guards, isolated Xvfb GUI, original Firestorm 133 joints/3 Body meshes (7186 triangles), X11 icon 128px. No live authenticated Grid session.",
+    "note": "Mint x64 full CMake/vcpkg Viewer, 178/178 native including WorldModel staged/live ordering, 416/416 Python, Xvfb GUI original Firestorm 133 joints/3 LLM body GPU meshes 7186 triangles, OGL WM_CLASS+128px icon, no authenticated live Grid.",
     "avatar_bake_gpu_pose_aligned_native_test": true,
     "cof_multirow_original_body_framebuffer_pixel_regression": true,
     "cof_format_highwater_real_wire_and_original_gl_pixels": true,
@@ -139,6 +134,9 @@
     "xvfb_gui_verified": true,
     "f9_manual_live_shared_multirecord_cof": true,
     "authenticated_self_pose_inworld_gate_native": true,
-    "early_fastrez_low158_low382_replay_native": true
+    "early_fastrez_low158_low382_replay_native": true,
+    "early_self_readback_direct_live_precedence": true,
+    "early_self_readback_simulator_socket_lease": true,
+    "f3_pending_low158_low382_visible": true
   }
 }

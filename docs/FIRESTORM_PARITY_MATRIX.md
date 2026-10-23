@@ -914,3 +914,10 @@ weggeworfen: nur Agent/Session/Region/Generation-gebunden
 temporär gehalten und genau einmal über die bisherigen
 WorldModel-Gates nach Circuitfreigabe angewendet.
 FastRez ist Server-Opt-in, keine Viewer-Abhängigkeit.
+
+## Alpha.855-864 Firestorm Low158/Low382 ordering
+A later direct live Low158 wins over any older early-buffered
+version, even where COF comparison is unavailable on legacy
+OpenSim packets. Modern and legacy status are not invented.
+Low382 U32 serial ordering remains authoritative for wearable
+readback. Endpoint IP/port binds both buffered messages.

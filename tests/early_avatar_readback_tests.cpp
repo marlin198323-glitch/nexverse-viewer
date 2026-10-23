@@ -108,6 +108,65 @@ int main()
     // A live disconnect also clears any accepted snapshot.
     model.reset();
     if(model.self_appearance()||model.self_wearables())return 17;
+
+    // A newer DIRECT live Low158 might have arrived after the circuit
+    // became ready but before the UI thread flushes an OLD staged packet.
+    // Even different COF format (or a legacy unversioned live packet)
+    // must not allow a previously buffered body to override that readback.
+    WorldModel live;
+    live.apply_region(area(region,false));
+    live.apply_agent({self,session,{},{},false});
+    if(!live.stage_early_self_appearance(appearance(17))||
+       !live.stage_early_self_wearables(worn(7)))return 18;
+    const auto still_pending=live.early_self_readbacks_pending();
+    if(!still_pending[0]||!still_pending[1])return 19;
+    live.apply_region(area(region,true));
+    live.apply_agent({self,session,{},{},true});
+    const auto newer=appearance(42);
+    if(!live.apply_self_appearance(newer)||
+       !live.apply_self_wearables(worn(9)))return 20;
+    const auto late_flush=live.flush_early_self_readbacks();
+    if(late_flush.appearance||late_flush.wearables||
+       !live.self_appearance()||
+       protocol::avatar_cof_version_for_display(
+           *live.self_appearance())!=42U||
+       !live.self_wearables()||live.self_wearables()->serial!=9U)
+        return 21;
+    const auto consumed=live.early_self_readbacks_pending();
+    if(consumed[0]||consumed[1])return 22;
+
+    WorldModel legacy_direct;
+    legacy_direct.apply_region(area(region,false));
+    legacy_direct.apply_agent({self,session,{},{},false});
+    if(!legacy_direct.stage_early_self_appearance(appearance(17)))
+        return 23;
+    legacy_direct.apply_region(area(region,true));
+    legacy_direct.apply_agent({self,session,{},{},true});
+    auto live_legacy=appearance(0);
+    live_legacy.appearance_data.clear();
+    live_legacy.visual_params={201U,202U};
+    if(!legacy_direct.apply_self_appearance(live_legacy))return 24;
+    if(legacy_direct.flush_early_self_readbacks().appearance||
+       !legacy_direct.self_appearance()||
+       legacy_direct.self_appearance()->visual_params!=
+           live_legacy.visual_params)return 25;
+
+    // Same RegionHandle is NOT the same simulator socket. A different
+    // port on reconnect must not reuse a prior circuit's early outfit.
+    WorldModel endpoint;
+    endpoint.apply_region(area(region,false));
+    endpoint.apply_agent({self,session,{},{},false});
+    if(!endpoint.stage_early_self_appearance(appearance(23))||
+       !endpoint.stage_early_self_wearables(worn(23)))return 26;
+    auto other_socket=area(region,true);
+    other_socket.simulator_port=9001U;
+    endpoint.apply_region(other_socket);
+    endpoint.apply_agent({self,session,{},{},true});
+    const auto endpoint_flush=endpoint.flush_early_self_readbacks();
+    if(endpoint_flush.appearance||endpoint_flush.wearables||
+       endpoint.self_appearance()||endpoint.self_wearables())return 27;
+    if(endpoint.early_self_readbacks_pending()[0]||
+       endpoint.early_self_readbacks_pending()[1])return 28;
     std::cout<<"OGL_FASTREZ_EARLY_LO158_LO382_SESSION_REGION_REPLAY_PASS\n";
     return 0;
 }

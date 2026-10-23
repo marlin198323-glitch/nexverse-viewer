@@ -261,7 +261,8 @@ bool WorldModel::stage_early_self_appearance(
     }
     early_self_appearance_=EarlySelfPacket<protocol::AvatarAppearanceMessage>{
         std::move(appearance),
-        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation}};
+        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation,
+         region_.simulator_ip,region_.simulator_port}};
     return true;
 }
 
@@ -279,7 +280,8 @@ bool WorldModel::stage_early_self_wearables(
         return false;
     early_self_wearables_=EarlySelfPacket<protocol::AgentWearablesUpdateMessage>{
         std::move(update),
-        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation}};
+        {agent_.agent_id,agent_.session_id,region_.handle,region_.generation,
+         region_.simulator_ip,region_.simulator_port}};
     return true;
 }
 
@@ -294,13 +296,19 @@ WorldModel::flush_early_self_readbacks()
         return source.agent_id==agent_.agent_id&&
             source.session_id==agent_.session_id&&
             source.region_handle==region_.handle&&
-            source.region_generation==region_.generation;
+            source.region_generation==region_.generation&&
+            source.simulator_ip==region_.simulator_ip&&
+            source.simulator_port==region_.simulator_port;
     };
     if(early_self_appearance_)
     {
         auto staged=std::move(*early_self_appearance_);
         early_self_appearance_.reset();
-        if(valid(staged.source))
+        // The live packet handler may have already accepted a NEWER
+        // Low158 between circuit-ready and this UI-thread flush.
+        // The staged packet cannot be ordered against a legacy unversioned
+        // live reply; retain the live accepted skin regardless of format.
+        if(valid(staged.source)&&!self_appearance_)
             result.appearance=apply_self_appearance(std::move(staged.packet));
     }
     if(early_self_wearables_)

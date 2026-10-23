@@ -817,3 +817,12 @@ wird bis zur echten Circuitfreigabe im WorldModel gehalten.
 Weder COF noch Skin wird allein durch den Empfang bestätigt.
 Andere Serverfeatures (OGL AssetService/mesh uploads) ändern
 nicht den Viewer-Wirevertrag; keine Migration ausführen.
+
+## Alpha.855-864 FastRez early self readback and later direct Low158
+A pending authenticated early Low158 is still provisional and must
+never overwrite an already directly accepted newer live Low158, even
+when COF format is legacy/unknown. Source now includes actual
+simulator IP+UDP port in addition to session, agent, region, generation.
+Same region handle after switching socket cannot inherit old early
+wearables/skin. OpenGenesisLINK server main 08f95e7 #285
+WebRTC Voice deploy: no new Low158/Low382 wire contract.
