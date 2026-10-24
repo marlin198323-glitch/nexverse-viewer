@@ -14,13 +14,13 @@ int main()
 {
     using Candidate=AvatarBakeStreamCandidate;
     const std::vector<Candidate> candidates{
-        {false,{"near-head","near-upper","near-lower"}, 25.0f,0.0f,0.0f},
-        {true,{"self-head","self-upper","self-lower"},0.0f,0.0f,0.0f},
-        {false,{"far-head","far-upper","far-lower"},250.0f,0.0f,0.0f},
-        {false,{"close-head","self-upper","close-lower"},5.0f,0.0f,0.0f},
-        {false,{"bad-head","",""},std::numeric_limits<float>::quiet_NaN(),0.0f,0.0f},
+        {false,{"near-head","near-upper","near-lower"}, 25.0f,0.0f,0.0f,"",""},
+        {true,{"self-head","self-upper","self-lower"},0.0f,0.0f,0.0f,"",""},
+        {false,{"far-head","far-upper","far-lower"},250.0f,0.0f,0.0f,"",""},
+        {false,{"close-head","self-upper","close-lower"},5.0f,0.0f,0.0f,"",""},
+        {false,{"bad-head","",""},std::numeric_limits<float>::quiet_NaN(),0.0f,0.0f,"",""},
         {false,{"00000000-0000-0000-0000-000000000000","",""},
-            2.0f,0.0f,0.0f}
+            2.0f,0.0f,0.0f,"",""}
     };
     const auto chosen=prioritize_avatar_body_bakes(candidates,0.0f,0.0f,0.0f);
     const std::vector<std::string> expected{
@@ -69,7 +69,7 @@ int main()
     std::vector<Candidate> many;
     for(unsigned i=0U;i<20U;++i)
         many.push_back({false,
-            {"id-"+std::to_string(i),"",""},1.0f,0.0f,0.0f});
+            {"id-"+std::to_string(i),"",""},1.0f,0.0f,0.0f,"",""});
     if(prioritize_avatar_body_bakes(many,0,0,0,100U).size()!=20U)
         return 8;
     // Renderer would reject this malformed remote pose. The GetTexture
