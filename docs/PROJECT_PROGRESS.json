@@ -248,5 +248,21 @@
     "main_release": "NOT_PERFORMED",
     "verified_github_feature_sha": "a4441680e3b261d4754afe2d2ca1e6e9e713758e",
     "github_ci_for_exact_sha": "UNVERIFIED_NO_WORKFLOW_RUNS_OR_COMMIT_STATUSES"
+  },
+  "interactive_acceptance": {
+    "status": "implemented_manual_ui_not_official_acceptance",
+    "builder": "scripts/ogl-acceptance.py --build",
+    "local_html": "build/acceptance/ABNAHME_DASHBOARD.html",
+    "guide": "docs/INTERAKTIVE_PROJEKTABNAHME.md",
+    "milestones": 12,
+    "tasks": 36,
+    "acceptance_criteria": 34,
+    "final_release_evidence_automatically_approved": 0,
+    "export_revision_bound": true,
+    "official_roadmap_modified_by_user_reviews": false,
+    "current_version": "v0.4.0.0",
+    "notes": "Manual offline QA only; no real live Grid release evidence.",
+    "local_test_status": "185/185 native, 642/642 Python, real Xvfb GPU/GUI/128px icon PASS; Chromium browser selftest PASS",
+    "official_release_status": "BLOCKED – 0 of 7 release evidence verified"
   }
 }

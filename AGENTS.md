@@ -986,3 +986,22 @@ Der folgende historische Abschnitt ist für interaktive OGL-Entwicklung **überh
 - Alle fünf Repo-Runner wurden auf Raspberry Pi 5 registriert und per GitHub Actions Smoke auf separatem Branch erfolgreich getestet.
 - Pi5 develop-current CI: Quelltext-/Bash-Prüfung plus native ARM64 C++23 und Python-Regressionstests. CMake/vcpkg und Windows/macOS/Linux-x64 GUI/GPU-Builds bleiben offen.
 - Ein erfolgreicher Smoke-Test beweist Runner-/Checkout-Funktion, nicht die vollständige Projekt-Testabdeckung.
+
+## v0.4.0.0 – Interaktive Abnahme und EventQueue, Batch 02
+
+- Offline-Projektabnahme: 12 Versionen, 36 Aufgaben, 34 Kriterien, 7
+  separat ausgewiesene reale Release-Gates. Suche/Filter, Prüfer,
+  Status, Befund und Nachweis, lokales Browser-Storage, JSON
+  Import/Export und Druckfunktion.
+- Lokaler Aufruf: `python3 scripts/ogl-acceptance.py --build`
+  und `xdg-open build/acceptance/ABNAHME_DASHBOARD.html`.
+  Anleitung: `docs/INTERAKTIVE_PROJEKTABNAHME.md`.
+- Exportvalidierung verhindert fremde und veraltete SHA,
+  gefälschte Releasefreigabe oder BESTANDEN ohne Beleg.
+  Manuelle Reviews verändern die offizielle Roadmap nie.
+- CAPS EventQueue: Nonempty HTTP-200 ohne ACK-ID wird nicht zugestellt;
+  leere idlose Antworten kontrolliert gepaced; native und
+  Python-Regressionen. Siehe Batch-02-Dokumentation.
+- v0.4.0.0-T02 weiter IN_ARBEIT, T01/T03 und A01–A03
+  authentifizierte Login/Teleport/WASD-E2E weiter OFFEN.
+  38,65 % gewichtet, Release BLOCKED, kein main-Merge.

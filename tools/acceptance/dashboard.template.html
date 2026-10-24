@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGL Viewer | Interaktive Projektabnahme</title>
+<style>
+:root{color-scheme:dark;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:#0b1020;color:#f0f5ff}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 80% -25%,#183858 0%,transparent 50%),#0b1020;min-height:100vh}
+header,main,footer{max-width:1320px;margin:auto;padding:25px 24px}
+header{padding-top:34px}
+small,.muted{color:#a8bacf}h1{font-size:clamp(25px,4vw,38px);letter-spacing:-.03em;margin:0 0 8px}
+h2{font-size:20px;margin:0 0 12px}h3{font-size:16px;margin:0}
+p{margin:4px 0 14px}a{color:#82d9ff}
+.topline,.stats,.toolbar,.actions,.row-head,.fields{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topline{justify-content:space-between}
+.pill{border:1px solid #456278;border-radius:99px;padding:4px 12px;color:#9eddeb;background:#12263b;font-weight:650;font-size:12px}
+.pill.warn{background:#3b281e;border-color:#805039;color:#ffb77b}
+.card{background:#141e30;border:1px solid #2b3b52;border-radius:16px;padding:21px;margin:16px 0;box-shadow:0 10px 38px #0002}
+.stats>div{flex:1;min-width:158px;background:#18273b;border:1px solid #324760;border-radius:13px;padding:15px}
+.stat{font-size:24px;font-weight:760;letter-spacing:-.03em}
+label{font-size:13px;color:#bfd0e1}
+select,input,textarea{font:inherit;color:#eaf3ff;background:#0c1728;border:1px solid #46617d;border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+select:focus,input:focus,textarea:focus,button:focus-visible{outline:2px solid #62d2ff;outline-offset:2px}
+button{font:600 14px system-ui;border:1px solid #3e6684;background:#1c3e5a;color:#e5f7ff;border-radius:9px;padding:10px 13px;cursor:pointer}
+button:hover{background:#255373}
+button.primary{background:#087ba6;border-color:#4fb8d3}
+button.danger{border-color:#8f5252;color:#ffb8b8;background:#3f252d}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.controls>label,.fields>label{display:block;flex:1;min-width:170px}
+.controls>label>*{margin-top:5px}
+.row-head{justify-content:space-between;align-items:start}
+.item{border-top:1px solid #324156;padding-top:18px;margin-top:18px}
+.item .id{font:600 12px ui-monospace,monospace;color:#75d7ff}
+.item-title{font-size:15px;font-weight:630;max-width:780px;overflow-wrap:anywhere;margin:5px 0}
+.source{color:#9cb1c6;font-size:12px}
+.review-grid{display:grid;grid-template-columns:minmax(155px,.65fr) minmax(180px,1fr) minmax(160px,.9fr);gap:11px;margin-top:11px}
+.review-grid label{display:block}
+.review-grid label>*{margin-top:5px}
+.review-notes{grid-column:1 / -1}
+.review-notes textarea{resize:vertical;min-height:55px}
+.tag{font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;white-space:nowrap;background:#253a50;color:#b9d2e8}
+.tag.open{color:#ffd08c;background:#423226}
+.tag.passed{color:#9af5c8;background:#183d34}
+.tag.blocked{color:#ffc0c0;background:#522e35}
+.notice{border-left:3px solid #d99a51;padding:10px 14px;background:#30271f;border-radius:4px;color:#f0d4ae}
+.grid-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.grid-list>div{padding:10px 12px;border:1px solid #30425a;background:#101b2e;border-radius:8px}
+.progress-track{height:9px;background:#26364b;border-radius:20px;overflow:hidden}
+.progress-fill{background:#32aaca;height:100%;width:0}
+.status{min-height:18px;color:#a8dcbc;margin-top:8px}
+.version-meta{font-size:12px;opacity:.8;overflow-wrap:anywhere}
+footer{font-size:12px;color:#8da4bb}
+@media(max-width:800px){.controls,.review-grid{grid-template-columns:1fr}.review-notes{grid-column:auto}header,main,footer{padding-left:14px;padding-right:14px}}
+@media print{body{background:white;color:#111}.card{box-shadow:none;background:white;border-color:#999}button,.toolbar,header .pill{display:none!important}select,input,textarea{color:#111;background:white} .muted,.source{color:#444}}
+</style></head>
+<body>
+<header>
+<div class="topline"><div><h1>OpenGenesisLINK Viewer</h1><p class="muted">Interaktive Projektabnahme · Versions-Roadmap · Nachweisprotokoll</p></div><span class="pill warn" id="releaseState">Keine Release-Freigabe</span></div>
+<div class="version-meta" id="revision"></div>
+</header>
+<main>
+<section class="stats" aria-label="Projektstand">
+<div><div class="muted">Gewichteter Fortschritt</div><div class="stat" id="weighted">–</div></div>
+<div><div class="muted">Meilensteine</div><div class="stat" id="milestonesCount">–</div></div>
+<div><div class="muted">Offizielle Abnahmekriterien</div><div class="stat" id="criteriaCount">–</div></div>
+<div><div class="muted">Manuell geprüft (Entwurf)</div><div class="stat" id="reviewCount">–</div></div>
+</section>
+<section class="card"><h2>Abnahmesitzung</h2>
+<p class="notice">Dieses Formular dokumentiert manuelle Prüfungen. Eine Auswahl „BESTANDEN“ ändert <strong>niemals</strong> den offiziellen Projektplan oder die Freigabe. Reale Grid-/Plattform-Nachweise und die automatische Releaseprüfung bleiben verpflichtend.</p>
+<div class="controls">
+<label>Version<select id="version"></select></label>
+<label>Prüfer / Verantwortlicher<input id="reviewer" autocomplete="name" maxlength="120" placeholder="Name des Prüfers"></label>
+<label>Suche nach Funktion / ID<input id="search" type="search" placeholder="z. B. CAPS, WASD, UI"></label>
+</div>
+<div class="toolbar" style="margin-top:15px"><label style="display:flex;gap:8px;align-items:center"><input id="hidePassed" type="checkbox" style="width:auto"> Nur offene / blockierte anzeigen</label></div>
+<div class="actions" style="margin-top:16px">
+<button class="primary" id="export" type="button">Abnahme als JSON exportieren</button>
+<button id="import" type="button">JSON-Protokoll importieren</button>
+<button id="print" type="button">Protokoll drucken</button>
+<button class="danger" id="reset" type="button">Lokale Bewertungen zurücksetzen</button>
+<input id="upload" type="file" accept=".json,application/json" hidden>
+</div>
+<div class="status" id="status" role="status"></div>
+</section>
+<section class="card"><h2>Release-Gates – 7 obligatorische Live-/Plattformnachweise</h2>
+<p class="muted">Diese Beweise kommen aus der offiziellen Projektstatusdatei. Manuelle Checkboxen oder exportierte Reviews dürfen sie nicht ersetzen.</p>
+<div class="grid-list" id="evidenceList"></div>
+<p class="notice" id="releaseNotice"></p>
+</section>
+<section class="card">
+<div class="row-head"><div><h2 id="heading">Abnahmepunkte</h2><p class="muted" id="description"></p></div><div class="pill" id="milestoneStatus">–</div></div>
+<div class="progress-track" aria-label="Anteil offiziell bestätigter Abnahmekriterien"><div class="progress-fill" id="milestoneBar"></div></div>
+<div id="items"></div>
+</section>
+</main>
+<footer>Lokale, offlinefähige Abnahme. Protokolle bleiben im Browser, bis sie ausdrücklich exportiert werden. Keine Zugangsdaten, Tokens oder personenbezogenen Geheimnisse als Nachweis eintragen. Eine neue Git-SHA erfordert eine neue Prüfgrundlage.</footer>
+<script>
+"use strict";
+/*__OGL_ACCEPTANCE_SNAPSHOT__*/
+(function(){
+ const $=id=>document.getElementById(id);
+ const key="ogl-acceptance-v1-"+SNAPSHOT.version+"-"+SNAPSHOT.snapshot_sha+(new URLSearchParams(location.search).has("selftest")?"-selftest":"");
+ const statuses=["OFFEN","IN_ARBEIT","BLOCKIERT","BESTANDEN"];
+ let reviews={};
+ let reviewer="";
+ try{
+   const old=JSON.parse(localStorage.getItem(key)||"null");
+   if(old&&old.version===SNAPSHOT.version&&old.snapshot_sha===SNAPSHOT.snapshot_sha
+     &&typeof old.reviews==="object"&&old.reviews&&!Array.isArray(old.reviews)){
+       reviews=old.reviews; reviewer=typeof old.reviewer==="string"?old.reviewer:"";
+   }
+ }catch(_){}
+ const ids=new Set(SNAPSHOT.milestones.flatMap(m=>[...m.tasks,...m.acceptance].map(x=>x.id)).concat(SNAPSHOT.release_evidence.map(x=>x.id)));
+ function text(el,value){el.textContent=String(value);return el}
+ function element(tag,cl,value){
+   const el=document.createElement(tag);if(cl)el.className=cl;
+   if(value!==undefined)text(el,value);return el;
+ }
+ function message(str){text($("status"),str)}
+ function save(){
+   try{localStorage.setItem(key,JSON.stringify({
+     version:SNAPSHOT.version,snapshot_sha:SNAPSHOT.snapshot_sha,reviews,reviewer
+   }));}catch(_){message("Speichern im Browser blockiert: Bitte JSON exportieren.");}
+   updateCounts();
+ }
+ function valid(item){
+   return item&&typeof item==="object"&&statuses.includes(item.status)
+     &&["evidence","notes","reviewer","tested_at"].every(k=>
+       typeof (item[k]||"")==="string"&&(item[k]||"").length<=4096)
+     &&(item.status!=="BESTANDEN"||((item.evidence||"").trim().length>=10&&!!item.tested_at));
+ }
+ function safeReview(id){
+   return Object.prototype.hasOwnProperty.call(reviews,id)&&valid(reviews[id])?reviews[id]:null;
+ }
+ function updateCounts(){
+   const validItems=Object.keys(reviews).filter(id=>ids.has(id)&&safeReview(id));
+   const passed=validItems.filter(id=>reviews[id].status==="BESTANDEN").length;
+   text($("reviewCount"),passed+" / "+ids.size);
+ }
+ function activeMilestone(){return SNAPSHOT.milestones.find(x=>x.version===$("version").value)||SNAPSHOT.milestones[0]}
+ function addField(box,title,type,value,onChange,options){
+   const lab=element("label",null,title);
+   const ctl=type==="select"?element("select"):element(type==="textarea"?"textarea":"input");
+   if(type==="select"){for(const v of options){const opt=element("option",null,v);opt.value=v;ctl.append(opt)}}
+   else if(type!=="textarea"){ctl.type=type;ctl.maxLength=4096}
+   ctl.value=value||"";ctl.setAttribute("aria-label",title);
+   ctl.addEventListener("change",()=>onChange(ctl.value));
+   lab.append(ctl);box.append(lab);return ctl;
+ }
+ function reviewEdit(id,field,value){
+   const old=safeReview(id)||{status:"OFFEN",evidence:"",notes:"",reviewer, tested_at:""};
+   const next={...old,[field]:value};
+   if(field==="status"&&value==="BESTANDEN"&&!old.tested_at)
+     next.tested_at=new Date().toISOString();
+   if(!statuses.includes(next.status))next.status="OFFEN";
+   if(!next.reviewer&&reviewer)next.reviewer=reviewer;
+   reviews[id]=next;save();
+   if(field==="status")render();
+ }
+ function renderItem(item,kind){
+   const v=safeReview(item.id)||{status:"OFFEN",evidence:"",notes:"",reviewer, tested_at:""};
+   const section=element("section","item");section.dataset.reviewId=item.id;
+   section.append(element("div","id",item.id+"  ·  "+kind));
+   const heading=element("div","row-head");
+   heading.append(element("div","item-title",item.description||item.criterion));
+   heading.append(element("span","tag "+(item.status==="GETESTET"||item.status==="FERTIG"?"passed":"open"),"ROADMAP: "+item.status));
+   section.append(heading);
+   const grid=element("div","review-grid");
+   addField(grid,"Manueller Prüfstatus","select",v.status,x=>reviewEdit(item.id,"status",x),statuses);
+   addField(grid,"Konkreter Beleg / Test-Log / Issue","text",v.evidence,x=>reviewEdit(item.id,"evidence",x));
+   addField(grid,"Prüfer","text",v.reviewer,x=>reviewEdit(item.id,"reviewer",x));
+   const note=element("div","review-notes");
+   addField(note,"Ergebnis, Abweichungen, reproduzierbare Schritte","textarea",v.notes,x=>reviewEdit(item.id,"notes",x));
+   grid.append(note);section.append(grid);
+   if(v.status==="BESTANDEN"&&!valid(v)){
+     section.append(element("p","notice","Für BESTANDEN werden mindestens 10 Zeichen konkreter Nachweis und ein Testzeitpunkt benötigt."));
+   }
+   return section;
+ }
+ function render(){
+   const m=activeMilestone();
+   const all=[...m.tasks.map(t=>[t,"Aufgabe"]),...m.acceptance.map(t=>[t,"Abnahme"])];
+   const terms=$("search").value.trim().toLocaleLowerCase();
+   const shown=all.filter(([x])=>{
+     const matches=(!terms||(x.id+" "+(x.description||x.criterion)).toLocaleLowerCase().includes(terms));
+     return matches&&(!$("hidePassed").checked||x.status!=="GETESTET"&&x.status!=="FERTIG");
+   });
+   const container=$("items");container.replaceChildren(...shown.map(([x,k])=>renderItem(x,k)));
+   if(!shown.length)container.append(element("p","muted","Keine passenden Abnahmepunkte gefunden."));
+   text($("heading"),m.version+" – "+m.title);
+   text($("milestoneStatus"),m.status);
+   const total=m.acceptance.length;
+   const done=m.acceptance.filter(x=>x.status==="GETESTET").length;
+   text($("description"),m.tasks.length+" Aufgaben · "+total+" Abnahmen · "+done+" offiziell getestet");
+   $("milestoneBar").style.width=(total?100*done/total:0)+"%";
+   updateCounts();
+ }
+ function buildExport(){
+   const safe={};
+   for(const [id,v] of Object.entries(reviews)){
+     if(ids.has(id)&&v&&typeof v==="object"&&statuses.includes(v.status)){
+       const entry={
+         status:v.status,
+         evidence:String(v.evidence||"").slice(0,4096),
+         notes:String(v.notes||"").slice(0,4096),
+         reviewer:String(v.reviewer||"").slice(0,4096),
+         tested_at:String(v.tested_at||"").slice(0,4096)
+       };
+       if(valid(entry))safe[id]=entry;
+     }
+   }
+   return {schema_version:1,project:SNAPSHOT.project,
+     version:SNAPSHOT.version,snapshot_sha:SNAPSHOT.snapshot_sha,
+     exported_at:new Date().toISOString(),reviewer,
+     local_review_only:true,release_authorized:false,
+     reviews:safe};
+ }
+ function exportReport(){
+   const blob=new Blob([JSON.stringify(buildExport(),null,2)],{type:"application/json"});
+   const url=URL.createObjectURL(blob),a=element("a");
+   a.href=url;a.download="ogl-abnahme-"+SNAPSHOT.version+"-"+SNAPSHOT.snapshot_sha.slice(0,10)+".json";
+   document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+   message("Manuelles Protokoll exportiert. Offizielle Release-Gates bleiben unverändert.");
+ }
+ async function importReport(file){
+   if(!file||file.size>1024*1024)throw Error("Datei fehlt oder ist über 1 MB");
+   const src=JSON.parse(await file.text());
+   if(src.schema_version!==1||src.project!==SNAPSHOT.project||
+      src.version!==SNAPSHOT.version||src.snapshot_sha!==SNAPSHOT.snapshot_sha||
+      src.release_authorized!==false||src.local_review_only!==true||
+      !src.reviews||typeof src.reviews!=="object"||Array.isArray(src.reviews))
+     throw Error("Fremder, veralteter oder freigebender Export ist unzulässig");
+   const incoming=Object.create(null);
+   for(const [id,v] of Object.entries(src.reviews)){
+     if(!ids.has(id)||!valid(v))throw Error("Ungültiger Review-Eintrag: "+id);
+     incoming[id]=v;
+   }
+   reviews=incoming;reviewer=String(src.reviewer||"").slice(0,120);
+   $("reviewer").value=reviewer;save();render();
+   message("Abnahmeprotokoll importiert: "+Object.keys(incoming).length+" Prüfpunkte.");
+ }
+ function init(){
+   text($("weighted"),SNAPSHOT.weighted_pct.toFixed(2)+" %");
+   text($("milestonesCount"),SNAPSHOT.milestones.length);
+   text($("criteriaCount"),SNAPSHOT.milestones.reduce((n,m)=>n+m.acceptance.length,0));
+   text($("revision"),"Entwicklungsstand "+SNAPSHOT.version+" · geprüfte Quelle SHA "+SNAPSHOT.snapshot_sha+" · offline");
+   const selector=$("version");
+   for(const m of SNAPSHOT.milestones){
+     const option=element("option",null,m.version+" – "+m.title);option.value=m.version;
+     selector.append(option);
+   }
+   selector.value=SNAPSHOT.version;
+   selector.addEventListener("change",render);
+   $("search").addEventListener("input",render);
+   $("hidePassed").addEventListener("change",render);
+   $("reviewer").value=reviewer;
+   $("reviewer").addEventListener("change",e=>{reviewer=e.target.value.slice(0,120);save()});
+   $("export").addEventListener("click",exportReport);
+   $("import").addEventListener("click",()=>$("upload").click());
+   $("upload").addEventListener("change",async e=>{
+     try{await importReport(e.target.files[0]);}catch(err){message("Import abgelehnt: "+err.message)}
+     e.target.value="";
+   });
+   $("print").addEventListener("click",()=>window.print());
+   $("reset").addEventListener("click",()=>{
+     if(confirm("Alle lokalen manuellen Bewertungen zu dieser Git-SHA löschen?")){
+       reviews={};reviewer="";$("reviewer").value="";save();render();
+       message("Lokale Bewertungen gelöscht. Offizielle Roadmap unverändert.");
+     }
+   });
+   const evidence=$("evidenceList");
+   for(const item of SNAPSHOT.release_evidence){
+     const box=element("div");
+     box.append(element("div",item.verified?"tag passed":"tag blocked",item.verified?"OFFIZIELL BELEGT":"OFFIZIELL OFFEN"));
+     box.append(element("p",null,item.title));evidence.append(box);
+   }
+   const verified=SNAPSHOT.release_evidence.filter(x=>x.verified).length;
+   text($("releaseNotice"),"Freigabe v1.0.0.0 bleibt GESPERRT: "+verified+"/"+
+      SNAPSHOT.release_evidence.length+" verpflichtende reale Endnachweise "+
+      "offiziell bestätigt. Dieser lokale Abnahmedialog kann keine Release-Tags, "+
+      "GitHub-Merges oder den Projektstatus verändern.");
+   render();
+   // Headless Chromium smoke: exercise selection + review interaction.
+   if(new URLSearchParams(location.search).has("selftest")){
+     const first=SNAPSHOT.milestones[0].tasks[0].id;
+     reviewEdit(first,"notes","Browser UI event roundtrip");
+     const state=buildExport();
+     const success=$("items").children.length>0&&
+       state.reviews[first].notes==="Browser UI event roundtrip"&&
+       !state.release_authorized&&!SNAPSHOT.release_eligible;
+     document.body.append(element("div",null,
+       success?"OGL_ACCEPTANCE_BROWSER_SELFTEST_PASS":"OGL_ACCEPTANCE_BROWSER_SELFTEST_FAIL"));
+   }
+ }
+ init();
+})();
+</script></body></html>

@@ -212,6 +212,14 @@ EventQueueBatch parse_event_queue_response(std::string_view response)
         batch.events.push_back(std::move(event));
     }
 
+    // A nonempty batch without an acknowledgement ID cannot be safely
+    // deduplicated across repeated OpenSim long polls. Never dispatch
+    // these events as though they were acknowledged server state.
+    if (!batch.id.has_value() && !batch.events.empty())
+    {
+        return {false, std::nullopt, {},
+            "EventQueue events without acknowledgement ID"};
+    }
     return batch;
 }
 

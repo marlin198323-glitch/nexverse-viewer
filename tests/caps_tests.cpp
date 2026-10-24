@@ -136,6 +136,23 @@ int main()
         return 4;
     }
 
+    // Never deliver events which the next poll cannot acknowledge:
+    // otherwise a broken server/proxy can duplicate inventory/teleport.
+    const auto without_id=parse_event_queue_response(
+        "<llsd><map><key>events</key><array>"
+        "<map><key>message</key><string>TeleportFinish</string>"
+        "<key>body</key><map/></map></array></map></llsd>");
+    if(without_id.success||!without_id.events.empty()||
+       without_id.message.find("acknowledgement ID")==std::string::npos)
+       return 42;
+    // An empty heartbeat without ID is a harmless, unacknowledgeable
+    // idle reply and will be paced by the region worker.
+    const auto empty_without_id=parse_event_queue_response(
+        "<llsd><map><key>events</key><array/></map></llsd>");
+    if(!empty_without_id.success||
+       empty_without_id.id.has_value()||
+       !empty_without_id.events.empty())return 43;
+
     auto transport = std::make_shared<FakeTransport>();
     transport->post_response = {
         200,

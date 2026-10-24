@@ -16,6 +16,7 @@ struct MockHttp final : nexverse::net::IHttpTransport
     bool missing=false;
     std::vector<int> acks;
     bool duplicate_forever=false;
+    bool missing_id_forever=false;
     nexverse::net::HttpResponse get(std::string_view,
         std::size_t,std::chrono::milliseconds,std::chrono::milliseconds) override
     { return {405,{},"unsupported"}; }
@@ -45,7 +46,8 @@ struct MockHttp final : nexverse::net::IHttpTransport
             const int id=duplicate_forever?17:(queue_calls==1?17:
                 queue_calls==2?17:18);
             return {200,serialize_llsd_xml(LlsdValue::map({
-                {"id",LlsdValue::integer(id)},
+                {"id",missing_id_forever?LlsdValue{}:
+                    LlsdValue::integer(id)},
                 {"events",LlsdValue::array({LlsdValue::map({
                     {"message",LlsdValue::string("BulkUpdateInventory")},
                     {"body",LlsdValue::map({
@@ -121,6 +123,17 @@ int main()
     if(replay.polls!=4U||replay.accepted_events!=1U||
        replay_mock->acks!=std::vector<int>({-1,17,17,17})||
        elapsed<std::chrono::milliseconds{300})return 6;
+    // Malformed HTTP-200 replies without an ACK cursor never dispatch
+    // a teleport/inventory event.  Backoff/retry is bounded.
+    auto no_id_mock=std::make_shared<MockHttp>();
+    no_id_mock->missing_id_forever=true;
+    last_epoch=lease.enter(556U,2U,"https://sim.test/no-id");
+    const auto broken=poll_region_event_queue(
+        no_id_mock,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,2U);
+    if(broken.accepted_events!=0U||broken.polls!=2U||
+       no_id_mock->acks!=std::vector<int>({-1,-1}))
+       return 7;
     std::cout<<"Region-scoped EventQueue duplicate replay bounded "
                 "without CPU hot loop\n";
     std::cout<<"Region-scoped EventQueue source, ack reset,"

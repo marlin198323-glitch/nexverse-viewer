@@ -55,6 +55,15 @@ RegionEventQueueStats poll_region_event_queue(
         }
         if(batch.success)
         {
+            // A successful but empty/id-less HTTP 200 is not a new
+            // actionable batch. Avoid a busy polling loop and preserve
+            // the prior acknowledged cursor on malformed idle replies.
+            if(!batch.id)
+            {
+                recovery.on_contact();
+                pause(std::chrono::milliseconds{150});
+                continue;
+            }
             // A duplicate acknowledgement/batch may be retransmitted.
             // Don't dispatch again in the same queue epoch.
             if(batch.id && ack && *batch.id==*ack)

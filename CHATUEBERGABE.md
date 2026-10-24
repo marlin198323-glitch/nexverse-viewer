@@ -4822,3 +4822,23 @@ Xvfb/Icon, GitHub und Pi5-CI Freigabe.
 Bericht docs/ALPHA230_234_VISIBLE_WORLD_AVATAR_MESH_UI.md.
 Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.
 \n\n**v0.4.0.0 EventQueue Replay-Fix (24.10.2026):** Im HTTP-200-Sofortduplikat derselben ACK-ID konnte der Long-Poll eine CPU-Busy-Loop verursachen. Nun 150ms pausierter, Region-Lease- und Stop-abbrechbarer ACK-Deduplikationspfad. Native Regression: vier sofortige identische ACKs -1/17/17/17, genau ein zugestelltes Event und >=300ms Gesamtpause. v0.4.0.0-T02 bleibt IN_ARBEIT; Grid-Login, Teleport und tatsächliche WASD-/Yaw-Live-Abnahme weiterhin OFFEN. Kein Main-Merge oder Release.\n
+## v0.4.0.0 – Interaktive Abnahme und EventQueue, Batch 02
+
+- Offline-Projektabnahme: 12 Versionen, 36 Aufgaben, 34 Kriterien, 7
+  separat ausgewiesene reale Release-Gates. Suche/Filter, Prüfer,
+  Status, Befund und Nachweis, lokales Browser-Storage, JSON
+  Import/Export und Druckfunktion.
+- Lokaler Aufruf: `python3 scripts/ogl-acceptance.py --build`
+  und `xdg-open build/acceptance/ABNAHME_DASHBOARD.html`.
+  Anleitung: `docs/INTERAKTIVE_PROJEKTABNAHME.md`.
+- Exportvalidierung verhindert fremde und veraltete SHA,
+  gefälschte Releasefreigabe oder BESTANDEN ohne Beleg.
+  Manuelle Reviews verändern die offizielle Roadmap nie.
+- CAPS EventQueue: Nonempty HTTP-200 ohne ACK-ID wird nicht zugestellt;
+  leere idlose Antworten kontrolliert gepaced; native und
+  Python-Regressionen. Siehe Batch-02-Dokumentation.
+- v0.4.0.0-T02 weiter IN_ARBEIT, T01/T03 und A01–A03
+  authentifizierte Login/Teleport/WASD-E2E weiter OFFEN.
+  38,65 % gewichtet, Release BLOCKED, kein main-Merge.
+
+**INTERAKTIVE QA BATCH 02 GEMESSEN:** Linux Mint 185/185 CTests, 642/642 Python, Original-Firestorm-Xvfb-GPU-/GUI-/128px-Systemicon PASS. Selbstständiges Offline-Abnahmefenster nach jedem Git-Commit mit `python3 scripts/ogl-acceptance.py --build` neu generieren, per `xdg-open build/acceptance/ABNAHME_DASHBOARD.html` starten. Manuelle Bewertungen sind keine offiziellen E2E-Releasefreigaben, v0.4.0.0 weiter IN_ARBEIT.
