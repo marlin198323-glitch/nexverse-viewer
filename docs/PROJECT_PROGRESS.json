@@ -201,5 +201,13 @@
     "runner_active": true,
     "workflow_runs_for_feature_sha": 0,
     "note": "Full Linux Mint native 183/183, Python 574/574, Xvfb/Firestorm GPU local gates PASS. No confirmed Pi5 ARM64 CI success on exact SHA."
+  },
+  "alpha1184_verified_feature_sha": "f3558b9d83cf3d2e16cdf8c5505a35f6431e71dc",
+  "alpha1184_pi5_ci": {
+    "exact_feature_sha": "f3558b9d83cf3d2e16cdf8c5505a35f6431e71dc",
+    "status": "unverified",
+    "runner_active": false,
+    "workflow_runs_for_feature_sha": 0,
+    "note": "Pi5 OGL Runner process not seen at 02:33:45; no completed ARM64 CI for exact SHA. Linux Mint x64 full local tests PASS."
   }
 }
