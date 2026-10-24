@@ -245,6 +245,8 @@
     "python_tests_passed": 628,
     "firestorm_xvfb_gpu_gui_and_x11_icon": "PASS",
     "authenticated_live_grid_e2e": "NOT_VERIFIED",
-    "main_release": "NOT_PERFORMED"
+    "main_release": "NOT_PERFORMED",
+    "verified_github_feature_sha": "a4441680e3b261d4754afe2d2ca1e6e9e713758e",
+    "github_ci_for_exact_sha": "UNVERIFIED_NO_WORKFLOW_RUNS_OR_COMMIT_STATUSES"
   }
 }
