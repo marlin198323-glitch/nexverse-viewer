@@ -1,0 +1,24 @@
+# Alpha.1185–1194 – echter anklickbarer Flugmodus im OGL Bewegungsfenster
+
+24.10.2026 | Linux Mint Desktop Commander jam-MS-7D28 | GitHub develop-current | 0.2.0-alpha.1194
+
+## Zehn Entwicklungsblöcke
+
+1185. Ersten vorherigen Block Alpha1184 via GitHub geprüft, Feature f3558b9d83cf3d2e16cdf8c5505a35f6431e71dc und docs b770709457bd1cde3dde212ab8f82d0664171e2a; Codebaum vor dieser Phase sauber, Linux Mint Commander gewählt.
+1186. Reale GUI-Lücke in ViewerShell untersucht: Bewegungsfenster zeigte nur 'F: Flugmodus umschalten' als statischen Text. Die Taste F war eine tatsächliche MovementController-Funktion, aber weder anklickbare Oberfläche noch ein geeigneter sichtbarer Zustand vorhanden.
+1187. Eigenständige ViewerAction toggle_fly und ViewerShellState Zustände fly_available/fly_toggle_requested/fly_local_requested eingeführt, keine erdachte Serverbestätigung.
+1188. Tatsächlich sichtbaren 204x42 Control-Button mit passenden on/off/disabled-Texten im bereits existierenden Movement-Fenster (Firestorm-NexVerse-UI) gerendert. Keine weiteren toten Fake-Bedienelemente; separate Warnung 'Server-Flight nur nach Readback bestaetigt'.
+1189. Layout.hit benutzt genau die gerenderten Koordinaten und liefert nur bei gültiger Selbst-Avatar-Position den echten Button, ansonsten disabled. Welt/HUD bleibt vor unbeabsichtigten Klicks geschützt.
+1190. In der wirklichen GLFW-Mausereignisverarbeitung ViewerAction::toggle_fly an flight control request der Hauptanwendung angeschlossen, nicht nur lokalen Textzustand umgeschaltet.
+1191. Für High4-AgentUpdate MovementKeys.toggle_fly akzeptiert die exakt einmalige UI-Anforderung ODER vorhandene F-Taste. Nur im gültigen aktuellen Owner-/Session-/Self-Pose-/Simulatorzustand aktiv; die alte Sicherheitsprüfung für eine echte WorldModel.self_avatar_controls_ready() bleibt.
+1192. Bei erfolgreicher echter OutboundCommandQueue-Zulassung den UI-Wunsch verbrauchen und den tatsächlichen lokal angeforderten FlightController-Zustand anzeigen; bei voller Queue bleibt die UI-Anforderung zum kontrollierten späteren Versuch erhalten und der MovementController wird zurückgerollt. Dies ist KEIN Server-Flight-ACK. Bei Simulator-/Region-/Positionsverlust werden UI-Modus und Anfrage zurückgesetzt.
+1193. Native C++-Regression für tatsächliche Move-Window-Maushit-Region, authabhängige Aktivierung, negative Klickposition, MovePanel-WASD-Nichtblockierung, 3 Fenstergrößen 1100/1920/3440 und echter Xvfb-GL-Renderingtest für On/Off-Button ergänzt. Zehn neue Python-Contracts prüfen eindeutige Aktion, identische Render-/Click-Koordinaten, GLFW-Weiterleitung bis zum echten originalen AgentUpdate-control_fly-Bit, sichere Queue-Rollbacks und die fehlende falsche Flight-Bestätigung.
+1194. VERSION, Projektplan, CHATUEBERGABE.md, AGENTS/info, JSON-Projektfortschritt und drei Firestorm-/OpenGenesisLINK-/Viewer-UI-Paritätsmatrizen aktualisiert. Volles Linux Mint CMake/vcpkg-x64 Build/184 native CTests/alle Python/Xvfb-Firestorm-Original-GPU-/GUI-/128px-Icon-Tests vor GitHub-Push. Keine Produktivinstallation. Nächste Alpha.1195–1204 mit echtem Grid-Avatar-Outfit- und WASD/Flight-E2E-P0-Scope.
+
+## Grenzen
+
+Klick auf den Flugbutton ist eine echte Client-Aktion, nicht bloß Dekoration; die einzig bestätigte lokale Tatsache ist die erfolgreiche Zulassung des AgentUpdate in die Outbound-Queue. Der Simulator darf das Fliegen noch verweigern; nur die nachfolgende authentifizierte SELF-Höhen-Rückmeldung kann eine reale Z-Positionsreaktion zeigen. Ein neuer Live-Grid-Test oder finale 3/3-RGB-Skin-Outfit-Darstellung ist nicht nachgewiesen. Der gesamte OGL Viewer ist NICHT 100 % fertig: weitere Firestorm-Funktionen, Inventory/IM/Freunde, Mesh/Materialien und Windows/macOS fehlen weiterhin. Fortschritt 38,65 % gewichtet, RELEASE BLOCKED, kein Deployment.
+
+## QA
+
+Native GUI/Layout-Hit Tests 1100x700/1920x1080/3440x1440, echtes Xvfb-OpenGL-GUI mit On/Off und authentisiertem Disabled-Flugschalter sowie zehn zusätzliche Python-Verträge PASS. Vollständiger Linux-Mint-CMake/vcpkg-Debug-Build über 426 Bauschritte PASS, 184/184 native CTests einschließlich Original-Firestorm-GPU-Framebuffer und Flight-Vertical-Readback, 594/594 Python PASS. Isolierter Xvfb-Viewerstart OGL 0.2.0-alpha.1194, originales Firestorm-133-Joint-Rig, 55 Attachpoints, drei gewichtete Original-LLMs/7186 Dreiecke, X11-WM_CLASS und echtes 128x128-Systemicon PASS. OGL_MINT_X64_FULL_VALIDATION_PASS. Keine neue echte auth Grid-Sitzung, keine 100%-Freigabe. Exakte getestete Feature-GitHub-SHA und Pi5 ARM64 nach Push separat.

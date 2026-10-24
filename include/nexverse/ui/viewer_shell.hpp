@@ -26,7 +26,8 @@ enum class ViewerAction {
     refresh_inventory, animations, select_animation,
     chat_whisper, chat_say, chat_shout, retry_animation,
     objects, select_object, touch_press, save_avatar_report, retry_terrain,
-    cycle_avatar_bakes, recheck_avatar_bakes, focus_avatar_camera, disabled
+    cycle_avatar_bakes, recheck_avatar_bakes, focus_avatar_camera,
+    toggle_fly, disabled
 };
 // Viewer-standard ChatFromViewer packet types: OpenSim and
 // OpenGenesisLINK use the same values; inter-region llListen
@@ -57,6 +58,10 @@ struct ViewerShellState
     std::string status_text;
     bool chat_submit_requested=false;
     bool teleport_submit_requested=false;
+    // User-visible control, not a fabricated simulator Flight ACK.
+    bool fly_available=false;
+    bool fly_toggle_requested=false;
+    bool fly_local_requested=false;
     std::array<std::string,3> teleport_coords{"128","128","25"};
     int teleport_focus=0;
     std::size_t animation_selected=0U;
@@ -199,6 +204,12 @@ struct ViewerShellLayout
             if(inside(x,y,panel_x+panel_w-56.0f*scale,
                       panel_y+10.0f*scale,46.0f*scale,36.0f*scale))
                 return ViewerAction::close;
+            if(state.window==ViewerWindow::move &&
+               inside(x,y,panel_x+27.0f*scale,
+                      panel_y+panel_h-97.0f*scale,
+                      204.0f*scale,42.0f*scale))
+                return state.fly_available?ViewerAction::toggle_fly:
+                       ViewerAction::disabled;
             if(state.window==ViewerWindow::chat)
             {
                 // Chat mode buttons match the three actual LLUDP

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-24",
-  "viewer_version": "0.2.0-alpha.1184",
+  "viewer_version": "0.2.0-alpha.1194",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1185–1194",
-  "assessment": "Alpha1184: Added self-contained, bounded and thread-safe real simulator vertical movement proof for jump/flying ascent/descent. Current C++ viewer movement controller already sent up/down/fly AgentUpdate bits, but no sign-sensitive actual SERVER altitude readback; original WASD horizontal monitor explicitly ignored z. New vertical_movement_feedback.hpp accepts only queued/current directions and UDP SOCKET-SUCCESS send flags (not queued packet or local animation) and after that only authenticated/current server-origin SELF positions from ImprovedTerseObjectUpdate, ObjectUpdate and ObjectUpdateCompressed accepted by WorldModel and current LocalID/region. Real vertical +/- signed >=0.25 m needed, horizontal-only and gravity wrong sign cannot confirm. Bounded stale/pre-send/out-of-order and >=32m teleport invalidation, 4sec+3 actual self position samples stall, right-way and opposite server samples counted separately, FLY modifier source tracked on same command. A different up/down command or fly mode change clears previous confirmation, idle and all nine original logout/login/epoch/local-ID/invalid self position/reset events clear vertical state as they do horizontal proof. F3 appends 'Steigen/Sprung', 'Sinken' actual simulator proof/wait/stall diagnostic to existing horizontal WASD/yaw status only while queued or actual UDP sent. One real native CTest nexverse-vertical-movement-feedback-tests and ten Python runtime source contracts. NO real authenticated GRID altitude readback was performed this turn, so complete WASD/Yaw/Jump/Flight E2E still open. No new server protocol requirements from OpenGenesisLINK upstream main d93b491318e10ad236ad906c71d995067eb470c4. Avatar/COF/3xRGB final skin and full Firestorm UI parity and Windows/macOS releases still open. Real live authenticated Grid Skin/Outfit and server-confirmed WASD/Yaw E2E still open. Release gate BLOCKED; no deploy.",
+  "next_five_blocks": "Alpha.1195–1204",
+  "assessment": "Alpha1194: Real clickable FLIGHT MODE toggle in in-world Move/Movement ViewerShell panel, replacing previously only inert text about F key. The actual rendered 204x42 blue button is mirrored by mouse ViewerShellLayout.hit() across 1100x700,1920x1080 and 3440x1440; when no currently authenticated/verified self avatar position, it is disabled with honest wording. Clicking dispatches ViewerAction::toggle_fly to the existing MovementKeys and MovementController (same real control_fly bit as keyboard F) through actual OutboundCommandQueue push, not a fabricated local flight/position or simulator ACK. On queue rejection, retains UI request and rolls back local controller, on accepted enqueue clears request and reflects only local requested flight state. WorldModel current agent/session, valid simulator self pose and epoch still gate outgoing High4. Disconnect/invalid pose clears UI action flags and local status. Move window remains usable alongside WASD, and flight button explicitly says flight success needs real simulator readback, which can now use Alpha1184 vertical height monitor. Native UI hit/layout and REAL Xvfb GL render tests for enabled/disabled flight action; 10 new Python source scope/UI/wire tests. Current World/Avatar/COF/Outfit final Grid 3xSkin RGB and authenticated server-confirmed WASD/Flight E2E still open; all Firestorm menus/actions/Windows/macOS not complete. Release BLOCKED. No deploy.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1185–1194",
+  "next_batch": "Alpha.1195–1204",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
@@ -113,7 +113,7 @@
     "cmake_full_debug_build": true,
     "native_ctest_passed": 184,
     "native_ctest_failed": 0,
-    "python_tests_passed": 584,
+    "python_tests_passed": 594,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -166,10 +166,10 @@
     "interleaved_legacy_cof_highwater_retirement": true,
     "cof_outfit_late_udp_object_bake_replay_rejected": true,
     "latest_localid_body_not_evicted_by_retired_replay": true,
-    "validated_viewer_version": "0.2.0-alpha.1184"
+    "validated_viewer_version": "0.2.0-alpha.1194"
   },
   "final_release_evidence": {},
-  "goal_100_release_status": "BLOCKED: Full authenticated Grid Skin/Outfit/WASD/Flight E2E, Firestorm UI parity, native cross-platform releases still missing.",
+  "goal_100_release_status": "BLOCKED: current authenticated grid flight and final 3/3 skin/outfit E2E, Firestorm UI parity and cross-platform releases still open.",
   "alpha1144_verified_feature_sha": "3c9745a10692bc3ce3cc619a602c38cdc3dc87ba",
   "alpha1144_pi5_ci": {
     "status": "unverified",

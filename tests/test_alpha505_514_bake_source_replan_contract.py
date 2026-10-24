@@ -52,13 +52,13 @@ class BodySourceReplan(unittest.TestCase):
    self.assertIn(s,app)
   self.assertNotIn("Self Body TE changed; UUID=",app)
  def test_version_and_ten_blocks(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1184")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1194")
   state=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(state["viewer_version"],"0.2.0-alpha.1184")
-  self.assertEqual(state["next_batch"],"Alpha.1185–1194")
+  self.assertEqual(state["viewer_version"],"0.2.0-alpha.1194")
+  self.assertEqual(state["next_batch"],"Alpha.1195–1204")
   self.assertEqual(state["default_blocks_per_run"],10)
   self.assertIn("still open",state["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.1185–1194",read(f)[:1400])
+   self.assertIn("Alpha.1195–1204",read(f)[:1400])
 if __name__=="__main__":unittest.main()

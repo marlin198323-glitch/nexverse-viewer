@@ -1480,6 +1480,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
                 " (Kanal 0; Reichweite serverseitig)";
             return;
         }
+        if(command==nexverse::ui::ViewerAction::toggle_fly)
+        {
+            if(shell.window==nexverse::ui::ViewerWindow::move &&
+               shell.fly_available)
+                shell.fly_toggle_requested=true;
+            return;
+        }
         if(command==nexverse::ui::ViewerAction::send_chat)
         {
             shell.chat_submit_requested=true;return;
@@ -8246,6 +8253,9 @@ int Application::run(bool enable_developer_modules)
 
             if (!simulation_ready)
             {
+                viewer_shell.fly_available=false;
+                viewer_shell.fly_toggle_requested=false;
+                viewer_shell.fly_local_requested=false;
                 viewer_shell.close();
                 world_ready_logged = false;
                 experience_ui.close();
@@ -8305,7 +8315,8 @@ int Application::run(bool enable_developer_modules)
                 keys.descend = pressed(GLFW_KEY_C);
                 keys.sprint = pressed(GLFW_KEY_LEFT_SHIFT) ||
                               pressed(GLFW_KEY_RIGHT_SHIFT);
-                keys.toggle_fly = pressed(GLFW_KEY_F);
+                keys.toggle_fly =
+                    pressed(GLFW_KEY_F)||viewer_shell.fly_toggle_requested;
 
                 world::AgentState agent_for_camera;
                 bool verified_self_controls=false;
@@ -8317,6 +8328,16 @@ int Application::run(bool enable_developer_modules)
                         active_session&&
                         agent_for_camera.agent_id==active_session->agent_id&&
                         agent_for_camera.session_id==active_session->session_id;
+                }
+                // Flight control is a real clickable request ONLY
+                // after verified current-session simulator self pose.
+                viewer_shell.fly_available=verified_self_controls&&
+                    protocol::valid_agent_update_position(
+                        agent_for_camera.position);
+                if(!viewer_shell.fly_available)
+                {
+                    viewer_shell.fly_toggle_requested=false;
+                    viewer_shell.fly_local_requested=false;
                 }
                 // A CircuitState::active can be true for a decoded
                 // AgentMovementComplete frame which failed strict WorldModel
@@ -8418,6 +8439,12 @@ int Application::run(bool enable_developer_modules)
                             agent_for_camera.agent_id,
                             agent_for_camera.session_id,
                             preview_rotation,now};
+                    // Only report a local requested mode after the
+                    // real LLUDP outbound queue admitted the request.
+                    // This is not simulator-confirmed flight mode.
+                    viewer_shell.fly_local_requested=
+                        movement_controller.flying();
+                    viewer_shell.fly_toggle_requested=false;
                     movement_feedback.queued_controls(queued_controls);
                     vertical_feedback.queued_controls(queued_controls);
                 }

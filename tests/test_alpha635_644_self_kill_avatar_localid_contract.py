@@ -73,14 +73,14 @@ class OwnObjectKill(unittest.TestCase):
   self.assertIn("r.self_object_kills=2U;",native)
   self.assertIn('text.find("self_object_localid_kills=2")',native)
  def test_version_next_and_status(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1184")
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1194")
   d=json.loads(rd("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"0.2.0-alpha.1184")
-  self.assertEqual(d["next_batch"],"Alpha.1185–1194")
+  self.assertEqual(d["viewer_version"],"0.2.0-alpha.1194")
+  self.assertEqual(d["next_batch"],"Alpha.1195–1204")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])
   for p in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
    self.assertIn("10 ECHTE ENTWICKLUNGSBLÖCKE",rd(p)[:350])
-   self.assertIn("Alpha.1185–1194",rd(p)[:1800])
+   self.assertIn("Alpha.1195–1204",rd(p)[:1800])
 if __name__=="__main__":unittest.main()

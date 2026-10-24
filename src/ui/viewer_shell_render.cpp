@@ -513,6 +513,23 @@ void render_viewer_shell(UiRenderer& r,int width,int height,
         line(6,"F3: Avatar-Status  /  F6: Chat  /  F7: Region");
         line(7,"F9: Outfits  /  F10: Inventar  /  F11: Vollbild");
         line(8,"ESC: Fenster schliessen",theme::cyan);
+        if(state.window==ViewerWindow::move)
+        {
+            r.rect(x+27.0f*sc,y+ph-97.0f*sc,
+                   204.0f*sc,42.0f*sc,
+                   state.fly_available?theme::blue:
+                     Color{0.022f,0.037f,0.054f,0.92f},7.0f*sc);
+            r.text(x+40.0f*sc,y+ph-82.0f*sc,9.0f*sc,
+                   state.fly_available
+                       ?(state.fly_local_requested
+                           ?"Flugmodus beenden"
+                           :"Flugmodus anfordern")
+                       :"Flugmodus: keine Serverpose",
+                   state.fly_available?theme::text:theme::text_muted);
+            r.text(x+241.0f*sc,y+ph-82.0f*sc,8.0f*sc,
+                   "Server-Flight nur nach Readback bestaetigt",
+                   theme::warning);
+        }
     }
 }
 }

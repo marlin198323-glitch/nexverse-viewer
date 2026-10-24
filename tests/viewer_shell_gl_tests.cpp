@@ -70,6 +70,21 @@ int main()
                 render_viewer_shell(renderer,1280,800,state,view);
                 if(glGetError()!=GL_NO_ERROR){error=3;break;}
             }
+            // Alpha1194 real Fly action visual states render both
+            // disabled and eligible without a synthetic server ACK.
+            if(!error)
+            {
+                state.window=ViewerWindow::move;
+                state.fly_available=true;
+                state.fly_local_requested=false;
+                render_viewer_shell(renderer,1280,800,state,view);
+                if(glGetError()!=GL_NO_ERROR)error=9;
+                state.fly_local_requested=true;
+                render_viewer_shell(renderer,1280,800,state,view);
+                if(glGetError()!=GL_NO_ERROR)error=10;
+                state.fly_available=false;
+                state.fly_local_requested=false;
+            }
             // SSA with many attachments must also render its F3
             // provenance row, with no unverified geometry claims.
             if(!error)

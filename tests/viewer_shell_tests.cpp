@@ -52,6 +52,23 @@ int main()
         if(l.hit((214.0f+104.0f*6.0f+16.0f)*sc,
                  l.height-(58.0f-12.0f)*sc,s)!=
            ViewerAction::map)return 8;
+        // Alpha1194: a REAL clickable Flight action in the existing
+        // Movement panel, across standard and ultrawide monitors.
+        // Disabled until a valid authenticated simulator SELF pose
+        // exists; opening this non-editing panel must not block WASD.
+        s.window=ViewerWindow::move;
+        if(s.movement_input_captured())return 98;
+        const float fx=l.panel_x+70.0f*sc;
+        const float fy=l.panel_y+l.panel_h-77.0f*sc;
+        if(l.hit(fx,fy,s)!=ViewerAction::disabled)return 99;
+        s.fly_available=true;
+        if(l.hit(fx,fy,s)!=ViewerAction::toggle_fly)return 100;
+        if(l.hit(l.panel_x+270.0f*sc,fy,s)!=
+           ViewerAction::none)return 101;
+        s.fly_local_requested=true;
+        if(l.hit(fx,fy,s)!=ViewerAction::toggle_fly)return 102;
+        s.fly_available=false;
+        s.fly_local_requested=false;
         // F3 is non-modal: diagnostic HUD cannot freeze WASD.
         s.window=ViewerWindow::avatar;
         if(s.movement_input_captured())return 90;
