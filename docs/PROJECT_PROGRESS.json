@@ -209,5 +209,12 @@
     "runner_active": false,
     "workflow_runs_for_feature_sha": 0,
     "note": "Pi5 OGL Runner process not seen at 02:33:45; no completed ARM64 CI for exact SHA. Linux Mint x64 full local tests PASS."
+  },
+  "alpha1194_verified_feature_sha": "4cc9bc01606e2090d2c2adc080f57cc4bfc879c0",
+  "alpha1194_ci": {
+    "exact_feature_sha": "4cc9bc01606e2090d2c2adc080f57cc4bfc879c0",
+    "status": "unverified",
+    "workflow_runs_for_feature_sha": 0,
+    "note": "Linux Mint x64 full gate PASS; GitHub returned no status or PR runs for exact feature SHA; Pi5 ARM64 not verified."
   }
 }
