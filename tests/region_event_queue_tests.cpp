@@ -15,6 +15,7 @@ struct MockHttp final : nexverse::net::IHttpTransport
     bool expire=false;
     bool missing=false;
     std::vector<int> acks;
+    bool duplicate_forever=false;
     nexverse::net::HttpResponse get(std::string_view,
         std::size_t,std::chrono::milliseconds,std::chrono::milliseconds) override
     { return {405,{},"unsupported"}; }
@@ -41,7 +42,7 @@ struct MockHttp final : nexverse::net::IHttpTransport
             acks.push_back(ack&&ack->type==LlsdType::integer
                 ?static_cast<int>(ack->integer_value):-1);
             if(expire &&queue_calls==1)return {404,{},""};
-            const int id=(queue_calls==1?17:
+            const int id=duplicate_forever?17:(queue_calls==1?17:
                 queue_calls==2?17:18);
             return {200,serialize_llsd_xml(LlsdValue::map({
                 {"id",LlsdValue::integer(id)},
@@ -107,6 +108,21 @@ int main()
        refreshed_mock->queue_calls!=2||!refreshed.advertised||
        refreshed_mock->acks!=std::vector<int>({-1,-1}))
         return 5;
+    // A misbehaving/looping simulator must not cause unbounded
+    // duplicate delivery or a busy-spin on immediate HTTP replies.
+    auto replay_mock=std::make_shared<MockHttp>();
+    replay_mock->duplicate_forever=true;
+    last_epoch=lease.enter(555U,2U,"https://sim.test/replay");
+    const auto tick=std::chrono::steady_clock::now();
+    const auto replay=poll_region_event_queue(
+        replay_mock,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,4U);
+    const auto elapsed=std::chrono::steady_clock::now()-tick;
+    if(replay.polls!=4U||replay.accepted_events!=1U||
+       replay_mock->acks!=std::vector<int>({-1,17,17,17})||
+       elapsed<std::chrono::milliseconds{300})return 6;
+    std::cout<<"Region-scoped EventQueue duplicate replay bounded "
+                "without CPU hot loop\n";
     std::cout<<"Region-scoped EventQueue source, ack reset,"
                 " deduplication and lease cancellation passed\n";
     return 0;

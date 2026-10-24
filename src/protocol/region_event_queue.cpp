@@ -58,7 +58,14 @@ RegionEventQueueStats poll_region_event_queue(
             // A duplicate acknowledgement/batch may be retransmitted.
             // Don't dispatch again in the same queue epoch.
             if(batch.id && ack && *batch.id==*ack)
+            {
+                // A misbehaving simulator/proxy can replay an already
+                // acknowledged batch immediately. Without a pause an
+                // unlimited long-poll worker becomes a CPU hot loop.
+                recovery.on_contact();
+                pause(std::chrono::milliseconds{150});
                 continue;
+            }
             ack=batch.id;
             recovery.on_contact();
             for(const auto& event:batch.events)

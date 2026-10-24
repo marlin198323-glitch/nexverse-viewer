@@ -7392,3 +7392,4 @@ Der nächste neue Chat startet nach Lesen der CHATUEBERGABE.md
 mit fünf vollständigen Blöcken Alpha.235–239.
 Realer erneut überprüfter NexVerse Avatar-Bake-/Terrain-
 Screenshot unter alpha.234 bleibt als Praxisprüfung offen.
+\n\n**v0.4.0.0 EventQueue Replay-Fix (24.10.2026):** Im HTTP-200-Sofortduplikat derselben ACK-ID konnte der Long-Poll eine CPU-Busy-Loop verursachen. Nun 150ms pausierter, Region-Lease- und Stop-abbrechbarer ACK-Deduplikationspfad. Native Regression: vier sofortige identische ACKs -1/17/17/17, genau ein zugestelltes Event und >=300ms Gesamtpause. v0.4.0.0-T02 bleibt IN_ARBEIT; Grid-Login, Teleport und tatsächliche WASD-/Yaw-Live-Abnahme weiterhin OFFEN. Kein Main-Merge oder Release.\n
