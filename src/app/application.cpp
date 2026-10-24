@@ -6421,12 +6421,13 @@ int Application::run(bool enable_developer_modules)
                                             &outbound_queue,
                                             std::chrono::seconds{15},
                                             [&movement_feedback,
-                                             &turn_feedback](std::uint32_t flags)
+                                             &turn_feedback](std::uint32_t flags,
+                                                            const protocol::Quaternion& sent_body)
                                             {
                                                 const auto sent_at=
                                                     std::chrono::steady_clock::now();
                                                 movement_feedback.outbound_controls(
-                                                    flags,sent_at);
+                                                    flags,sent_at,sent_body);
                                                 turn_feedback.outbound_controls(
                                                     flags,sent_at);
                                             });

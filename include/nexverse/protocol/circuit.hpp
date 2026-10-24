@@ -75,7 +75,8 @@ public:
     using PacketCallback = std::function<void(const DecodedPacket&)>;
     // Called only after a real UDP socket successfully sends AgentUpdate.
     // Non-reliable UDP has no server ACK. Flags only, no agent identifiers.
-    using AgentUpdateSentCallback = std::function<void(std::uint32_t)>;
+    using AgentUpdateSentCallback =
+        std::function<void(std::uint32_t,const Quaternion&)>;
 
     [[nodiscard]] CircuitStatus run(
         std::atomic_bool& stop_requested,

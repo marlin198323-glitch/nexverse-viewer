@@ -43,6 +43,6 @@ class HeadQueueContract(unittest.TestCase):
   self.assertIn('void adopt_server_heading(',header)
   self.assertIn('yaw_ = valid_initial_agent_yaw(heading);',header)
  def test_version_and_next_step(self):
-  self.assertEqual(read('VERSION').strip(),'0.2.0-alpha.1164')
-  self.assertIn('Alpha.1165–1174',read('CHATUEBERGABE.md'))
+  self.assertEqual(read('VERSION').strip(),'0.2.0-alpha.1174')
+  self.assertIn('Alpha.1175–1184',read('CHATUEBERGABE.md'))
 if __name__=='__main__': unittest.main()

@@ -62,13 +62,13 @@ class Alpha295AckProof(unittest.TestCase):
 
     def test_release_and_handoff(self):
         data=json.loads(source("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.1164")
-        self.assertEqual(data["viewer_version"],"0.2.0-alpha.1164")
-        self.assertEqual(data["next_batch"],"Alpha.1165–1174")
+        self.assertEqual(source("VERSION").strip(),"0.2.0-alpha.1174")
+        self.assertEqual(data["viewer_version"],"0.2.0-alpha.1174")
+        self.assertEqual(data["next_batch"],"Alpha.1175–1184")
         self.assertEqual(data["default_blocks_per_run"],10)
         for name in ("CHATUEBERGABE.md","AGENTS.md","info.md",
                      "projectplan.md","docs/PROJEKTFORTSCHRITT.md"):
             text=source(name)[:2100]
             self.assertIn("39 %",text)
-            self.assertIn("Alpha.1165–1174",text)
+            self.assertIn("Alpha.1175–1184",text)
 if __name__=="__main__":unittest.main()

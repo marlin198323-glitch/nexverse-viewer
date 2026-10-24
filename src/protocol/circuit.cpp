@@ -420,7 +420,7 @@ CircuitStatus CircuitConnection::run(
                             {
                                 ++status.agent_updates_sent;
                                 if(on_agent_update_sent)
-                                    on_agent_update_sent(value.control_flags);
+                                    on_agent_update_sent(value.control_flags,value.body_rotation);
                                 constexpr auto walking=control_at_pos|
                                     control_at_neg|control_left_pos|control_left_neg;
                                 if((value.control_flags&walking)!=0U)

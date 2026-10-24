@@ -133,5 +133,68 @@ int main()
     monitor.queued_controls(0U);
     if(monitor.snapshot().awaiting_after_discontinuity)return 29;
 
+    // Alpha1174: the ACTUAL serialized AgentUpdate BodyRotation is
+    // sent with its flags to the proof monitor. Perpendicular drift
+    // and motion in the OPPOSITE direction must not confirm WASD.
+    const Quaternion east{0,0,0,1};
+    const Quaternion north{0,0,0.70710678f,0.70710678f};
+    monitor.reset();
+    (void)monitor.server_position({0,0,5},now+300s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+301s,east);
+    if(monitor.server_position({0,1,5},now+302s)!=MovementEvidence::none||
+       monitor.server_position({-0.5f,1,5},now+303s)!=
+            MovementEvidence::none||
+       monitor.snapshot().server_confirmed||
+       monitor.snapshot().offaxis_server_samples!=2U||
+       std::string_view(monitor.status()).find("quer/entgegen")==
+           std::string_view::npos)return 30;
+    if(monitor.server_position({0.35f,1,5},now+304s)!=
+       MovementEvidence::server_position_changed)return 31;
+    // Reversing while still transmitting must invalidate the previous
+    // proof, rather than inheriting a former 'W moved' confirmation.
+    monitor.queued_controls(control_at_neg);
+    monitor.outbound_controls(control_at_neg,now+305s,east);
+    if(monitor.snapshot().server_confirmed||
+       monitor.server_position({1.1f,1,5},now+306s)!=MovementEvidence::none||
+       monitor.snapshot().server_confirmed)return 32;
+    if(monitor.server_position({0.04f,1,5},now+307s)!=
+       MovementEvidence::server_position_changed)return 33;
+    // +90-degree heading moves the expected world-axis to north;
+    // a +X displacement must not be accepted as an 'W' response.
+    monitor.reset();
+    (void)monitor.server_position({8,4,5},now+310s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+311s,north);
+    if(monitor.server_position({9,4,5},now+312s)!=MovementEvidence::none||
+       monitor.server_position({9,4.3f,5},now+313s)!=
+          MovementEvidence::server_position_changed)return 34;
+    // Left strafe at north heading points toward world negative X.
+    monitor.reset();
+    (void)monitor.server_position({8,4,5},now+320s);
+    monitor.queued_controls(control_left_pos);
+    monitor.outbound_controls(control_left_pos,now+321s,north);
+    if(monitor.server_position({8,5,5},now+322s)!=MovementEvidence::none||
+       monitor.server_position({7.65f,5,5},now+323s)!=
+            MovementEvidence::server_position_changed)return 35;
+    // Invalid actual outgoing quaternion must never authorize server
+    // movement evidence, even when the self position changes.
+    monitor.reset();
+    (void)monitor.server_position({0,0,0},now+330s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+331s,{0,0,0,0});
+    if(monitor.server_position({1,0,0},now+332s)!=MovementEvidence::none||
+       monitor.snapshot().server_confirmed)return 36;
+    // Small local yaw changes while holding W cannot invalidate
+    // baseline every 100ms, unlike an actual direction-key reversal.
+    monitor.reset();
+    (void)monitor.server_position({0,0,0},now+340s);
+    monitor.queued_controls(control_at_pos);
+    monitor.outbound_controls(control_at_pos,now+341s,east);
+    monitor.outbound_controls(control_at_pos,now+342s,
+        {0.0f,0.0f,0.0249974f,0.9996875f});
+    if(monitor.server_position({0.3f,0,0},now+343s)!=
+       MovementEvidence::server_position_changed)return 37;
+    std::cout<<"OGL_ACTUAL_AGENTUPDATE_DIRECTIONAL_SERVER_READBACK_PASS\n";
     std::cout<<"OGL movement server readback and truthful F3 statuses PASS\n";
 }

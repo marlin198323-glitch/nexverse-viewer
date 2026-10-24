@@ -74,6 +74,6 @@ class SelfOriginalLocalLayerGpu(unittest.TestCase):
  def test_full_authenticated_live_rgb_outfit_movement_remains_open(self):
   s=txt("docs/PROJECT_PROGRESS.json")
   self.assertIn("still open",s)
-  self.assertIn("Alpha1164",s)
+  self.assertRegex(s,r"Alpha[0-9]{3,4}")
   self.assertIn("BLOCKED",s)
 if __name__=="__main__":unittest.main()

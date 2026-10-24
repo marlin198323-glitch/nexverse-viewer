@@ -7,7 +7,7 @@ class TrueMotionReadback(unittest.TestCase):
  def test_socket_success_circuit_callback(self):
   cpp=read("src/protocol/circuit.cpp")
   self.assertIn("if(on_agent_update_sent)",cpp)
-  self.assertIn("on_agent_update_sent(value.control_flags)",cpp)
+  self.assertIn("on_agent_update_sent(value.control_flags,value.body_rotation)",cpp)
   self.assertIn("sent = !packet.empty() && send_datagram(socket, packet, status)",cpp)
   self.assertIn("AgentUpdateSentCallback",read("include/nexverse/protocol/circuit.hpp"))
  def test_queue_status_not_false_send(self):
@@ -44,10 +44,10 @@ class TrueMotionReadback(unittest.TestCase):
   self.assertIn("MovementPositionSource::compressed_object",test)
   self.assertIn("wartet auf UDP-Versand",test)
  def test_updated_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1164")
+  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1174")
   progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(progress["next_batch"],"Alpha.1165–1174")
+  self.assertEqual(progress["next_batch"],"Alpha.1175–1184")
   self.assertEqual(progress["default_blocks_per_run"],10)
   for f in ["CHATUEBERGABE.md","projectplan.md","AGENTS.md","info.md"]:
-   self.assertIn("Alpha.1165–1174",read(f)[:1100])
+   self.assertIn("Alpha.1175–1184",read(f)[:1100])
 if __name__=="__main__": unittest.main()
