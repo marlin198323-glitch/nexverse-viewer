@@ -1,4 +1,4 @@
-name: OpenGenesisLINK Viewer Pi5 Source Check
+name: OpenGenesisLINK Viewer Linux Mint x64 Source Check
 on:
   push:
     branches: [develop-current]
@@ -13,8 +13,8 @@ concurrency:
 
 jobs:
   source-check:
-    name: ARM64 source contract checks (no native GUI build)
-    runs-on: [self-hosted, linux, ARM64, pi5-ogl]
+    name: Linux x64 source contract checks (no native GUI build)
+    runs-on: [mint-ogl]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(uname -m)" = aarch64
+          test "$(uname -m)" = x86_64
           git diff --check
           test -s CMakeLists.txt
           test -s projectplan.md
