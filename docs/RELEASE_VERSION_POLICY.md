@@ -30,6 +30,22 @@ ALLE nachfolgenden Bedingungen erfüllt sind:
 5. Getesteten Release-Branch bzw. `develop-current` per PR nach `main`; Branchschutz/Review beachten; nach erfolgreichem Merge annotierten `vX.Y.Z.W`-Tag und GitHub-Release mit Artefakten publizieren.
 6. Wenn ein Beweis oder benötigte Berechtigung fehlt: Status BLOCKIERT, kein main-Merge, kein Tag, kein falscher Release.
 
+## Zusätzliches Wartungsrelease-Gate für v1.0.0.1
+
+`scripts/ogl-version.py --release-check v1.0.0.1` verlangt jetzt vor
+allen anderen Freigabeprüfungen einen annotierten `v1.0.0.0`-Tag.
+Dieser Tag muss auf `origin` mit derselben Git-Objekt-SHA existieren,
+dessen Commit muss Vorfahr von `origin/main` sein und muss in seiner
+`VERSION`-Datei tatsächlich `v1.0.0.0` enthalten. Außerdem ist der
+Publikationsbeleg `published_releases.v1.0.0.0` mit exakt dieser
+Commit-SHA und offizieller GitHub-Release-URL erforderlich. Vor einem
+wirklichen Release muss der GitHub-Release unabhängig online
+verifiziert werden; ein JSON-Eintrag allein ist keine Remote-Attestation.
+
+**Aktuelle Prüfung am 24.10.2026:** Stable-Vorgänger nicht
+veröffentlicht, `v1.0.0.1` BLOCKIERT, kein main-Merge oder Tag.
+Die aktive Programmversion bleibt `v0.3.0.0`.
+
 Der Befehl `/goal v1.0.0.0 ... und releasen` autorisiert einen
 **konditionalen** Release nach vollständiger Abnahme, nicht das
 Überspringen von GitHub-Rechten, Sicherheitsprüfungen oder Live-Grid-Beweisen.

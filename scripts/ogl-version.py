@@ -47,6 +47,67 @@ def policy():
         raise ValueError("README current version inconsistent")
     return v,data,stages
 
+def stable_predecessor_released(
+    target: str,
+    progress: dict,
+    repo: Path = ROOT,
+) -> tuple[bool, str]:
+    """Fail closed: a hotfix may only follow a published stable main release.
+
+    Both an annotated tag on origin/main and a recorded PUBLIC GitHub
+    release are required. A local/unsigned tag or the current branch's
+    VERSION text does not establish that v1.0.0.0 shipped.
+    """
+    if target != "v1.0.0.1":
+        return True, "No first-hotfix dependency"
+    stable = "v1.0.0.0"
+    def git(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+    # An annotated tag, not a lightweight or unpushed local label.
+    tagged = git("rev-parse", "--verify", f"refs/tags/{stable}^{{tag}}")
+    if tagged.returncode:
+        return False, f"missing annotated predecessor tag {stable}"
+    base = git("rev-parse", "--verify", f"refs/tags/{stable}^{{commit}}")
+    if base.returncode:
+        return False, f"missing predecessor release commit {stable}"
+    sha = base.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        return False, "invalid predecessor release SHA"
+    on_main = git("merge-base", "--is-ancestor", sha, "refs/remotes/origin/main")
+    if on_main.returncode:
+        return False, f"predecessor {stable} not merged into origin/main"
+    # The v1.0 tag must actually describe the v1.0 program, not a
+    # renamed v0.3 or a dangling release label.
+    base_version = git("show", f"{sha}:VERSION")
+    if base_version.returncode or base_version.stdout.strip() != stable:
+        return False, f"predecessor {stable} does not contain VERSION={stable}"
+    published = progress.get("published_releases", {}).get(stable)
+    if not isinstance(published, dict) or published.get("published") is not True:
+        return False, f"missing verified publication receipt for {stable}"
+    if published.get("release_commit_sha") != sha:
+        return False, f"published predecessor SHA mismatch for {stable}"
+    # A local tag can be fabricated independently of GitHub. Require
+    # the exact annotated tag object to exist on the origin remote too.
+    remote_tag = git("ls-remote", "--tags", "origin", f"refs/tags/{stable}")
+    remote_lines = remote_tag.stdout.strip().splitlines()
+    if (remote_tag.returncode or len(remote_lines)!=1
+            or remote_lines[0].split() != [tagged.stdout.strip(),
+                                         f"refs/tags/{stable}"]):
+        return False, f"published predecessor {stable} tag is absent/mismatched on origin"
+    expected_url = (
+        "https://github.com/marlin198323-glitch/nexverse-viewer/"
+        f"releases/tag/{stable}"
+    )
+    if published.get("release_url") != expected_url:
+        return False, f"missing official GitHub Release URL for {stable}"
+    # The receipt is not an external GitHub API attestation; perform
+    # manual/web verification of the URL before actual publishing.
+    return True, f"local annotated {stable} tag, main ancestry and publication receipt OK"
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     action=parser.add_mutually_exclusive_group()
@@ -73,6 +134,16 @@ def main():
         if not match.get("release_to_main"):
             print("RELEASE BLOCKED: pre-v1 development milestone cannot merge to main")
             return 2
+        # For hotfixes the predecessor must be an actual shipped
+        # release, even if someone marks the roadmap JSON as FERTIG.
+        progress=json.loads((ROOT/"docs/PROJECT_PROGRESS.json").read_text(
+            encoding="utf-8"))
+        prior_ok, prior_detail=stable_predecessor_released(target, progress)
+        if not prior_ok:
+            print(f"RELEASE BLOCKED: {prior_detail}")
+            return 2
+        if target=="v1.0.0.1":
+            print("PREDECESSOR PREREQUISITE:",prior_detail)
         index=stages.index(match)
         checks=stages[:index+1]
         if v!=target or any(stage["status"]!="FERTIG" for stage in checks) or any(

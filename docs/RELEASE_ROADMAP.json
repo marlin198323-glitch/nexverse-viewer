@@ -464,7 +464,7 @@
     {
       "version": "v1.0.0.1",
       "title": "Erstes Wartungs- und Hotfixrelease",
-      "status": "GEPLANT",
+      "status": "BLOCKIERT",
       "depends_on": [
         "v1.0.0.0"
       ],
@@ -503,7 +503,15 @@
         }
       ],
       "release_to_main": true,
-      "tag_only_after_verified_release": true
+      "tag_only_after_verified_release": true,
+      "blocked_by": [
+        "v1.0.0.0 not released on main; no annotated tag",
+        "No published predecessor GitHub Release / receipt",
+        "Prerequisites v0.4.0.0 through v1.0.0.0 unfinished",
+        "Seven authenticated E2E release proofs missing",
+        "No post-v1.0.0.0 production defects can yet be reproduced",
+        "Current VERSION v0.3.0.0; no v1.0.0.1 build"
+      ]
     },
     {
       "version": "v1.1.0.0",
@@ -553,5 +561,7 @@
     "firestorm_xvfb_gpu_gui_and_128px_icon": true,
     "legacy_alpha_module_manifest_supported": true,
     "main_release_or_tag_created": false
-  }
+  },
+  "requested_release_goal": "v1.0.0.1",
+  "requested_goal_status": "BLOCKIERT – predecessor v1.0.0.0 not shipped"
 }

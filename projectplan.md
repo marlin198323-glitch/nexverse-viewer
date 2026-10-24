@@ -2,6 +2,8 @@
 
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (ZEHN ECHTE ENTWICKLUNGSBLÖCKE); öffentliches Versionformat vMAJOR.MINOR.PATCH.REVISION. AKTUELL v0.3.0.0 (Entwicklung, nicht released), Gesamtfortschritt 39 % (38,65 % gewichtet), NÄCHSTES ZIEL v0.4.0.0.**
 
+**/goal v1.0.0.1 – RELEASE BLOCKIERT (24.10.2026):** v1.0.0.0 wurde NICHT auf main veröffentlicht. GitHub develop-current vor diesem Durchgang: d1e28f4074e4a405fecd1fedf8b5245f77e9d727; origin/main: f4d4a93ecb9b032e0fa675b42cadb8c7ecff80c0. Kein stabiler Vorgänger-Tag/GitHub-Release oder späterer reproduzierbarer Hotfix-Bug. Fortschritt 38,65 % (39 %). Neue v1.0.0.1-Release-Sperre kontrolliert annotierten Vorgängertag, exakte Remote-Tag-Identität, main-Vorfahren, v1.0.0.0-VERSION und übereinstimmenden Release-Beleg; 11 isolierte neue Git-Regressionsprüfungen PASS. VERSION bleibt v0.3.0.0, nächstes funktionales Ziel v0.4.0.0. Kein main-Merge, Tag oder Deployment. Details `docs/V1_0_0_1_RELEASE_BLOCKERS_2026-10-24.md` und `docs/RELEASE_VERSION_POLICY.md`.
+
 **NEUER /goal-VERTRAG:** `/goal vX.Y.Z.W fertigstellen` erledigt alle Aufgaben und Abnahmekriterien der Zielversion inklusive Vorgänger. `/goal v1.0.0.0 komplett fertigstellen und releasen` bedeutet vollständige Firestorm-/Grid-Parität, 100 % und sieben echte Endbeweise; erst dann Release-PR nach `main`, Merge, Tag `v1.0.0.0` und GitHub Release. `/goal v1.0.0.1 fertigstellen` ist die erste Wartung nach veröffentlichtem v1.0.0.0. Quellen: `VERSION`, `ROADMAP.md`, `docs/RELEASE_ROADMAP.json`, `docs/RELEASE_VERSION_POLICY.md`, `docs/PROJEKT_AUDIT_2026-10-24.md`. Die bisherigen Alpha.1–1194-Berichte bleiben NUR HISTORIE und keine öffentlichen Versionsstufen. Kein main-Merge/Tag ohne echten erfolgreichen Gate-Test.
 
 ## Verbindliche Versionsstufen
@@ -18,7 +20,7 @@
 | v0.9.5.0 | Stabilität, Sicherheit, Performance und Modulgrenzen | GEPLANT |
 | v0.9.9.0 | Release Candidate und plattformübergreifende Abnahme | GEPLANT |
 | v1.0.0.0 | Erste vollständige stabile Veröffentlichung | GEPLANT |
-| v1.0.0.1 | Erstes Wartungs- und Hotfixrelease | GEPLANT |
+| v1.0.0.1 | Erstes Wartungs- und Hotfixrelease | BLOCKIERT – v1.0.0.0 fehlt |
 | v1.1.0.0 | Optionale größere Funktionen nach stabilem Release | GEPLANT |
 
 Details zu den 36 Aufgaben und 34 Akzeptanzkriterien: `ROADMAP.md`. Alle Bedingungen müssen je Version als FERTIG/GETESTET nachgewiesen werden; laufende Alpha-Blöcke allein bedeuten keine fertige Version. Derzeitiger Stand 38,65 %, v1.0.0.0 Release BLOCKED.

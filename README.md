@@ -22,6 +22,7 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 - `develop-current` ist der Entwicklungsbranch,
   `CHATUEBERGABE.md` dokumentiert die Fortsetzung und
   `projectplan.md` bewahrt die historische Alpha-Implementierung.
+- **Angefragtes Hotfixrelease v1.0.0.1: BLOCKIERT**, weil v1.0.0.0 noch nicht als offizielles Release auf main existiert; siehe `docs/V1_0_0_1_RELEASE_BLOCKERS_2026-10-24.md`.
 - **Kein produktives v1.0.0.0 veröffentlicht**:
   Live-Grid-Head/Upper/Lower-Skin 3/3, Outfit, WASD/Yaw, volle
   Firestorm-UI, echte Plattform-/Security-/CI-Prüfungen fehlen.

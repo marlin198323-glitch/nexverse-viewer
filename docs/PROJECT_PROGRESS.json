@@ -230,5 +230,11 @@
     "python_tests_passed": 606,
     "linux_mint_gpu_gui_icon": "PASS",
     "stable_release": "BLOCKED – seven authentic end-to-end evidence pending"
-  }
+  },
+  "requested_release_goal": "v1.0.0.1",
+  "requested_goal_status": "BLOCKIERT",
+  "requested_goal_as_of": "2026-10-24",
+  "requested_release_predecessor_verified": false,
+  "requested_hotfix_release_verified": false,
+  "requested_release_note": "Stable v1.0.0.0 no tag/release; seven E2E proofs absent. Additional fail-closed predecessor tag/main/publication guard implemented."
 }

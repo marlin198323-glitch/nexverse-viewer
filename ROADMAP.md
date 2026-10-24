@@ -119,7 +119,7 @@ Freigabe: `docs/RELEASE_VERSION_POLICY.md`. Historische Alpha-Blöcke stehen wei
 - [ ] v1.0.0.0-A03 – Erst dann Pull Request nach main, Merge nach Freigabe, annotierter v1.0.0.0-Tag und GitHub-Release
 
 ### v1.0.0.1 – Erstes Wartungs- und Hotfixrelease
-**Status:** GEPLANT – Main-Merge und Release nur nach vollständigem Gate
+**Status:** BLOCKIERT – v1.0.0.0 muss vorher auf main veröffentlicht werden – Main-Merge und Release nur nach vollständigem Gate
 **Aufgaben:**
 - [ ] v1.0.0.1-T01 – Nach v1.0.0.0 gemeldete Bugs reproduzieren und beheben
 - [ ] v1.0.0.1-T02 – Sicherheits-/Regressionstests und ggf. Protokoll-Fixes
