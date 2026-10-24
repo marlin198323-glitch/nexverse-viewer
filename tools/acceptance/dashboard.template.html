@@ -49,6 +49,20 @@ button.danger{border-color:#8f5252;color:#ffb8b8;background:#3f252d}
 .progress-fill{background:#32aaca;height:100%;width:0}
 .status{min-height:18px;color:#a8dcbc;margin-top:8px}
 .version-meta{font-size:12px;opacity:.8;overflow-wrap:anywhere}
+.guided{border-color:#3d718c;background:linear-gradient(135deg,#162f49,#101b2c)}
+.guide-count{font:600 12px system-ui;color:#b5d9ed;letter-spacing:.025em}
+.guide-main{font-size:19px;font-weight:740;margin:8px 0}
+.guide-instructions{padding-left:23px}
+.guide-instructions li{margin:10px 0;line-height:1.55}
+.guide-actions{display:flex;gap:8px;flex-wrap:wrap}
+.guide-actions button{flex:1;min-width:165px}
+.guide-actions button.selected{outline:2px solid #a1e0fc}
+.guide-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;flex-wrap:wrap}
+.guide-note{display:block;margin:13px 0}
+.guide-note textarea{margin-top:5px;resize:vertical;min-height:65px}
+.guided-good{background:#193b33;border-color:#34785f}
+.guided-bad{background:#482e35;border-color:#a35462}
+.guided-wait{background:#303745;border-color:#6a788d}
 footer{font-size:12px;color:#8da4bb}
 @media(max-width:800px){.controls,.review-grid{grid-template-columns:1fr}.review-notes{grid-column:auto}header,main,footer{padding-left:14px;padding-right:14px}}
 @media print{body{background:white;color:#111}.card{box-shadow:none;background:white;border-color:#999}button,.toolbar,header .pill{display:none!important}select,input,textarea{color:#111;background:white} .muted,.source{color:#444}}
@@ -64,6 +78,29 @@ footer{font-size:12px;color:#8da4bb}
 <div><div class="muted">Meilensteine</div><div class="stat" id="milestonesCount">–</div></div>
 <div><div class="muted">Offizielle Abnahmekriterien</div><div class="stat" id="criteriaCount">–</div></div>
 <div><div class="muted">Manuell geprüft (Entwurf)</div><div class="stat" id="reviewCount">–</div></div>
+</section>
+<section class="card guided" aria-label="Geführte Abnahme für Einsteiger">
+<div class="topline"><h2>Geführte Abnahme – wir machen das gemeinsam</h2><span class="pill" id="guidedProgress">0 / 8 geprüft</span></div>
+<p class="muted">Du benötigst keine technischen Kenntnisse. Führe einfach die angezeigten Schritte im Viewer aus. Ich übernehme die Log-, Server- und Fehleranalyse nach deiner Rückmeldung. Keine Passwörter ins Formular.</p>
+<div class="guide-count" id="guidedNumber"></div>
+<div class="guide-main" id="guidedTitle"></div>
+<p class="muted" id="guidedWho"></p>
+<ol class="guide-instructions" id="guidedInstructions"></ol>
+<p><strong>So muss es aussehen:</strong> <span id="guidedExpected"></span></p>
+<p class="source" id="guidedTask"></p>
+<div class="guide-actions" id="guidedActions">
+<button type="button" class="guided-good" data-result="FUNKTIONIERT">Funktioniert</button>
+<button type="button" class="guided-bad" data-result="FEHLER">Fehler / geht nicht</button>
+<button type="button" class="guided-wait" data-result="NICHT_MOEGLICH">Noch nicht möglich</button>
+</div>
+<label class="guide-note">Was hast du gesehen? (optional; bei Fehlern besonders hilfreich)
+<textarea id="guidedNotes" maxlength="4096" placeholder="z. B. Login lädt ewig, Bildschirm bleibt schwarz, W bewegt nur Kamera ..."></textarea></label>
+<div class="guide-foot">
+<button type="button" id="guidedPrevious">Zurück</button>
+<button type="button" class="primary" id="guidedNext">Nächster Schritt</button>
+</div>
+<p class="status" id="guidedState" role="status"></p>
+<p class="notice">Deine Rückmeldung ist ein manueller Befund, noch kein bestätigter technischer Abnahmetest. Sie wird im JSON-Protokoll gespeichert, aber gibt niemals einen Release frei.</p>
 </section>
 <section class="card"><h2>Abnahmesitzung</h2>
 <p class="notice">Dieses Formular dokumentiert manuelle Prüfungen. Eine Auswahl „BESTANDEN“ ändert <strong>niemals</strong> den offiziellen Projektplan oder die Freigabe. Reale Grid-/Plattform-Nachweise und die automatische Releaseprüfung bleiben verpflichtend.</p>
@@ -93,7 +130,7 @@ footer{font-size:12px;color:#8da4bb}
 <div id="items"></div>
 </section>
 </main>
-<footer>Lokale, offlinefähige Abnahme. Protokolle bleiben im Browser, bis sie ausdrücklich exportiert werden. Keine Zugangsdaten, Tokens oder personenbezogenen Geheimnisse als Nachweis eintragen. Eine neue Git-SHA erfordert eine neue Prüfgrundlage.</footer>
+<footer>Geführte Offline-Abnahme. Ich helfe bei der technischen Auswertung; du musst nur beobachten und angeben, ob etwas funktioniert. Protokolle bleiben lokal bis zum Export. Keine Zugangsdaten, Tokens oder sonstige Geheimnisse eintragen. Neue Git-SHA erfordert neue Prüfgrundlage.</footer>
 <script>
 "use strict";
 /*__OGL_ACCEPTANCE_SNAPSHOT__*/
@@ -103,11 +140,25 @@ footer{font-size:12px;color:#8da4bb}
  const statuses=["OFFEN","IN_ARBEIT","BLOCKIERT","BESTANDEN"];
  let reviews={};
  let reviewer="";
+ let guidedResults={};
+ let guideIndex=0;
+ const guidedSteps=SNAPSHOT.guided.steps;
+ const allowedGuided=new Set(["FUNKTIONIERT","FEHLER","NICHT_MOEGLICH","NICHT_GETESTET"]);
+ const guidedIds=new Set(guidedSteps.map(s=>s.id));
  try{
    const old=JSON.parse(localStorage.getItem(key)||"null");
    if(old&&old.version===SNAPSHOT.version&&old.snapshot_sha===SNAPSHOT.snapshot_sha
      &&typeof old.reviews==="object"&&old.reviews&&!Array.isArray(old.reviews)){
        reviews=old.reviews; reviewer=typeof old.reviewer==="string"?old.reviewer:"";
+       if(old.guided_results&&typeof old.guided_results==="object"&&!Array.isArray(old.guided_results)){
+         for(const [id,result] of Object.entries(old.guided_results)){
+           if(guidedIds.has(id)&&result&&allowedGuided.has(result.status)&&
+             typeof result.notes==="string"&&result.notes.length<=4096)
+             guidedResults[id]=result;
+         }
+       }
+       if(Number.isInteger(old.guide_index)&&old.guide_index>=0&&old.guide_index<guidedSteps.length)
+         guideIndex=old.guide_index;
    }
  }catch(_){}
  const ids=new Set(SNAPSHOT.milestones.flatMap(m=>[...m.tasks,...m.acceptance].map(x=>x.id)).concat(SNAPSHOT.release_evidence.map(x=>x.id)));
@@ -119,7 +170,8 @@ footer{font-size:12px;color:#8da4bb}
  function message(str){text($("status"),str)}
  function save(){
    try{localStorage.setItem(key,JSON.stringify({
-     version:SNAPSHOT.version,snapshot_sha:SNAPSHOT.snapshot_sha,reviews,reviewer
+     version:SNAPSHOT.version,snapshot_sha:SNAPSHOT.snapshot_sha,reviews,reviewer,
+     guided_results:guidedResults,guide_index:guideIndex
    }));}catch(_){message("Speichern im Browser blockiert: Bitte JSON exportieren.");}
    updateCounts();
  }
@@ -141,6 +193,42 @@ footer{font-size:12px;color:#8da4bb}
    const validItems=Object.keys(reviews).filter(id=>ids.has(id)&&safeReview(id));
    const passed=validItems.filter(id=>reviews[id].status==="BESTANDEN").length;
    text($("reviewCount"),passed+" / "+ids.size);
+ }
+ function renderGuided(){
+   const entry=guidedSteps[guideIndex];
+   if(!entry)return;
+   const result=guidedResults[entry.id]||{status:"NICHT_GETESTET",notes:"",tested_at:""};
+   text($("guidedNumber"),"Schritt "+(guideIndex+1)+" von "+guidedSteps.length);
+   text($("guidedTitle"),entry.title);
+   text($("guidedWho"),entry.who);
+   $("guidedInstructions").replaceChildren(...entry.instructions.map(instruction=>
+     element("li",null,instruction)));
+   text($("guidedExpected"),entry.expected);
+   text($("guidedTask"),"Roadmap: "+entry.related_roadmap_id+" · Ergebnis ist eine Beobachtung, kein bestätigter Servernachweis");
+   $("guidedNotes").value=result.notes||"";
+   for(const button of $("guidedActions").querySelectorAll("button[data-result]")){
+     button.classList.toggle("selected",button.dataset.result===result.status);
+     button.setAttribute("aria-pressed",button.dataset.result===result.status?"true":"false");
+   }
+   text($("guidedState"),result.status==="FUNKTIONIERT"?"Du hast 'Funktioniert' angegeben. Ich prüfe anschließend die technischen Belege.":
+     result.status==="FEHLER"?"Fehler erfasst. Schreib dazu möglichst kurz auf, was passiert ist.":
+     result.status==="NICHT_MOEGLICH"?"Als noch nicht möglich markiert – der Schritt bleibt offen.":"Noch nicht geprüft");
+   $("guidedPrevious").disabled=guideIndex===0;
+   $("guidedNext").disabled=guideIndex===guidedSteps.length-1;
+   text($("guidedNext"),guideIndex===guidedSteps.length-1?"Alle Schritte angezeigt":"Nächster Schritt");
+   const completed=guidedSteps.filter(s=>guidedResults[s.id]&&
+     guidedResults[s.id].status!=="NICHT_GETESTET").length;
+   text($("guidedProgress"),completed+" / "+guidedSteps.length+" beantwortet");
+ }
+ function setGuidedResult(status){
+   if(!allowedGuided.has(status))return;
+   const item=guidedSteps[guideIndex];
+   guidedResults[item.id]={
+     status,
+     notes:$("guidedNotes").value.slice(0,4096),
+     tested_at:new Date().toISOString()
+   };
+   save();renderGuided();
  }
  function activeMilestone(){return SNAPSHOT.milestones.find(x=>x.version===$("version").value)||SNAPSHOT.milestones[0]}
  function addField(box,title,type,value,onChange,options){
@@ -221,7 +309,13 @@ footer{font-size:12px;color:#8da4bb}
      version:SNAPSHOT.version,snapshot_sha:SNAPSHOT.snapshot_sha,
      exported_at:new Date().toISOString(),reviewer,
      local_review_only:true,release_authorized:false,
-     reviews:safe};
+     reviews:safe,
+     guided_results:Object.fromEntries(Object.entries(guidedResults)
+       .filter(([id,v])=>guidedIds.has(id)&&v&&
+         allowedGuided.has(v.status)&&typeof v.notes==="string"&&v.notes.length<=4096)
+       .map(([id,v])=>[id,{
+         status:v.status,notes:v.notes,tested_at:String(v.tested_at||"")
+       }]))};
  }
  function exportReport(){
    const blob=new Blob([JSON.stringify(buildExport(),null,2)],{type:"application/json"});
@@ -243,8 +337,22 @@ footer{font-size:12px;color:#8da4bb}
      if(!ids.has(id)||!valid(v))throw Error("Ungültiger Review-Eintrag: "+id);
      incoming[id]=v;
    }
-   reviews=incoming;reviewer=String(src.reviewer||"").slice(0,120);
-   $("reviewer").value=reviewer;save();render();
+   const guidedIncoming=Object.create(null);
+   if(src.guided_results!==undefined){
+     if(!src.guided_results||Array.isArray(src.guided_results)||
+       typeof src.guided_results!=="object")throw Error("Ungültige begleitete Abnahme");
+     for(const [id,r] of Object.entries(src.guided_results)){
+       if(!guidedIds.has(id)||!r||!allowedGuided.has(r.status)||
+         typeof r.notes!=="string"||r.notes.length>4096||
+         typeof r.tested_at!=="string"||
+         (r.status!=="NICHT_GETESTET"&&!r.tested_at))
+         throw Error("Ungültiges geführtes Testergebnis: "+id);
+       guidedIncoming[id]=r;
+     }
+   }
+   reviews=incoming;guidedResults=guidedIncoming;
+   reviewer=String(src.reviewer||"").slice(0,120);
+   $("reviewer").value=reviewer;save();render();renderGuided();
    message("Abnahmeprotokoll importiert: "+Object.keys(incoming).length+" Prüfpunkte.");
  }
  function init(){
@@ -270,9 +378,24 @@ footer{font-size:12px;color:#8da4bb}
      e.target.value="";
    });
    $("print").addEventListener("click",()=>window.print());
+   for(const button of $("guidedActions").querySelectorAll("button[data-result]"))
+     button.addEventListener("click",()=>setGuidedResult(button.dataset.result));
+   $("guidedPrevious").addEventListener("click",()=>{
+     if(guideIndex>0)guideIndex--;save();renderGuided();
+   });
+   $("guidedNext").addEventListener("click",()=>{
+     if(guideIndex<guidedSteps.length-1)guideIndex++;save();renderGuided();
+   });
+   $("guidedNotes").addEventListener("input",()=>{
+     const item=guidedSteps[guideIndex];
+     const old=guidedResults[item.id]||{status:"NICHT_GETESTET",tested_at:""};
+     guidedResults[item.id]={...old,notes:$("guidedNotes").value.slice(0,4096)};
+     save();
+   });
    $("reset").addEventListener("click",()=>{
      if(confirm("Alle lokalen manuellen Bewertungen zu dieser Git-SHA löschen?")){
-       reviews={};reviewer="";$("reviewer").value="";save();render();
+       reviews={};guidedResults={};guideIndex=0;
+       reviewer="";$("reviewer").value="";save();render();renderGuided();
        message("Lokale Bewertungen gelöscht. Offizielle Roadmap unverändert.");
      }
    });
@@ -287,7 +410,7 @@ footer{font-size:12px;color:#8da4bb}
       SNAPSHOT.release_evidence.length+" verpflichtende reale Endnachweise "+
       "offiziell bestätigt. Dieser lokale Abnahmedialog kann keine Release-Tags, "+
       "GitHub-Merges oder den Projektstatus verändern.");
-   render();
+   render();renderGuided();
    // Headless Chromium smoke: exercise selection + review interaction.
    if(new URLSearchParams(location.search).has("selftest")){
      const first=SNAPSHOT.milestones[0].tasks[0].id;
@@ -296,7 +419,12 @@ footer{font-size:12px;color:#8da4bb}
      reviewEdit(first,"evidence","smoke-tests/chromium-ui-evidence.log");
      reviewEdit(first,"notes","Browser UI event roundtrip");
      const state=buildExport();
-     const success=$("items").children.length>0&&incomplete&&
+     // A beginner must be able to record an observable result in one click.
+     setGuidedResult("FUNKTIONIERT");
+     const guidedPass=guidedResults[guidedSteps[0].id].status==="FUNKTIONIERT"&&
+       buildExport().guided_results[guidedSteps[0].id].status==="FUNKTIONIERT"&&
+       $("guidedProgress").textContent.includes("1 / 8");
+     const success=guidedPass&&$("items").children.length>0&&incomplete&&
        state.reviews[first].status==="BESTANDEN"&&
        state.reviews[first].notes==="Browser UI event roundtrip"&&
        !state.release_authorized&&!SNAPSHOT.release_eligible;

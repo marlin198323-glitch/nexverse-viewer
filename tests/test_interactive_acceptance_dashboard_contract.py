@@ -102,6 +102,56 @@ class AcceptanceDashboardContract(unittest.TestCase):
         self.assertIn('const incomplete=rawReview(first).status==="BESTANDEN"&&!safeReview(first)',src)
         self.assertIn('reviewEdit(first,"evidence","smoke-tests/chromium-ui-evidence.log")',src)
 
+    def test_beginner_guided_acceptance_has_eight_real_viewer_tasks(self):
+        guided=self.snap["guided"]
+        self.assertEqual(guided["version"],"v0.4.0.0")
+        self.assertEqual(len(guided["steps"]),8)
+        ids=[step["id"] for step in guided["steps"]]
+        self.assertEqual(len(ids),len(set(ids)))
+        for step in guided["steps"]:
+            self.assertGreaterEqual(len(step["instructions"]),2)
+            self.assertTrue(step["expected"].strip())
+            self.assertIn(step["related_roadmap_id"],
+                {item["id"] for stage in self.snap["milestones"]
+                 for kind in ("tasks","acceptance") for item in stage[kind]})
+        self.assertIn("walk",ids)
+        self.assertIn("teleport",ids)
+        self.assertIn("login",ids)
+
+    def test_guided_results_accept_user_observation_without_release_approval(self):
+        out=self.check_report({},guided_results={"login":{
+            "status":"FUNKTIONIERT",
+            "notes":"Angemeldet, 3D-Welt ist sichtbar",
+            "tested_at":"2026-10-24T15:01:00Z"
+        }})
+        self.assertEqual(out.returncode,0,out.stderr)
+        self.assertIn("1 guided results",out.stdout)
+        self.assertFalse(self.snap["release_eligible"])
+
+    def test_guided_results_block_unknown_status_id_and_false_attestation(self):
+        cases=[
+            {"no-real-step":{"status":"FEHLER","notes":"error","tested_at":"2026-10-24T15:01:00Z"}},
+            {"login":{"status":"RELEASED","notes":"","tested_at":"2026-10-24T15:01:00Z"}},
+            {"login":{"status":"FUNKTIONIERT","notes":"","tested_at":""}},
+            {"login":{"status":"FEHLER","notes":123,"tested_at":"2026-10-24T15:01:00Z"}}
+        ]
+        for entries in cases:
+            with self.subTest(entries=entries):
+                self.assertEqual(self.check_report({},guided_results=entries).returncode,2)
+
+    def test_guided_steps_ui_has_clear_buttons_next_back_and_expected_result(self):
+        src=self.m.TEMPLATE.read_text(encoding="utf-8")
+        for token in ('id="guidedInstructions"','id="guidedExpected"',
+            'id="guidedNext"','id="guidedPrevious"',
+            'data-result="FUNKTIONIERT"','data-result="FEHLER"',
+            'data-result="NICHT_MOEGLICH"',
+            'function renderGuided()','function setGuidedResult(status)',
+            "guided_results:Object.fromEntries","const guidedIncoming=Object.create(null)",
+            'const guidedPass=guidedResults[guidedSteps[0].id].status==="FUNKTIONIERT"'):
+            self.assertIn(token,src)
+        self.assertNotIn("fetch(",src)
+        self.assertNotIn("innerHTML=",src)
+
     def test_no_release_from_dashboard_even_when_user_marks_all_passed(self):
         src=self.m.TEMPLATE.read_text(encoding="utf-8")
         self.assertIn("!SNAPSHOT.release_eligible",src)

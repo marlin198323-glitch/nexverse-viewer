@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "version": "v0.4.0.0",
+  "title": "Begleitete Abnahme: Login, Welt, Steuerung und Teleport",
+  "steps": [
+    {
+      "id": "start",
+      "title": "Viewer starten",
+      "who": "Du startest den OGL Viewer; ich prüfe Build, Startlogs und Abstürze.",
+      "instructions": [
+        "Öffne den OGL Viewer auf Linux Mint, nicht den Firestorm-Viewer.",
+        "Kontrolliere, ob ein Loginfenster erscheint und du es wieder minimieren oder schließen kannst.",
+        "Wenn der Viewer gar nicht startet: 'Fehler' anklicken und aufschreiben, was du siehst."
+      ],
+      "expected": "Ein lesbares Loginfenster erscheint, keine Fehlermeldung oder Absturz.",
+      "related_roadmap_id": "v0.4.0.0-T01"
+    },
+    {
+      "id": "login",
+      "title": "Im Grid anmelden",
+      "who": "Du meldest dich an; ich werte anschließend getrennt die echten Auth-/CAPS-/LLUDP-Logs aus.",
+      "instructions": [
+        "Trage deine Zugangsdaten ausschließlich direkt im OGL-Viewer ein.",
+        "Benutze die vorhandene NexVerse-Grid-Auswahl und klicke auf Anmelden.",
+        "Warte auf das 3D-Fenster oder eine konkrete Fehlermeldung. Keine Passwörter oder Tokens hier eingeben."
+      ],
+      "expected": "Du erreichst die 3D-Welt mit deinem Avatar, ohne wiederholte Login-Abbrüche.",
+      "related_roadmap_id": "v0.4.0.0-A01"
+    },
+    {
+      "id": "world",
+      "title": "Region und Verbindung",
+      "who": "Du schaust, ob die Welt erscheint; ich prüfe die Region- und EventQueue-Diagnose.",
+      "instructions": [
+        "Lass das Viewerfenster offen und warte, bis die Welt sichtbar ist.",
+        "Drücke F3, um die technische Diagnose einzublenden.",
+        "Siehst du Boden und andere Objekte? Bleiben Verbindungsfehler oder ein dauerhaft leerer Bildschirm?"
+      ],
+      "expected": "Region/Boden/Objekte erscheinen; F3 zeigt eine laufende Verbindung ohne andauernden Abbruch.",
+      "related_roadmap_id": "v0.4.0.0-T02"
+    },
+    {
+      "id": "walk",
+      "title": "WASD testen",
+      "who": "Du beobachtest die Bewegung; ich prüfe, ob der Simulator die Positionsänderung bestätigt.",
+      "instructions": [
+        "Klicke einmal in die 3D-Welt, damit die Tastatur an den Viewer geht.",
+        "Drücke W ungefähr zwei Sekunden. Danach S, A und D nacheinander kurz.",
+        "Beobachte, ob sich dein Avatar tatsächlich in der Welt bewegt. Prüfe zusätzlich die Bewegungsdiagnose in F3."
+      ],
+      "expected": "Die Figur bewegt sich passend zu den Tasten, nicht nur die Kamera; die Serverantwort bestätigt die Richtung.",
+      "related_roadmap_id": "v0.4.0.0-A02"
+    },
+    {
+      "id": "turn",
+      "title": "Drehung testen",
+      "who": "Du drehst die Figur; ich prüfe die tatsächliche Simulator-Rotation (Yaw).",
+      "instructions": [
+        "Klicke in die 3D-Welt und drücke die rechte Pfeiltaste kurz.",
+        "Drücke danach die linke Pfeiltaste.",
+        "Beobachte, ob sich Avatar/Blickrichtung ändern und ob F3 eine echte Rotationsbestätigung ausweist."
+      ],
+      "expected": "Die Drehung reagiert, und die Serverrotation folgt der tatsächlichen Eingabe.",
+      "related_roadmap_id": "v0.4.0.0-T03"
+    },
+    {
+      "id": "jump",
+      "title": "Springen und Fliegen",
+      "who": "Du probierst zwei Steueraktionen; ich prüfe echtes vertikales Server-Readback.",
+      "instructions": [
+        "Drücke einmal die Leertaste zum Springen und beobachte, ob die Figur hochspringt.",
+        "Öffne 'Bewegen' und wähle den Flugmodus-Button oder drücke F.",
+        "Benutze Leertaste zum Aufsteigen und Umschalt-Taste zum Sinken, soweit die Region Fliegen erlaubt. Drücke F erneut zum Beenden."
+      ],
+      "expected": "Ein echter Höhenwechsel ist sichtbar und erscheint in F3 als Simulatorantwort; bei Flugverbot ist 'Nicht möglich' korrekt.",
+      "related_roadmap_id": "v0.4.0.0-A02"
+    },
+    {
+      "id": "teleport",
+      "title": "Teleport und Regionenwechsel",
+      "who": "Du benutzt die sichtbare Teleportfunktion; ich prüfe Serverwechsel und CAPS-Reconnect.",
+      "instructions": [
+        "Öffne im Viewer den Menüpunkt 'Teleport'.",
+        "Wähle eine dir bekannte, erlaubte Position oder Region und starte den Teleport.",
+        "Prüfe, ob die neue Region erscheint und sich der Avatar danach wieder bewegen kann."
+      ],
+      "expected": "Teleport erreicht das Ziel, die Verbindung bleibt stabil und die alten Regiondaten verschwinden.",
+      "related_roadmap_id": "v0.4.0.0-A01"
+    },
+    {
+      "id": "relogin",
+      "title": "Abmelden und neu anmelden",
+      "who": "Du meldest dich ab und wieder an; ich prüfe alte Sitzungs- und Regiondaten.",
+      "instructions": [
+        "Schließe den Viewer regulär.",
+        "Starte ihn erneut und melde dich mit demselben Konto an.",
+        "Prüfe, ob die Welt wieder lädt und die Steuerung ohne eingefrorene Eingaben funktioniert."
+      ],
+      "expected": "Neuanmeldung klappt; keine Daten aus der vorherigen Sitzung werden falsch angezeigt.",
+      "related_roadmap_id": "v0.4.0.0-A03"
+    }
+  ]
+}

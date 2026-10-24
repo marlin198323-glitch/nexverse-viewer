@@ -16,6 +16,7 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
   (38,65 % gewichtet); vollständige Firestorm-/Grid-Funktionsparität ist offen.
 - Erste vollständige stabile Zielversion: **`v1.0.0.0`**.
   Erste Wartung danach: **`v1.0.0.1`**.
+- **Geführte Abnahme:** acht einfache Schritte von Login bis Teleport; im Dashboard nur Funktioniert, Fehler oder Noch nicht möglich auswählen. Logs werden technisch separat geprüft.
 - **Interaktive Projektabnahme:** auf Linux Mint
   `python3 scripts/ogl-acceptance.py --build` und
   `xdg-open build/acceptance/ABNAHME_DASHBOARD.html`.

@@ -4842,3 +4842,40 @@ Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.
   38,65 % gewichtet, Release BLOCKED, kein main-Merge.
 
 **INTERAKTIVE QA BATCH 02 GEMESSEN:** Linux Mint 185/185 CTests, 643/643 Python, Original-Firestorm-Xvfb-GPU-/GUI-/128px-Systemicon PASS. Selbstständiges Offline-Abnahmefenster nach jedem Git-Commit mit `python3 scripts/ogl-acceptance.py --build` neu generieren, per `xdg-open build/acceptance/ABNAHME_DASHBOARD.html` starten. Manuelle Bewertungen sind keine offiziellen E2E-Releasefreigaben, v0.4.0.0 weiter IN_ARBEIT.
+
+## v0.4.0.0 – Begleitete Live-Abnahme statt technischem Quiz
+
+Acht einfache praktische Prüfschritte: Start, Grid-Login,
+Welt/F3, WASD, Yaw, Springen/Fliegen, Teleport und Re-Login.
+Jeder Schritt hat tatsächliche Bedienanweisung und erwartete
+Beobachtung; die Nutzerseite meldet nur Funktioniert, Fehler oder
+Noch nicht möglich. Technische Log-/Simulatorprüfung übernimmt
+die Projektentwicklung. Manuelle Antworten mit Zeitstempel werden
+im lokalen SHA-gebundenen JSON-Protokoll gespeichert und sicher
+validiert, ändern aber niemals reale E2E-Beweise oder den
+offiziellen Status. Details: docs/ACCEPTANCE_GUIDED_V0400.json
+und docs/INTERAKTIVE_PROJEKTABNAHME.md.
+Echte Grid-Live-Endtests A01–A03 weiterhin offen.
+Keine Freigabe, kein main-Merge.
+
+## Geführte Abnahme (v0.4.0.0) – QA nachgewiesen
+
+Die echte Chromium-UI wurde im isolierten Headless-Modus bedient:
+Geführter Test #1 mit dem Button Funktioniert, Speicherung, Export
+der Antwort und unveränderter Releasefreigabe: PASS.
+Die Import-/Export-Validierung lehnt unbekannte Schritte,
+unzulässige Statuswerte, falsche Versions-/Git-SHA und
+erfundene Releaseberechtigungen ab. Der geführte Testplan
+besteht aus 8 eindeutigen, auf die Roadmap referenzierten Schritten.
+
+Lokale Linux-Mint-Abnahme: 185/185 native CTests, 647/647
+Python-Tests und original Firestorm-Xvfb-GPU-/GUI-/128px-X11-
+Taskleistenicon PASS, vollständiger CMake/vcpkg-x64-Debug-Build.
+Das Dashboard kann per scripts/ogl-acceptance.py --build
+zur aktuell geprüften Git-SHA neu erstellt werden.
+
+**Nicht abgenommen:** Aktuelle authentifizierte Live-Grid-Anmeldung,
+CAPS-/Teleport-Region-Endtest, serverbestätigte WASD-/Yaw-/Höhen-
+bewegung; weiterhin v0.4.0.0 IN_ARBEIT und v1 RELEASE BLOCKED.
+Der Nutzer soll nur die acht visuellen Testschritte und Beobachtungen
+liefern; die technischen Beweise bleiben Aufgabe der Entwicklung.

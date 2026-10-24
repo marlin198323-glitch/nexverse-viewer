@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 TEMPLATE=ROOT/"tools/acceptance/dashboard.template.html"
 OUTPUT=ROOT/"build/acceptance/ABNAHME_DASHBOARD.html"
+GUIDED_SPEC=ROOT/"docs/ACCEPTANCE_GUIDED_V0400.json"
+GUIDED_STATUSES={"FUNKTIONIERT","FEHLER","NICHT_MOEGLICH","NICHT_GETESTET"}
 RELEASE_CHECKS=(
     ("authenticated_live_grid_3_body_bakes_gpu_rgb","Live-Grid Skin: echte Head/Upper/Lower RGB-Bakes 3/3"),
     ("authenticated_live_grid_actual_outfit_and_cof","Live-Grid Outfit/CurrentOutfitFolder"),
@@ -35,8 +37,23 @@ def snapshot() -> dict:
         raise ValueError("invalid project git SHA")
     if roadmap.get("current_version")!=version or progress.get("viewer_version")!=version:
         raise ValueError("roadmap/progress/VERSION mismatch")
+    guided=json.loads(GUIDED_SPEC.read_text(encoding="utf-8"))
+    if guided.get("version")!=version:
+        raise ValueError("guided acceptance version does not match VERSION")
+    expected_ids={entry["id"] for stage in roadmap["milestones"]
+        for kind in ("tasks","acceptance") for entry in stage[kind]}
+    seen=set()
+    for step in guided["steps"]:
+        if (step["id"] in seen
+            or step.get("related_roadmap_id") not in expected_ids
+            or not isinstance(step.get("instructions"),list)
+            or not step["instructions"]
+            or not isinstance(step.get("expected"),str)):
+            raise ValueError("invalid guided acceptance mapping")
+        seen.add(step["id"])
     return {
         "schema_version":1,"project":"OpenGenesisLINK Viewer",
+        "guided":guided,
         "version":version,"snapshot_sha":sha,
         "weighted_pct":round(sum(
             a["weight_pct"]*a["completion_pct"]/100 for a in progress["areas"]),2),
@@ -102,8 +119,26 @@ def validate_manual(path: Path) -> int:
                     raise ValueError("BESTANDEN requires concrete evidence and test timestamp")
                 passed+=1
             if state=="BLOCKIERT":blocked+=1
+        results=report.get("guided_results",{})
+        if not isinstance(results,dict):
+            raise ValueError("guided_results is not an object")
+        guided_ids={step["id"] for step in snap["guided"]["steps"]}
+        if len(results)>len(guided_ids):
+            raise ValueError("too many guided test results")
+        for ident,result in results.items():
+            if ident not in guided_ids or not isinstance(result,dict):
+                raise ValueError("unknown guided step")
+            if result.get("status") not in GUIDED_STATUSES:
+                raise ValueError("illegal guided status")
+            if any(not isinstance(result.get(field,""),str)
+                or len(result.get(field,""))>4096
+                for field in ("notes","tested_at")):
+                raise ValueError("invalid guided result text")
+            if result["status"]!="NICHT_GETESTET" and not result.get("tested_at"):
+                raise ValueError("guided result needs date/time")
         print(f"OGL_MANUAL_ACCEPTANCE_VALID: {len(reviews)} reviews; "
-              f"{passed} user-reported passed; {blocked} blocked")
+              f"{passed} user-reported passed; {blocked} blocked; "
+              f"{len(results)} guided results")
         print("MANUAL REVIEWS DO NOT CHANGE ROADMAP OR RELEASE STATUS; "
               "real E2E and the official release-readiness gate remain mandatory")
         return 0

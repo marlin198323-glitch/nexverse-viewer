@@ -32,6 +32,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect
 **T02 Teilfortschritt (Batch 02):** EventQueue HTTP-200 ohne bestätigbare ACK-ID wird nicht zugestellt, leere idlose Antworten werden kontrolliert gepaced. Interaktives QA-Dashboard unter `docs/INTERAKTIVE_PROJEKTABNAHME.md` verfügbar; keine automatisierte Live-Freigabe. Voller Region-/Teleport-E2E weiter offen.
 
+**Geführte manuelle Abnahme:** Acht Bedien- und Beobachtungstests in docs/ACCEPTANCE_GUIDED_V0400.json. Nutzer meldet sichtbare Resultate, Entwickler prüft Logs/Server-Readback. Weiterhin keine offizielle Live-Freigabe.
+
 - [ ] v0.4.0.0-T03 – WASD, Rotation, Sprung/Flug und Kamera im echten Grid inklusive serverseitigem Positions-/Yaw-/Z-Readback
 **Abnahmekriterien:**
 - [ ] v0.4.0.0-A01 – Echter authentifizierter NexVerse-Login/Re-Login, Region-Handoff, Teleport und Rückkehr reproduzierbar
