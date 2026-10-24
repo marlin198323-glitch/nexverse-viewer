@@ -59,9 +59,9 @@ class SelfAppearanceHandshakeContract(unittest.TestCase):
         self.assertIn("decoded_region_reply.packet->payload[32U]!=0U",test)
         self.assertIn("(ssa.packet->header.flags&packet_reliable)==0U",test)
     def test_handoff_and_percent(self):
-        self.assertEqual(s("VERSION").strip(),"v0.3.0.0")
+        self.assertEqual(s("VERSION").strip(),"v0.4.0.0")
         data=json.loads(s("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(data["viewer_version"],"v0.3.0.0")
+        self.assertEqual(data["viewer_version"],"v0.4.0.0")
         self.assertEqual(data["default_blocks_per_run"],10)
         self.assertEqual(data["next_batch"],"v0.4.0.0")
         for name in ("CHATUEBERGABE.md","AGENTS.md","info.md",

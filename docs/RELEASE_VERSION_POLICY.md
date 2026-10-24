@@ -3,7 +3,7 @@
 ## Format und Quelle
 
 Die einzige aktuelle öffentliche Entwicklungsversionsnummer steht in `VERSION`:
-**v0.3.0.0** (noch nicht released). Format: `vMAJOR.MINOR.PATCH.REVISION`.
+**v0.4.0.0** (Grid/Login/CAPS in Entwicklung, nicht released). Format: `vMAJOR.MINOR.PATCH.REVISION`.
 
 - MAJOR: neue stabile Produktgeneration; v1 = erste vollständig abgenommene Firestorm-kompatible Version.
 - MINOR: fachlich großer Versionsmeilenstein (v0.4 Verbindung, v0.5 Avatar usw.).

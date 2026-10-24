@@ -1,6 +1,8 @@
 # OpenGenesisLINK Viewer – versionsbasierter Projektplan
 
-**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (ZEHN ECHTE ENTWICKLUNGSBLÖCKE); öffentliches Versionformat vMAJOR.MINOR.PATCH.REVISION. AKTUELL v0.3.0.0 (Entwicklung, nicht released), Gesamtfortschritt 39 % (38,65 % gewichtet), NÄCHSTES ZIEL v0.4.0.0.**
+**AKTIVE ROADMAP v0.4.0.0 – GRID/LOGIN/CAPS SECURE TRANSPORT (10 ECHTE ENTWICKLUNGSBLÖCKE):** v0.3.0.0 als geprüfte Baseline FERTIG, v0.4.0.0 IN ARBEIT; ALPHA-HISTORIE unverändert dokumentiert. XML-RPC-/CAPS-/GridInfo-URI-Validator verweigert UserInfo-Spoof, defekte Ports/Hostsegmente, Steuerzeichen und Redirect-Manipulationen; LoginService verweigert ungültige Ziele ohne sensitives POST. CAPS-URLs aus Seed LLSD werden geprüft, manipulierte GridInfo erhält keinen Cacheersatz. libcurl folgt keinem 30x-Redirect (GET Bearer-URL-Token und POST Passwort-Hash/LLSD-Body bleiben geschützt). Ein echter Loopback-libcurl-307-HTTP-Test plus native GridDiscovery/Login/CAPS-Tests und zehn Python-Quellverträge. Mint-x64-CMake/vcpkg-Build 428/428 Schritte, 185/185 native CTests, 628/628 Python, echter Original-Firestorm-Xvfb-GPU-/GUI-/128px-X11-Icon-Test PASS. Offen: authentifizierter aktueller Live-Grid-Login/SSO, CAPS-/Region/Teleport-Reconnect, tatsächlich serverbestätigte WASD/Yaw/Jump/Flight. T01 IN_ARBEIT, T02/T03 und A01/A02/A03 OFFEN, Fortschritt weiter 38,65 %, kein main-Merge, keine v1-Freigabe. Details `docs/V0_4_0_0_GRID_LOGIN_CAPS_SECURITY_BATCH01.md`.
+
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (ZEHN ECHTE ENTWICKLUNGSBLÖCKE); öffentliches Versionformat vMAJOR.MINOR.PATCH.REVISION. AKTUELL v0.4.0.0 (IN ARBEIT, nicht released), Gesamtfortschritt 39 % (38,65 % gewichtet), NÄCHSTES ZIEL v0.4.0.0.**
 
 **/goal v1.0.0.1 – RELEASE BLOCKIERT (24.10.2026):** v1.0.0.0 wurde NICHT auf main veröffentlicht. GitHub develop-current vor diesem Durchgang: d1e28f4074e4a405fecd1fedf8b5245f77e9d727; origin/main: f4d4a93ecb9b032e0fa675b42cadb8c7ecff80c0. Kein stabiler Vorgänger-Tag/GitHub-Release oder späterer reproduzierbarer Hotfix-Bug. Fortschritt 38,65 % (39 %). Neue v1.0.0.1-Release-Sperre kontrolliert annotierten Vorgängertag, exakte Remote-Tag-Identität, main-Vorfahren, v1.0.0.0-VERSION und übereinstimmenden Release-Beleg; 11 isolierte neue Git-Regressionsprüfungen PASS. VERSION bleibt v0.3.0.0, nächstes funktionales Ziel v0.4.0.0. Kein main-Merge, Tag oder Deployment. Details `docs/V1_0_0_1_RELEASE_BLOCKERS_2026-10-24.md` und `docs/RELEASE_VERSION_POLICY.md`.
 
@@ -11,7 +13,7 @@
 | Zielversion | Schwerpunkt | Status |
 |---|---|---|
 | v0.3.0.0 | Aktuelle technische Entwicklungsbasis | FERTIG – nur Entwicklung, kein Release |
-| v0.4.0.0 | Grid, Login, Regionen und reale Avatarsteuerung | GEPLANT |
+| v0.4.0.0 | Grid, Login, Regionen und reale Avatarsteuerung | IN_ARBEIT – P0 Grid/CAPS URI-Sicherheit, echte E2E offen |
 | v0.5.0.0 | Avatare, Skin, Outfits und Wearables | GEPLANT |
 | v0.6.0.0 | Welt-Renderer, Meshes und Materialsystem | GEPLANT |
 | v0.7.0.0 | Inventar, Bauen, Objekte, Karte und Grundstücke | GEPLANT |

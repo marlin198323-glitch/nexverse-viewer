@@ -59,9 +59,9 @@ class Alpha275DepthProof(unittest.TestCase):
         self.assertNotIn("std::to_string(packet.avatar_id)",exporter)
 
     def test_versions_and_hand_off(self):
-        self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+        self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
         progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(progress["viewer_version"],"v0.3.0.0")
+        self.assertEqual(progress["viewer_version"],"v0.4.0.0")
         self.assertEqual(progress["default_blocks_per_run"],10)
         self.assertEqual(progress["next_batch"],"v0.4.0.0")
         for path in ("CHATUEBERGABE.md","AGENTS.md","info.md","projectplan.md","docs/PROJEKTFORTSCHRITT.md"):

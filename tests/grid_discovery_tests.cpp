@@ -74,7 +74,19 @@ int main()
     if (!invalid.success || invalid.source != GridInfoSource::cache ||
         invalid.info.grid_name() != "NexVerse") return 5;
 
-    if (transport->calls != 4) return 6;
+    transport->response={
+        200,
+        "<gridinfo><login>http://hg.stadt-nexverse.de@evil.invalid/login</login>"
+        "<gridname>Poisoned</gridname></gridinfo>",{}};
+    const auto poisoned=discovery.refresh();
+    if(!poisoned.success||poisoned.source!=GridInfoSource::cache||
+       poisoned.info.grid_name()!="NexVerse")return 7;
+    transport->response={0,{},"offline"};
+    const auto still_safe=discovery.refresh();
+    if(!still_safe.success||still_safe.source!=GridInfoSource::cache||
+       still_safe.info.grid_name()!="NexVerse")return 8;
+
+    if (transport->calls != 6) return 6;
 
     std::filesystem::remove_all(root);
     std::cout << "Grid discovery tests passed\n";

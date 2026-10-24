@@ -156,6 +156,27 @@ int main()
         return 5;
     }
 
+    // v0.4: forged CAPS authority must be rejected BEFORE the POST.
+    const auto posts_before=transport->post_calls;
+    const auto url_before=transport->last_url;
+    const auto malicious=service.discover(
+        "https://caps.example.test@evil.invalid/seed",
+        {"EventQueueGet"});
+    if(malicious.success||transport->post_calls!=posts_before||
+       transport->last_url!=url_before)return 40;
+    constexpr std::string_view poisoned_seed=
+        "<llsd><map>"
+        "<key>EventQueueGet</key>"
+        "<uri>https://caps.example.test@evil.invalid/steal-token</uri>"
+        "<key>GetTexture</key><string>https://caps.example.test:99999/a</string>"
+        "<key>SimulatorFeatures</key>"
+        "<uri>https://caps.example.test/features</uri>"
+        "</map></llsd>";
+    const auto safe_seed=parse_seed_capability_response(poisoned_seed);
+    if(!safe_seed.success||safe_seed.capabilities.size()!=1U||
+       !safe_seed.capabilities.contains("SimulatorFeatures"))
+        return 41;
+
     transport->get_response = {
         200,
         "<llsd><map><key>MeshRezEnabled</key><boolean>true</boolean></map></llsd>",

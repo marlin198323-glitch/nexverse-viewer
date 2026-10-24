@@ -40,6 +40,6 @@ class MovementLookAtContract(unittest.TestCase):
    self.assertIn(token,n)
   self.assertIn("nexverse-self-agent-movement-look-at-tests",s("CMakeLists.txt"))
   self.assertIn("self_agent_movement_look_at_tests",s("scripts/pi5-headless-tests.sh"))
-  self.assertEqual(s("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(s("VERSION").strip(),"v0.4.0.0")
   self.assertIn("v0.4.0.0",s("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

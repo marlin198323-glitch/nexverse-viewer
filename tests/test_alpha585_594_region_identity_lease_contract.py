@@ -62,9 +62,9 @@ class RegionLease(unittest.TestCase):
   self.assertIn("world_model.apply_region(",app)
   self.assertIn("protocol::region_circuit_ready(",app)
  def test_next_release_and_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   p=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["viewer_version"],"v0.3.0.0")
+  self.assertEqual(p["viewer_version"],"v0.4.0.0")
   self.assertEqual(p["next_batch"],"v0.4.0.0")
   self.assertEqual(p["default_blocks_per_run"],10)
   self.assertIn("still open",p["assessment"])

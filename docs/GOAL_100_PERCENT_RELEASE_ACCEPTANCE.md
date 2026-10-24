@@ -1,6 +1,6 @@
 # OGL Viewer – Abnahmekriterien bis 100 %
 
-Stand 24.10.2026, Branch develop-current, öffentliche Entwicklungsversion v0.3.0.0 (nicht released), aktueller gewichteter Fortschritt 38,65 %.
+Stand 24.10.2026, Branch develop-current, öffentliche Entwicklungsversion v0.4.0.0 (IN ARBEIT, nicht released), aktueller gewichteter Fortschritt 38,65 %.
 
 **RELEASE ZIEL:** v1.0.0.0 nur mit 100 %, 7/7 echten Endbeweisen aus `docs/PROJECT_PROGRESS.json`, vollständigen Aufgaben aus `ROADMAP.md` und `python3 scripts/ogl-version.py --release-check v1.0.0.0`. Derzeit BLOCKED, kein main-Merge und kein Git-Tag.
 

@@ -51,7 +51,7 @@ class TerrainManualRecoveryContract(unittest.TestCase):
         self.assertIn("KEIN",report)
     def test_release_and_progress_accounting(self):
         data=json.loads(src("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(src("VERSION").strip(),"v0.3.0.0")
+        self.assertEqual(src("VERSION").strip(),"v0.4.0.0")
         self.assertEqual(data["viewer_version"],src("VERSION").strip())
         self.assertEqual(data["next_batch"],"v0.4.0.0")
         self.assertEqual(data["default_blocks_per_run"],10)

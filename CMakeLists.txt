@@ -373,6 +373,18 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
         COMMAND nexverse-developer-modules-tests "${CMAKE_BINARY_DIR}/modules")
 
 
+    # Real loopback transport verification: never follow a credentials-
+    # bearing 307 POST or CAPS token-bearing GET redirect to another URL.
+    if(UNIX)
+        add_executable(nexverse-http-credential-redirect-tests
+            tests/http_credential_redirect_tests.cpp)
+        target_link_libraries(nexverse-http-credential-redirect-tests
+            PRIVATE NexVerse::Net Threads::Threads)
+        nexverse_enable_warnings(nexverse-http-credential-redirect-tests)
+        add_test(NAME nexverse-http-credential-redirect-tests
+            COMMAND nexverse-http-credential-redirect-tests)
+    endif()
+
     add_executable(nexverse-grid-info-tests tests/grid_info_tests.cpp)
     target_link_libraries(nexverse-grid-info-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-grid-info-tests)

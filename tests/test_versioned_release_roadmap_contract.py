@@ -9,9 +9,9 @@ class ReleaseRoadmapContract(unittest.TestCase):
   cls.road=json.loads(load("docs/RELEASE_ROADMAP.json"))
   cls.progress=json.loads(load("docs/PROJECT_PROGRESS.json"))
  def test_version_agrees_everywhere(self):
-  self.assertEqual(load("VERSION").strip(),"v0.3.0.0")
-  self.assertEqual(self.road["current_version"],"v0.3.0.0")
-  self.assertEqual(self.progress["viewer_version"],"v0.3.0.0")
+  self.assertEqual(load("VERSION").strip(),"v0.4.0.0")
+  self.assertEqual(self.road["current_version"],"v0.4.0.0")
+  self.assertEqual(self.progress["viewer_version"],"v0.4.0.0")
  def test_cmake_has_no_stale_version(self):
   c=load("CMakeLists.txt")
   self.assertIn("NEXVERSE_VERSION_NUMERIC",c)
@@ -28,6 +28,11 @@ class ReleaseRoadmapContract(unittest.TestCase):
   self.assertEqual(len(ms),12)
   self.assertEqual(sum(len(m["tasks"]) for m in ms),36)
   self.assertEqual(sum(len(m["acceptance"]) for m in ms),34)
+ def test_completed_v03_development_baseline_is_preserved(self):
+  ms={m["version"]:m for m in self.road["milestones"]}
+  self.assertEqual(ms["v0.3.0.0"]["status"],"FERTIG")
+  self.assertEqual(ms["v0.4.0.0"]["status"],"IN_ARBEIT")
+  self.assertEqual(ms["v0.4.0.0"]["tasks"][0]["status"],"IN_ARBEIT")
  def test_complete_stable_and_followup_exist(self):
   ms={m["version"]:m for m in self.road["milestones"]}
   self.assertIn("v1.0.0.0",ms["v1.0.0.1"]["depends_on"])
@@ -53,7 +58,7 @@ class ReleaseRoadmapContract(unittest.TestCase):
    self.assertIn(item,s)
  def test_historical_alpha_kept_but_not_current(self):
   self.assertIn("HISTORIE",load("projectplan.md")[:1900])
-  self.assertIn("v0.3.0.0",load("README.md")[:950])
+  self.assertIn("v0.4.0.0",load("README.md")[:950])
   self.assertIn("ROADMAP.md",load("CHATUEBERGABE.md")[:2800])
   self.assertIn("ALPHA.1194",load("CHATUEBERGABE.md"))
  def test_no_main_release_occurred(self):

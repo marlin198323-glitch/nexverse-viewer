@@ -55,9 +55,9 @@ class OpenGenesisLow158(unittest.TestCase):
   model=read("src/world/world_model.cpp")
   self.assertIn("valid_self_appearance_texture_entry(appearance.texture_entry)",model)
  def test_release(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   meta=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(meta["viewer_version"],"v0.3.0.0")
+  self.assertEqual(meta["viewer_version"],"v0.4.0.0")
   self.assertEqual(meta["next_batch"],"v0.4.0.0")
   self.assertEqual(meta["default_blocks_per_run"],10)
   self.assertIn("still open",meta["assessment"])

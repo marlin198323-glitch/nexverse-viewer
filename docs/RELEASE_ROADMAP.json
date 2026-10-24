@@ -8,8 +8,8 @@
     "patch": "feature/stability maintenance group; after v1.0.0.0 v1.0.0.1 fixes",
     "revision": "fourth numeric component for subsequent patch/revision builds; no GitHub tag without release gate"
   },
-  "current_version": "v0.3.0.0",
-  "current_status": "FERTIG_DEV_BASELINE_NOT_RELEASED",
+  "current_version": "v0.4.0.0",
+  "current_status": "IN_ARBEIT_DEV_ONLY_NOT_RELEASED",
   "first_stable_release": "v1.0.0.0",
   "after_first_release": "v1.0.0.1",
   "legacy_alpha_history": "0.2.0-alpha.1194; previously numbered alpha blocks are historical development work, not main releases",
@@ -68,14 +68,14 @@
     {
       "version": "v0.4.0.0",
       "title": "Grid, Login, Regionen und reale Avatarsteuerung",
-      "status": "GEPLANT",
+      "status": "IN_ARBEIT",
       "depends_on": [
         "v0.3.0.0"
       ],
       "tasks": [
         {
           "id": "v0.4.0.0-T01",
-          "status": "OFFEN",
+          "status": "IN_ARBEIT",
           "description": "Grid Discovery/SSO/Login und Session/Passwortreset-Fehlerwege"
         },
         {
@@ -107,7 +107,24 @@
         }
       ],
       "release_to_main": false,
-      "tag_only_after_verified_release": false
+      "tag_only_after_verified_release": false,
+      "completed_work_units": [
+        "GRID-01 validate nonempty HTTP/S authority before credential-bearing LoginService",
+        "GRID-02 reject userinfo authority spoof, including @ after a trusted host",
+        "GRID-03 bounded TCP port, bracketed IPv6 and DNS label checks",
+        "GRID-04 reject invalid login URI without caching live forged GridInfo",
+        "GRID-05 reject malformed seed CAPS URL before POST",
+        "GRID-06 filter spoofed EventQueue/GetTexture URLs in CAPS LLSD response",
+        "GRID-07 disable GET redirect with bearer tokens in URL",
+        "GRID-08 disable POST redirect with password hash and LLSD body",
+        "GRID-09 real native loopback libcurl HTTP 307 GET/POST redirect no-forward test",
+        "GRID-10 native Login/CAPS/GridInfo regression and full Mint testing"
+      ],
+      "remain_open": [
+        "actual authenticated current-grid login/relogin and session errors",
+        "CAPS EventQueue region handoff and teleport E2E under current server",
+        "server WASD/yaw/jump/flight actual avatar readbacks"
+      ]
     },
     {
       "version": "v0.5.0.0",

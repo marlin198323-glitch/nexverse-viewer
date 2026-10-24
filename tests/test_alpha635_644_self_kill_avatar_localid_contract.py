@@ -73,9 +73,9 @@ class OwnObjectKill(unittest.TestCase):
   self.assertIn("r.self_object_kills=2U;",native)
   self.assertIn('text.find("self_object_localid_kills=2")',native)
  def test_version_next_and_status(self):
-  self.assertEqual(rd("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(rd("VERSION").strip(),"v0.4.0.0")
   d=json.loads(rd("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"v0.3.0.0")
+  self.assertEqual(d["viewer_version"],"v0.4.0.0")
   self.assertEqual(d["next_batch"],"v0.4.0.0")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])

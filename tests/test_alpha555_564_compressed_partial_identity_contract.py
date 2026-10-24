@@ -62,9 +62,9 @@ class PartialCompressed(unittest.TestCase):
   self.assertIn("world_model.apply_object_terse(",s)
   self.assertIn("world::reconcile_avatar_attachments(",s)
  def test_version_and_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   d=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"v0.3.0.0")
+  self.assertEqual(d["viewer_version"],"v0.4.0.0")
   self.assertEqual(d["next_batch"],"v0.4.0.0")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])

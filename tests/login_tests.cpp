@@ -287,6 +287,24 @@ int main()
         return 6;
     }
 
+    // v0.4.0.0: never POST even hashed password credentials when
+    // GridInfo claims an authority with injected userinfo or a bad port.
+    const std::string accepted_url=transport->posted_url;
+    const std::string accepted_body=transport->posted_body;
+    for(const std::string_view malformed:{
+        "https://hg.stadt-nexverse.de@evil.invalid/login",
+        "http://user:secret@hg.stadt-nexverse.de:8002/",
+        "http://hg.stadt-nexverse.de:99999/",
+        "http://hg.stadt-nexverse.de:8002\\redirect"
+    })
+    {
+        const auto rejected=service.login(
+            malformed,credentials,"OpenGenesisLINK Viewer","v0.4.0.0");
+        if(rejected.success||rejected.reason!="invalid_login_uri"||
+           transport->posted_url!=accepted_url||
+           transport->posted_body!=accepted_body)
+            return 70;
+    }
     // Actual LoginService transport contract for new single-name account
     // while legacy path above remains unchanged.
     const auto account_result=service.login(

@@ -49,10 +49,10 @@ class ProvisionalBakes(unittest.TestCase):
    self.assertIn(s,case)
   self.assertIn("nexverse-self-object-bake-fallback-tests",src("CMakeLists.txt"))
  def test_documented_release(self):
-  self.assertEqual(src("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(src("VERSION").strip(),"v0.4.0.0")
   data=json.loads(src("docs/PROJECT_PROGRESS.json"))
   self.assertEqual(data["next_batch"],"v0.4.0.0")
-  self.assertEqual(data["viewer_version"],"v0.3.0.0")
+  self.assertEqual(data["viewer_version"],"v0.4.0.0")
   self.assertEqual(data["default_blocks_per_run"],10)
   self.assertIn("still open",data["assessment"])
   for f in ("CHATUEBERGABE.md","AGENTS.md","projectplan.md","info.md","docs/PROJEKTFORTSCHRITT.md"):

@@ -64,8 +64,8 @@ class Alpha265AvatarBakeContracts(unittest.TestCase):
 
     def test_progress_and_next_chat_consistency(self):
         progress=json.loads(source("docs/PROJECT_PROGRESS.json"))
-        self.assertEqual(source("VERSION").strip(),"v0.3.0.0")
-        self.assertEqual(progress["viewer_version"],"v0.3.0.0")
+        self.assertEqual(source("VERSION").strip(),"v0.4.0.0")
+        self.assertEqual(progress["viewer_version"],"v0.4.0.0")
         self.assertEqual(progress["default_blocks_per_run"],10)
         self.assertEqual(progress["next_batch"],"v0.4.0.0")
         for name in ("CHATUEBERGABE.md","projectplan.md","info.md","AGENTS.md",

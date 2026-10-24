@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-24",
-  "viewer_version": "v0.3.0.0",
+  "viewer_version": "v0.4.0.0",
   "branch": "develop-current",
   "next_five_blocks": "v0.4.0.0",
-  "assessment": "Versionierung v0.3.0.0 replaces public 0.2.0-alpha.1194, preserving Alpha1194 historical native/GUI proof only. Project is 38.65% weighted, first stable v1.0.0.0 not released and seven real Grid/Firestorm/cross-platform E2E still open. Current real avatar 3x final baked RGB, outfit, authenticated server WASD/Flight E2E and Firestorm UI parity still open. Version roadmap has version-specific task and acceptance gates; main release BLOCKED until exact SHA and all real evidence verified.",
+  "assessment": "Alpha1194 historical local GUI/WASD/Flight contracts remain as regression baseline; v0.4.0.0 security integration for Grid/Login/CAPS: stronger HTTP URI authority checks, no automatic libcurl redirect for bearer token GET or secret-containing POST, local live HTTP/307 native integration test and cache poisoning/login/CAPS regression. Authenticated current NexVerse grid login, region handoff/teleport and actual server WASD/Yaw/Jump/Flight readback still open, so v0.4 milestone and v1 stable Release BLOCKED. Weighted progress remains 38.65%.",
   "areas": [
     {
       "id": "connection",
@@ -111,9 +111,9 @@
   "mint_x64_validation": {
     "status": "local_pass",
     "cmake_full_debug_build": true,
-    "native_ctest_passed": 184,
+    "native_ctest_passed": 185,
     "native_ctest_failed": 0,
-    "python_tests_passed": 594,
+    "python_tests_passed": 628,
     "python_tests_failed": 0,
     "isolated_xvfb_login_screen": true,
     "x11_wm_class": "opengenesislink-viewer",
@@ -166,7 +166,7 @@
     "interleaved_legacy_cof_highwater_retirement": true,
     "cof_outfit_late_udp_object_bake_replay_rejected": true,
     "latest_localid_body_not_evicted_by_retired_replay": true,
-    "validated_viewer_version": "0.2.0-alpha.1194"
+    "validated_viewer_version": "v0.4.0.0"
   },
   "final_release_evidence": {},
   "goal_100_release_status": "BLOCKED: v1.0.0.0 not ready; 7 real E2E evidence and full 100% completion not established; no main/tag.",
@@ -218,8 +218,8 @@
     "note": "Linux Mint x64 full gate PASS; GitHub returned no status or PR runs for exact feature SHA; Pi5 ARM64 not verified."
   },
   "version_scheme": "vMAJOR.MINOR.PATCH.REVISION",
-  "version_status": "FERTIG_DEV_BASELINE_NOT_RELEASED",
-  "active_goal_version": "v0.3.0.0",
+  "version_status": "IN_ARBEIT_DEV_NOT_RELEASED",
+  "active_goal_version": "v0.4.0.0",
   "next_goal_version": "v0.4.0.0",
   "first_stable_release": "v1.0.0.0",
   "first_hotfix_release": "v1.0.0.1",
@@ -236,5 +236,15 @@
   "requested_goal_as_of": "2026-10-24",
   "requested_release_predecessor_verified": false,
   "requested_hotfix_release_verified": false,
-  "requested_release_note": "Stable v1.0.0.0 no tag/release; seven E2E proofs absent. Additional fail-closed predecessor tag/main/publication guard implemented."
+  "requested_release_note": "Stable v1.0.0.0 no tag/release; seven E2E proofs absent. Additional fail-closed predecessor tag/main/publication guard implemented.",
+  "v0400_security_batch01": {
+    "version": "v0.4.0.0",
+    "status": "IN_ARBEIT_DEV_ONLY",
+    "linux_mint_full_build_steps": 428,
+    "native_ctest_passed": 185,
+    "python_tests_passed": 628,
+    "firestorm_xvfb_gpu_gui_and_x11_icon": "PASS",
+    "authenticated_live_grid_e2e": "NOT_VERIFIED",
+    "main_release": "NOT_PERFORMED"
+  }
 }

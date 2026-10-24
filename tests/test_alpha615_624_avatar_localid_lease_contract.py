@@ -66,9 +66,9 @@ class LocalAvatarLease(unittest.TestCase):
   self.assertIn("view.remote_avatar_local_id_rebinds=3U;",
                 read("tests/viewer_shell_gl_tests.cpp"))
  def test_version_and_next_batch(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   progress=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(progress["viewer_version"],"v0.3.0.0")
+  self.assertEqual(progress["viewer_version"],"v0.4.0.0")
   self.assertEqual(progress["next_batch"],"v0.4.0.0")
   self.assertEqual(progress["default_blocks_per_run"],10)
   self.assertIn("still open",progress["assessment"])

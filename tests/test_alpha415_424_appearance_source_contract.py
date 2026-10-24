@@ -51,9 +51,9 @@ class AvatarSourceProvenance(unittest.TestCase):
                  "disconnected.apply_region","disconnected.self_appearance()"):
    self.assertIn(needle,native2)
  def test_handoff(self):
-  self.assertEqual(text("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(text("VERSION").strip(),"v0.4.0.0")
   d=json.loads(text("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(d["viewer_version"],"v0.3.0.0")
+  self.assertEqual(d["viewer_version"],"v0.4.0.0")
   self.assertEqual(d["next_batch"],"v0.4.0.0")
   self.assertEqual(d["default_blocks_per_run"],10)
   self.assertIn("still open",d["assessment"])

@@ -6,10 +6,12 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 
 ## Aktueller Stand (24.10.2026)
 
-- **Öffentliche Entwicklungsnummer: `v0.3.0.0` (lokal geprüft, noch kein Release auf main).**
-- Geprüfter vorheriger Implementierungsstand: 184/184 native CTests,
-  606/606 Python-Tests, isolierter originaler Firestorm-Xvfb-GPU-
-  und Linux-X11-Taskleistenicon-Test. Aktueller Versionsumbau ist separat zu testen.
+- **Aktiver Grid-/Login-Entwicklungsmeilenstein `v0.4.0.0` (IN ARBEIT, nicht released).**
+- Aktueller Mint-x64-Gesamttest: 185/185 native CTests,
+  628/628 Python-Tests, original Firestorm-Xvfb-GPU-/GUI-/128px-
+  X11-Taskleistenicon PASS. Laufzeitversion v0.4.0.0 geprüft.
+  Neues Grid-/Login-/CAPS-URI-/Redirect-Sicherheitsmodul implementiert;
+  authentifizierter NexVerse-Live-Grid-Test weiter offen.
 - Technisch ist das C++23-Projekt erst **ca. 39 %** fertig
   (38,65 % gewichtet); vollständige Firestorm-/Grid-Funktionsparität ist offen.
 - Erste vollständige stabile Zielversion: **`v1.0.0.0`**.

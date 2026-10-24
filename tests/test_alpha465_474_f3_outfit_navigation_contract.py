@@ -54,9 +54,9 @@ class F3F9OutfitNavigation(unittest.TestCase):
   self.assertIn("gallery_wearables_status,legacy_cof_status",app)
   self.assertIn("kein Wear-Beweis",read("include/nexverse/protocol/legacy_wearables_cof_audit.hpp"))
  def test_version_progress_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   obj=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(obj["viewer_version"],"v0.3.0.0")
+  self.assertEqual(obj["viewer_version"],"v0.4.0.0")
   self.assertEqual(obj["next_batch"],"v0.4.0.0")
   self.assertEqual(obj["default_blocks_per_run"],10)
   self.assertIn("still open",obj["assessment"])

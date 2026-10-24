@@ -88,12 +88,14 @@ nexverse::net::HttpResponse perform_request(
 
     curl_easy_setopt(curl, CURLOPT_URL, url_copy.c_str());
     curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
-    // Mutating PUT must not forward an authenticated capability on
-    // redirects, which could carry a request to a different origin.
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION,
-                     (method==RequestMethod::put||
-                      method==RequestMethod::remove)?0L:1L);
-    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
+    // Login XML-RPC POSTs contain password-derived credentials; CAPS
+    // POSTs and GETs can contain bearer tokens in the URL itself.
+    // libcurl redirect-following would forward those URL capabilities
+    // (and POST body for 307/308) to an attacker-controlled Location.
+    // Refuse automatic redirects for ALL methods until a separately
+    // audited same-origin-only redirect mechanism exists.
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 0L);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms(connect_timeout));
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms(total_timeout));
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);

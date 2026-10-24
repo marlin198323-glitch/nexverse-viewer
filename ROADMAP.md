@@ -1,6 +1,6 @@
 # OpenGenesisLINK Viewer – Versionierte Roadmap
 
-**Aktuelle Entwicklungsbasis v0.3.0.0 – IN ARBEIT, nicht released.**
+**Aktives Entwicklungsziel v0.4.0.0 – IN ARBEIT, nicht released.**
 **Erstes vollständiges Release v1.0.0.0; erster Hotfix danach v1.0.0.1.**
 Gesamtfortschritt: 38,65 % gewichtet, ca. 39 %. Kein Produktivrelease.
 
@@ -20,9 +20,15 @@ Freigabe: `docs/RELEASE_VERSION_POLICY.md`. Historische Alpha-Blöcke stehen wei
 - [x] v0.3.0.0-A02 – Dokumentierte vollständige siebenfach kritische Release-Lücken; keine Freigabe oder main-Merge
 
 ### v0.4.0.0 – Grid, Login, Regionen und reale Avatarsteuerung
-**Status:** GEPLANT – Entwicklungsmeilenstein, kein Produktionsrelease
+**Status:** IN ARBEIT – gehärteter Login/CAPS-Transport implementiert, reale Grid-Endabnahme offen
 **Aufgaben:**
 - [ ] v0.4.0.0-T01 – Grid Discovery/SSO/Login und Session/Passwortreset-Fehlerwege
+**T01 Teilfortschritt:** URI-/Login-/Seed-CAPS-Autoritätsprüfung,
+kein automatisches Weiterleiten von Secret-POSTs oder CAPS-Token-GETs;
+echter Loopback-307-Test, GridInfo-Cache- und CAPS-Sicherheitsregressionen.
+Noch offen: vollständiges Grid-SSO/Passwortreset und Live-Grid-Login.
+Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
+
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect
 - [ ] v0.4.0.0-T03 – WASD, Rotation, Sprung/Flug und Kamera im echten Grid inklusive serverseitigem Positions-/Yaw-/Z-Readback
 **Abnahmekriterien:**

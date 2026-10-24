@@ -25,6 +25,6 @@ class CofFormatReplay(unittest.TestCase):
             "difference(skin_v3,after_format_replay)!=0U"):
    self.assertIn(x,s)
  def test_version_docs(self):
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
   self.assertIn("v0.4.0.0",read("CHATUEBERGABE.md"))
 if __name__=="__main__": unittest.main()

@@ -18,5 +18,5 @@ class BakeGlSource(unittest.TestCase):
   s=read('tests/avatar_body_framebuffer_pixels_tests.cpp')
   self.assertIn('native_draw.self_avatar_body_drawn_bake_ids!=bake_ids',s)
  def test_handoff(self):
-  self.assertEqual(read('VERSION').strip(),'v0.3.0.0')
+  self.assertEqual(read('VERSION').strip(),'v0.4.0.0')
   self.assertIn('v0.4.0.0',read('CHATUEBERGABE.md'))

@@ -41,9 +41,9 @@ class LiveInputParity(unittest.TestCase):
   self.assertIn('!avatar_proof.appearance_received&&appearance_runtime.malformed>0U',a)
   self.assertNotIn('avatar_id+" | "',a)
  def test_release_docs(self):
-  self.assertEqual(source('VERSION').strip(),'v0.3.0.0')
+  self.assertEqual(source('VERSION').strip(),'v0.4.0.0')
   d=json.loads(source('docs/PROJECT_PROGRESS.json'))
-  self.assertEqual(d['viewer_version'],'v0.3.0.0')
+  self.assertEqual(d['viewer_version'],'v0.4.0.0')
   self.assertEqual(d['next_batch'],'v0.4.0.0')
   self.assertEqual(d['default_blocks_per_run'],10)
   for p in ('CHATUEBERGABE.md','AGENTS.md','info.md','projectplan.md','docs/PROJEKTFORTSCHRITT.md'):

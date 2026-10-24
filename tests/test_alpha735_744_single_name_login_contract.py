@@ -32,5 +32,5 @@ class SingleNameLoginContract(unittest.TestCase):
   self.assertIn("find_first_of",header)
  def test_version_and_handoff(self):
   self.assertIn("v0.4.0.0",read("CHATUEBERGABE.md"))
-  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
+  self.assertEqual(read("VERSION").strip(),"v0.4.0.0")
 if __name__=="__main__":unittest.main()
