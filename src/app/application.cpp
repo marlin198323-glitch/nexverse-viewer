@@ -81,6 +81,7 @@
 #include "nexverse/protocol/movement_controls.hpp"
 #include "nexverse/protocol/local_heading_preview.hpp"
 #include "nexverse/protocol/movement_feedback.hpp"
+#include "nexverse/protocol/vertical_movement_feedback.hpp"
 #include "nexverse/protocol/turn_readback.hpp"
 #include "nexverse/world/attachment_state.hpp"
 #include "nexverse/protocol/avatar_bakes.hpp"
@@ -4960,6 +4961,7 @@ int Application::run(bool enable_developer_modules)
     std::uint32_t self_avatar_region_generation = 0U;
     std::chrono::steady_clock::time_point last_self_movement_log{};
     protocol::MovementFeedbackMonitor movement_feedback;
+    protocol::VerticalMovementFeedbackMonitor vertical_feedback;
     protocol::TurnReadbackMonitor turn_feedback;
     bool simulation_ready = false;
     input_context.viewer_shell=&viewer_shell;
@@ -5376,7 +5378,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_local_id,
          &self_avatar_region_handle,
          &self_avatar_region_generation,
-         &movement_feedback,
+         &movement_feedback,&vertical_feedback,
          &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
@@ -5429,6 +5431,7 @@ int Application::run(bool enable_developer_modules)
                             // evidence lease: old WASD/turn confirmations
                             // must not survive an implicit rebind.
                             movement_feedback.reset();
+                            vertical_feedback.reset();
                             turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
@@ -5456,6 +5459,8 @@ int Application::run(bool enable_developer_modules)
                                entry.rotation,std::chrono::steady_clock::now()))
                             core::info("Avatar turn VERIFIED by real self "
                                        "ObjectUpdate rotation after UDP send");
+                        (void)vertical_feedback.server_position(
+                            entry.position,std::chrono::steady_clock::now());
                         const auto evidence=movement_feedback.server_position(
                             entry.position,std::chrono::steady_clock::now(),
                             protocol::MovementPositionSource::full_object);
@@ -5507,7 +5512,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_local_id,
          &self_avatar_region_handle,
          &self_avatar_region_generation,
-         &movement_feedback,
+         &movement_feedback,&vertical_feedback,
          &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
@@ -5561,6 +5566,7 @@ int Application::run(bool enable_developer_modules)
                             // evidence lease: old WASD/turn confirmations
                             // must not survive an implicit rebind.
                             movement_feedback.reset();
+                            vertical_feedback.reset();
                             turn_feedback.reset();
                             self_avatar_local_id = entry.local_id;
                             self_avatar_region_handle = update->region_handle;
@@ -5586,6 +5592,8 @@ int Application::run(bool enable_developer_modules)
                                entry.rotation,std::chrono::steady_clock::now()))
                             core::info("Avatar turn VERIFIED by real self "
                                        "compressed ObjectUpdate rotation");
+                        (void)vertical_feedback.server_position(
+                            entry.position,std::chrono::steady_clock::now());
                         const auto evidence=movement_feedback.server_position(
                             entry.position,std::chrono::steady_clock::now(),
                             protocol::MovementPositionSource::compressed_object);
@@ -5676,7 +5684,7 @@ int Application::run(bool enable_developer_modules)
          &self_avatar_region_handle,
          &self_avatar_region_generation,
          &last_self_movement_log,
-         &movement_feedback,
+         &movement_feedback,&vertical_feedback,
          &turn_feedback,
          &world_model,
          &world_mutex](const protocol::DecodedPacket& packet)
@@ -5727,6 +5735,8 @@ int Application::run(bool enable_developer_modules)
                                update.rotation,now))
                             core::info("Avatar turn VERIFIED by real self "
                                        "ImprovedTerseObjectUpdate rotation");
+                        (void)vertical_feedback.server_position(
+                            update.position,now);
                         const auto evidence=movement_feedback.server_position(
                             update.position,now);
                         if(evidence==protocol::MovementEvidence::server_position_changed)
@@ -5777,7 +5787,7 @@ int Application::run(bool enable_developer_modules)
         [&object_packets, &world_model, &world_mutex,
          &self_avatar_local_id, &self_avatar_region_handle,
          &self_avatar_region_generation,
-         &movement_feedback, &turn_feedback](
+         &movement_feedback,&vertical_feedback, &turn_feedback](
             const protocol::DecodedPacket& packet)
         {
             const auto kill = protocol::decode_kill_object(packet.payload);
@@ -5816,6 +5826,7 @@ int Application::run(bool enable_developer_modules)
                     // No stale success label after a real self root kill:
                     // the next ObjectUpdate must establish fresh motion.
                     movement_feedback.reset();
+                    vertical_feedback.reset();
                     turn_feedback.reset();
                 }
                 (void)world_model.kill_simulator_local_id(local_id);
@@ -6364,7 +6375,7 @@ int Application::run(bool enable_developer_modules)
                                  &circuit_mutex,
                                  &circuit_status,
                                  &packet_dispatcher,
-                                 &outbound_queue,&movement_feedback,
+                                 &outbound_queue,&movement_feedback,&vertical_feedback,
                                  &turn_feedback,
                                  &world_model,&world_mutex]() mutable
                                 {
@@ -6420,7 +6431,7 @@ int Application::run(bool enable_developer_modules)
                                             },
                                             &outbound_queue,
                                             std::chrono::seconds{15},
-                                            [&movement_feedback,
+                                            [&movement_feedback,&vertical_feedback,
                                              &turn_feedback](std::uint32_t flags,
                                                             const protocol::Quaternion& sent_body)
                                             {
@@ -6428,6 +6439,8 @@ int Application::run(bool enable_developer_modules)
                                                     std::chrono::steady_clock::now();
                                                 movement_feedback.outbound_controls(
                                                     flags,sent_at,sent_body);
+                                                vertical_feedback.outbound_controls(
+                                                    flags,sent_at);
                                                 turn_feedback.outbound_controls(
                                                     flags,sent_at);
                                             });
@@ -7245,6 +7258,7 @@ int Application::run(bool enable_developer_modules)
                         login_ui.tos.reset();
                         movement_controller.reset();
                         movement_feedback.reset();
+                        vertical_feedback.reset();
                         turn_feedback.reset();
                         movement_heading_initialized = false;
                         local_heading_preview.reset();
@@ -8066,6 +8080,7 @@ int Application::run(bool enable_developer_modules)
                         outbound_queue.clear();
                         movement_controller.reset();
                         movement_feedback.reset();
+                        vertical_feedback.reset();
                         turn_feedback.reset();
                         movement_heading_initialized=false;
                         local_heading_preview.reset();
@@ -8137,6 +8152,7 @@ int Application::run(bool enable_developer_modules)
                     outbound_queue.clear();
                     movement_controller.reset();
                     movement_feedback.reset();
+                    vertical_feedback.reset();
                         turn_feedback.reset();
                     movement_heading_initialized=false;
                     local_heading_preview.reset();
@@ -8319,6 +8335,7 @@ int Application::run(bool enable_developer_modules)
                         invalid_movement_position_logged=true;
                     }
                     movement_feedback.reset();
+                    vertical_feedback.reset();
                     movement_heading_initialized=false;
                 }
                 else if(!verified_self_controls)
@@ -8334,6 +8351,7 @@ int Application::run(bool enable_developer_modules)
                         waiting_movement_server_pose_logged=true;
                     }
                     movement_feedback.reset();
+                    vertical_feedback.reset();
                     movement_heading_initialized=false;
                 }
                 else
@@ -8401,6 +8419,7 @@ int Application::run(bool enable_developer_modules)
                             agent_for_camera.session_id,
                             preview_rotation,now};
                     movement_feedback.queued_controls(queued_controls);
+                    vertical_feedback.queued_controls(queued_controls);
                 }
                 else
                 {
@@ -8545,6 +8564,7 @@ int Application::run(bool enable_developer_modules)
                 waiting_movement_server_pose_logged=false;
                 invalid_movement_position_logged=false;
                 movement_feedback.reset();
+                vertical_feedback.reset();
                 turn_feedback.reset();
                 // The self-appearance diagnostic is a CURRENT SIMULATOR
                 // counter; never carry events from a prior region/agent.
@@ -14444,6 +14464,13 @@ int Application::run(bool enable_developer_modules)
                     turn_feedback.turn_active()
                         ?turn_feedback.status()
                         :movement_feedback.status();
+                if(vertical_feedback.snapshot().sent||
+                   vertical_feedback.snapshot().queued)
+                {
+                    shell_view.avatar_movement_status+=" | ";
+                    shell_view.avatar_movement_status+=
+                        vertical_feedback.status();
+                }
                 // F3 must tell the operator WHY movement is paused,
                 // not report "no input" on an active circuit while the
                 // simulator has not supplied a valid authenticated pose.

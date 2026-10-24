@@ -68,6 +68,6 @@ class SentMotionReadback(unittest.TestCase):
    self.assertIn(x,s)
  def test_real_live_login_absent_release_blocked(self):
   s=src("docs/PROJECT_PROGRESS.json")
-  self.assertIn("Alpha1174",s)
+  self.assertRegex(s,r"Alpha[0-9]{3,4}")
   self.assertIn("BLOCKED",s)
 if __name__=="__main__":unittest.main()

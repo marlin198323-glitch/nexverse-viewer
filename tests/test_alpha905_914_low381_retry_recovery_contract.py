@@ -38,6 +38,6 @@ class Low381ReadbackRetry(unittest.TestCase):
   self.assertIn("nexverse-wearables-readback-retry-tests",rd("CMakeLists.txt"))
   self.assertIn("wearables_readback_retry_tests local_heading",rd("scripts/pi5-headless-tests.sh"))
  def test_release_handoff(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1174")
-  self.assertIn("Alpha.1175–1184",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1184")
+  self.assertIn("Alpha.1185–1194",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

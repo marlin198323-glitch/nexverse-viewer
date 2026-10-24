@@ -455,6 +455,12 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-movement-feedback-status-tests
         COMMAND nexverse-movement-feedback-status-tests)
 
+    add_executable(nexverse-vertical-movement-feedback-tests
+        tests/vertical_movement_feedback_tests.cpp)
+    target_link_libraries(nexverse-vertical-movement-feedback-tests PRIVATE NexVerse::Protocol)
+    add_test(NAME nexverse-vertical-movement-feedback-tests
+        COMMAND nexverse-vertical-movement-feedback-tests)
+
     add_executable(nexverse-outbound-queue-tests tests/outbound_queue_tests.cpp)
     target_link_libraries(nexverse-outbound-queue-tests PRIVATE NexVerse::Protocol)
     nexverse_enable_warnings(nexverse-outbound-queue-tests)

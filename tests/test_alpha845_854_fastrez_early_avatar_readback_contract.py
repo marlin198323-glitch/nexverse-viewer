@@ -38,6 +38,6 @@ class FastRezEarlyReadback(unittest.TestCase):
   self.assertIn("nexverse-early-avatar-readback-tests",src("CMakeLists.txt"))
   self.assertIn("early_avatar_readback_tests; do",src("scripts/pi5-headless-tests.sh"))
  def test_version_handoff(self):
-  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1174")
-  self.assertIn("Alpha.1175–1184",src("CHATUEBERGABE.md"))
+  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1184")
+  self.assertIn("Alpha.1185–1194",src("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()
