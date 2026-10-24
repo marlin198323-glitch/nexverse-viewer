@@ -4841,4 +4841,4 @@ Echte NexVerse-Bake-/Avatar-/Terrain-Pixelparitaet OFFEN.
   authentifizierte Login/Teleport/WASD-E2E weiter OFFEN.
   38,65 % gewichtet, Release BLOCKED, kein main-Merge.
 
-**INTERAKTIVE QA BATCH 02 GEMESSEN:** Linux Mint 185/185 CTests, 642/642 Python, Original-Firestorm-Xvfb-GPU-/GUI-/128px-Systemicon PASS. Selbstständiges Offline-Abnahmefenster nach jedem Git-Commit mit `python3 scripts/ogl-acceptance.py --build` neu generieren, per `xdg-open build/acceptance/ABNAHME_DASHBOARD.html` starten. Manuelle Bewertungen sind keine offiziellen E2E-Releasefreigaben, v0.4.0.0 weiter IN_ARBEIT.
+**INTERAKTIVE QA BATCH 02 GEMESSEN:** Linux Mint 185/185 CTests, 643/643 Python, Original-Firestorm-Xvfb-GPU-/GUI-/128px-Systemicon PASS. Selbstständiges Offline-Abnahmefenster nach jedem Git-Commit mit `python3 scripts/ogl-acceptance.py --build` neu generieren, per `xdg-open build/acceptance/ABNAHME_DASHBOARD.html` starten. Manuelle Bewertungen sind keine offiziellen E2E-Releasefreigaben, v0.4.0.0 weiter IN_ARBEIT.

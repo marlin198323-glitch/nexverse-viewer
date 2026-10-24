@@ -262,7 +262,7 @@
     "official_roadmap_modified_by_user_reviews": false,
     "current_version": "v0.4.0.0",
     "notes": "Manual offline QA only; no real live Grid release evidence.",
-    "local_test_status": "185/185 native, 642/642 Python, real Xvfb GPU/GUI/128px icon PASS; Chromium browser selftest PASS",
+    "local_test_status": "185/185 native, 643/643 Python, real Xvfb GPU/GUI/128px icon PASS; Chromium browser selftest PASS",
     "official_release_status": "BLOCKED – 0 of 7 release evidence verified"
   }
 }

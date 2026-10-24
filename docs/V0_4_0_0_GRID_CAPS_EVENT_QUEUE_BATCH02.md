@@ -21,4 +21,4 @@ bleiben offen. Gesamter Viewer 38,65 % gewichtet. Kein main-Release.
 
 ## Nachweis der lokalen Gesamtabnahme
 
-Linux Mint x64 voller CMake/vcpkg-Debug-Build, **185/185 native CTests**, **642/642 Python-Tests**, echter Original-Firestorm-Xvfb-GPU-/GUI-/128px-X11-Taskleistenicon-Test PASS. Interaktive Chromium-DOM-/JS-Aktion PASS. Das ist kein echter Grid-Login-, Outfits-, Teleport- oder WASD-/Yaw-Endtest und keine Releasefreigabe.
+Linux Mint x64 voller CMake/vcpkg-Debug-Build, **185/185 native CTests**, **643/643 Python-Tests**, echter Original-Firestorm-Xvfb-GPU-/GUI-/128px-X11-Taskleistenicon-Test PASS. Interaktive Chromium-DOM-/JS-Aktion PASS. Das ist kein echter Grid-Login-, Outfits-, Teleport- oder WASD-/Yaw-Endtest und keine Releasefreigabe.

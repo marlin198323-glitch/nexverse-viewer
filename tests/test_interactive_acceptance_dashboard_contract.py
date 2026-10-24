@@ -94,6 +94,14 @@ class AcceptanceDashboardContract(unittest.TestCase):
         self.assertNotIn("document.write(",src)
         self.assertNotIn("innerHTML=",src)
 
+    def test_incomplete_manual_pass_remains_visible_until_evidence_added(self):
+        src=self.m.TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn("function rawReview(id)",src)
+        self.assertIn("const old=rawReview(id)",src)
+        self.assertIn("const v=rawReview(item.id)",src)
+        self.assertIn('const incomplete=rawReview(first).status==="BESTANDEN"&&!safeReview(first)',src)
+        self.assertIn('reviewEdit(first,"evidence","smoke-tests/chromium-ui-evidence.log")',src)
+
     def test_no_release_from_dashboard_even_when_user_marks_all_passed(self):
         src=self.m.TEMPLATE.read_text(encoding="utf-8")
         self.assertIn("!SNAPSHOT.release_eligible",src)

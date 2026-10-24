@@ -7412,4 +7412,4 @@ Screenshot unter alpha.234 bleibt als Praxisprüfung offen.
   authentifizierte Login/Teleport/WASD-E2E weiter OFFEN.
   38,65 % gewichtet, Release BLOCKED, kein main-Merge.
 
-**V0.4.0.0 INTERAKTIVE QA TESTNACHWEIS:** Volles Linux-Mint-x64-Gate 185/185 native Tests, 642/642 Python, Original-Firestorm-GPU-/GUI-/128px-X11-Icon PASS. Chromium führt tatsächlichen Offline-Dashboard-JS-Selbsttest aus. Echte Grid-/Teleport-/Skin-/WASD-Endabnahmen OFFEN, keine Freigabe.
+**V0.4.0.0 INTERAKTIVE QA TESTNACHWEIS:** Volles Linux-Mint-x64-Gate 185/185 native Tests, 643/643 Python, Original-Firestorm-GPU-/GUI-/128px-X11-Icon PASS. Chromium führt tatsächlichen Offline-Dashboard-JS-Selbsttest aus. Echte Grid-/Teleport-/Skin-/WASD-Endabnahmen OFFEN, keine Freigabe.
