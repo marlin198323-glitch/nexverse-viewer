@@ -1,3 +1,32 @@
+# OpenGenesisLINK Viewer – versionsbasierter Projektplan
+
+**ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER 10 ECHTE ENTWICKLUNGSBLÖCKE (ZEHN ECHTE ENTWICKLUNGSBLÖCKE); öffentliches Versionformat vMAJOR.MINOR.PATCH.REVISION. AKTUELL v0.3.0.0 (Entwicklung, nicht released), Gesamtfortschritt 39 % (38,65 % gewichtet), NÄCHSTES ZIEL v0.4.0.0.**
+
+**NEUER /goal-VERTRAG:** `/goal vX.Y.Z.W fertigstellen` erledigt alle Aufgaben und Abnahmekriterien der Zielversion inklusive Vorgänger. `/goal v1.0.0.0 komplett fertigstellen und releasen` bedeutet vollständige Firestorm-/Grid-Parität, 100 % und sieben echte Endbeweise; erst dann Release-PR nach `main`, Merge, Tag `v1.0.0.0` und GitHub Release. `/goal v1.0.0.1 fertigstellen` ist die erste Wartung nach veröffentlichtem v1.0.0.0. Quellen: `VERSION`, `ROADMAP.md`, `docs/RELEASE_ROADMAP.json`, `docs/RELEASE_VERSION_POLICY.md`, `docs/PROJEKT_AUDIT_2026-10-24.md`. Die bisherigen Alpha.1–1194-Berichte bleiben NUR HISTORIE und keine öffentlichen Versionsstufen. Kein main-Merge/Tag ohne echten erfolgreichen Gate-Test.
+
+## Verbindliche Versionsstufen
+
+| Zielversion | Schwerpunkt | Status |
+|---|---|---|
+| v0.3.0.0 | Aktuelle technische Entwicklungsbasis | FERTIG – nur Entwicklung, kein Release |
+| v0.4.0.0 | Grid, Login, Regionen und reale Avatarsteuerung | GEPLANT |
+| v0.5.0.0 | Avatare, Skin, Outfits und Wearables | GEPLANT |
+| v0.6.0.0 | Welt-Renderer, Meshes und Materialsystem | GEPLANT |
+| v0.7.0.0 | Inventar, Bauen, Objekte, Karte und Grundstücke | GEPLANT |
+| v0.8.0.0 | Kommunikation, Freunde, Gruppen und Identität | GEPLANT |
+| v0.9.0.0 | Firestorm-GUI- und Bedienungsparität | GEPLANT |
+| v0.9.5.0 | Stabilität, Sicherheit, Performance und Modulgrenzen | GEPLANT |
+| v0.9.9.0 | Release Candidate und plattformübergreifende Abnahme | GEPLANT |
+| v1.0.0.0 | Erste vollständige stabile Veröffentlichung | GEPLANT |
+| v1.0.0.1 | Erstes Wartungs- und Hotfixrelease | GEPLANT |
+| v1.1.0.0 | Optionale größere Funktionen nach stabilem Release | GEPLANT |
+
+Details zu den 36 Aufgaben und 34 Akzeptanzkriterien: `ROADMAP.md`. Alle Bedingungen müssen je Version als FERTIG/GETESTET nachgewiesen werden; laufende Alpha-Blöcke allein bedeuten keine fertige Version. Derzeitiger Stand 38,65 %, v1.0.0.0 Release BLOCKED.
+
+## Historischer Alpha-Entwicklungsplan (unverändert)
+
+---
+
 **ZEHN-BLÖCKE-REGEL: BEI JEDEM WEITER ZEHN ECHTE ENTWICKLUNGSBLÖCKE (10 ECHTE ENTWICKLUNGSBLÖCKE); /goal OGL Viewer VOLLSTAENDIG FERTIGSTELLEN. Viewer 0.2.0-alpha.1194, Projektfortschritt ca. 39 % (38,65 % gewichtet), NÄCHSTE Alpha.1195–1204.**
 
 **ALPHA.1194 – ECHTER ANKLICKBARER FLUGMODUS IM VIEWER-MOVE-FENSTER:** GitHub-verifizierte Feature-Code-SHA 4cc9bc01606e2090d2c2adc080f57cc4bfc879c0 (Mint-x64-Build 426 Schritte, 184/184 native CTests, 594/594 Python, original Firestorm-Xvfb-GPU-/GUI-/128px-X11-Icon PASS, CI für genau diese SHA UNVERIFIZIERT). Nur Linux Mint Desktop Commander jam-MS-7D28, GitHub develop-current. Das bereits vorhandene Move-Fenster verfügt nicht mehr ausschließlich über eine F-Tastenanleitung: neu ist eine sichtbare echte klickbare Anforderung Flugmodus aktivieren/beenden (204x42 Pixel skaliert), die exakt wie die vorhandene Taste F über MovementKeys/MovementController den tatsächlichen LLUDP AgentUpdate-control_fly-Modus in die originale OutboundCommandQueue übergibt. Nur aktuelle authentifizierte Simulator-SELF-Position mit gültigem Session-/Agent-/Epoch-Readback autorisiert die Aktion; sonst deaktiviert. Queue-Erfolg aktualisiert ausschließlich den lokalen angeforderten Flugstatus, bei Queue-Failure Rollback und Request erhalten. Bei Logout/ungültiger Pose UI-Flags zurücksetzen. F3/Alpha1184 bewerten echten Flug weiter nur nach tatsächlichem Server-Z-Readback, niemals als UI-Klick-Beweis. Voller Mint-x64-Debug-CMake/vcpkg-Build 426 Schritte, 184/184 native CTests, 594/594 Python und original Firestorm-Xvfb-GPU-/GUI-/128px-X11-Icon-Gate PASS. Native ViewerShell-Layout-Tests 1100/1920/3440 und echter isolierter Xvfb-GL-Render-Test + 10 Python-Verträge. Kein neuer auth-Grid-Live-Flight-, Avatar-Skin-/Outfit-3/3-RGB- oder finaler WASD-Endtest; 39 %, Release BLOCKED, kein Deploy. Details docs/ALPHA1185_1194_CLICKABLE_FLY_MOVEMENT_UI.md.

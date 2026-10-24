@@ -50,6 +50,15 @@ int main(int argc, char** argv)
     require(!version_at_least("0.2.0-alpha.37", "0.2.0-alpha.38"), "Alpha comparison broken");
     require(version_at_least("0.2.0", "0.2.0-alpha.38"), "Release ordering broken");
     require(!version_at_least("0.1.9", "0.2.0"), "Major/minor comparison broken");
+    // Four-part public versions and old alpha manifests must coexist.
+    require(version_at_least("v0.3.0.0", "0.2.0-alpha.37"),
+            "New public vX.Y.Z.W must meet legacy module minimum");
+    require(version_at_least("v1.0.0.1", "v1.0.0.0"),
+            "Four-part revision compare broken");
+    require(!version_at_least("v1.0.0.0", "v1.0.0.1"),
+            "Older four-part release accepted for newer minimum");
+    require(!version_at_least("v1.0.0.0.1", "v1.0.0.0"),
+            "Malformed five-part version accepted");
 
     std::string malformed = manifest;
     replace_one(malformed, "\"entrypoint\": \"ogl_example_module", "\"entrypoint\": \"../ogl_example_module");

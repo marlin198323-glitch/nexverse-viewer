@@ -13,16 +13,18 @@ if(UNIX AND DEFINED ENV{HOME} AND NOT DEFINED VCPKG_INSTALLED_DIR)
     )
 endif()
 
-project(NexVerseViewer VERSION 0.1.0 LANGUAGES CXX)
-
-include(GNUInstallDirs)
-
-# Changes to VERSION require CMake reconfiguration, not merely re-linking.
-# Ninja should never report the prior alpha number after VERSION changed.
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
+# The VERSION file is the only public version source: vM.m.p.r.
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" NEXVERSE_VERSION_LABEL)
 string(STRIP "${NEXVERSE_VERSION_LABEL}" NEXVERSE_VERSION_LABEL)
+if(NOT NEXVERSE_VERSION_LABEL MATCHES "^v[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "VERSION must be vMAJOR.MINOR.PATCH.REVISION")
+endif()
+string(REGEX REPLACE "^v" "" NEXVERSE_VERSION_NUMERIC "${NEXVERSE_VERSION_LABEL}")
+project(NexVerseViewer VERSION "${NEXVERSE_VERSION_NUMERIC}" LANGUAGES CXX)
+include(GNUInstallDirs)
+# Reconfigure CMake whenever the public version changes.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/VERSION")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

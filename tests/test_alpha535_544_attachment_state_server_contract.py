@@ -49,13 +49,13 @@ class RealAttachmentSource(unittest.TestCase):
   self.assertIn('"self_object_attachment_roots="+',d)
   self.assertNotIn("self_object_attachment_uuid=",d)
  def test_handoff(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1194")
+  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
   j=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(j["viewer_version"],"0.2.0-alpha.1194")
-  self.assertEqual(j["next_batch"],"Alpha.1195–1204")
+  self.assertEqual(j["viewer_version"],"v0.3.0.0")
+  self.assertEqual(j["next_batch"],"v0.4.0.0")
   self.assertEqual(j["default_blocks_per_run"],10)
   self.assertIn("still open",j["assessment"])
   for f in ("CHATUEBERGABE.md","projectplan.md","AGENTS.md",
             "info.md","docs/PROJEKTFORTSCHRITT.md"):
-   self.assertIn("Alpha.1195–1204",read(f)[:1600])
+   self.assertIn("v0.4.0.0",read(f)[:1600])
 if __name__=="__main__":unittest.main()

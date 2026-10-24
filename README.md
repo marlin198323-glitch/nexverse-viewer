@@ -4,16 +4,29 @@ OpenGenesisLINK Viewer ist ein eigenständiger nativer OpenSim/OpenGenesisLINK-V
 
 **Verbindliche Zielarchitektur (11.10.2026):** Firestorm bildet die **vollständige Funktions- und technische Implementierungsbaseline**, OpenGenesisLINK Server den autoritativen OpenSim-/Serverprotokollvertrag. Bestehende Firestorm-Funktionen werden funktionsgleich geplant und implementiert, an den Server angepasst; neue OGL-Funktionen ergänzen sie. Die **derzeitige C++23-Codebasis ist noch kein echter Firestorm-Quellcode-Fork**; eine Portierung/Migration von Firestorm-Code braucht eine gesonderte Lizenz- und Architekturprüfung. Maßgeblich: `projectplan.md`, `docs/FIRESTORM_COMPATIBILITY_CONTRACT.md` und die offene `docs/FIRESTORM_PARITY_MATRIX.md`.
 
-## Aktueller Stand
+## Aktueller Stand (24.10.2026)
 
-- Version: `0.2.0-alpha.85`
-- lokaler Arbeitsbranch: `develop-current`
-- GitHub-Handoff-Branch: `develop-current`
-- direkter Chat-Wiedereinstieg: `CHATUEBERGABE.md`
-- letzter vollständiger Entwicklungs-Teststand: **80/80 CTests**, einschließlich nativer OpenGL-/Streamingtests (finaler Versionsbuild/GUI-Smoke getrennt)
-- aktueller Entwicklungsblock: **alpha.85 – F10-Inventarbaum mit echten CAPS-Ordnerabfragen, FetchInventory2-Einzelitem-Auflösung, COF-Wear-Vorprüfung und F8-Experience-Forget mit Enter-Bestätigung; Firestorm-Vollparität und Live-InWorld-Abnahme offen**
-- Server-Referenz: `opengenesislink/opengenesislinkserver` `main` (für alpha.85 geprüft bei `885fa72a`); offiziellen Firestorm-Releasebranch jeweils erneut prüfen
-- aktueller Funktionsnachweis: `docs/FIRESTORM_PARITY_MATRIX.md`
+- **Öffentliche Entwicklungsnummer: `v0.3.0.0` (lokal geprüft, noch kein Release auf main).**
+- Geprüfter vorheriger Implementierungsstand: 184/184 native CTests,
+  606/606 Python-Tests, isolierter originaler Firestorm-Xvfb-GPU-
+  und Linux-X11-Taskleistenicon-Test. Aktueller Versionsumbau ist separat zu testen.
+- Technisch ist das C++23-Projekt erst **ca. 39 %** fertig
+  (38,65 % gewichtet); vollständige Firestorm-/Grid-Funktionsparität ist offen.
+- Erste vollständige stabile Zielversion: **`v1.0.0.0`**.
+  Erste Wartung danach: **`v1.0.0.1`**.
+- **Versionsroadmap:** `ROADMAP.md`,
+  `docs/RELEASE_ROADMAP.json` und
+  `docs/RELEASE_VERSION_POLICY.md`.
+  Eine Nachricht wie `/goal v1.0.0.0 komplett fertigstellen und releasen`
+  bedeutet alle Abnahmen erfüllen und erst dann in `main` mergen/taggen.
+- `develop-current` ist der Entwicklungsbranch,
+  `CHATUEBERGABE.md` dokumentiert die Fortsetzung und
+  `projectplan.md` bewahrt die historische Alpha-Implementierung.
+- **Kein produktives v1.0.0.0 veröffentlicht**:
+  Live-Grid-Head/Upper/Lower-Skin 3/3, Outfit, WASD/Yaw, volle
+  Firestorm-UI, echte Plattform-/Security-/CI-Prüfungen fehlen.
+
+## Historische technische Alpha-Entwicklung
 
 Seit alpha.51 wählt der Viewer aus allen Meshes die bis zu 256
 nächsten unterschiedlichen Mesh-Assets anhand der Avatarposition aus.

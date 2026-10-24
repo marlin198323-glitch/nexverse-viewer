@@ -21,7 +21,7 @@ int main()
         return 1;
     }
 
-    if (version.empty() || version.front() != '0')
+    if (version.empty() || version.front() != 'v')
     {
         std::cerr << "Invalid development version: " << version << '\n';
         return 2;

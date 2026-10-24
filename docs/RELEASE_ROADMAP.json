@@ -1,0 +1,557 @@
+{
+  "schema_version": 1,
+  "product": "OpenGenesisLINK Viewer",
+  "version_scheme": "vMAJOR.MINOR.PATCH.REVISION",
+  "version_meanings": {
+    "major": "1 = first complete stable Firestorm-equivalent Viewer; 0 = prerelease development",
+    "minor": "planned functionality and integration milestones",
+    "patch": "feature/stability maintenance group; after v1.0.0.0 v1.0.0.1 fixes",
+    "revision": "fourth numeric component for subsequent patch/revision builds; no GitHub tag without release gate"
+  },
+  "current_version": "v0.3.0.0",
+  "current_status": "FERTIG_DEV_BASELINE_NOT_RELEASED",
+  "first_stable_release": "v1.0.0.0",
+  "after_first_release": "v1.0.0.1",
+  "legacy_alpha_history": "0.2.0-alpha.1194; previously numbered alpha blocks are historical development work, not main releases",
+  "progress_weighted_pct": 38.65,
+  "merge_policy": {
+    "working_branch": "develop-current",
+    "release_target_branch": "main",
+    "trigger": "explicit /goal vX.Y.Z.W or /goal v1.0.0.0 fertigstellen",
+    "requirements": [
+      "all target milestone dependencies plus ALL defined acceptance criteria GETESTET",
+      "for stable releases complete docs/GOAL_100_PERCENT_RELEASE_ACCEPTANCE.md and seven real E2E proofs",
+      "build and exact SHA verified Linux/Windows/macOS per release policy",
+      "no unresolved critical P0/P1 release blockers",
+      "release PR into main, approve/merge only after passing all checks",
+      "create exact vX.Y.Z.W tag and publish GitHub Release only after merge"
+    ]
+  },
+  "milestones": [
+    {
+      "version": "v0.3.0.0",
+      "title": "Aktuelle technische Entwicklungsbasis",
+      "status": "FERTIG",
+      "depends_on": [],
+      "tasks": [
+        {
+          "id": "v0.3.0.0-T01",
+          "status": "FERTIG",
+          "description": "Bestehende C++23/OpenSim/OpenGenesisLINK-Architektur, Grid-Login, LLUDP und CAPS inventarisieren"
+        },
+        {
+          "id": "v0.3.0.0-T02",
+          "status": "FERTIG",
+          "description": "Ist-Zustand: Self-Avatar lokal sichtbare Teilfarben, F3/F9, Flugbutton, authentifizierte Live-Beweise als offen ausweisen"
+        },
+        {
+          "id": "v0.3.0.0-T03",
+          "status": "FERTIG",
+          "description": "VERSION/CMake/Programm/README/Projektplan auf vierstellige Nummer und 39%-Stand angleichen"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.3.0.0-A01",
+          "status": "GETESTET",
+          "criterion": "Vierteiliges v-Label in Build, Runtime und Metadaten identisch"
+        },
+        {
+          "id": "v0.3.0.0-A02",
+          "status": "GETESTET",
+          "criterion": "Dokumentierte vollständige siebenfach kritische Release-Lücken; keine Freigabe oder main-Merge"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.4.0.0",
+      "title": "Grid, Login, Regionen und reale Avatarsteuerung",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.3.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.4.0.0-T01",
+          "status": "OFFEN",
+          "description": "Grid Discovery/SSO/Login und Session/Passwortreset-Fehlerwege"
+        },
+        {
+          "id": "v0.4.0.0-T02",
+          "status": "OFFEN",
+          "description": "CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect"
+        },
+        {
+          "id": "v0.4.0.0-T03",
+          "status": "OFFEN",
+          "description": "WASD, Rotation, Sprung/Flug und Kamera im echten Grid inklusive serverseitigem Positions-/Yaw-/Z-Readback"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.4.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Echter authentifizierter NexVerse-Login/Re-Login, Region-Handoff, Teleport und Rückkehr reproduzierbar"
+        },
+        {
+          "id": "v0.4.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "W/S/A/D/Yaw/Jump/Fly auf dem aktuellen Server tatsächlich sichtbar und protokolliert, nicht nur UDP-Send"
+        },
+        {
+          "id": "v0.4.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Region-/Accountwechsel ohne alte Daten oder falsche Bewegungsbestätigungen"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.5.0.0",
+      "title": "Avatare, Skin, Outfits und Wearables",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.4.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.5.0.0-T01",
+          "status": "OFFEN",
+          "description": "Firestorm-original Skeleton, Shape/Drivers und Animationen auf aktuellem Server vollständig"
+        },
+        {
+          "id": "v0.5.0.0-T02",
+          "status": "OFFEN",
+          "description": "CurrentOutfitFolder, LLWearable, Kleidung/Tattoo/Alpha/Universal-Layer und Bake-Cache/Upload"
+        },
+        {
+          "id": "v0.5.0.0-T03",
+          "status": "OFFEN",
+          "description": "Mesh-Avatare, Skinning, Skinned-Attachments, HUD und Remote-Avatare"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.5.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Self Head/Upper/Lower echte Serverbakes mit jeweils authentifiziertem GetTexture und RGB-Pixel-Endbeweis 3/3"
+        },
+        {
+          "id": "v0.5.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Kleidung und Outfits aus COF dauerhaft sichtbar nach Relog/Teleport/Regionwechsel"
+        },
+        {
+          "id": "v0.5.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Remote-Avatar-Skin/Shape/Attachments und Änderungsdialoge geprüft"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.6.0.0",
+      "title": "Welt-Renderer, Meshes und Materialsystem",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.5.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.6.0.0-T01",
+          "status": "OFFEN",
+          "description": "Prim/Skulpt/Mesh/LOD/Animesh, Streaming und Objekt-Hierarchie"
+        },
+        {
+          "id": "v0.6.0.0-T02",
+          "status": "OFFEN",
+          "description": "JPEG2000, TextureEntry, PBR/glTF, Transparenz, UV, Texturqualität"
+        },
+        {
+          "id": "v0.6.0.0-T03",
+          "status": "OFFEN",
+          "description": "Terrain, Wasser, Himmel, Sonne/Mond, Licht, EEP, Wetter und Sichtbarkeit"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.6.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Referenzregion mit echten Serverassets visuell korrekt gegen Firestorm verglichen"
+        },
+        {
+          "id": "v0.6.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Keine fehlenden priorisierten 3D-Objekte/Texturen unter validem Assetdienst"
+        },
+        {
+          "id": "v0.6.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Begrenzter RAM/VRAM/CPU bei repräsentativer Szene, GPU-Fehler protokolliert"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.7.0.0",
+      "title": "Inventar, Bauen, Objekte, Karte und Grundstücke",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.6.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.7.0.0-T01",
+          "status": "OFFEN",
+          "description": "Inventarordner/-items, Suche, Upload/Download, Rechte, Wear/Detach"
+        },
+        {
+          "id": "v0.7.0.0-T02",
+          "status": "OFFEN",
+          "description": "Objekte Rez/Move/Rotate/Scale/Edit, Linkset, Touch, Skripte und Rückmeldung"
+        },
+        {
+          "id": "v0.7.0.0-T03",
+          "status": "OFFEN",
+          "description": "Land/Parzellen, Regionskarte, Landmarken, lokale und interregionale Teleports"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.7.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Alle sichtbaren Buttons CRUD/Verwenden/Touch haben nachprüfbares Backend und Server-Readback"
+        },
+        {
+          "id": "v0.7.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Permission-/Owner-Tests für Inventar/Objekte und Simulatorlimits"
+        },
+        {
+          "id": "v0.7.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Nach Ab-/Anmeldung bleiben eigene Änderungen konsistent"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.8.0.0",
+      "title": "Kommunikation, Freunde, Gruppen und Identität",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.7.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.8.0.0-T01",
+          "status": "OFFEN",
+          "description": "Lokaler Chat, Flüstern/Sagen/Rufen, IM, Offline-Nachrichten"
+        },
+        {
+          "id": "v0.8.0.0-T02",
+          "status": "OFFEN",
+          "description": "Freundesliste, Online-Status, Gruppen, Rollen, Einladungen und Rechte"
+        },
+        {
+          "id": "v0.8.0.0-T03",
+          "status": "OFFEN",
+          "description": "Profile, Bilder, Suche, Einwilligungen, Abuse/Bug Report"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.8.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Chats/IM/Freunde/Gruppen über zwei echte Avatare getestet"
+        },
+        {
+          "id": "v0.8.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Rollen-/Datenschutz-/Berechtigungsprüfungen einschließlich Sperr- und Logoutfällen"
+        },
+        {
+          "id": "v0.8.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Jede UI-Aktion ist mit echten Simulator-/CAPS-Endpunkten verbunden"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.9.0.0",
+      "title": "Firestorm-GUI- und Bedienungsparität",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.8.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.9.0.0-T01",
+          "status": "OFFEN",
+          "description": "Hauptmenüs, Fenster, Floater, Toolbar, Modal/Buttons/Felder/Tabellen/Suche"
+        },
+        {
+          "id": "v0.9.0.0-T02",
+          "status": "OFFEN",
+          "description": "Inventar-, Avatar-, Land-, Gruppen-, Freunde-, Bau- und Kommunikation-UIs"
+        },
+        {
+          "id": "v0.9.0.0-T03",
+          "status": "OFFEN",
+          "description": "Widescreen, Skalierung, Eingabefokus, Tastatur, Maus, Kamera, Einstellungsseiten und OGL-Branding"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.9.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "Firestorm-Funktionsmatrix vollständig ohne tote Bedienelemente abgearbeitet"
+        },
+        {
+          "id": "v0.9.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Visuelle und funktionale End-to-End-Prüfung aller Menüs auf verschiedenen Auflösungen"
+        },
+        {
+          "id": "v0.9.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Aktionen tatsächlich auf Backend ausgeführt, nicht nur Placeholder/Toast"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.9.5.0",
+      "title": "Stabilität, Sicherheit, Performance und Modulgrenzen",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.9.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.9.5.0-T01",
+          "status": "OFFEN",
+          "description": "HTTP/LLUDP/CAPS Fehler- und Retry-/Timeout-Tests, Grenzen, Wiederherstellung"
+        },
+        {
+          "id": "v0.9.5.0-T02",
+          "status": "OFFEN",
+          "description": "Speicher-/GPU-Leaks, große Regionen/Avatare, Performance und Barrierefreiheit"
+        },
+        {
+          "id": "v0.9.5.0-T03",
+          "status": "OFFEN",
+          "description": "MPL-2.0/Firestorm-Quell- und Assetlizenzen, signierte Updates, Module, Logs und Crashreports"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.9.5.0-A01",
+          "status": "OFFEN",
+          "criterion": "Langlauf-/Lasttests und fehlerfreie Speicher-/VRAM-Grenzen dokumentiert"
+        },
+        {
+          "id": "v0.9.5.0-A02",
+          "status": "OFFEN",
+          "criterion": "Angriffe auf Login/Auth/Tokens/URLs/CAPS/Assets geprüft"
+        },
+        {
+          "id": "v0.9.5.0-A03",
+          "status": "OFFEN",
+          "criterion": "Alle extern eingebundenen Komponenten rechtlich/reproduzierbar dokumentiert"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v0.9.9.0",
+      "title": "Release Candidate und plattformübergreifende Abnahme",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.9.5.0"
+      ],
+      "tasks": [
+        {
+          "id": "v0.9.9.0-T01",
+          "status": "OFFEN",
+          "description": "Windows, Linux x64 und macOS Installer inklusive Systemicon/Uninstall/Update"
+        },
+        {
+          "id": "v0.9.9.0-T02",
+          "status": "OFFEN",
+          "description": "Reproduzierbare CI/CD-Artefakte, Buildsignaturen und Freigabe-Workflow"
+        },
+        {
+          "id": "v0.9.9.0-T03",
+          "status": "OFFEN",
+          "description": "Echte vollständige Grid-Tests: Avatar-Outfit 3/3, Movement/Teleport, Welt/UI/Assets"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v0.9.9.0-A01",
+          "status": "OFFEN",
+          "criterion": "Sieben echte Evidence-IDs und exakter getesteter Release-Commit erfolgreich"
+        },
+        {
+          "id": "v0.9.9.0-A02",
+          "status": "OFFEN",
+          "criterion": "Plattformtests Windows/Linux/macOS bestanden und Artefakte installierbar"
+        },
+        {
+          "id": "v0.9.9.0-A03",
+          "status": "OFFEN",
+          "criterion": "Alle P0/P1-Blocker geschlossen, Rollback und Release Notes verfügbar"
+        }
+      ],
+      "release_to_main": false,
+      "tag_only_after_verified_release": false
+    },
+    {
+      "version": "v1.0.0.0",
+      "title": "Erste vollständige stabile Veröffentlichung",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v0.9.9.0"
+      ],
+      "tasks": [
+        {
+          "id": "v1.0.0.0-T01",
+          "status": "OFFEN",
+          "description": "Sämtliche vorangegangenen Meilensteine vollständig integriert und abgenommen"
+        },
+        {
+          "id": "v1.0.0.0-T02",
+          "status": "OFFEN",
+          "description": "100 % gesamte Firestorm-/OpenGenesisLINK-Funktionsmatrix mit Live-Grid-Endbeweisen"
+        },
+        {
+          "id": "v1.0.0.0-T03",
+          "status": "OFFEN",
+          "description": "Finale Doku, Lizenzprüfung, Changelog und getestete reproduzierbare Release-Artefakte"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v1.0.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "scripts/ogl-release-readiness.py Exitcode 0; gewichteter Projektwert 100 %; alle 7 realen Nachweise eindeutig zuordenbar"
+        },
+        {
+          "id": "v1.0.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Vollständiger Mint- und Linux/Windows/macOS-Release-Test mit identischer Code-SHA"
+        },
+        {
+          "id": "v1.0.0.0-A03",
+          "status": "OFFEN",
+          "criterion": "Erst dann Pull Request nach main, Merge nach Freigabe, annotierter v1.0.0.0-Tag und GitHub-Release"
+        }
+      ],
+      "release_to_main": true,
+      "tag_only_after_verified_release": true
+    },
+    {
+      "version": "v1.0.0.1",
+      "title": "Erstes Wartungs- und Hotfixrelease",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v1.0.0.0"
+      ],
+      "tasks": [
+        {
+          "id": "v1.0.0.1-T01",
+          "status": "OFFEN",
+          "description": "Nach v1.0.0.0 gemeldete Bugs reproduzieren und beheben"
+        },
+        {
+          "id": "v1.0.0.1-T02",
+          "status": "OFFEN",
+          "description": "Sicherheits-/Regressionstests und ggf. Protokoll-Fixes"
+        },
+        {
+          "id": "v1.0.0.1-T03",
+          "status": "OFFEN",
+          "description": "Changelog, Artefakte, Upgrade-/Rollbacktest"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v1.0.0.1-A01",
+          "status": "OFFEN",
+          "criterion": "Alle gemeldeten Bugs des Hotfix-Scopes reproduzierbar geschlossen"
+        },
+        {
+          "id": "v1.0.0.1-A02",
+          "status": "OFFEN",
+          "criterion": "Sämtliche v1.0.0.0-Freigaben nicht regressiert, Plattformtests und exakte SHA grün"
+        },
+        {
+          "id": "v1.0.0.1-A03",
+          "status": "OFFEN",
+          "criterion": "Nach Review Release-PR nach main, Merge, v1.0.0.1-Tag, GitHub-Release"
+        }
+      ],
+      "release_to_main": true,
+      "tag_only_after_verified_release": true
+    },
+    {
+      "version": "v1.1.0.0",
+      "title": "Optionale größere Funktionen nach stabilem Release",
+      "status": "GEPLANT",
+      "depends_on": [
+        "v1.0.0.1"
+      ],
+      "tasks": [
+        {
+          "id": "v1.1.0.0-T01",
+          "status": "OFFEN",
+          "description": "Nur neue separat freigegebene Erweiterungen, z. B. modernere Renderer-Backendpfade"
+        },
+        {
+          "id": "v1.1.0.0-T02",
+          "status": "OFFEN",
+          "description": "Neue Features und Plugins ohne Bruch der v1.0-ABI/API"
+        },
+        {
+          "id": "v1.1.0.0-T03",
+          "status": "OFFEN",
+          "description": "Eigenständige abgenommene Roadmap mit Release-Gate"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "v1.1.0.0-A01",
+          "status": "OFFEN",
+          "criterion": "v1.0.0.x-Stabilität und Firestorm-Funktionsumfang weiter garantiert"
+        },
+        {
+          "id": "v1.1.0.0-A02",
+          "status": "OFFEN",
+          "criterion": "Neue Feature-E2E/Upgrades über gleiche Release-Regeln abgenommen"
+        }
+      ],
+      "release_to_main": true,
+      "tag_only_after_verified_release": true
+    }
+  ],
+  "baseline_validation": {
+    "version": "v0.3.0.0",
+    "linux_mint_build": true,
+    "native_ctests_passed": 184,
+    "python_tests_passed": 606,
+    "firestorm_xvfb_gpu_gui_and_128px_icon": true,
+    "legacy_alpha_module_manifest_supported": true,
+    "main_release_or_tag_created": false
+  }
+}

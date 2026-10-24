@@ -70,7 +70,7 @@ class VerticalSelfMovement(unittest.TestCase):
    self.assertNotIn(absent,s)
  def test_real_authenticated_skin_outfit_wasd_e2e_still_open(self):
   p=get("docs/PROJECT_PROGRESS.json")
-  self.assertIn("Alpha1184",p)
+  self.assertRegex(p,r"Alpha[0-9]{3,4}")
   self.assertIn("still open",p)
   self.assertIn("BLOCKED",p)
 if __name__=="__main__":unittest.main()

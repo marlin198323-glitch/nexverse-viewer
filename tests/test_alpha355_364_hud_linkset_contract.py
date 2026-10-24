@@ -10,7 +10,7 @@ class HudTests(unittest.TestCase):
   self.assertIn("avatar_hud_world_excluded",src("src/app/application.cpp"))
   self.assertIn("HUD 3D aus:",src("src/ui/viewer_shell_render.cpp"))
  def test_persistent_release(self):
-  self.assertEqual(src("VERSION").strip(),"0.2.0-alpha.1194")
+  self.assertEqual(src("VERSION").strip(),"v0.3.0.0")
   p=json.loads(src("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(p["next_batch"],"Alpha.1195–1204")
+  self.assertEqual(p["next_batch"],"v0.4.0.0")
 if __name__=="__main__":unittest.main()

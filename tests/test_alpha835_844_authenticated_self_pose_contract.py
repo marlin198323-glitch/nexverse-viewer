@@ -38,6 +38,6 @@ class AuthenticatedSelfPose(unittest.TestCase):
   self.assertIn("early_avatar_readback_tests; do",script)
   self.assertIn("nexverse-self-avatar-pose-authority-tests",rd("CMakeLists.txt"))
  def test_version_and_next(self):
-  self.assertEqual(rd("VERSION").strip(),"0.2.0-alpha.1194")
-  self.assertIn("Alpha.1195–1204",rd("CHATUEBERGABE.md"))
+  self.assertEqual(rd("VERSION").strip(),"v0.3.0.0")
+  self.assertIn("v0.4.0.0",rd("CHATUEBERGABE.md"))
 if __name__=="__main__":unittest.main()

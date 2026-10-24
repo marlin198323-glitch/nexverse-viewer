@@ -2298,7 +2298,7 @@ void render_loading_screen(
             7.4f*scale,wait_hint,theme::warning);
 
     const std::string version =
-        std::string{"v"} + std::string{nexverse::core::version()};
+        std::string{nexverse::core::version()};
     renderer.text(
         22.0f * scale,
         h - 28.0f * scale,
@@ -4146,7 +4146,7 @@ void render_shell(
         }
 
         const std::string version =
-            std::string{"v"} + std::string{nexverse::core::version()};
+            std::string{nexverse::core::version()};
         const float version_w = renderer.text_width(9.0f * scale, version);
         renderer.text(
             w - version_w - 18.0f * scale,
@@ -4576,7 +4576,7 @@ void render_shell(
     }
 
     const std::string version =
-        std::string{"v"} + std::string{nexverse::core::version()};
+        std::string{nexverse::core::version()};
     const float version_w = renderer.text_width(9.0f * scale, version);
     renderer.text(
         w - version_w - 18.0f * scale,

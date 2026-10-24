@@ -19,8 +19,8 @@ class LiveWireTests(unittest.TestCase):
   self.assertIn("v.avatar_movement_status",read("src/ui/viewer_shell_render.cpp"))
   self.assertIn("Serverposition bleibt gleich",read("include/nexverse/protocol/movement_feedback.hpp"))
  def test_current_release(self):
-  self.assertEqual(read("VERSION").strip(),"0.2.0-alpha.1194")
+  self.assertEqual(read("VERSION").strip(),"v0.3.0.0")
   data=json.loads(read("docs/PROJECT_PROGRESS.json"))
-  self.assertEqual(data["next_batch"],"Alpha.1195–1204")
+  self.assertEqual(data["next_batch"],"v0.4.0.0")
   self.assertEqual(data["default_blocks_per_run"],10)
 if __name__=="__main__":unittest.main()

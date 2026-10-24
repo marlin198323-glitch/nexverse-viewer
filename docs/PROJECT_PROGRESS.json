@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "as_of": "2026-10-24",
-  "viewer_version": "0.2.0-alpha.1194",
+  "viewer_version": "v0.3.0.0",
   "branch": "develop-current",
-  "next_five_blocks": "Alpha.1195–1204",
-  "assessment": "Alpha1194: Real clickable FLIGHT MODE toggle in in-world Move/Movement ViewerShell panel, replacing previously only inert text about F key. The actual rendered 204x42 blue button is mirrored by mouse ViewerShellLayout.hit() across 1100x700,1920x1080 and 3440x1440; when no currently authenticated/verified self avatar position, it is disabled with honest wording. Clicking dispatches ViewerAction::toggle_fly to the existing MovementKeys and MovementController (same real control_fly bit as keyboard F) through actual OutboundCommandQueue push, not a fabricated local flight/position or simulator ACK. On queue rejection, retains UI request and rolls back local controller, on accepted enqueue clears request and reflects only local requested flight state. WorldModel current agent/session, valid simulator self pose and epoch still gate outgoing High4. Disconnect/invalid pose clears UI action flags and local status. Move window remains usable alongside WASD, and flight button explicitly says flight success needs real simulator readback, which can now use Alpha1184 vertical height monitor. Native UI hit/layout and REAL Xvfb GL render tests for enabled/disabled flight action; 10 new Python source scope/UI/wire tests. Current World/Avatar/COF/Outfit final Grid 3xSkin RGB and authenticated server-confirmed WASD/Flight E2E still open; all Firestorm menus/actions/Windows/macOS not complete. Release BLOCKED. No deploy.",
+  "next_five_blocks": "v0.4.0.0",
+  "assessment": "Versionierung v0.3.0.0 replaces public 0.2.0-alpha.1194, preserving Alpha1194 historical native/GUI proof only. Project is 38.65% weighted, first stable v1.0.0.0 not released and seven real Grid/Firestorm/cross-platform E2E still open. Current real avatar 3x final baked RGB, outfit, authenticated server WASD/Flight E2E and Firestorm UI parity still open. Version roadmap has version-specific task and acceptance gates; main release BLOCKED until exact SHA and all real evidence verified.",
   "areas": [
     {
       "id": "connection",
@@ -58,7 +58,7 @@
   ],
   "confidence": "niedrig bis mittel – gewichtete Experteneinschätzung, keine formal abgenommene Anforderungsliste",
   "complete_when": "100 % erst nach implementierten, integrierten und getesteten Firestorm-Basisfunktionen samt Grid-E2E und Plattform-Releases.",
-  "next_batch": "Alpha.1195–1204",
+  "next_batch": "v0.4.0.0",
   "default_blocks_per_run": 10,
   "last_verified_pi5_ci": {
     "tested_sha": "7bf730812ed149f358a84b12ebe8d24ee6cba14a",
@@ -169,7 +169,7 @@
     "validated_viewer_version": "0.2.0-alpha.1194"
   },
   "final_release_evidence": {},
-  "goal_100_release_status": "BLOCKED: current authenticated grid flight and final 3/3 skin/outfit E2E, Firestorm UI parity and cross-platform releases still open.",
+  "goal_100_release_status": "BLOCKED: v1.0.0.0 not ready; 7 real E2E evidence and full 100% completion not established; no main/tag.",
   "alpha1144_verified_feature_sha": "3c9745a10692bc3ce3cc619a602c38cdc3dc87ba",
   "alpha1144_pi5_ci": {
     "status": "unverified",
@@ -216,5 +216,19 @@
     "status": "unverified",
     "workflow_runs_for_feature_sha": 0,
     "note": "Linux Mint x64 full gate PASS; GitHub returned no status or PR runs for exact feature SHA; Pi5 ARM64 not verified."
+  },
+  "version_scheme": "vMAJOR.MINOR.PATCH.REVISION",
+  "version_status": "FERTIG_DEV_BASELINE_NOT_RELEASED",
+  "active_goal_version": "v0.3.0.0",
+  "next_goal_version": "v0.4.0.0",
+  "first_stable_release": "v1.0.0.0",
+  "first_hotfix_release": "v1.0.0.1",
+  "roadmap_file": "docs/RELEASE_ROADMAP.json",
+  "version_audit_validation": {
+    "version": "v0.3.0.0",
+    "native_ctests_passed": 184,
+    "python_tests_passed": 606,
+    "linux_mint_gpu_gui_icon": "PASS",
+    "stable_release": "BLOCKED – seven authentic end-to-end evidence pending"
   }
 }

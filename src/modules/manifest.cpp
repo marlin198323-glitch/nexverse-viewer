@@ -231,7 +231,7 @@ bool valid_id(std::string_view id)
 }
 struct Version
 {
-    unsigned major = 0, minor = 0, patch = 0, alpha = 0;
+    unsigned major = 0, minor = 0, patch = 0, revision = 0, alpha = 0;
     bool prerelease = false;
 };
 std::optional<Version> parse_version(std::string_view s)
@@ -248,12 +248,21 @@ std::optional<Version> parse_version(std::string_view s)
         s.remove_prefix(part.size());
         return true;
     };
+    // Backwards compatible with historical unsigned module manifests
+    // 0.2.0-alpha.N and 0.1.0, but current Viewer uses vX.Y.Z.W.
+    if (s.starts_with("v")) s.remove_prefix(1);
     if (!number(out.major) || !s.starts_with(".")) return {};
     s.remove_prefix(1);
     if (!number(out.minor) || !s.starts_with(".")) return {};
     s.remove_prefix(1);
     if (!number(out.patch)) return {};
     if (s.empty()) return out;
+    if (s.starts_with("."))
+    {
+        s.remove_prefix(1);
+        if (!number(out.revision) || !s.empty()) return {};
+        return out;
+    }
     if (!s.starts_with("-alpha.")) return {};
     s.remove_prefix(7);
     if (!number(out.alpha) || !s.empty()) return {};
@@ -270,7 +279,8 @@ bool version_at_least(std::string_view actual, std::string_view minimum)
     if (a->minor != b->minor) return a->minor > b->minor;
     if (a->patch != b->patch) return a->patch > b->patch;
     if (a->prerelease != b->prerelease) return !a->prerelease;
-    return !a->prerelease || a->alpha >= b->alpha;
+    if (a->prerelease) return a->alpha >= b->alpha;
+    return a->revision >= b->revision;
 }
 ManifestResult parse_manifest(std::string_view json)
 {
