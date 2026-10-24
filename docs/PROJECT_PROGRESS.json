@@ -193,5 +193,13 @@
     "runner_active": true,
     "workflow_runs_for_feature_sha": 0,
     "note": "Mint x64 full local tests pass; no completed GitHub ARM64 CI for this exact feature SHA."
+  },
+  "alpha1174_verified_feature_sha": "6a41e5314bba7987e54ab0db5c8b15acd0d7648a",
+  "alpha1174_pi5_ci": {
+    "exact_feature_sha": "6a41e5314bba7987e54ab0db5c8b15acd0d7648a",
+    "status": "unverified",
+    "runner_active": true,
+    "workflow_runs_for_feature_sha": 0,
+    "note": "Full Linux Mint native 183/183, Python 574/574, Xvfb/Firestorm GPU local gates PASS. No confirmed Pi5 ARM64 CI success on exact SHA."
   }
 }
