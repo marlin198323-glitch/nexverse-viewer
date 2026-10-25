@@ -7450,3 +7450,20 @@ CAPS-/Teleport-Region-Endtest, serverbestätigte WASD-/Yaw-/Höhen-
 bewegung; weiterhin v0.4.0.0 IN_ARBEIT und v1 RELEASE BLOCKED.
 Der Nutzer soll nur die acht visuellen Testschritte und Beobachtungen
 liefern; die technischen Beweise bleiben Aufgabe der Entwicklung.
+
+
+## Abnahme v0.4.0.0 – Schritt 3 Welt/F3, 25.10.2026
+
+Login/CAPS/UDP und sichtbare Region bestätigt, aber untexturierte
+Oberflächen, unvollständige Meshes und fehlender vollständiger
+Avatar-Skin/Outfit-Nachweis aus zwei Screenshots.
+Reales Sitzungslog 15:40–15:48: 784 GetMesh GPU Upload
+`gpu_failure=capacity`, 43 GetTexture-Fehler, 2 ungültige
+Mesh-LODs. Ursache P0: Renderer begrenzt auf 256 verschiedene
+GPU-Mesh-Assets in `src/render/opengl_renderer.cpp`.
+P0 OGL-WORLD-003-MESH-CAPACITY, P1 OGL-WORLD-003-TEXTURE-DECODE
+und OGL-WORLD-003-MESH-INVALID, Avatar-E2E weiter P0 OFFEN.
+**Schritt 3 als fehlerhafte Teilabnahme protokolliert**, kein
+Release-Erfolg. Details in
+`docs/ABNAHME_V0400_SCHRITT03_WELT_ASSET_GPU_2026-10-25.md`.
+Nächstes: Schritt 4 WASD mit serverseitiger Positionsbestätigung.
