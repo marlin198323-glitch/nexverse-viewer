@@ -6298,6 +6298,10 @@ int Application::run(bool enable_developer_modules)
     std::size_t texture_budget_rejections = 0U;
     std::unordered_set<std::string> object_texture_loaded_ids;
     assets::AssetRetrySchedule object_texture_retries;
+    // Shared, region-epoch-scoped converter evidence across the sequence
+    // of one-shot GetTexture workers. No CAP URI / asset IDs stored.
+    const auto texture_format_preference=
+        std::make_shared<assets::TextureFormatPreference>();
     std::size_t texture_retry_dispatches = 0U;
     std::size_t texture_failure_events = 0U;
     assets::AssetFailureTelemetry texture_failure_categories;
@@ -10889,6 +10893,7 @@ int Application::run(bool enable_developer_modules)
                 world_renderer->clear_object_textures();
                 object_texture_loaded_ids.clear();
                 object_texture_retries.enter(material_scope.epoch());
+                texture_format_preference->enter(material_scope.epoch());
                 self_avatar_mip_rescue.enter(material_scope.epoch());
                 self_avatar_mip_rescued_uploads=0U;
                 texture_recovered_j2c_transfers=0U;
@@ -12859,6 +12864,7 @@ int Application::run(bool enable_developer_modules)
                         std::launch::async,
                         [transport, capability, requested_id,
                          mip=object_texture_loading_mip, texture_memory_cache,
+                         texture_format_preference,
                          live_epoch=texture_prefetch_live_epoch,
                          expected_epoch=object_texture_request_epoch]()
                         {
@@ -12873,8 +12879,11 @@ int Application::run(bool enable_developer_modules)
                                 requested_id,mip,*texture_memory_cache,disk,
                                 [&]()
                                 {
-                                    return assets::TextureAssetLoader{transport}
-                                        .fetch_rgba(capability,requested_id);
+                                    assets::TextureAssetLoader loader{transport};
+                                    loader.set_format_preference(
+                                        texture_format_preference,expected_epoch);
+                                    return loader.fetch_rgba(
+                                        capability,requested_id);
                                 },active);
                         });
                     }
@@ -12941,6 +12950,7 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::seconds{60})
             {
                 last_texture_telemetry = texture_plan_now;
+                const auto format_stats=texture_format_preference->statistics();
                 core::info("GetTexture streaming metrics: ram_hits=" +
                     std::to_string(texture_ram_hits) +
                     " ram_assets=" +
@@ -12949,6 +12959,12 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_memory_cache->bytes()) +
                     " demand_dispatches=" +
                     std::to_string(texture_request_dispatches) +
+                    " native_png_gets_avoided=" +
+                    std::to_string(format_stats.png_gets_avoided) +
+                    " native_png_reprobes=" +
+                    std::to_string(format_stats.png_converter_reprobes) +
+                    " native_preferred=" +
+                    std::to_string(format_stats.native_preferred?1U:0U) +
                     " retry_dispatches=" +
                     std::to_string(texture_retry_dispatches) +
                     " failure_events=" +

@@ -7,6 +7,7 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/assets/asset_failure.hpp"
 #include "nexverse/assets/asset_cache_lookup.hpp"
+#include "nexverse/assets/texture_format_preference.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -67,6 +68,16 @@ public:
     explicit TextureAssetLoader(
         std::shared_ptr<net::IHttpTransport> transport);
 
+    // Optional per-region evidence, shared across successive one-shot
+    // HTTP workers. No token, server URL, UUID or secret retained.
+    void set_format_preference(
+        std::shared_ptr<TextureFormatPreference> preference,
+        std::uint64_t region_epoch) noexcept
+    {
+        format_preference_=std::move(preference);
+        format_epoch_=region_epoch;
+    }
+
     // Request PNG first; retry the native OpenSim x-j2c codestream
     // on conversion/HTTP/decode failures.
     [[nodiscard]] TextureAssetResult fetch_rgba(
@@ -75,5 +86,7 @@ public:
 
 private:
     std::shared_ptr<net::IHttpTransport> transport_;
+    std::shared_ptr<TextureFormatPreference> format_preference_;
+    std::uint64_t format_epoch_=0U;
 };
 }

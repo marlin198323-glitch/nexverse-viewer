@@ -1245,6 +1245,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-jpeg2000-payload-signature-tests
         COMMAND nexverse-jpeg2000-payload-signature-tests)
 
+    add_executable(nexverse-texture-format-preference-tests
+        tests/texture_format_preference_tests.cpp)
+    target_include_directories(nexverse-texture-format-preference-tests
+        PRIVATE include)
+    nexverse_enable_warnings(nexverse-texture-format-preference-tests)
+    add_test(NAME nexverse-texture-format-preference-tests
+        COMMAND nexverse-texture-format-preference-tests)
+
     add_executable(nexverse-texture-loader-tests tests/texture_loader_tests.cpp)
     target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-loader-tests)

@@ -24,6 +24,8 @@ public:
         png_returns_truncated_j2c,
         j2c_returns_valid_png,
         j2c_returns_truncated_png,
+        j2c_down_png_ok,
+        j2c_invalid_png_converter_recovers,
         both_missing,
         both_unavailable,
         first_j2c_truncated_then_valid,
@@ -72,6 +74,10 @@ public:
         if (url.find("format=x-j2c") != std::string_view::npos)
         {
             ++j2c_requests;
+            if(mode==Mode::j2c_down_png_ok)
+                return {503,{},"native endpoint unavailable"};
+            if(mode==Mode::j2c_invalid_png_converter_recovers)
+                return {200,body.substr(0U,12U),{}};
             if(mode==Mode::j2c_returns_valid_png)
                 return {200,body,{}};
             if(mode==Mode::j2c_returns_truncated_png)
@@ -371,6 +377,135 @@ int main()
         unavailable.message.find("503") == std::string::npos)
         return 12;
     transport->mode = MockTransport::Mode::png_ok;
+
+    // Historical live grid evidence: a broken format=png converter
+    // caused thousands of 2-request JPEG2000 fallbacks. Learn from
+    // THREE successful natives only, then skip redundant converter
+    // calls, with a bounded 16-transfer PNG re-probe.
+    auto adaptive_http=std::make_shared<MockTransport>();
+    adaptive_http->body=one_pixel_png();
+    adaptive_http->mode=MockTransport::Mode::png_invalid;
+    auto adaptive_state=std::make_shared<TextureFormatPreference>();
+    adaptive_state->enter(22U);
+    TextureAssetLoader adaptive_loader{adaptive_http};
+    adaptive_loader.set_format_preference(adaptive_state,22U);
+    for(int i=0;i<3;++i)
+    {
+        adaptive_http->requests.clear();
+        const auto initial=adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id);
+        if(!valid_fixture(initial)||adaptive_http->requests.size()!=2U)
+            return 33;
+    }
+    for(int i=0;i<15;++i)
+    {
+        adaptive_http->requests.clear();
+        const auto native_only=adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id);
+        if(!valid_fixture(native_only)||
+           adaptive_http->requests.size()!=1U||
+           adaptive_http->requests[0].find("format=x-j2c")==
+               std::string::npos)
+            return 34;
+    }
+    // The converter recovers while native is preferred. Every 16th
+    // transfer must re-probe, then forget the preference on PNG success.
+    adaptive_http->mode=MockTransport::Mode::png_ok;
+    adaptive_http->requests.clear();
+    const auto converter_restored=adaptive_loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!converter_restored.success||
+       adaptive_http->requests.size()!=1U||
+       adaptive_http->requests[0].find("format=png")==std::string::npos)
+        return 35;
+    adaptive_http->requests.clear();
+    if(!adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id).success||
+       adaptive_http->requests.size()!=1U||
+       adaptive_http->requests[0].find("format=png")==std::string::npos)
+        return 36;
+
+    adaptive_http->mode=MockTransport::Mode::png_invalid;
+    for(int i=0;i<3;++i)
+    {
+        adaptive_http->requests.clear();
+        if(!valid_fixture(adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id))||
+           adaptive_http->requests.size()!=2U)
+            return 37;
+    }
+    adaptive_http->mode=MockTransport::Mode::both_unavailable;
+    adaptive_http->requests.clear();
+    const auto native_down=adaptive_loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(native_down.success||
+       native_down.failure!=AssetFailure::transient||
+       adaptive_http->requests.size()!=2U||
+       adaptive_http->requests[0].find("format=x-j2c")==
+           std::string::npos||
+       adaptive_http->requests[1].find("format=png")==
+           std::string::npos)
+        return 38;
+    adaptive_http->mode=MockTransport::Mode::png_ok;
+    adaptive_http->requests.clear();
+    if(!adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id).success||
+       adaptive_http->requests.size()!=1U||
+       adaptive_http->requests[0].find("format=png")==std::string::npos)
+        return 39;
+    // A native CAP suddenly fails while its PNG converter recovers.
+    // The SAME asset must be recovered immediately, not blocked by
+    // AssetFailure::invalid/missing for 10-30 minutes.
+    adaptive_http->mode=MockTransport::Mode::png_invalid;
+    for(int i=0;i<3;++i)
+        if(!valid_fixture(adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id)))return 41;
+    adaptive_http->mode=MockTransport::Mode::j2c_down_png_ok;
+    adaptive_http->requests.clear();
+    const auto same_asset_recovered=adaptive_loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!same_asset_recovered.success||
+       same_asset_recovered.message!=
+           "GetTexture converter fallback PNG succeeded"||
+       adaptive_http->requests.size()!=2U||
+       adaptive_http->requests[0].find("format=x-j2c")==
+           std::string::npos||
+       adaptive_http->requests[1].find("format=png")==
+           std::string::npos)return 42;
+    adaptive_http->requests.clear();
+    const auto restored_png=adaptive_loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!restored_png.success||adaptive_http->requests.size()!=1U||
+       adaptive_http->requests[0].find("format=png")==
+           std::string::npos)return 43;
+
+    // A corrupted PNG body from x-j2c can also recover through the
+    // real PNG converter after native preference is learned.
+    adaptive_http->mode=MockTransport::Mode::png_invalid;
+    for(int i=0;i<3;++i)
+        if(!valid_fixture(adaptive_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id)))return 44;
+    adaptive_http->mode=
+        MockTransport::Mode::j2c_invalid_png_converter_recovers;
+    adaptive_http->requests.clear();
+    const auto native_bad_png=adaptive_loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!native_bad_png.success||
+       adaptive_http->requests.size()!=2U||
+       native_bad_png.message!=
+           "GetTexture converter fallback PNG succeeded")return 45;
+
+    // New simulator region has no reason to inherit last region's
+    // converter preference or failed authentication/capability state.
+    adaptive_state->enter(23U);
+    TextureAssetLoader fresh_region_loader{adaptive_http};
+    fresh_region_loader.set_format_preference(adaptive_state,23U);
+    adaptive_http->mode=MockTransport::Mode::png_invalid;
+    adaptive_http->requests.clear();
+    if(!valid_fixture(fresh_region_loader.fetch_rgba(
+            "https://caps.example/GetTexture/",id))||
+       adaptive_http->requests.size()!=2U)
+        return 40;
 
     if (decode_jpeg2000_texture(id, "invalid").success ||
         decode_jpeg2000_texture(id, j2c.substr(0U, 22U)).success ||

@@ -573,5 +573,25 @@
     "authenticated_teleport_and_movement": "OPEN",
     "authenticated_shutdown_latency": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_adaptive_gettexture_png_j2c_negotiation_20261025": {
+    "status": "IMPLEMENTED_MINT_FULL_TESTED_LIVE_GRID_PERFORMANCE_UNVERIFIED",
+    "documentation": "docs/V0_4_0_0_ADAPTIVE_TEXTURE_FORMAT_NEGOTIATION_20261025.md",
+    "historic_native_j2c_fallback_successes": 4757,
+    "native_preference_requires_successful_bad_png_then_j2c_count": 3,
+    "png_probe_every_preferred_transfers": 16,
+    "same_asset_png_recovery_if_native_endpoint_breaks": true,
+    "new_region_resets_traffic_preference": true,
+    "format_preference_does_not_store_tokens_urls_or_uuids": true,
+    "decoder_vram_http_pacer_safety_limits_unchanged": true,
+    "aggregate_telemetry_png_avoided_and_reprobes": true,
+    "native_ctests": "195/195 PASS",
+    "python_tests": "743/743 PASS",
+    "original_firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "authenticated_grid_speedup_measurement": "OPEN",
+    "authenticated_avatar_head_upper_lower_skin_rgb": "OPEN",
+    "cof_outfit": "OPEN",
+    "authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
