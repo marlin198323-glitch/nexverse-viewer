@@ -5889,7 +5889,7 @@ int Application::run(bool enable_developer_modules)
     std::uint64_t login_caps_epoch=0U;
     std::vector<std::future<protocol::RegionEventQueueStats>>
         region_event_queue_futures;
-    std::uint64_t region_event_started_epoch=0U;
+    protocol::RegionEventRestartGate region_event_restart;
     std::mutex caps_mutex;
     CapsRuntimeState caps_state;
     protocol::FirestormRegionLease firestorm_region_lease;
@@ -8648,6 +8648,13 @@ int Application::run(bool enable_developer_modules)
                 try
                 {
                     const auto result=it->get();
+                    if(region_event_restart.completed(
+                        result,std::chrono::steady_clock::now())&&
+                       !result.advertised)
+                        core::warning("Region EventQueue initial discovery "
+                            "unavailable; throttled region-scoped retry "
+                            "scheduled; attempt="+
+                            std::to_string(region_event_restart.retry_failures()));
                     core::info("Region EventQueue worker stopped; events="+
                         std::to_string(result.accepted_events)+
                         "; endpoint="+
@@ -8672,12 +8679,12 @@ int Application::run(bool enable_developer_modules)
                 current_region_simulator_port==circuit_target_port &&
                 current_region_handle!=0U &&active_session.has_value();
             if(destination_circuit_active&&
-               current_firestorm_epoch!=0U &&
-               current_firestorm_epoch!=login_caps_epoch &&
-               current_firestorm_epoch!=region_event_started_epoch &&
+               region_event_restart.can_start(
+                   current_firestorm_epoch,login_caps_epoch,
+                   std::chrono::steady_clock::now())&&
                region_event_queue_futures.size()<4U)
             {
-                region_event_started_epoch=current_firestorm_epoch;
+                region_event_restart.started(current_firestorm_epoch);
                 region_event_queue_futures.emplace_back(
                     std::async(std::launch::async,
                         [transport,seed=current_region_seed,
@@ -8707,9 +8714,23 @@ int Application::run(bool enable_developer_modules)
                                     }
                                 }
                             };
-                            return protocol::poll_region_event_queue(
-                                transport,seed,epoch,firestorm_region_lease,
-                                caps_stop,receive);
+                            try
+                            {
+                                return protocol::poll_region_event_queue(
+                                    transport,seed,epoch,firestorm_region_lease,
+                                    caps_stop,receive);
+                            }
+                            catch(const std::exception&)
+                            {
+                                // Preserve source epoch even when a malformed
+                                // simulator reply or event dispatcher throws.
+                                // Otherwise the region would never retry.
+                                core::warning("Region EventQueue worker failed; "
+                                    "source-scoped retry scheduled");
+                                protocol::RegionEventQueueStats failure;
+                                failure.issued_epoch=epoch;
+                                return failure;
+                            }
                         }));
                 core::info("New region CAPS EventQueue discovery started");
             }

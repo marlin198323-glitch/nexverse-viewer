@@ -13,6 +13,9 @@ struct MockHttp final : nexverse::net::IHttpTransport
     int seed_calls=0;
     int queue_calls=0;
     bool expire=false;
+    bool expire_second=false;
+    bool same_uri_after_refresh=false;
+    bool fail_first_seed=false;
     bool missing=false;
     std::vector<int> acks;
     bool duplicate_forever=false;
@@ -27,9 +30,11 @@ struct MockHttp final : nexverse::net::IHttpTransport
         if(url=="https://sim.test/seed")
         {
             ++seed_calls;
+            if(fail_first_seed&&seed_calls==1)
+                return {503,{},"temporary seed unavailable"};
             return {200,serialize_llsd_xml(LlsdValue::map({
                 {"EventQueueGet",LlsdValue::string(
-                    missing?"":(seed_calls==1?
+                    missing?"":(same_uri_after_refresh||seed_calls==1?
                         "https://sim.test/queue1":"https://sim.test/queue2"))}
             })),{}};
         }
@@ -42,7 +47,8 @@ struct MockHttp final : nexverse::net::IHttpTransport
             const auto* ack=parsed.value->find("ack");
             acks.push_back(ack&&ack->type==LlsdType::integer
                 ?static_cast<int>(ack->integer_value):-1);
-            if(expire &&queue_calls==1)return {404,{},""};
+            if((expire&&queue_calls==1)||
+               (expire_second&&queue_calls==2))return {404,{},""};
             const int id=duplicate_forever?17:(queue_calls==1?17:
                 queue_calls==2?17:18);
             return {200,serialize_llsd_xml(LlsdValue::map({
@@ -134,6 +140,66 @@ int main()
     if(broken.accepted_events!=0U||broken.polls!=2U||
        no_id_mock->acks!=std::vector<int>({-1,-1}))
        return 7;
+    // Expiration may return a new queue incarnation at the identical
+    // URI. Sending its old ACK strands the new instance.
+    auto same_uri_mock=std::make_shared<MockHttp>();
+    same_uri_mock->expire_second=true;
+    same_uri_mock->same_uri_after_refresh=true;
+    last_epoch=lease.enter(557U,2U,"https://sim.test/same-uri");
+    const auto reincarnated=poll_region_event_queue(
+        same_uri_mock,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,3U);
+    if(reincarnated.polls!=3U||reincarnated.rediscoveries!=1U||
+       same_uri_mock->seed_calls!=2||
+       same_uri_mock->acks!=std::vector<int>({-1,17,-1}))
+       return 8;
+
+    RegionEventRestartGate gate;
+    const auto origin=RegionEventRestartGate::Clock::now();
+    if(!gate.can_start(1001U,11U,origin))return 9;
+    gate.started(1001U);
+    if(gate.can_start(1001U,11U,origin))return 10;
+    RegionEventQueueStats unavailable;
+    unavailable.issued_epoch=1001U;
+    if(!gate.completed(unavailable,origin))return 11;
+    if(gate.retry_failures()!=1U ||
+       gate.can_start(1001U,11U,origin+std::chrono::seconds{4})||
+       !gate.can_start(1001U,11U,origin+std::chrono::seconds{5}))
+       return 12;
+    gate.started(1001U);
+    if(!gate.completed(unavailable,origin+std::chrono::seconds{5})||
+       gate.can_start(1001U,11U,origin+std::chrono::seconds{14})||
+       !gate.can_start(1001U,11U,origin+std::chrono::seconds{15})||
+       gate.can_start(11U,11U,origin+std::chrono::seconds{120}))
+       return 13;
+    // A new region ignores a stale region's retry cooldown.
+    if(!gate.can_start(1002U,11U,origin+std::chrono::seconds{6}))
+       return 14;
+    gate.started(1002U);
+    if(gate.completed(unavailable,origin+std::chrono::seconds{6})||
+       gate.can_start(1002U,11U,origin+std::chrono::seconds{6}))
+       return 15;
+    RegionEventQueueStats healthy;
+    healthy.issued_epoch=1002U;
+    healthy.advertised=true;
+    if(!gate.completed(healthy,origin+std::chrono::seconds{7})||
+       gate.can_start(1002U,11U,origin+std::chrono::seconds{120}))
+       return 16;
+    auto no_seed=std::make_shared<MockHttp>();
+    no_seed->fail_first_seed=true;
+    const auto missing_epoch=lease.enter(558U,2U,"https://sim.test/fail-seed");
+    auto temporary=poll_region_event_queue(
+        no_seed,"https://sim.test/seed",missing_epoch,lease,stop,receive,1U);
+    if(temporary.advertised||temporary.issued_epoch!=missing_epoch||
+       temporary.polls!=0U||no_seed->seed_calls!=1)
+       return 17;
+    const auto recovered=poll_region_event_queue(
+        no_seed,"https://sim.test/seed",missing_epoch,lease,stop,receive,1U);
+    if(!recovered.advertised||recovered.issued_epoch!=missing_epoch||
+       recovered.polls!=1U||no_seed->seed_calls!=2)
+       return 18;
+    std::cout<<"Region EventQueue same-URI 404 ACK reset and "
+                "bounded initial-seed retry PASS\n";
     std::cout<<"Region-scoped EventQueue duplicate replay bounded "
                 "without CPU hot loop\n";
     std::cout<<"Region-scoped EventQueue source, ack reset,"

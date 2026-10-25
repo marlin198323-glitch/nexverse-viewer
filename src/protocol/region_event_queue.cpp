@@ -16,6 +16,7 @@ RegionEventQueueStats poll_region_event_queue(
     const RegionEventSink& sink,std::size_t max_polls)
 {
     RegionEventQueueStats stats;
+    stats.issued_epoch=epoch;
     const auto active=[&]{return !stop.load()&&lease.matches(epoch);};
     if(!transport||!active()||seed.empty()||seed.size()>4096U)
         return stats;
@@ -95,8 +96,11 @@ RegionEventQueueStats poll_region_event_queue(
             {
                 const auto found=refreshed.capabilities.find("EventQueueGet");
                 if(found!=refreshed.capabilities.end()&&!found->second.empty()&&
-                   found->second!=uri)
+                   (found->second!=uri||batch.expired))
                 {
+                    // HTTP 404 invalidated the queue incarnation even
+                    // if its rediscovered URL happens to be identical.
+                    // The old cursor must never be sent to the new one.
                     uri=found->second;
                     ack.reset();
                     recovery.on_contact();

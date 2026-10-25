@@ -391,5 +391,24 @@
     "original_firestorm_gl_gui_x11_icon": "PASS",
     "authenticated_grid_acceptance": "OPEN",
     "weighted_progress_pct": 38.65
+  },
+  "v0400_region_eventqueue_reconnect_20261025": {
+    "status": "IMPLEMENTED_AND_LOCAL_MINT_TESTED_LIVE_REGION_E2E_OPEN",
+    "date": "2026-10-25",
+    "documentation": "docs/V0_4_0_0_REGION_EVENTQUEUE_RECONNECT_20261025.md",
+    "native_ctests": "188/188 PASS",
+    "python_contracts": "680/680 PASS",
+    "firestorm_xvfb_open_gl_x11_icon": "PASS",
+    "first_seed_retry_wait_seconds": [
+      5,
+      10,
+      20,
+      40,
+      60
+    ],
+    "cross_region_stale_result_guard": true,
+    "expired_http_404_same_uri_ack_reset": true,
+    "authenticated_region_teleport_readback": "OPEN",
+    "total_weighted_pct": 38.65
   }
 }

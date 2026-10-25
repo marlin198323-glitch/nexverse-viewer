@@ -7523,3 +7523,5 @@ vollständiges Release-E2E. Einzelheiten in
 `docs/V0_4_0_0_NEON_COMPACT_AND_FAST_SHUTDOWN.md`.
 
 **KOMPAKTES NEON-DESIGN + SCHLIESSEN QA BESTANDEN:** Linux Mint 187/187 native CTests, 666/666 Python, Original-Firestorm-Xvfb-OpenGL-/GUI-/128px-X11-Systemicon PASS; echter HTTP-Stall/Stop-Loopback-Test PASS. Realer eingeloggter Viewer-Abschluss und Grid-Funktionsparität weiterhin offen. Projektversion v0.4.0.0, 38,65 % gewichtet, main NICHT ändern.
+
+**T02 Region-CAPS-Reconnect (25.10.2026):** Erstes fehlgeschlagenes Seed-CAPS/EventQueueGet kann in derselben Region mit 5–60s Cooldown neu gestartet werden; alte Worker dürfen aktuelle Region nicht deaktivieren; HTTP 404 + gleicher Queue-URI setzt ACK zurück. Native Region-Tests inkl. HTTP503/404/Lease PASS, Linux Mint x64 komplett 188/188 CTests, 680/680 Python, Firestorm Xvfb/GL/X11-Icon PASS. Echte Live-Grid-Region/Teleport-Abnahme offen. Dokument: docs/V0_4_0_0_REGION_EVENTQUEUE_RECONNECT_20261025.md. Projekt 39 %; v0.4.0.0 IN_ARBEIT.
