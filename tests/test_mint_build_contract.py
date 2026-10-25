@@ -13,8 +13,13 @@ class MintBuildContractTests(unittest.TestCase):
     def test_login_ui_truthfully_reports_original_gpu_asset_state(self):
         app=(ROOT/"src/app/application.cpp").read_text()
         self.assertIn("original_body_gpu_ready=true;",app)
-        self.assertIn("Avatar-Mesh: Firestorm 3/3 auf GPU bereit",app)
-        self.assertIn("Avatar-Mesh: Originaldateien fehlen",app)
+        # Login no longer obscures the live welcome background with
+        # a technical modal. The true GPU status is logged and appears
+        # in the in-world Avatar diagnostic, not falsely painted over
+        # the neon home page.
+        self.assertIn("Firestorm ORIGINAL three-part",app)
+        self.assertIn("Firestorm avatar .llm loading incomplete",app)
+        self.assertIn("nexverse::ui::NeonLoginLayout l{width,height}",app)
         self.assertIn("welcome_texture,brand_texture,",app)
         self.assertIn("original_body_gpu_ready,viewer_shell",app)
 

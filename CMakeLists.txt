@@ -982,6 +982,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-diagnostic-report-tests
         COMMAND nexverse-avatar-diagnostic-report-tests)
 
+    add_executable(nexverse-neon-login-layout-tests
+        tests/neon_login_layout_tests.cpp)
+    target_link_libraries(nexverse-neon-login-layout-tests
+        PRIVATE nexverse-ui)
+    nexverse_enable_warnings(nexverse-neon-login-layout-tests)
+    add_test(NAME nexverse-neon-login-layout-tests
+        COMMAND nexverse-neon-login-layout-tests)
+
     add_executable(nexverse-viewer-shell-tests
         tests/viewer_shell_tests.cpp)
     target_link_libraries(nexverse-viewer-shell-tests

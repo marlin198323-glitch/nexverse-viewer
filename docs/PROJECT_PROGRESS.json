@@ -275,5 +275,24 @@
       "python_tests_passed": 647,
       "real_chromium_guided_ui_smoke": true
     }
+  },
+  "neon_login_reference": {
+    "version": "v0.4.0.0",
+    "real_cpp_opengl_ui": true,
+    "web_welcome_retained": true,
+    "resizable_login_geometry": true,
+    "real_glfw_click_matching": true,
+    "local_password_eye_toggle": true,
+    "password_persistence": false,
+    "source_tests": 11,
+    "native_resolution_tests": 6,
+    "authenticated_grid_login_after_change_verified": false,
+    "web_welcome_offscreen_links_functional": false,
+    "local_screenshot": "build/neon-login-proof/login_full_final.png",
+    "status": "UX_IMPLEMENTED; RELEASE BLOCKED",
+    "local_build_and_native_ctests": "PASS: 186/186",
+    "local_python_tests": "PASS: 658/658",
+    "real_xvfb_firestorm_gui_and_ogl_128px_systemicon": "PASS",
+    "real_first_reference_resolution": "1648x928"
   }
 }

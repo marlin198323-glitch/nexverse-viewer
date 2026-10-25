@@ -29,6 +29,8 @@ echter Loopback-307-Test, GridInfo-Cache- und CAPS-Sicherheitsregressionen.
 Noch offen: vollständiges Grid-SSO/Passwortreset und Live-Grid-Login.
 Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 
+**T01 UI/UX-Teilarbeit:** programmierter Neon-Login statt Popup, Original-NexVerse-Welcome, responsiver Footer und echte GLFW-Hitboxes, Paswortanzeige, sechsfache Auflösungsabnahme. Backend-Grid-E2E bleibt offen. Siehe docs/V0_4_0_0_NEON_LOGIN_REFERENCE_IMPLEMENTATION.md.
+
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect
 **T02 Teilfortschritt (Batch 02):** EventQueue HTTP-200 ohne bestätigbare ACK-ID wird nicht zugestellt, leere idlose Antworten werden kontrolliert gepaced. Interaktives QA-Dashboard unter `docs/INTERAKTIVE_PROJEKTABNAHME.md` verfügbar; keine automatisierte Live-Freigabe. Voller Region-/Teleport-E2E weiter offen.
 

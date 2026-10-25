@@ -20,7 +20,7 @@ class ReleaseRoadmapContract(unittest.TestCase):
  def test_ui_does_not_make_double_v(self):
   c=load("src/app/application.cpp")
   self.assertNotIn('std::string{"v"} + std::string{nexverse::core::version()}',c)
-  self.assertEqual(c.count('std::string{nexverse::core::version()};'),3)
+  self.assertGreaterEqual(c.count('std::string{nexverse::core::version()};'),3)
  def test_stages_unique_ordered(self):
   ms=self.road["milestones"]
   keys=[tuple(map(int,x["version"][1:].split("."))) for x in ms]

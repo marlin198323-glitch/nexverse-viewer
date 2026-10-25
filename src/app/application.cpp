@@ -138,6 +138,7 @@
 #include "nexverse/world/self_avatar_localid_lease.hpp"
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include "nexverse/ui/welcome_page.hpp"
+#include "nexverse/ui/neon_login_layout.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -444,6 +445,7 @@ struct LoginUiState
     bool submit_requested = false;
     bool busy = false;
     bool authenticated = false;
+    bool show_password = false; // Local UI visibility only, never saved.
     // Real NexVerse versioned ToS challenge. No automatic acceptance.
     nexverse::protocol::LoginTosConsent tos;
     nexverse::ui::TosAction tos_focus=nexverse::ui::TosAction::open_document;
@@ -1770,47 +1772,22 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     int height = 0;
     glfwGetWindowSize(window, &width, &height);
 
-    const float w = static_cast<float>(std::max(width, 1));
-    const float h = static_cast<float>(std::max(height, 1));
-    const float scale = std::clamp(
-        std::min(w / 1536.0f, h / 960.0f),
-        0.72f,
-        1.55f);
-
-    const float left_w = 252.0f * scale;
-    const float bottom_h = 106.0f * scale;
-    const float bottom_y = h - bottom_h;
-    const float login_x = left_w + 20.0f * scale;
-    const float login_y = bottom_y + 20.0f * scale;
-    const float field_w = 184.0f * scale;
-    const float field_h = 48.0f * scale;
-    const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
-    const float button_w = 164.0f * scale;
-
-    double mouse_x = 0.0;
-    double mouse_y = 0.0;
-    glfwGetCursorPos(window, &mouse_x, &mouse_y);
-
-    LoginUiState& state = *context->login;
-    if (point_inside(mouse_x, mouse_y, login_x, login_y, field_w, field_h))
+    const nexverse::ui::NeonLoginLayout layout{width,height};
+    double mouse_x=0.0,mouse_y=0.0;
+    glfwGetCursorPos(window,&mouse_x,&mouse_y);
+    LoginUiState& state=*context->login;
+    if(layout.password_eye.contains(mouse_x,mouse_y) ||
+       layout.remember_avatar.contains(mouse_x,mouse_y))
     {
-        state.focused = LoginField::username;
+        state.show_password=!state.show_password;
+        return;
     }
-    else if (point_inside(
-                 mouse_x,
-                 mouse_y,
-                 login_x + field_w + 8.0f * scale,
-                 login_y,
-                 field_w,
-                 field_h))
-    {
-        state.focused = LoginField::password;
-    }
-    else if (point_inside(mouse_x, mouse_y, button_x, login_y, button_w, field_h) &&
-             !state.busy)
-    {
-        state.submit_requested = true;
-    }
+    if(layout.username.contains(mouse_x,mouse_y))
+        state.focused=LoginField::username;
+    else if(layout.password.contains(mouse_x,mouse_y))
+        state.focused=LoginField::password;
+    else if(layout.enter_world.contains(mouse_x,mouse_y)&&!state.busy)
+        state.submit_requested=true;
 }
 
 // Shared with native login regression tests: accept the new single-name
@@ -3765,397 +3742,181 @@ void render_shell(
         return;
     }
 
-    renderer.rect(
-        0.0f,
-        0.0f,
-        w,
-        h,
-        Color{0.008f, 0.018f, 0.035f, 1.0f},
-        0.0f);
-
-    const float top_h = 86.0f * scale;
-    const float left_w = 252.0f * scale;
-    const float right_w = 354.0f * scale;
-    const float bottom_h = 106.0f * scale;
-    const float gap = 10.0f * scale;
-
-    renderer.rect(
-        0.0f, 0.0f, w, top_h,
-        Color{0.008f, 0.034f, 0.077f, 0.99f},
-        0.0f);
-    renderer.rect(
-        0.0f, top_h - 2.0f, w, 2.0f,
-        with_alpha(theme::cyan, 0.50f),
-        0.0f);
-
-    // Real original brand icon in the upper-left header, not a mockup.
-    renderer.rect(17.0f*scale,13.0f*scale,58.0f*scale,58.0f*scale,
-        with_alpha(theme::cyan,0.28f),15.0f*scale);
-    if(brand_texture!=0U)
-        renderer.image(brand_texture,19.0f*scale,15.0f*scale,
-            54.0f*scale,54.0f*scale,1.0f);
-    else
-        renderer.rect(19.0f*scale,15.0f*scale,54.0f*scale,54.0f*scale,
-            Color{0.025f,0.120f,0.235f,1.0f},13.0f*scale);
-
-    renderer.text(
-        88.0f * scale,
-        15.0f * scale,
-        24.0f * scale,
-        "OpenGenesisLINK",
-        theme::text);
-    renderer.text(
-        89.0f * scale,
-        48.0f * scale,
-        9.0f * scale,
-        "VIEWER FOR NEXVERSE",
-        theme::cyan);
-
-    const float location_x = 346.0f * scale;
-    const float location_w = 360.0f * scale;
-    renderer.rect(
-        location_x,
-        14.0f * scale,
-        location_w,
-        54.0f * scale,
-        Color{0.026f, 0.052f, 0.090f, 0.95f},
-        12.0f * scale);
-    renderer.text(
-        location_x + 18.0f * scale,
-        18.0f * scale,
-        10.0f * scale,
-        "NEXVERSE GRID",
-        theme::text_muted);
-    renderer.text(
-        location_x + 18.0f * scale,
-        36.0f * scale,
-        13.0f * scale,
-        grid_name,
-        theme::text);
-
-    const float chip_w = 122.0f * scale;
-    const float chip_gap = 8.0f * scale;
-    const float chips_total = chip_w * 3.0f + chip_gap * 2.0f;
-    const float chip_start = std::max(location_x + location_w + 16.0f * scale, w - chips_total - 26.0f * scale);
-
-    status_chip(renderer, chip_start, 14.0f * scale, chip_w, scale, "GRID", grid_status, grid_status_color);
-    status_chip(renderer, chip_start + chip_w + chip_gap, 14.0f * scale, chip_w, scale, "LOGIN", login.status, login_color);
-    status_chip(
-        renderer,
-        chip_start + (chip_w + chip_gap) * 2.0f,
-        14.0f * scale,
-        chip_w,
-        scale,
-        "WORLD",
-        simulation_ready
-            ? circuit_state_label(circuit.state)
-            : (login.authenticated ? "LOADING" : "OFFLINE"),
-        simulation_ready
-            ? circuit_state_color(circuit.state)
-            : (login.authenticated ? theme::cyan : theme::text_muted));
-
-    const float content_y = top_h + gap;
-    const float content_h = std::max(380.0f * scale, h - top_h - bottom_h - gap * 2.0f);
-
-    if (!simulation_ready)
+    // Legacy world shell below still requires these world-mode
+    // geometry values; it is not the login view.
+    const float top_h=86.0f*scale;
+    const float left_w=252.0f*scale;
+    const float right_w=354.0f*scale;
+    const float bottom_h=106.0f*scale;
+    const float gap=10.0f*scale;
+    const float content_y=top_h+gap;
+    const float content_h=std::max(380.0f*scale,
+        h-top_h-bottom_h-gap*2.0f);
+    // Real neon login composition: retain the LIVE embedded NexVerse
+    // welcome page; remove the previous dark blocking login modal.
+    const nexverse::ui::NeonLoginLayout l{width,height};
+    const float sc=l.scale;
+    renderer.rect(0.0f,0.0f,w,h,Color{0.008f,0.020f,0.045f,1.0f});
+    if(welcome_texture!=0U)
     {
-        if (welcome_texture != 0U)
-        {
-            renderer.image(
-                welcome_texture,
-                0.0f,
-                content_y,
-                w,
-                std::max(1.0f, h - content_y - bottom_h),
-                1.0f);
-            renderer.rect(
-                0.0f,
-                content_y,
-                w,
-                std::max(1.0f, h - content_y - bottom_h),
-                Color{0.004f, 0.012f, 0.028f, 0.56f},
-                0.0f);
-        }
-
-        const float panel_w = std::min(760.0f * scale, w - 80.0f * scale);
-        const float panel_h = login.authenticated ? 286.0f * scale : 230.0f * scale;
-        const float panel_x = (w - panel_w) * 0.5f;
-        const float panel_y = top_h + std::max(44.0f * scale, (h - top_h - bottom_h - panel_h) * 0.5f);
-
-        renderer.rect(
-            panel_x-1.0f*scale,panel_y-1.0f*scale,
-            panel_w+2.0f*scale,panel_h+2.0f*scale,
-            with_alpha(theme::cyan,0.24f),17.0f*scale);
-        renderer.rect(
-            panel_x,
-            panel_y,
-            panel_w,
-            panel_h,
-            Color{0.010f, 0.035f, 0.073f, 0.96f},
-            16.0f * scale);
-        renderer.rect(
-            panel_x+18.0f*scale,panel_y+10.0f*scale,
-            45.0f*scale,2.0f*scale,
-            with_alpha(theme::cyan,0.85f),1.0f*scale);
-
-        renderer.text(
-            panel_x + 28.0f * scale,
-            panel_y + 24.0f * scale,
-            10.0f * scale,
-            login.authenticated ? "SIMULATION" : "NEXVERSE LOGIN",
-            theme::cyan);
-
-        renderer.text(
-            panel_x + 28.0f * scale,
-            panel_y + 52.0f * scale,
-            22.0f * scale,
-            login.authenticated
-                ? "Simulation wird geladen"
-                : "Willkommen bei NexVerse",
-            theme::text);
-
-        renderer.text(
-            panel_x + 28.0f * scale,
-            panel_y + 88.0f * scale,
-            11.0f * scale,
-            login.authenticated
-                ? "Die Viewer-Oberflaeche wird erst eingeblendet, wenn Region und WorldModel bereit sind."
-                : "Melde dich mit deinem NexVerse-Avatar an.",
-            theme::text_muted);
-
-        status_row(
-            renderer,
-            panel_x + 28.0f * scale,
-            panel_y + 126.0f * scale,
-            "Grid",
-            grid_status,
-            grid_status_color);
-        status_row(
-            renderer,
-            panel_x + 28.0f * scale,
-            panel_y + 154.0f * scale,
-            "Login",
-            login.status,
-            login_color);
-        status_row(
-            renderer,
-            panel_x + 28.0f * scale,
-            panel_y + 182.0f * scale,
-            "Simulation",
-            login.authenticated
-                ? (circuit.state == nexverse::protocol::CircuitState::active ? "WORLD DATA" : circuit_state_label(circuit.state))
-                : "WARTET",
-            login.authenticated
-                ? (circuit.state == nexverse::protocol::CircuitState::active ? theme::cyan : circuit_state_color(circuit.state))
-                : theme::text_muted);
-
-        if(!login.authenticated)
-            renderer.text(panel_x+28.0f*scale,
-                panel_y+214.0f*scale,8.4f*scale,
-                original_body_gpu_ready
-                    ?"Avatar-Mesh: Firestorm 3/3 auf GPU bereit (ohne Login)"
-                    :"Avatar-Mesh: Originaldateien fehlen; Ersatzgeometrie",
-                original_body_gpu_ready?theme::success:theme::warning);
-
-        if (login.authenticated)
-        {
-            const std::string load_line =
-                "Terrain " + std::to_string(load_stats.terrain_packets) +
-                "  |  Objekte " + std::to_string(load_stats.object_packets) +
-                "  |  Avatar " + std::to_string(load_stats.avatar_packets) +
-                "  |  Sonstige " + std::to_string(load_stats.other_packets);
-
-            renderer.text(
-                panel_x + 28.0f * scale,
-                panel_y + 222.0f * scale,
-                10.0f * scale,
-                load_line,
-                theme::text_muted);
-
-            const std::string caps_line =
-                "CAPS " + caps.status +
-                "  |  Endpunkte " + std::to_string(caps.capability_count) +
-                "  |  Features " + (caps.simulator_features_loaded ? "OK" : "-") +
-                "  |  Events " + std::to_string(caps.event_count);
-
-            renderer.text(
-                panel_x + 28.0f * scale,
-                panel_y + 246.0f * scale,
-                9.5f * scale,
-                caps_line,
-                caps.status == "ERROR" ? theme::magenta : theme::text_muted);
-        }
-
-        const float bottom_y = h - bottom_h;
-        renderer.rect(
-            0.0f,
-            bottom_y,
-            w,
-            bottom_h,
-            Color{0.010f, 0.026f, 0.050f, 0.99f},
-            0.0f);
-        renderer.rect(
-            0.0f,
-            bottom_y,
-            w,
-            1.0f,
-            with_alpha(theme::cyan, 0.20f),
-            0.0f);
-
-        const float login_x = left_w + 20.0f * scale;
-        const float login_y = bottom_y + 20.0f * scale;
-        const float field_w = 184.0f * scale;
-        const float field_h = 48.0f * scale;
-
-        if (!login.authenticated)
-        {
-            renderer.text(
-                login_x,
-                bottom_y + 7.0f * scale,
-                8.5f * scale,
-                "ANMELDUNG",
-                theme::text_muted);
-
-            renderer.rect(
-                login_x,
-                login_y,
-                field_w,
-                field_h,
-                login.focused == LoginField::username
-                    ? Color{0.035f, 0.085f, 0.145f, 0.98f}
-                    : Color{0.024f, 0.052f, 0.090f, 0.96f},
-                11.0f * scale);
-            if (login.focused == LoginField::username)
-            {
-                renderer.rect(
-                    login_x,
-                    login_y + field_h - 2.0f * scale,
-                    field_w,
-                    2.0f * scale,
-                    theme::cyan,
-                    1.0f * scale);
-            }
-            renderer.text(
-                login_x + 14.0f * scale,
-                login_y + 14.0f * scale,
-                11.0f * scale,
-                login.username.empty() ? "Avatar Name" : login.username,
-                login.username.empty() ? theme::text_muted : theme::text);
-
-            const float password_x = login_x + field_w + 8.0f * scale;
-            renderer.rect(
-                password_x,
-                login_y,
-                field_w,
-                field_h,
-                login.focused == LoginField::password
-                    ? Color{0.035f, 0.085f, 0.145f, 0.98f}
-                    : Color{0.024f, 0.052f, 0.090f, 0.96f},
-                11.0f * scale);
-            if (login.focused == LoginField::password)
-            {
-                renderer.rect(
-                    password_x,
-                    login_y + field_h - 2.0f * scale,
-                    field_w,
-                    2.0f * scale,
-                    theme::cyan,
-                    1.0f * scale);
-            }
-
-            const std::string password_mask = masked_password(login.password);
-            renderer.text(
-                password_x + 14.0f * scale,
-                login_y + 14.0f * scale,
-                11.0f * scale,
-                password_mask.empty() ? "Passwort" : password_mask,
-                password_mask.empty() ? theme::text_muted : theme::text);
-
-            const float button_x = login_x + (field_w + 8.0f * scale) * 2.0f;
-            const float button_w = 164.0f * scale;
-            const bool hover = point_inside(
-                mouse_x,
-                mouse_y,
-                button_x,
-                login_y,
-                button_w,
-                field_h);
-
-            const bool can_submit =
-                !login.busy &&
-                !login.username.empty() &&
-                !login.password.empty() &&
-                (grid_status == "LIVE" || grid_status == "CACHE");
-
-            Color button_color = can_submit
-                ? theme::blue
-                : Color{0.075f, 0.120f, 0.185f, 1.0f};
-            if (can_submit && hover)
-            {
-                button_color = Color{0.080f, 0.690f, 0.960f, 1.0f};
-            }
-
-            renderer.rect(
-                button_x,
-                login_y,
-                button_w,
-                field_h,
-                button_color,
-                11.0f * scale);
-
-            const std::string_view button_label = login.busy
-                ? "VERBINDE..."
-                : "WELT BETRETEN";
-            const float button_label_w = renderer.text_width(10.5f * scale, button_label);
-            renderer.text(
-                button_x + (button_w - button_label_w) * 0.5f,
-                login_y + 14.0f * scale,
-                10.5f * scale,
-                button_label,
-                can_submit ? theme::text : theme::text_muted);
-
-            renderer.text(
-                login_x,
-                bottom_y + 76.0f * scale,
-                8.5f * scale,
-                login.notice,
-                theme::text_muted);
-        }
-        else
-        {
-            renderer.text(
-                24.0f * scale,
-                bottom_y + 20.0f * scale,
-                10.0f * scale,
-                "ANGEMELDET",
-                theme::success);
-            renderer.text(
-                24.0f * scale,
-                bottom_y + 44.0f * scale,
-                13.0f * scale,
-                login.username,
-                theme::text);
-            renderer.text(
-                24.0f * scale,
-                bottom_y + 68.0f * scale,
-                9.5f * scale,
-                circuit.state == nexverse::protocol::CircuitState::active
-                    ? "Verbindung steht. Warte auf Region, WorldModel und Renderer."
-                    : circuit.message,
-                theme::text_muted);
-        }
-
-        const std::string version =
-            std::string{nexverse::core::version()};
-        const float version_w = renderer.text_width(9.0f * scale, version);
-        renderer.text(
-            w - version_w - 18.0f * scale,
-            bottom_y + bottom_h - 20.0f * scale,
-            9.0f * scale,
-            version,
-            theme::text_muted);
-        return;
+        // Lay out the existing WebKit page below the native header.
+        // Compress only the snapshot vertically: at 1648x928 this
+        // preserves the target's hero/news proportions and keeps the
+        // real Grid-Informationen title out of the opaque header.
+        renderer.image(welcome_texture,0.0f,72.0f*sc,w,h*0.82f,1.0f);
+        // The old 56% scrim made the hero/news barely legible.
+        renderer.rect(0.0f,l.header_h,w,h-l.header_h-l.footer_h,
+            Color{0.004f,0.008f,0.022f,0.07f});
     }
+    else
+    {
+        renderer.text(80.0f*sc,l.header_h+145.0f*sc,
+            48.0f*sc,"NexVerse",theme::cyan);
+        renderer.text(80.0f*sc,l.header_h+214.0f*sc,20.0f*sc,
+            "Deine Stadt. Deine Welt. Deine Geschichte.",theme::text);
+    }
+    renderer.rect(0,0,w,l.header_h,
+        Color{0.003f,0.015f,0.035f,0.97f});
+    renderer.rect(0,l.header_h-2.0f*sc,w,2.0f*sc,
+        with_alpha(theme::cyan,0.68f));
+    renderer.rect(l.brand.x-3.0f*sc,l.brand.y-3.0f*sc,
+        l.brand.w+6.0f*sc,l.brand.h+6.0f*sc,
+        Color{0.018f,0.200f,0.345f,0.97f},14.0f*sc);
+    if(brand_texture)
+        renderer.image(brand_texture,l.brand.x,l.brand.y,
+            l.brand.w,l.brand.h,1.0f);
+    renderer.text(113.0f*sc,28.0f*sc,24.0f*sc,
+        "OpenGenesisLINK",theme::text);
+    renderer.text(114.0f*sc,59.0f*sc,10.5f*sc,
+        "VIEWER FUER NEXVERSE",theme::cyan);
+
+    renderer.rect(l.grid.x-1.0f*sc,l.grid.y-1.0f*sc,
+        l.grid.w+2.0f*sc,l.grid.h+2.0f*sc,
+        Color{0.11f,0.31f,0.48f,0.85f},12.0f*sc);
+    renderer.rect(l.grid.x,l.grid.y,l.grid.w,l.grid.h,
+        Color{0.032f,0.090f,0.151f,0.99f},11.0f*sc);
+    renderer.rect(l.grid.x+19.0f*sc,l.grid.y+17.0f*sc,
+        31.0f*sc,26.0f*sc,with_alpha(theme::cyan,0.19f),8.0f*sc);
+    renderer.text(l.grid.x+28.0f*sc,l.grid.y+19.0f*sc,
+        15.0f*sc,"G",theme::cyan);
+    renderer.text(l.grid.x+68.0f*sc,l.grid.y+9.0f*sc,
+        10.0f*sc,"NEXVERSE GRID",theme::cyan);
+    renderer.text(l.grid.x+68.0f*sc,l.grid.y+29.0f*sc,
+        16.0f*sc,grid_name,theme::text);
+    // Do not draw a fake nonfunctional dropdown: this installation
+    // currently has one configured grid.
+    const auto status_chip_neon=[&](
+        const nexverse::ui::NeonRect& box,
+        std::string_view title,std::string_view value,Color color)
+    {
+        renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
+            box.w+2.0f*sc,box.h+2.0f*sc,
+            Color{0.065f,0.275f,0.43f,0.8f},12.0f*sc);
+        renderer.rect(box.x,box.y,box.w,box.h,
+            Color{0.012f,0.045f,0.085f,0.99f},11.0f*sc);
+        renderer.rect(box.x+12.0f*sc,box.y+24.0f*sc,
+            9.0f*sc,9.0f*sc,color,5.0f*sc);
+        renderer.text(box.x+29.0f*sc,box.y+9.0f*sc,
+            10.0f*sc,title,theme::cyan);
+        renderer.text(box.x+29.0f*sc,box.y+29.0f*sc,
+            11.5f*sc,value,theme::text);
+    };
+    status_chip_neon(l.grid_status,"GRID",grid_status,grid_status_color);
+    status_chip_neon(l.login_status,"LOGIN",login.status,login_color);
+    status_chip_neon(l.world_status,"WORLD","OFFLINE",theme::text_muted);
+
+    // Wide full-width bottom dock replaces the old cramped 184px inputs.
+    renderer.rect(0.0f,l.footer_y,w,l.footer_h,
+        Color{0.002f,0.017f,0.037f,0.97f});
+    renderer.rect(l.footer.x-1.0f*sc,l.footer.y-1.0f*sc,
+        l.footer.w+2.0f*sc,l.footer.h+2.0f*sc,
+        Color{0.04f,0.43f,0.74f,0.96f},18.0f*sc);
+    renderer.rect(l.footer.x,l.footer.y,l.footer.w,l.footer.h,
+        Color{0.018f,0.056f,0.099f,0.99f},17.0f*sc);
+    renderer.rect(l.avatar_icon.x,l.avatar_icon.y,
+        l.avatar_icon.w,l.avatar_icon.h,
+        Color{0.024f,0.160f,0.270f,0.98f},33.0f*sc);
+    renderer.text(l.avatar_icon.x+21.0f*sc,
+        l.avatar_icon.y+17.0f*sc,27.0f*sc,"@",theme::cyan);
+    renderer.text(128.0f*sc,l.footer_y+27.0f*sc,
+        11.0f*sc,"ANMELDUNG",theme::cyan);
+    renderer.text(128.0f*sc,l.footer_y+49.0f*sc,
+        9.6f*sc,"Mit deinem NexVerse-Avatar anmelden",theme::text);
+    renderer.text(128.0f*sc,l.footer_y+68.0f*sc,
+        9.6f*sc,"und deine Welt betreten.",theme::text_muted);
+    renderer.rect(l.username.x-26.0f*sc,l.footer_y+27.0f*sc,
+        1.0f*sc,48.0f*sc,with_alpha(theme::cyan,0.36f));
+
+    const auto field=[&](const nexverse::ui::NeonRect& box,
+                         bool focused,bool secret,std::string_view label)
+    {
+        renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
+            box.w+2.0f*sc,box.h+2.0f*sc,
+            focused?theme::cyan:
+                Color{0.115f,0.320f,0.470f,0.88f},11.0f*sc);
+        renderer.rect(box.x,box.y,box.w,box.h,
+            focused?Color{0.036f,0.095f,0.158f,0.98f}:
+                Color{0.026f,0.060f,0.106f,0.98f},10.0f*sc);
+        renderer.text(box.x+16.0f*sc,box.y+13.0f*sc,
+            18.0f*sc,secret?"#":"@",theme::text_muted);
+        renderer.text(box.x+44.0f*sc,box.y+16.0f*sc,
+            11.3f*sc,label,
+            (secret?login.password.empty():login.username.empty())
+                ?theme::text_muted:theme::text);
+    };
+    field(l.username,login.focused==LoginField::username,false,
+        login.username.empty()?std::string{"Avatar Name"}:login.username);
+    const std::string secret=login.password.empty()?
+        "Passwort":login.show_password?login.password:
+        masked_password(login.password);
+    field(l.password,login.focused==LoginField::password,true,secret);
+    renderer.rect(l.password_eye.x,l.password_eye.y,
+        l.password_eye.w,l.password_eye.h,
+        with_alpha(theme::blue,login.show_password?0.32f:0.12f),7.0f*sc);
+    renderer.text(l.password_eye.x+7.0f*sc,l.password_eye.y+12.0f*sc,
+        10.0f*sc,login.show_password?"ZU":"AN",
+        login.show_password?theme::cyan:theme::text_muted);
+
+    const bool neon_can_submit=!login.busy&&!login.username.empty()&&
+        !login.password.empty()&&
+        (grid_status=="LIVE"||grid_status=="CACHE");
+    const bool neon_hover=l.enter_world.contains(mouse_x,mouse_y);
+    const Color neon_button_color=neon_can_submit?
+        (neon_hover?Color{0.018f,0.790f,0.980f,1.0f}:
+               Color{0.025f,0.545f,0.960f,1.0f}):
+               Color{0.060f,0.160f,0.235f,1.0f};
+    renderer.rect(l.enter_world.x-1.0f*sc,
+        l.enter_world.y-1.0f*sc,
+        l.enter_world.w+2.0f*sc,l.enter_world.h+2.0f*sc,
+        with_alpha(theme::cyan,neon_can_submit?0.93f:0.25f),12.0f*sc);
+    renderer.rect(l.enter_world.x,l.enter_world.y,
+        l.enter_world.w,l.enter_world.h,neon_button_color,11.0f*sc);
+    renderer.text(l.enter_world.x+38.0f*sc,
+        l.enter_world.y+16.0f*sc,13.0f*sc,
+        login.busy?"VERBINDE...":"WELT BETRETEN",
+        neon_can_submit?theme::text:theme::text_muted);
+    renderer.text(l.enter_world.x+l.enter_world.w-30.0f*sc,
+        l.enter_world.y+13.0f*sc,17.0f*sc,">",
+        neon_can_submit?theme::text:theme::text_muted);
+    // A working password visibility toggle (not the mockup's
+    // misleading "stay signed in" persistence claim).
+    renderer.rect(l.remember_avatar.x,l.remember_avatar.y,
+        22.0f*sc,22.0f*sc,
+        with_alpha(theme::blue,0.20f),6.0f*sc);
+    renderer.text(l.remember_avatar.x+5.0f*sc,
+        l.remember_avatar.y+3.0f*sc,
+        12.0f*sc,login.show_password?"X":"",theme::cyan);
+    renderer.text(l.remember_avatar.x+29.0f*sc,
+        l.remember_avatar.y+5.0f*sc,
+        10.0f*sc,"Passwort zeigen",theme::text_muted);
+    const std::string neon_version=std::string{nexverse::core::version()};
+    renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
+        l.footer_y-22.0f*sc,9.0f*sc,neon_version,theme::text_muted);
+    const std::string notice=login.notice.substr(0U,86U);
+    renderer.text(l.username.x,l.footer_y+l.footer_h-19.0f*sc,
+        8.6f*sc,notice,
+        login.status=="ERROR"?theme::magenta:theme::text_muted);
+    return;
 
     renderer.rect(
         0.0f, content_y, left_w, content_h,
@@ -4714,14 +4475,11 @@ int Application::run(bool enable_developer_modules)
             ? glfwGetVideoMode(primary_monitor)
             : nullptr;
 
-    const int initial_width =
-        primary_mode != nullptr
-            ? std::max(1280, primary_mode->width * 3 / 4)
-            : 1440;
-    const int initial_height =
-        primary_mode != nullptr
-            ? std::max(800, primary_mode->height * 3 / 4)
-            : 900;
+    // Start maximized with ordinary native minimize/maximize/close
+    // controls. Use the actual monitor dimensions even without a window
+    // manager (isolated Xvfb), rather than 75% and a huge black border.
+    const int initial_width=primary_mode?primary_mode->width:1440;
+    const int initial_height=primary_mode?primary_mode->height:900;
 
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);

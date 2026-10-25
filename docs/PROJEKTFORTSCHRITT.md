@@ -953,3 +953,31 @@ Nächster Zehnerdurchlauf Alpha.255–264.
 - v0.4.0.0-T02 weiter IN_ARBEIT, T01/T03 und A01–A03
   authentifizierte Login/Teleport/WASD-E2E weiter OFFEN.
   38,65 % gewichtet, Release BLOCKED, kein main-Merge.
+
+## v0.4.0.0 – Echt programmierter Neon-Login gemäß erster Bildvorlage
+
+C++/OpenGL Login vollständig neu gestaltet: ursprüngliche
+Live-NexVerse-Welcome-Seite ohne 56%-Schleier, kein mittiges
+Popup, großes OGL-Header-Branding, Grid-/Live-Status, breite
+responsive glasartige Avatar-/Passwort-/WELT-BETRETEN-Leiste,
+echter Passwortanzeigen-Toggle. Ein identisches Layout wird
+für GL-Darstellung und reale GLFW-Klicks auf 800/1100/1280/
+1648/1920/3440px verwendet; maximiertes, aber dekoriertes
+und frei resizables Viewer-Fenster. Originaler Login-/ToS-/
+CAPS-Backendpfad bleibt erhalten. Testbasis: 1 nativer
+Multi-Auflösungs-CTest, 11 Python-Verträge und echte isolierte
+1648x928 OpenGL-Screenshot-Inspektion.
+Details: docs/V0_4_0_0_NEON_LOGIN_REFERENCE_IMPLEMENTATION.md.
+Offen bleiben authentifizierte Grid-E2E und nicht interaktive
+WebKit-Offscreen-Links. Fortschritt 38,65 % (ca. 39 %);
+v0.4.0.0 weiter IN_ARBEIT, kein main-Merge/Deploy.
+
+**V0.4.0.0 NEON LOGIN LINUX-MINT-ABNAHME (25.10.):**
+Vollständiger x64-CMake/vcpkg-Debug-Build und 186/186 native
+CTests, 658/658 Python, isolierter echter Firestorm-Xvfb-GPU-/GUI-/
+128px-OGL-Systemicon-Test bestanden.
+GL-Login im 1648×928-Referenzformat lokal visuell überprüft.
+Neues NeonLoginLayout ist responsiv und in Maus-/Renderpfad
+gemeinsam implementiert. Weiterhin keine authentifizierte
+Grid-Login-/WASD-/Outfit-Endabnahme dieser Code-SHA,
+kein main-Merge/Produktivdeploy.
