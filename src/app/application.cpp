@@ -132,6 +132,7 @@
 #include "nexverse/ui/viewer_shell.hpp"
 #include "nexverse/ui/viewer_shell_render.hpp"
 #include "nexverse/ui/avatar_diagnostic_report.hpp"
+#include "nexverse/ui/avatar_bake_progress_trace.hpp"
 #include "nexverse/ui/loading_diagnostics_layout.hpp"
 #include "nexverse/ui/loading_circuit_retry_policy.hpp"
 #include "nexverse/world/world_model.hpp"
@@ -4630,6 +4631,9 @@ int Application::run(bool enable_developer_modules)
     bool loading_diagnostics_open=false;
     ui::WorldEntryWaitMonitor world_entry_wait_monitor{};
     ui::WorldEntryTrace world_entry_trace{};
+    // Live log only; status-change and 30s throttling. No report files,
+    // UUIDs, user names, CAPS URLs or body texture bytes.
+    ui::AvatarBakeProgressTrace avatar_bake_progress_trace{};
     ui::LoadingCircuitRetryReason loading_circuit_retry_reason=
         ui::LoadingCircuitRetryReason::login_missing;
     std::uint32_t manual_circuit_reconnect_count=0U;
@@ -14234,6 +14238,11 @@ int Application::run(bool enable_developer_modules)
                 avatar_proof.visual_truth.resident_body_bakes;
             avatar_diagnostic.avatar_body_bakes_gl=
                 avatar_proof.visual_truth.baked_body_gl_draws;
+            for(std::size_t slot=0U;slot<3U;++slot)
+                avatar_diagnostic.self_low158_current_body_gl_drawn[slot]=
+                    avatar_proof.appearance_received&&
+                    avatar_proof.current_body_bake_sources_drawn[slot]&&
+                    avatar_proof.body_bake_draws[slot]>0U;
             avatar_diagnostic.avatar_self_keyframe_draws=
                 avatar_proof.visual_truth.keyframe_skin_draws;
             avatar_diagnostic.avatar_self_server_motion_draws=
@@ -14286,6 +14295,9 @@ int Application::run(bool enable_developer_modules)
             const std::string_view world_entry_wait_hint=
                 ui::world_entry_wait_hint(world_entry_stage,
                     avatar_diagnostic.world_entry_wait_seconds);
+            if(auto stage=avatar_bake_progress_trace.observe(
+                   material_scope.epoch(),avatar_diagnostic,trace_now))
+                core::info(std::move(*stage));
             // Explicit user action only: no background report files.
             if(avatar_report_save_requested)
             {

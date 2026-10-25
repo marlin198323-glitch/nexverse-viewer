@@ -104,7 +104,14 @@ int main()
     stage.avatar_body_bakes_gpu=3U;
     if(std::string(avatar_skin_blocker_key(stage))!=
        "original_body_bake_gl_draw_missing")return 30;
-    stage.avatar_body_bakes_gl=3U;
+    stage.avatar_body_bakes_gl=8U; // Eight Head draws are not 3/3!
+    stage.self_low158_current_body_gl_drawn={true,false,false};
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "original_body_bake_gl_draw_missing")return 35;
+    stage.self_low158_current_body_gl_drawn={true,true,false};
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "original_body_bake_gl_draw_missing")return 36;
+    stage.self_low158_current_body_gl_drawn={true,true,true};
     if(std::string(avatar_skin_blocker_key(stage))!=
        "avatar_depth_fragments_zero")return 31;
     stage.gpu_fragments_passed=true;
@@ -139,6 +146,7 @@ int main()
        text.find("self_low158_head_gettexture_stage=1")==std::string::npos||
        text.find("self_low158_upper_gettexture_stage=3")==std::string::npos||
        text.find("self_low158_lower_gettexture_stage=0")==std::string::npos||
+       text.find("self_low158_head_current_gl_drawn=no")==std::string::npos||
        text.find("self_render_head_bake_source=1")==std::string::npos||
        text.find("self_render_upper_bake_source=2")==std::string::npos||
        text.find("self_render_lower_bake_source=0")==std::string::npos||

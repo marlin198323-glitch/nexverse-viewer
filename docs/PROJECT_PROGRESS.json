@@ -492,5 +492,22 @@
     "authenticated_grid_j2c_retest": "OPEN",
     "head_upper_lower_server_bake_3_of_3": "OPEN",
     "weighted_project_pct": 38.65
+  },
+  "v0400_authentic_low158_per_part_gl_evidence_and_live_trace_20261025": {
+    "status": "IMPLEMENTED_AND_MINT_VERIFIED_LIVE_AUTHENTICATED_GRID_PENDING",
+    "documentation": "docs/V0_4_0_0_AVATAR_BAKE_3OF3_LIVE_TRACE_20261025.md",
+    "authentic_low158_current_body_gl_3of3_per_part": true,
+    "aggregate_draw_count_no_longer_sufficient_for_three_body_parts": true,
+    "privacy_safe_region_epoch_scoped_status_trace": true,
+    "minimum_period_between_repeated_unresolved_messages_seconds": 30,
+    "no_background_report_file": true,
+    "native_ctests": "192/192 PASS",
+    "python_tests": "710/710 PASS",
+    "original_firestorm_xvfb_gl_gui_x11_icon": "PASS",
+    "authenticated_head_upper_lower_gl_rgb_3of3": "OPEN",
+    "authenticated_avatar_cof_outfit": "OPEN",
+    "authenticated_shutdown_total": "OPEN",
+    "weighted_project_completion_percent": 38.65,
+    "minimum_time_between_rapid_stage_changes_ms": 250
   }
 }

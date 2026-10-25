@@ -25,7 +25,11 @@ const char* avatar_skin_blocker_key(const AvatarDiagnosticReport& r) noexcept
         return "server_body_bakes_partial";
     if(r.avatar_body_bakes_gpu<3U)
         return "body_bake_assets_not_gpu_resident";
-    if(r.avatar_body_bakes_gl<3U)
+    // Three draws of one body part do not prove all three source
+    // textures reached the correct Firestorm .llm slot.
+    if(!r.self_low158_current_body_gl_drawn[0]||
+       !r.self_low158_current_body_gl_drawn[1]||
+       !r.self_low158_current_body_gl_drawn[2])
         return "original_body_bake_gl_draw_missing";
     if(!r.gpu_fragment_result_known)
         return "depth_visibility_unverified";
@@ -207,6 +211,12 @@ std::string avatar_diagnostic_text(const AvatarDiagnosticReport& r)
            std::to_string(r.avatar_body_bakes_gpu)+"\n"
        "avatar_body_bakes_gl="+
            std::to_string(r.avatar_body_bakes_gl)+"\n"
+       "self_low158_head_current_gl_drawn="+
+           std::string(yn(r.self_low158_current_body_gl_drawn[0]))+"\n"
+       "self_low158_upper_current_gl_drawn="+
+           std::string(yn(r.self_low158_current_body_gl_drawn[1]))+"\n"
+       "self_low158_lower_current_gl_drawn="+
+           std::string(yn(r.self_low158_current_body_gl_drawn[2]))+"\n"
        "avatar_depth_head_known="+
            std::to_string(r.avatar_depth_known[0])+"\n"
        "avatar_depth_head_passed="+

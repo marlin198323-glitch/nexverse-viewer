@@ -984,6 +984,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-outfit-gallery-layout-tests
         COMMAND nexverse-outfit-gallery-layout-tests)
 
+    add_executable(nexverse-avatar-bake-progress-trace-tests
+        tests/avatar_bake_progress_trace_tests.cpp)
+    target_link_libraries(nexverse-avatar-bake-progress-trace-tests
+        PRIVATE NexVerse::UI)
+    nexverse_enable_warnings(nexverse-avatar-bake-progress-trace-tests)
+    add_test(NAME nexverse-avatar-bake-progress-trace-tests
+        COMMAND nexverse-avatar-bake-progress-trace-tests)
+
     add_executable(nexverse-avatar-diagnostic-report-tests
         tests/avatar_diagnostic_report_tests.cpp)
     target_link_libraries(nexverse-avatar-diagnostic-report-tests

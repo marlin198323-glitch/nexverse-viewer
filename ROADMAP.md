@@ -65,6 +65,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 - [ ] v0.5.0.0-T03 – Mesh-Avatare, Skinning, Skinned-Attachments, HUD und Remote-Avatare
 **Abnahmekriterien:**
 - [ ] v0.5.0.0-A01 – Self Head/Upper/Lower echte Serverbakes mit jeweils authentifiziertem GetTexture und RGB-Pixel-Endbeweis 3/3
+**P0 v0.4.0.0 AVATAR BAKE 3/3 LIVE-TRACE (25.10.2026):** Die bisherige avatar_skin_blocker_key-GL-Stufe konnte 3+ Aufrufe aus nur einem Körperteil als drei vollständig gezeichnete Body-Bakes zählen. Korrigiert: Nur drei jeweils CURRENT-Low158-identische, tatsächlich auf originalen Firestorm-LLM-Head/Upper/Lower-Teilen gebundene und gezeichnete Body-Texturen erfüllen die Stufe; acht Head-Draws sind keine 3/3. Native Userdiagnose exportiert einzelne Head-/Upper-/Lower-Zeichnungswerte. Neuer privatsphäreschonender AvatarBakeProgressTrace protokolliert nach authentifiziertem Login pro Region nur Statusänderungen (bei Blockade maximal alle 30 Sekunden, schnelle Zustandswechsel mindestens 250 ms), GetTexture-Stage 0-6, Server/ObjTE-Quelle 0-2, GPU/GL/Depth-Stufen; KEINE UUIDs, Credentials oder Endpoint-URLs. Regionwechsel und Logout setzen History zurück, kein automatischer Diagnose-Dateiexport. Linux Mint: 192/192 native CTests, 710/710 Python, Firestorm-Xvfb-GL/GUI und X11-Icon PASS. Echte Head-/Upper-/Lower-RGB- und COF-/Outfit-Grid-Abnahme weiterhin OFFEN; ebenfalls authentifizierter Shutdown. Dokument: docs/V0_4_0_0_AVATAR_BAKE_3OF3_LIVE_TRACE_20261025.md. v0.4.0.0 IN_ARBEIT, Projekt 39 % (38,65 %). main unverändert.
+
 - [ ] v0.5.0.0-A02 – Kleidung und Outfits aus COF dauerhaft sichtbar nach Relog/Teleport/Regionwechsel
 - [ ] v0.5.0.0-A03 – Remote-Avatar-Skin/Shape/Attachments und Änderungsdialoge geprüft
 

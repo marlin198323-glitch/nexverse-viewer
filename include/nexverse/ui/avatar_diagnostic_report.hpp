@@ -103,6 +103,10 @@ struct AvatarDiagnosticReport
     std::uint32_t mesh_lod_total=0U,mesh_lod_matched=0U;
     std::uint32_t mesh_lod_high_requested=0U;
     std::uint32_t avatar_body_bakes_gpu=0U,avatar_body_bakes_gl=0U;
+    // Three distinct CURRENT Low158 Head/Upper/Lower assets bound to
+    // their corresponding actually drawn original LLM body slot.
+    // Aggregate GL draw counts cannot establish 3/3 source coverage.
+    std::array<bool,3U> self_low158_current_body_gl_drawn{};
     std::uint32_t avatar_self_keyframe_draws=0U;
     std::uint32_t avatar_self_server_motion_draws=0U;
     bool avatar_server_animation_received=false;
