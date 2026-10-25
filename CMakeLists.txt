@@ -1411,6 +1411,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-avatar-visibility-source-gate-tests
         COMMAND nexverse-self-avatar-visibility-source-gate-tests)
 
+    add_executable(nexverse-self-avatar-visibility-pose-gate-tests
+        tests/self_avatar_visibility_pose_gate_tests.cpp)
+    target_include_directories(nexverse-self-avatar-visibility-pose-gate-tests
+        PRIVATE include)
+    nexverse_enable_warnings(nexverse-self-avatar-visibility-pose-gate-tests)
+    add_test(NAME nexverse-self-avatar-visibility-pose-gate-tests
+        COMMAND nexverse-self-avatar-visibility-pose-gate-tests)
+
     add_executable(nexverse-renderer-region-transition-tests
         tests/renderer_region_transition_tests.cpp)
     target_link_libraries(nexverse-renderer-region-transition-tests

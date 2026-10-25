@@ -255,6 +255,63 @@ int main()
                             if(error==0&&
                                !render().self_avatar_visible_samples_known)
                                 error=54;
+                            // REAL GPU test: camera unchanged but the Self
+                            // avatar moves. An old depth sample is no
+                            // longer proof at the new world location.
+                            changed_self.position={3.12f,0.0f,0.0f};
+                            renderer->set_avatar_proxies({changed_self});
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=55;
+                            renderer->set_avatar_proxies({changed_self});
+                            glFinish(); // tests only
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=56;
+                            // Rotation changes geometry even if no new
+                            // server bake or camera movement happened.
+                            changed_self.rotation={
+                                0.0f,0.0f,0.08715574f,0.9961947f};
+                            renderer->set_avatar_proxies({changed_self});
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=57;
+                            renderer->set_avatar_proxies({changed_self});
+                            glFinish();
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=58;
+                            // A fresh original Firestorm Upper upload is
+                            // also a different silhouette at the SAME
+                            // server-bake ID. Reject previous GL depth.
+                            if(error==0&&
+                               !renderer->set_avatar_body_mesh(1U,body))
+                                error=59;
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=60;
+                            glFinish();
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=61;
+                            renderer->resize(420,230);
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=62;
+                            glFinish();
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=63;
+                            // An identical resize does not invalidate
+                            // the new current-viewport proof each frame.
+                            renderer->resize(420,230);
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=64;
+                            renderer->resize(400,230);
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=65;
                         }
                         // The SAME camera GL sample must become UNKNOWN
                         // when the user pans/zooms/rotates. Old GPU samples

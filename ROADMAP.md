@@ -55,6 +55,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 **Abnahmekriterien:**
 - [ ] v0.4.0.0-A01 – Echter authentifizierter NexVerse-Login/Re-Login, Region-Handoff, Teleport und Rückkehr reproduzierbar
 - [ ] v0.4.0.0-A02 – W/S/A/D/Yaw/Jump/Fly auf dem aktuellen Server tatsächlich sichtbar und protokolliert, nicht nur UDP-Send
+**P0 v0.4.0.0 SELF-MOTION/SHAPE/RESIZE GPU-DEPTH-GUARD (25.10.2026):** Die alte asynchrone GL-Head-/Upper-/Lower-Depth-Abnahme wurde trotz Avatar-Weltbewegung/Rotation bei unveränderter Kamera, neuer aktueller COF-Shape-LLM-Geometrie oder Projektionsänderung durch Window-Resize weiterverwendet. Neu: SelfAvatarVisibilityPoseGate mit akkumulierten 5cm-Bewegungs-/ca. 2°-Rotationsschwellen, normierter q/-q-Äquivalenz, Logout-/Self-Verlust-Reset. Echte Original-/Morph-Head-/Upper-/Lower-Mesh-GPU-Uploads (Slots 0–2,6,8,9) sowie tatsächliche Viewportänderungen invalidieren alte GPU-Query-Epochen, nicht aber identische Per-Frame-Werte, defekte Uploads oder unbeteiligte Hair-/Eye-Meshes. Isolierter echter OpenGL-Regionstest für Bewegung, Rotation, Body-Upload und Resize sowie nativer Pose-Gate-CTest und sieben neue Python-Vertragsprüfungen. Vollständiger Linux-Mint-x64-Test: **194/194 CTests, 735/735 Python, Firestorm-Xvfb-GL-/GUI-/X11-Icon PASS**. Die reale Head-/Upper-/Lower-RGB-/COF-Grid-Abnahme, echte Teleport-/WASD-/Flugbewegung und angemeldete Shutdown-Dauer bleiben offen. Details docs/V0_4_0_0_SELF_MOTION_SHAPE_RESIZE_DEPTH_20261025.md. v0.4.0.0 IN_ARBEIT, Projekt **39 % (38,65 % gewichtet)**, kein main-Release.
+
 - [ ] v0.4.0.0-A03 – Region-/Accountwechsel ohne alte Daten oder falsche Bewegungsbestätigungen
 
 ### v0.5.0.0 – Avatare, Skin, Outfits und Wearables

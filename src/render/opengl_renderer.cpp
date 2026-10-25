@@ -10,6 +10,7 @@
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/avatar_proxy_pose_integrity.hpp"
 #include "nexverse/render/self_avatar_visibility_source_gate.hpp"
+#include "nexverse/render/self_avatar_visibility_pose_gate.hpp"
 #include "nexverse/render/attachment_scene_classification.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
@@ -2713,8 +2714,15 @@ public:
 
     void resize(int width, int height) override
     {
-        width_ = width > 0 ? width : 1;
-        height_ = height > 0 ? height : 1;
+        const int next_width=width>0?width:1;
+        const int next_height=height>0?height:1;
+        // A resized framebuffer changes the camera projection aspect,
+        // even when set_camera receives identical yaw and FOV.
+        // Query results from the previous viewport are not evidence.
+        if(width_!=next_width||height_!=next_height)
+            reset_self_avatar_visibility();
+        width_=next_width;
+        height_=next_height;
     }
 
     void set_camera(const RenderCamera& camera) override
@@ -3457,6 +3465,12 @@ public:
         }
         destroy_mesh(avatar_body_meshes_[slot]);
         avatar_body_meshes_[slot]=std::move(candidate);
+        // Shape-morph uploads replace real head/upper/lower geometry.
+        // The old GL depth result belongs to the PRE-morph triangles,
+        // even when the server bake ID remains identical. Hair, eye and
+        // eyelash resources are not body-depth query subjects.
+        if(slot<=2U||slot==6U||slot==8U||slot==9U)
+            reset_self_avatar_visibility();
         return true;
     }
 
@@ -3517,13 +3531,25 @@ public:
         // never on every identical per-frame set_avatar_proxies call.
         std::optional<SelfAvatarVisibilitySourceGate::BakeIds>
             current_self_bakes;
+        std::optional<SelfAvatarVisibilityPoseGate::Pose>
+            current_self_pose;
         for(const auto& avatar:avatar_proxies_)
             if(avatar.is_self)
             {
                 current_self_bakes=avatar.baked_texture_ids;
+                current_self_pose=SelfAvatarVisibilityPoseGate::Pose{
+                    avatar.position.x,avatar.position.y,avatar.position.z,
+                    avatar.rotation.x,avatar.rotation.y,
+                    avatar.rotation.z,avatar.rotation.w};
                 break;
             }
-        if(self_avatar_visibility_sources_.observe(current_self_bakes))
+        const bool source_changed=
+            self_avatar_visibility_sources_.observe(current_self_bakes);
+        const bool pose_changed=
+            self_avatar_visibility_pose_.observe(current_self_pose);
+        // Check BOTH transitions (no short-circuit): their baselines
+        // must update together even if the other one has changed.
+        if(source_changed||pose_changed)
             reset_self_avatar_visibility();
     }
 
@@ -5912,6 +5938,7 @@ private:
     std::array<GpuMesh,10U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
     SelfAvatarVisibilitySourceGate self_avatar_visibility_sources_{};
+    SelfAvatarVisibilityPoseGate self_avatar_visibility_pose_{};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};
     std::array<std::uint64_t,6U> self_avatar_visibility_query_epoch_{};
