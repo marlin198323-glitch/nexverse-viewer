@@ -19,7 +19,7 @@ int main()
     for(const auto wh:sizes)
     {
         const NeonLoginLayout l{wh[0],wh[1]};
-        if(l.header_h<30||l.footer_h<35||
+        if(l.header_h<25||l.footer_h<27||
            l.footer_y<=l.header_h)return 1;
         const auto inside=[&](NeonRect box){
             return box.x>=0&&box.y>=0&&
@@ -35,10 +35,14 @@ int main()
            !disjoint(l.password,l.enter_world)||
            !disjoint(l.enter_world,l.remember_avatar))
             return 3;
-        if(!l.username.contains(l.username.x+15,l.username.y+10)||
-           !l.password.contains(l.password.x+15,l.password.y+10)||
-           !l.password_eye.contains(l.password_eye.x+12,l.password_eye.y+9)||
-           !l.enter_world.contains(l.enter_world.x+25,l.enter_world.y+18))
+        if(!l.username.contains(l.username.x+l.username.w*0.5f,
+                                l.username.y+l.username.h*0.5f)||
+           !l.password.contains(l.password.x+l.password.w*0.5f,
+                                l.password.y+l.password.h*0.5f)||
+           !l.password_eye.contains(l.password_eye.x+l.password_eye.w*0.5f,
+                                    l.password_eye.y+l.password_eye.h*0.5f)||
+           !l.enter_world.contains(l.enter_world.x+l.enter_world.w*0.5f,
+                                   l.enter_world.y+l.enter_world.h*0.5f))
             return 4;
         if(!l.password.contains(l.password_eye.x+5,l.password_eye.y+5))
             return 5;
@@ -50,15 +54,14 @@ int main()
     const NeonLoginLayout ref{1648,928};
     // Compact top/bottom bars leave more of the actual NexVerse
     // welcome page visible than the first reference implementation.
-    if(ref.header_h>74.0f||ref.header_h<64.0f||
-       ref.footer_h>80.0f||ref.footer_h<70.0f||
-       ref.footer_y<845.0f||
-       ref.username.x<335.0f||ref.username.x>365.0f||
-       ref.username.w>250.0f||ref.username.h>41.0f||
-       ref.password.x<590.0f||ref.password.x>620.0f||
-       ref.enter_world.x<845.0f||ref.enter_world.x>880.0f||
-       ref.enter_world.w>220.0f||
-       ref.grid.x<665.0f||ref.grid.x>690.0f)
+    if(ref.header_h!=58.0f||ref.footer_h!=60.0f||
+       ref.footer_y!=868.0f||
+       ref.username.x<310.0f||ref.username.x>332.0f||
+       ref.username.w!=205.0f||ref.username.h!=32.0f||
+       ref.password.x<527.0f||ref.password.x>550.0f||
+       ref.enter_world.x<744.0f||ref.enter_world.x>767.0f||
+       ref.enter_world.w!=180.0f||ref.enter_world.h!=32.0f||
+       ref.grid.x<696.0f||ref.grid.x>701.0f)
         return 7;
     // Header and footer must be far apart; status/fields cannot
     // overlap. Particularly important in 720p and ultra-wide layouts.

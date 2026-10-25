@@ -3786,24 +3786,24 @@ void render_shell(
     if(brand_texture)
         renderer.image(brand_texture,l.brand.x,l.brand.y,
             l.brand.w,l.brand.h,1.0f);
-    renderer.text(87.0f*sc,17.0f*sc,20.0f*sc,
+    renderer.text(69.0f*sc,12.0f*sc,16.0f*sc,
         "OpenGenesisLINK",theme::text);
-    renderer.text(88.0f*sc,43.0f*sc,8.7f*sc,
+    renderer.text(70.0f*sc,34.0f*sc,7.6f*sc,
         "VIEWER FUER NEXVERSE",theme::cyan);
 
     renderer.rect(l.grid.x-1.0f*sc,l.grid.y-1.0f*sc,
         l.grid.w+2.0f*sc,l.grid.h+2.0f*sc,
-        Color{0.11f,0.31f,0.48f,0.85f},12.0f*sc);
+        Color{0.08f,0.22f,0.32f,0.62f},9.0f*sc);
     renderer.rect(l.grid.x,l.grid.y,l.grid.w,l.grid.h,
-        Color{0.032f,0.090f,0.151f,0.99f},11.0f*sc);
-    renderer.rect(l.grid.x+13.0f*sc,l.grid.y+10.0f*sc,
-        25.0f*sc,23.0f*sc,with_alpha(theme::cyan,0.19f),8.0f*sc);
-    renderer.text(l.grid.x+21.0f*sc,l.grid.y+13.0f*sc,
-        12.0f*sc,"G",theme::cyan);
-    renderer.text(l.grid.x+48.0f*sc,l.grid.y+6.0f*sc,
-        9.0f*sc,"NEXVERSE GRID",theme::cyan);
-    renderer.text(l.grid.x+48.0f*sc,l.grid.y+23.0f*sc,
-        13.0f*sc,grid_name,theme::text);
+        Color{0.032f,0.090f,0.151f,0.99f},8.0f*sc);
+    renderer.rect(l.grid.x+11.0f*sc,l.grid.y+8.0f*sc,
+        20.0f*sc,19.0f*sc,with_alpha(theme::cyan,0.13f),6.0f*sc);
+    renderer.text(l.grid.x+17.0f*sc,l.grid.y+10.0f*sc,
+        10.0f*sc,"G",theme::cyan);
+    renderer.text(l.grid.x+40.0f*sc,l.grid.y+5.0f*sc,
+        7.0f*sc,"NEXVERSE GRID",theme::cyan);
+    renderer.text(l.grid.x+40.0f*sc,l.grid.y+19.0f*sc,
+        11.0f*sc,grid_name,theme::text);
     // Do not draw a fake nonfunctional dropdown: this installation
     // currently has one configured grid.
     const auto status_chip_neon=[&](
@@ -3812,15 +3812,15 @@ void render_shell(
     {
         renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
             box.w+2.0f*sc,box.h+2.0f*sc,
-            Color{0.065f,0.275f,0.43f,0.8f},12.0f*sc);
+            Color{0.045f,0.175f,0.27f,0.62f},9.0f*sc);
         renderer.rect(box.x,box.y,box.w,box.h,
-            Color{0.012f,0.045f,0.085f,0.99f},11.0f*sc);
-        renderer.rect(box.x+9.0f*sc,box.y+18.0f*sc,
-            7.0f*sc,7.0f*sc,color,5.0f*sc);
-        renderer.text(box.x+23.0f*sc,box.y+6.0f*sc,
-            8.5f*sc,title,theme::cyan);
-        renderer.text(box.x+23.0f*sc,box.y+22.0f*sc,
-            10.0f*sc,value,theme::text);
+            Color{0.012f,0.045f,0.085f,0.99f},8.0f*sc);
+        renderer.rect(box.x+8.0f*sc,box.y+16.0f*sc,
+            6.0f*sc,6.0f*sc,color,4.0f*sc);
+        renderer.text(box.x+19.0f*sc,box.y+4.0f*sc,
+            7.0f*sc,title,theme::cyan);
+        renderer.text(box.x+19.0f*sc,box.y+19.0f*sc,
+            9.0f*sc,value,theme::text);
     };
     status_chip_neon(l.grid_status,"GRID",grid_status,grid_status_color);
     status_chip_neon(l.login_status,"LOGIN",login.status,login_color);
@@ -3831,36 +3831,34 @@ void render_shell(
         Color{0.002f,0.017f,0.037f,0.97f});
     renderer.rect(l.footer.x-1.0f*sc,l.footer.y-1.0f*sc,
         l.footer.w+2.0f*sc,l.footer.h+2.0f*sc,
-        Color{0.04f,0.43f,0.74f,0.96f},18.0f*sc);
+        Color{0.035f,0.27f,0.43f,0.60f},12.0f*sc);
     renderer.rect(l.footer.x,l.footer.y,l.footer.w,l.footer.h,
-        Color{0.018f,0.056f,0.099f,0.99f},17.0f*sc);
+        Color{0.013f,0.042f,0.080f,0.97f},11.0f*sc);
     renderer.rect(l.avatar_icon.x,l.avatar_icon.y,
         l.avatar_icon.w,l.avatar_icon.h,
-        Color{0.024f,0.160f,0.270f,0.98f},33.0f*sc);
-    renderer.text(l.avatar_icon.x+12.0f*sc,
-        l.avatar_icon.y+10.0f*sc,20.0f*sc,"@",theme::cyan);
-    renderer.text(82.0f*sc,l.footer_y+15.0f*sc,
-        9.0f*sc,"ANMELDUNG",theme::cyan);
-    renderer.text(82.0f*sc,l.footer_y+31.0f*sc,
-        8.5f*sc,"Mit deinem NexVerse-Avatar anmelden",theme::text);
-    renderer.text(82.0f*sc,l.footer_y+46.0f*sc,
-        8.5f*sc,"und deine Welt betreten.",theme::text_muted);
-    renderer.rect(l.username.x-15.0f*sc,l.footer_y+17.0f*sc,
-        1.0f*sc,39.0f*sc,with_alpha(theme::cyan,0.36f));
+        Color{0.024f,0.120f,0.210f,0.98f},21.0f*sc);
+    renderer.text(l.avatar_icon.x+10.0f*sc,
+        l.avatar_icon.y+8.0f*sc,16.0f*sc,"@",theme::cyan);
+    renderer.text(70.0f*sc,l.footer_y+12.0f*sc,
+        8.0f*sc,"ANMELDUNG",theme::cyan);
+    renderer.text(70.0f*sc,l.footer_y+26.0f*sc,
+        7.0f*sc,"Mit NexVerse-Avatar anmelden",theme::text);
+    renderer.text(70.0f*sc,l.footer_y+38.0f*sc,
+        7.0f*sc,"und die Welt betreten.",theme::text_muted);
+    renderer.rect(l.username.x-13.0f*sc,l.footer_y+14.0f*sc,
+        1.0f*sc,32.0f*sc,with_alpha(theme::cyan,0.20f));
 
     const auto field=[&](const nexverse::ui::NeonRect& box,
                          bool focused,bool secret,std::string_view label)
     {
-        renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
-            box.w+2.0f*sc,box.h+2.0f*sc,
-            Color{0.075f,0.240f,0.355f,0.75f},9.0f*sc);
+        // No outer focus frame: clicks only alter the muted fill.
         renderer.rect(box.x,box.y,box.w,box.h,
-            focused?Color{0.030f,0.078f,0.125f,0.98f}:
-                Color{0.026f,0.060f,0.106f,0.98f},8.0f*sc);
-        renderer.text(box.x+13.0f*sc,box.y+10.0f*sc,
-            14.0f*sc,secret?"#":"@",theme::text_muted);
-        renderer.text(box.x+37.0f*sc,box.y+12.0f*sc,
-            10.0f*sc,label,
+            focused?Color{0.032f,0.069f,0.101f,0.97f}:
+                Color{0.024f,0.053f,0.085f,0.96f},6.0f*sc);
+        renderer.text(box.x+11.0f*sc,box.y+7.0f*sc,
+            12.0f*sc,secret?"#":"@",theme::text_muted);
+        renderer.text(box.x+30.0f*sc,box.y+10.0f*sc,
+            9.0f*sc,label,
             (secret?login.password.empty():login.username.empty())
                 ?theme::text_muted:theme::text);
     };
@@ -3872,9 +3870,9 @@ void render_shell(
     field(l.password,login.focused==LoginField::password,true,secret);
     renderer.rect(l.password_eye.x,l.password_eye.y,
         l.password_eye.w,l.password_eye.h,
-        with_alpha(theme::blue,login.show_password?0.32f:0.12f),7.0f*sc);
-    renderer.text(l.password_eye.x+5.0f*sc,l.password_eye.y+9.0f*sc,
-        9.0f*sc,login.show_password?"ZU":"AN",
+        with_alpha(theme::blue,login.show_password?0.18f:0.07f),5.0f*sc);
+    renderer.text(l.password_eye.x+4.0f*sc,l.password_eye.y+8.0f*sc,
+        8.0f*sc,login.show_password?"ZU":"AN",
         login.show_password?theme::cyan:theme::text_muted);
 
     const bool neon_can_submit=!login.busy&&!login.username.empty()&&
@@ -3888,32 +3886,32 @@ void render_shell(
     renderer.rect(l.enter_world.x-1.0f*sc,
         l.enter_world.y-1.0f*sc,
         l.enter_world.w+2.0f*sc,l.enter_world.h+2.0f*sc,
-        with_alpha(theme::cyan,neon_can_submit?0.93f:0.25f),12.0f*sc);
+        with_alpha(theme::cyan,neon_can_submit?0.38f:0.14f),8.0f*sc);
     renderer.rect(l.enter_world.x,l.enter_world.y,
-        l.enter_world.w,l.enter_world.h,neon_button_color,11.0f*sc);
-    renderer.text(l.enter_world.x+27.0f*sc,
-        l.enter_world.y+13.0f*sc,11.5f*sc,
+        l.enter_world.w,l.enter_world.h,neon_button_color,7.0f*sc);
+    renderer.text(l.enter_world.x+17.0f*sc,
+        l.enter_world.y+10.0f*sc,9.6f*sc,
         login.busy?"VERBINDE...":"WELT BETRETEN",
         neon_can_submit?theme::text:theme::text_muted);
-    renderer.text(l.enter_world.x+l.enter_world.w-25.0f*sc,
-        l.enter_world.y+10.0f*sc,15.0f*sc,">",
+    renderer.text(l.enter_world.x+l.enter_world.w-19.0f*sc,
+        l.enter_world.y+8.0f*sc,12.0f*sc,">",
         neon_can_submit?theme::text:theme::text_muted);
     // A working password visibility toggle (not the mockup's
     // misleading "stay signed in" persistence claim).
     renderer.rect(l.remember_avatar.x,l.remember_avatar.y,
-        18.0f*sc,18.0f*sc,
-        with_alpha(theme::blue,0.20f),6.0f*sc);
-    renderer.text(l.remember_avatar.x+5.0f*sc,
+        15.0f*sc,15.0f*sc,
+        with_alpha(theme::blue,0.14f),5.0f*sc);
+    renderer.text(l.remember_avatar.x+4.0f*sc,
         l.remember_avatar.y+2.0f*sc,
-        10.0f*sc,login.show_password?"X":"",theme::cyan);
-    renderer.text(l.remember_avatar.x+22.0f*sc,
-        l.remember_avatar.y+5.0f*sc,
-        9.0f*sc,"Passwort zeigen",theme::text_muted);
+        8.0f*sc,login.show_password?"X":"",theme::cyan);
+    renderer.text(l.remember_avatar.x+19.0f*sc,
+        l.remember_avatar.y+3.0f*sc,
+        8.0f*sc,"Passwort zeigen",theme::text_muted);
     const std::string neon_version=std::string{nexverse::core::version()};
     renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
         l.footer_y-14.0f*sc,8.0f*sc,neon_version,theme::text_muted);
     const std::string notice=login.notice.substr(0U,86U);
-    renderer.text(l.username.x,l.footer_y+l.footer_h-14.0f*sc,
+    renderer.text(l.username.x,l.footer_y-12.0f*sc,
         8.0f*sc,notice,
         login.status=="ERROR"?theme::magenta:theme::text_muted);
     return;
@@ -6226,7 +6224,12 @@ int Application::run(bool enable_developer_modules)
                                                 circuit_status.message =
                                                     "LLUDP reconnect scheduled";
                                             }
-                                            std::this_thread::sleep_for(std::chrono::seconds{1});
+                                            // Interrupted reconnect backoff: window close must not
+                                            // wait for a full one-second retry sleep.
+                                            for(int tick=0; tick<20 &&
+                                                    !circuit_stop.load(); ++tick)
+                                                std::this_thread::sleep_for(
+                                                    std::chrono::milliseconds{50});
                                         }
                                     }
 
@@ -14953,19 +14956,53 @@ int Application::run(bool enable_developer_modules)
     circuit_stop.store(true);
     caps_stop.store(true);
 
-    if (circuit_future.valid())
+    // std::async futures wait in their destructors. Drain ALL outstanding
+    // workers explicitly while the state they reference still exists,
+    // with duration telemetry to identify slow authenticated shutdowns.
+    // Never detach a worker that captures stack-owned viewer state.
+    const auto shutdown_wait=[&](auto& future,std::string_view label)
     {
-        circuit_future.wait();
-    }
-    if (caps_future.valid())
+        if(!future.valid())return;
+        const auto started=std::chrono::steady_clock::now();
+        if(future.wait_for(std::chrono::milliseconds{150})!=
+           std::future_status::ready)
+            core::warning("Viewer shutdown waiting on "+std::string{label});
+        future.wait();
+        const auto ms=std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now()-started).count();
+        if(ms>=100)
+            core::info("Viewer shutdown worker "+std::string{label}+
+                       " elapsed_ms="+std::to_string(ms));
+    };
+    const auto shutdown_wait_group=[&](auto& futures,
+                                      std::string_view label)
     {
-        caps_future.wait();
-    }
-    for(auto& pending:region_event_queue_futures)
-        pending.wait();
-    // Profiling marker for real authenticated close sessions. Some
-    // CPU-bound std::async tasks are not cancellable yet, so log
-    // total close latency rather than claim all exits are instant.
+        for(auto& pending:futures)
+            shutdown_wait(pending,label);
+    };
+    shutdown_wait(circuit_future,"LLUDP circuit");
+    shutdown_wait(caps_future,"CAPS EventQueue");
+    shutdown_wait_group(region_event_queue_futures,"region EventQueue");
+    shutdown_wait(discovery_future,"GridInfo");
+    shutdown_wait(login_future,"login");
+    shutdown_wait(experience_permission_future,"experience permissions");
+    shutdown_wait_group(firestorm_region_read_futures,"region CAPS read");
+    shutdown_wait(gallery_item_fetch_future,"COF item");
+    shutdown_wait(gallery_wearables_fetch_future,"COF wearables");
+    shutdown_wait(gallery_local_texture_future,"wearable textures");
+    shutdown_wait(gallery_sync_future,"outfit inventory");
+    shutdown_wait_group(gallery_image_futures,"outfit images");
+    shutdown_wait(region_material_discovery_future,"region materials discovery");
+    shutdown_wait(mesh_asset_future,"mesh asset");
+    shutdown_wait(render_materials_future,"render materials GET");
+    shutdown_wait(render_materials_post_future,"render materials POST");
+    shutdown_wait(terrain_texture_future,"terrain textures");
+    shutdown_wait(texture_prefetch_future,"texture prefetch");
+    shutdown_wait(object_texture_future,"object textures");
+    shutdown_wait(inventory_folder_future,"inventory folders");
+    shutdown_wait(inventory_item_detail_future,"inventory item");
+    // All async workers are now joined before the frame's local state
+    // is destructed; the timing is the actual network/asset-drain gate.
     const auto shutdown_ms=std::chrono::duration_cast<
         std::chrono::milliseconds>(
             std::chrono::steady_clock::now()-shutdown_started).count();
@@ -14973,9 +15010,14 @@ int Application::run(bool enable_developer_modules)
                std::to_string(shutdown_ms));
 
     glfwSetWindowUserPointer(window, nullptr);
-    core::info("OpenGenesisLINK Viewer shutdown");
     glfwDestroyWindow(window);
     glfwTerminate();
+    const auto shutdown_total_ms=std::chrono::duration_cast<
+        std::chrono::milliseconds>(
+            std::chrono::steady_clock::now()-shutdown_started).count();
+    core::info("Viewer shutdown total elapsed_ms="+
+               std::to_string(shutdown_total_ms));
+    core::info("OpenGenesisLINK Viewer shutdown");
     return 0;
 }
 }

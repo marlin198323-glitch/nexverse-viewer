@@ -314,5 +314,26 @@
     "still_open": "Actual logged-in exit duration, Grid appearance and movement E2E",
     "local_validation": "187/187 CTests, 666/666 Python, Firestorm Xvfb GUI/GL/X11 icon PASS",
     "stalled_http_loopback_cancel": "PASS around 0.5 seconds, max test deadline 2.5 seconds against 4.5 seconds request timeout"
+  },
+  "v0400_mini_login_measured_shutdown": {
+    "status": "implemented_local_mint_verified_live_auth_still_open",
+    "reference": "docs/V0_4_0_0_MINI_LOGIN_AND_MEASURED_SHUTDOWN.md",
+    "header_reference_px": 58,
+    "footer_reference_px": 60,
+    "input_reference_px": [
+      205,
+      32
+    ],
+    "enter_reference_px": [
+      180,
+      32
+    ],
+    "external_input_focus_border": false,
+    "lludp_retry_stop_slice_ms": 50,
+    "all_local_async_futures_joined_and_timed": true,
+    "shutdown_after_glfw_total_marker": true,
+    "local_validation": "187/187 CTests, 667/667 Python, Firestorm Xvfb GL GUI/X11 icon PASS",
+    "authenticated_live_shutdown_measured": false,
+    "weighted_pct": 38.65
   }
 }

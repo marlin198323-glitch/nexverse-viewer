@@ -6,15 +6,15 @@ def source(name):return (R/name).read_text()
 class CompactNeonAndFastClose(unittest.TestCase):
  def test_header_and_footer_smaller_at_reference_resolution(self):
   h=source("include/nexverse/ui/neon_login_layout.hpp")
-  self.assertIn("header_h=72.0f*scale;",h)
-  self.assertIn("footer_h=77.0f*scale;",h)
-  self.assertIn("field_w=245.0f*scale;",h)
-  self.assertIn("210.0f*scale,39.0f*scale",h)
+  self.assertIn("header_h=58.0f*scale;",h)
+  self.assertIn("footer_h=60.0f*scale;",h)
+  self.assertIn("field_w=205.0f*scale;",h)
+  self.assertIn("180.0f*scale,32.0f*scale",h)
  def test_focus_does_not_draw_cyan_border(self):
   app=source("src/app/application.cpp")
   self.assertNotIn("focused?theme::cyan:",app)
-  self.assertIn("Color{0.075f,0.240f,0.355f,0.75f}",app)
-  self.assertIn("focused?Color{0.030f,0.078f,0.125f,0.98f}",app)
+  self.assertIn("// No outer focus frame: clicks only alter the muted fill.",app)
+  self.assertIn("focused?Color{0.032f,0.069f,0.101f,0.97f}",app)
  def test_welcome_snapshot_fills_more_area_between_bars(self):
   app=source("src/app/application.cpp")
   self.assertIn("renderer.image(welcome_texture,0.0f,l.header_h,w,",app)
@@ -28,7 +28,7 @@ class CompactNeonAndFastClose(unittest.TestCase):
   app=source("src/app/application.cpp")
   i=app.index("transport->request_stop();")
   self.assertLess(i,app.index("renderer.destroy_texture(brand_texture);",i))
-  self.assertLess(i,app.index("circuit_future.wait();",i))
+  self.assertLess(i,app.index('shutdown_wait(circuit_future,"LLUDP circuit");',i))
   self.assertIn("Viewer shutdown cleanup elapsed_ms=",app)
  def test_threadsafe_http_cancelled_early_and_during_transfer(self):
   hdr=source("include/nexverse/net/http_transport.hpp")
@@ -39,6 +39,14 @@ class CompactNeonAndFastClose(unittest.TestCase):
                  "CURLOPT_NOPROGRESS, 0L","CURLOPT_XFERINFODATA",
                  'HTTP cancelled: Viewer is closing',"stopping_"):
    self.assertIn(needle,src)
+ def test_all_background_work_is_joined_and_shutdown_is_timed(self):
+  app=source("src/app/application.cpp")
+  for worker in ("LLUDP circuit","CAPS EventQueue","region EventQueue",
+                 "login","outfit images","mesh asset","texture prefetch"):
+   self.assertIn('"'+worker+'"',app)
+  self.assertIn("Viewer shutdown waiting on ",app)
+  self.assertIn("Viewer shutdown total elapsed_ms=",app)
+  self.assertIn("!circuit_stop.load(); ++tick",app)
  def test_real_loopback_cancel_test_registered(self):
   cmake=source("CMakeLists.txt")
   cpp=source("tests/http_viewer_shutdown_tests.cpp")

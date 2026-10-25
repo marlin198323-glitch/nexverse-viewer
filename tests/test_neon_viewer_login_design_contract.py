@@ -34,19 +34,19 @@ class NeonLoginDesignContract(unittest.TestCase):
   for key in ("l.avatar_icon","l.username","l.password",
       "l.enter_world","l.remember_avatar", "WELT BETRETEN"):
    self.assertIn(key,a)
-  for key in ("width/1648.0f","height/928.0f","210.0f*scale",
-      "245.0f*scale","footer_y=height-footer_h"):
+  for key in ("width/1648.0f","height/928.0f","180.0f*scale",
+      "205.0f*scale","footer_y=height-footer_h"):
    self.assertIn(key,h)
  def test_compact_header_dock_and_subtle_input_focus(self):
   a=src("src/app/application.cpp")
   h=src("include/nexverse/ui/neon_login_layout.hpp")
-  self.assertIn("header_h=72.0f*scale;",h)
-  self.assertIn("footer_h=77.0f*scale;",h)
-  self.assertIn("field_w=245.0f*scale;",h)
-  self.assertIn("field_w,39.0f*scale",h)
+  self.assertIn("header_h=58.0f*scale;",h)
+  self.assertIn("footer_h=60.0f*scale;",h)
+  self.assertIn("field_w=205.0f*scale;",h)
+  self.assertIn("field_w,32.0f*scale",h)
   self.assertNotIn("focused?theme::cyan:",a)
-  self.assertIn("Color{0.075f,0.240f,0.355f,0.75f}",a)
-  self.assertIn("focused?Color{0.030f,0.078f,0.125f,0.98f}",a)
+  self.assertIn("// No outer focus frame: clicks only alter the muted fill.",a)
+  self.assertIn("focused?Color{0.032f,0.069f,0.101f,0.97f}",a)
 
  def test_actual_mouse_hit_matches_rendered_geometries(self):
   a=src("src/app/application.cpp")
