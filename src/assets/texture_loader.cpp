@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/jpeg2000_payload_signature.hpp"
 
 #include <png.h>
 
@@ -226,10 +227,33 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     AssetFailure png_failure = classify_http_asset_failure(png_response);
     if (png_response.ok())
     {
-        result = decode_png_texture(texture_id, png_response.body);
-        if (result.success) return result;
-        png_error = result.message;
-        png_failure = AssetFailure::invalid;
+        // Some simulator/proxy configurations return native J2C/JP2
+        // even to format=png. Only attempt OpenJPEG for a recognizable
+        // signature, then require a FULL validated RGBA result before
+        // skipping the normal format=x-j2c fallback HTTP request.
+        if(is_native_jpeg2000_payload(png_response.body))
+        {
+            auto native=decode_jpeg2000_texture(
+                texture_id,png_response.body);
+            if(native.success)
+            {
+                native.message=
+                    "GetTexture PNG response contained valid JPEG2000";
+                return native;
+            }
+            // A recognized header is NOT sufficient evidence: an
+            // invalid J2C/JP2 still gets the ordinary independent
+            // x-j2c fetch, preserving all OpenJPEG safety limits.
+            png_error="GetTexture PNG returned invalid JPEG2000: "+
+                native.message;
+        }
+        else
+        {
+            result=decode_png_texture(texture_id,png_response.body);
+            if(result.success)return result;
+            png_error=result.message;
+        }
+        png_failure=AssetFailure::invalid;
     }
     else
     {
@@ -238,7 +262,9 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     }
 
     // A missing server-side PNG converter must not prevent native
-    // JPEG2000 textures from loading. Never reuse the failed PNG payload.
+    // JPEG2000 textures from loading. Only the signature-verified,
+    // fully decoded native response above may avoid this independent
+    // fallback; unrecognized or damaged responses never bypass it.
     const auto j2c_response = transport_->get(
         j2c_uri, max_texture_download_bytes,
         connect_timeout, total_timeout);

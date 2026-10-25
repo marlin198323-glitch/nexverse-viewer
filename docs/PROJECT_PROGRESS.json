@@ -476,5 +476,21 @@
     "actual_grid_jpeg2000_asset_retested": false,
     "actual_grid_avatar_skin_cof_verified": false,
     "weighted_progress_pct": 38.65
+  },
+  "v0400_native_jpeg2000_on_png_endpoint_20261025": {
+    "status": "IMPLEMENTED_AND_LOCAL_MINT_VERIFIED_REAL_GRID_RESPONSE_UNVERIFIED",
+    "date": "2026-10-25",
+    "reference": "docs/V0_4_0_0_TEXTURE_PNG_NATIVE_J2C_RECOVERY_20261025.md",
+    "png_endpoint_native_j2c_signature_gate": true,
+    "png_endpoint_boxed_jp2_signature_gate": true,
+    "native_j2c_only_after_successful_decoder": true,
+    "damaged_j2c_falls_back_to_independent_get": true,
+    "no_changes_to_openjpeg_bounds": true,
+    "local_native_tests": "191/191 PASS",
+    "local_python_tests": "704/704 PASS",
+    "firestorm_xvfb_gl_gui_x11_icon": "PASS",
+    "authenticated_grid_j2c_retest": "OPEN",
+    "head_upper_lower_server_bake_3_of_3": "OPEN",
+    "weighted_project_pct": 38.65
   }
 }

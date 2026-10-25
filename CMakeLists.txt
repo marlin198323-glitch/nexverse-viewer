@@ -1229,6 +1229,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-texture-entry-tests)
     add_test(NAME nexverse-texture-entry-tests COMMAND nexverse-texture-entry-tests)
 
+    add_executable(nexverse-jpeg2000-payload-signature-tests
+        tests/jpeg2000_payload_signature_tests.cpp)
+    target_include_directories(nexverse-jpeg2000-payload-signature-tests
+        PRIVATE include tests)
+    nexverse_enable_warnings(nexverse-jpeg2000-payload-signature-tests)
+    add_test(NAME nexverse-jpeg2000-payload-signature-tests
+        COMMAND nexverse-jpeg2000-payload-signature-tests)
+
     add_executable(nexverse-texture-loader-tests tests/texture_loader_tests.cpp)
     target_link_libraries(nexverse-texture-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-texture-loader-tests)

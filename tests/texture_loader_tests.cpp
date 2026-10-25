@@ -19,6 +19,9 @@ public:
         png_ok,
         png_missing,
         png_invalid,
+        png_returns_native_j2c,
+        png_returns_native_jp2,
+        png_returns_truncated_j2c,
         both_missing,
         both_unavailable,
         first_j2c_truncated_then_valid,
@@ -41,6 +44,17 @@ public:
             return {503,{}, "HTTP server returned status 503"};
         if (url.find("format=png") != std::string_view::npos)
         {
+            if(mode==Mode::png_returns_native_j2c)
+                return {200,std::string{
+                    reinterpret_cast<const char*>(j2c_fixture),
+                    sizeof(j2c_fixture)},{}};
+            if(mode==Mode::png_returns_native_jp2)
+                return {200,std::string{
+                    reinterpret_cast<const char*>(jp2_fixture),
+                    sizeof(jp2_fixture)},{}};
+            if(mode==Mode::png_returns_truncated_j2c)
+                return {200,std::string{
+                    reinterpret_cast<const char*>(j2c_fixture),12U},{}};
             if (mode == Mode::first_j2c_truncated_then_valid ||
                 mode == Mode::always_j2c_truncated ||
                 mode == Mode::j2c_non_tile_corruption)
@@ -224,6 +238,40 @@ int main()
         std::cerr << "GetTexture HTTP 404 fallback failed: " << native.message << '\n';
         return 7;
     }
+
+    // Real OpenSim proxies sometimes ignore format=png and return a
+    // native J2C or JP2 body. Do not needlessly download it twice.
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::png_returns_native_j2c;
+    const auto mislabeled_j2c=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!valid_fixture(mislabeled_j2c)||
+       transport->requests.size()!=1U||transport->j2c_requests!=0U||
+       mislabeled_j2c.message.find(
+           "PNG response contained valid JPEG2000")==std::string::npos)
+        return 28;
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::png_returns_native_jp2;
+    const auto mislabeled_jp2=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!valid_fixture(mislabeled_jp2)||
+       transport->requests.size()!=1U||transport->j2c_requests!=0U)
+        return 29;
+    // An authentic SOC marker followed by a truncated body must NOT
+    // count as a valid PNG response; fetch the independently requested
+    // native J2C instead and accept only its full decoded pixels.
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::png_returns_truncated_j2c;
+    const auto bad_native=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!valid_fixture(bad_native)||
+       transport->requests.size()!=2U||
+       transport->j2c_requests!=1U||
+       bad_native.message.find("fallback succeeded")==std::string::npos)
+        return 30;
 
     transport->requests.clear();
     transport->mode = MockTransport::Mode::png_invalid;
