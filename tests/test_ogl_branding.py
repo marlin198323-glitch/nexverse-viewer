@@ -24,7 +24,7 @@ class OriginalBrandingTests(unittest.TestCase):
         self.assertIn("renderer.image(brand_texture,l.brand.x,l.brand.y,",src)
         self.assertIn("renderer.image(brand_texture,15.0f*scale",src)
         self.assertIn("renderer.destroy_texture(brand_texture)",src)
-        self.assertIn("welcome_page.initialize(window_width, window_height)",src)
+        self.assertIn("welcome_page.initialize(window_width, welcome_initial_height)",src)
         self.assertIn("const ui::WelcomeFrame& welcome_frame = welcome_page.frame()",src)
         self.assertIn("renderer.image(welcome_texture,",src)
 

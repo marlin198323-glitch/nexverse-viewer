@@ -25,14 +25,25 @@ struct NeonLoginLayout
     NeonRect brand{},grid{},grid_status{},login_status{},world_status{};
     NeonRect footer{},avatar_icon{},username{},password{},password_eye{};
     NeonRect enter_world{},remember_avatar{},help{};
+    [[nodiscard]] int welcome_content_height() const noexcept
+    {
+        return std::max(1,static_cast<int>(std::lround(footer_y-header_h)));
+    }
+    [[nodiscard]] int welcome_capture_height() const noexcept
+    {
+        // Snapshot and GPU always have the same dimensions.
+        return welcome_content_height();
+    }
     explicit NeonLoginLayout(int w,int h) noexcept
     {
         width=static_cast<float>(std::max(w,1));
         height=static_cast<float>(std::max(h,1));
-        scale=std::clamp(std::min(width/1648.0f,height/928.0f),0.38f,1.65f);
-        // A client window smaller than the design minimum still shrinks
-        // control geometry rather than clipping credentials off-screen.
-        scale=std::min(scale,std::max(0.26f,width/1110.0f));
+        // The old height/928 scale made fonts microscopic on wide,
+        // short desktops (e.g. 2048x838), despite ample horizontal room.
+        // Cap the chrome at 106%, but protect usable text sizes and
+        // still scale the compact dock down for 800px-wide windows.
+        scale=std::clamp(std::min(width/1648.0f,height/820.0f),
+                         0.62f,1.06f);
         header_h=58.0f*scale;
         footer_h=60.0f*scale;
         footer_y=height-footer_h;
@@ -51,8 +62,11 @@ struct NeonLoginLayout
         avatar_icon={22.0f*scale,footer_y+12.0f*scale,
                      36.0f*scale,36.0f*scale};
         const float control_y=footer_y+14.0f*scale;
-        const float controls_start=std::min(315.0f*scale,
-            std::max(190.0f*scale,width*0.20f));
+        // Balance the entire bottom dock across widescreen space:
+        // native field cluster begins near the reference's ~26% x,
+        // while the independent password toggle anchors at right.
+        const float controls_start=width>=1000.0f
+            ?width*0.26f:315.0f*scale;
         const float field_w=205.0f*scale;
         const float gap=12.0f*scale;
         username={controls_start,control_y,field_w,32.0f*scale};
@@ -62,7 +76,9 @@ struct NeonLoginLayout
                       control_y+3.0f*scale,27.0f*scale,26.0f*scale};
         enter_world={password.x+password.w+gap,control_y,
                      180.0f*scale,32.0f*scale};
-        remember_avatar={enter_world.x+enter_world.w+13.0f*scale,
+        const float trailing_toggle=width-228.0f*scale;
+        remember_avatar={std::max(enter_world.x+enter_world.w+
+                                    13.0f*scale,trailing_toggle),
                          control_y+3.0f*scale,142.0f*scale,26.0f*scale};
         help={width-35.0f*scale,control_y+3.0f*scale,
               22.0f*scale,26.0f*scale};

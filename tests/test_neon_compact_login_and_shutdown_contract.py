@@ -13,12 +13,12 @@ class CompactNeonAndFastClose(unittest.TestCase):
  def test_focus_does_not_draw_cyan_border(self):
   app=source("src/app/application.cpp")
   self.assertNotIn("focused?theme::cyan:",app)
-  self.assertIn("// No outer focus frame: clicks only alter the muted fill.",app)
-  self.assertIn("focused?Color{0.032f,0.069f,0.101f,0.97f}",app)
+  self.assertIn("// Identical neutral outline for both focused/unfocused states.",app)
+  self.assertIn("focused?Color{0.036f,0.074f,0.111f,0.98f}",app)
  def test_welcome_snapshot_fills_more_area_between_bars(self):
   app=source("src/app/application.cpp")
   self.assertIn("renderer.image(welcome_texture,0.0f,l.header_h,w,",app)
-  self.assertIn("l.footer_y-l.header_h,1.0f);",app)
+  self.assertIn("static_cast<float>(l.welcome_capture_height()),1.0f);",app)
  def test_real_field_clicks_share_layout_rectangles(self):
   app=source("src/app/application.cpp")
   for name in ("layout.username.contains","layout.password.contains",

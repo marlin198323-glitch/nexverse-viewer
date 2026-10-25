@@ -31,6 +31,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 
 **T01 weitere UI-/Shutdown-Teilarbeit (25.10.):** Oberer 58-px-Header, unterer 60-px-Dock, Eingaben 205×32, Welt-Button 180×32 bei 1648×928; kein gezeichneter Außen-Fokusrahmen. Login bleibt echte WebKit-Welcome/GLFW/OpenGL-Implementierung. 50-ms-abbrechbarer LLUDP-Retry-Schlaf, explizite Async-Join-Telemetrie und Gesamt-Shutdown-Messung nach GLFW-Abbau. 187/187 native + 667/667 Python und Firestorm-Xvfb-GL/X11-Icon lokal PASS. Echte authentifizierte Shutdown-Dauer und Live-Grid-E2E weiterhin offen: docs/V0_4_0_0_MINI_LOGIN_AND_MEASURED_SHUTDOWN.md.
 
+**T01 visuelle Feinabstimmung:** Dokumentierte reale GUI-Prüfung für 1648x928 und 2048x838. WebKit-Zoom vereinheitlicht Seite für kurze UltraWide-Fenster ohne verzerrten Text oder verdeckte News. Fokusglow entfernt, Einfassungen dauerhaft neutral, Header/Dock weiterhin kompakt. 187/187 native CTests + 671/671 Python, Original-Firestorm-Xvfb-GL/GUI/X11-Icon PASS. Noch kein authentifizierter E2E-Login. Details docs/V0_4_0_0_VISUAL_REFERENCE_RECHECK_2026_10_25.md.
+
 **T01 UI/UX-Teilarbeit:** programmierter Neon-Login statt Popup, Original-NexVerse-Welcome, responsiver Footer und echte GLFW-Hitboxes, Paswortanzeige, sechsfache Auflösungsabnahme. Backend-Grid-E2E bleibt offen. Siehe docs/V0_4_0_0_NEON_LOGIN_REFERENCE_IMPLEMENTATION.md.
 
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect

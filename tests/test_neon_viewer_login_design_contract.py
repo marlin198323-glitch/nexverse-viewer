@@ -12,8 +12,8 @@ class NeonLoginDesignContract(unittest.TestCase):
  def test_original_live_nexverse_welcome_retained_not_fake_image(self):
   a=src("src/app/application.cpp")
   self.assertIn("renderer.image(welcome_texture,0.0f,l.header_h,w,",a)
-  self.assertIn("l.footer_y-l.header_h,1.0f);",a)
-  self.assertIn("Color{0.004f,0.008f,0.022f,0.07f}",a)
+  self.assertIn("static_cast<float>(l.welcome_capture_height()),1.0f);",a)
+  self.assertIn("// no additional black/purple scrim over the original page.",a)
   self.assertIn("https://stadt-nexverse.de/service/welcome",src("include/nexverse/ui/welcome_page.hpp"))
  def test_centered_dark_modal_removed_from_actual_login_draw_path(self):
   a=src("src/app/application.cpp")
@@ -34,7 +34,7 @@ class NeonLoginDesignContract(unittest.TestCase):
   for key in ("l.avatar_icon","l.username","l.password",
       "l.enter_world","l.remember_avatar", "WELT BETRETEN"):
    self.assertIn(key,a)
-  for key in ("width/1648.0f","height/928.0f","180.0f*scale",
+  for key in ("width/1648.0f","height/820.0f","180.0f*scale",
       "205.0f*scale","footer_y=height-footer_h"):
    self.assertIn(key,h)
  def test_compact_header_dock_and_subtle_input_focus(self):
@@ -45,8 +45,8 @@ class NeonLoginDesignContract(unittest.TestCase):
   self.assertIn("field_w=205.0f*scale;",h)
   self.assertIn("field_w,32.0f*scale",h)
   self.assertNotIn("focused?theme::cyan:",a)
-  self.assertIn("// No outer focus frame: clicks only alter the muted fill.",a)
-  self.assertIn("focused?Color{0.032f,0.069f,0.101f,0.97f}",a)
+  self.assertIn("// Identical neutral outline for both focused/unfocused states.",a)
+  self.assertIn("focused?Color{0.036f,0.074f,0.111f,0.98f}",a)
 
  def test_actual_mouse_hit_matches_rendered_geometries(self):
   a=src("src/app/application.cpp")

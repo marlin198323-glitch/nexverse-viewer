@@ -3763,11 +3763,12 @@ void render_shell(
         // Compress only the snapshot vertically: at 1648x928 this
         // preserves the target's hero/news proportions and keeps the
         // real Grid-Informationen title out of the opaque header.
+        // WebKit zoom handles short ultrawide windows uniformly:
+        // show both hero and news without flattening or hiding cards.
         renderer.image(welcome_texture,0.0f,l.header_h,w,
-            l.footer_y-l.header_h,1.0f);
-        // The old 56% scrim made the hero/news barely legible.
-        renderer.rect(0.0f,l.header_h,w,h-l.header_h-l.footer_h,
-            Color{0.004f,0.008f,0.022f,0.07f});
+            static_cast<float>(l.welcome_capture_height()),1.0f);
+        // Leave the live Stadt-NexVerse WebKit pixels untouched:
+        // no additional black/purple scrim over the original page.
     }
     else
     {
@@ -3786,9 +3787,9 @@ void render_shell(
     if(brand_texture)
         renderer.image(brand_texture,l.brand.x,l.brand.y,
             l.brand.w,l.brand.h,1.0f);
-    renderer.text(69.0f*sc,12.0f*sc,16.0f*sc,
+    renderer.text(69.0f*sc,11.0f*sc,17.5f*sc,
         "OpenGenesisLINK",theme::text);
-    renderer.text(70.0f*sc,34.0f*sc,7.6f*sc,
+    renderer.text(70.0f*sc,35.0f*sc,8.3f*sc,
         "VIEWER FUER NEXVERSE",theme::cyan);
 
     renderer.rect(l.grid.x-1.0f*sc,l.grid.y-1.0f*sc,
@@ -3818,9 +3819,9 @@ void render_shell(
         renderer.rect(box.x+8.0f*sc,box.y+16.0f*sc,
             6.0f*sc,6.0f*sc,color,4.0f*sc);
         renderer.text(box.x+19.0f*sc,box.y+4.0f*sc,
-            7.0f*sc,title,theme::cyan);
+            8.2f*sc,title,theme::cyan);
         renderer.text(box.x+19.0f*sc,box.y+19.0f*sc,
-            9.0f*sc,value,theme::text);
+            10.0f*sc,value,theme::text);
     };
     status_chip_neon(l.grid_status,"GRID",grid_status,grid_status_color);
     status_chip_neon(l.login_status,"LOGIN",login.status,login_color);
@@ -3851,14 +3852,18 @@ void render_shell(
     const auto field=[&](const nexverse::ui::NeonRect& box,
                          bool focused,bool secret,std::string_view label)
     {
-        // No outer focus frame: clicks only alter the muted fill.
+        // Identical neutral outline for both focused/unfocused states.
+        // Focus changes ONLY the fill, never a cyan ring or glow.
+        renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
+            box.w+2.0f*sc,box.h+2.0f*sc,
+            Color{0.060f,0.170f,0.255f,0.52f},7.0f*sc);
         renderer.rect(box.x,box.y,box.w,box.h,
-            focused?Color{0.032f,0.069f,0.101f,0.97f}:
-                Color{0.024f,0.053f,0.085f,0.96f},6.0f*sc);
+            focused?Color{0.036f,0.074f,0.111f,0.98f}:
+                Color{0.026f,0.058f,0.096f,0.98f},6.0f*sc);
         renderer.text(box.x+11.0f*sc,box.y+7.0f*sc,
             12.0f*sc,secret?"#":"@",theme::text_muted);
-        renderer.text(box.x+30.0f*sc,box.y+10.0f*sc,
-            9.0f*sc,label,
+        renderer.text(box.x+30.0f*sc,box.y+9.0f*sc,
+            10.5f*sc,label,
             (secret?login.password.empty():login.username.empty())
                 ?theme::text_muted:theme::text);
     };
@@ -3890,7 +3895,7 @@ void render_shell(
     renderer.rect(l.enter_world.x,l.enter_world.y,
         l.enter_world.w,l.enter_world.h,neon_button_color,7.0f*sc);
     renderer.text(l.enter_world.x+17.0f*sc,
-        l.enter_world.y+10.0f*sc,9.6f*sc,
+        l.enter_world.y+9.0f*sc,11.0f*sc,
         login.busy?"VERBINDE...":"WELT BETRETEN",
         neon_can_submit?theme::text:theme::text_muted);
     renderer.text(l.enter_world.x+l.enter_world.w-19.0f*sc,
@@ -3906,7 +3911,7 @@ void render_shell(
         8.0f*sc,login.show_password?"X":"",theme::cyan);
     renderer.text(l.remember_avatar.x+19.0f*sc,
         l.remember_avatar.y+3.0f*sc,
-        8.0f*sc,"Passwort zeigen",theme::text_muted);
+        9.0f*sc,"Passwort zeigen",theme::text_muted);
     const std::string neon_version=std::string{nexverse::core::version()};
     renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
         l.footer_y-14.0f*sc,8.0f*sc,neon_version,theme::text_muted);
@@ -6576,7 +6581,15 @@ int Application::run(bool enable_developer_modules)
         int welcome_texture_height = 0;
         bool welcome_failure_logged = false;
 
-        if (!welcome_page.initialize(window_width, window_height))
+        // The WebKit viewport MUST equal the actually visible center
+        // between the native header and login dock. Capturing full
+        // window height and squeezing its texture distorted text,
+        // especially on the user's 2048x838 ultrawide viewport.
+        const ui::NeonLoginLayout initial_login_layout{
+            window_width,window_height};
+        const int welcome_initial_height=
+            initial_login_layout.welcome_capture_height();
+        if (!welcome_page.initialize(window_width, welcome_initial_height))
         {
             core::warning("Embedded NexVerse welcome page initialization failed");
         }
@@ -8232,7 +8245,11 @@ int Application::run(bool enable_developer_modules)
                 continue;
             }
 
-            welcome_page.resize(window_width, window_height);
+            const ui::NeonLoginLayout welcome_layout{
+                window_width,window_height};
+            const int welcome_viewport_height=login_ui.authenticated
+                ?window_height:welcome_layout.welcome_capture_height();
+            welcome_page.resize(window_width,welcome_viewport_height);
             welcome_page.pump();
             glfwMakeContextCurrent(window);
 

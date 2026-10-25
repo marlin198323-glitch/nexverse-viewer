@@ -56,12 +56,21 @@ int main()
     // welcome page visible than the first reference implementation.
     if(ref.header_h!=58.0f||ref.footer_h!=60.0f||
        ref.footer_y!=868.0f||
-       ref.username.x<310.0f||ref.username.x>332.0f||
+       ref.username.x<425.0f||ref.username.x>433.0f||
        ref.username.w!=205.0f||ref.username.h!=32.0f||
-       ref.password.x<527.0f||ref.password.x>550.0f||
-       ref.enter_world.x<744.0f||ref.enter_world.x>767.0f||
+       ref.password.x<642.0f||ref.password.x>651.0f||
+       ref.enter_world.x<858.0f||ref.enter_world.x>867.0f||
        ref.enter_world.w!=180.0f||ref.enter_world.h!=32.0f||
-       ref.grid.x<696.0f||ref.grid.x>701.0f)
+       ref.grid.x<696.0f||ref.grid.x>701.0f||
+       ref.remember_avatar.x<1410.0f||
+       ref.remember_avatar.x>1430.0f||
+       ref.welcome_content_height()!=810||
+       ref.welcome_capture_height()!=810||
+       NeonLoginLayout{2048,838}.welcome_capture_height()!=
+           NeonLoginLayout{2048,838}.welcome_content_height()||
+       NeonLoginLayout{2048,838}.welcome_content_height()>=810||
+       NeonLoginLayout{800,600}.welcome_capture_height()!=
+           NeonLoginLayout{800,600}.welcome_content_height())
         return 7;
     // Header and footer must be far apart; status/fields cannot
     // overlap. Particularly important in 720p and ultra-wide layouts.

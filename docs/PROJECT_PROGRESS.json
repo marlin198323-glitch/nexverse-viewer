@@ -335,5 +335,39 @@
     "local_validation": "187/187 CTests, 667/667 Python, Firestorm Xvfb GL GUI/X11 icon PASS",
     "authenticated_live_shutdown_measured": false,
     "weighted_pct": 38.65
+  },
+  "v0400_neon_visual_reference_review": {
+    "status": "implemented_mint_x64_tested_no_live_grid_release",
+    "date": "2026-10-25",
+    "document": "docs/V0_4_0_0_VISUAL_REFERENCE_RECHECK_2026_10_25.md",
+    "reference_images_px": [
+      [
+        1672,
+        941
+      ],
+      [
+        2048,
+        838
+      ]
+    ],
+    "render_verified_window_px": [
+      [
+        1648,
+        928
+      ],
+      [
+        2048,
+        838
+      ]
+    ],
+    "welcome_source_unchanged": true,
+    "welcome_webkit_zoom_short_ultrawide": true,
+    "welcome_logo_and_news_visible_in_2048x838": true,
+    "native_login_focus_glow": false,
+    "local_ctests": "187/187 PASS",
+    "local_python": "671/671 PASS",
+    "original_firestorm_xvfb_gl_gui_x11_icon": "PASS",
+    "live_authenticated_grid_e2e": "NOT_VERIFIED",
+    "total_weighted_progress_percent": 38.65
   }
 }

@@ -15,6 +15,14 @@
 
 namespace nexverse::ui
 {
+// Uniform browser zoom avoids changing the original HTML/CSS and
+// preserves both hero and news on wide, low-height displays.
+[[nodiscard]] double welcome_zoom(int width,int height) noexcept
+{
+    return width>=1450 && height<810
+        ?std::clamp(static_cast<double>(height)/810.0,0.80,1.0)
+        :1.0;
+}
 struct WelcomePage::Impl
 {
     GtkWidget* window = nullptr;
@@ -160,6 +168,8 @@ bool WelcomePage::initialize(int width, int height)
 
     impl_->window = gtk_offscreen_window_new();
     impl_->web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+    webkit_web_view_set_zoom_level(
+        impl_->web_view,welcome_zoom(impl_->width,impl_->height));
 
     gtk_widget_set_size_request(
         GTK_WIDGET(impl_->web_view),
@@ -233,9 +243,14 @@ void WelcomePage::resize(int width, int height)
 
     impl_->width = new_width;
     impl_->height = new_height;
+    webkit_web_view_set_zoom_level(
+        impl_->web_view,welcome_zoom(new_width,new_height));
     gtk_widget_set_size_request(GTK_WIDGET(impl_->web_view), new_width, new_height);
+    gtk_window_resize(GTK_WINDOW(impl_->window), new_width, new_height);
     impl_->frame.ready = false;
-    impl_->request_snapshot();
+    // Wait for GTK's layout allocation before taking the snapshot;
+    // otherwise a resized frame can still carry old viewport pixels.
+    // pump() drains GTK events and then requests the new visible frame.
 }
 
 void WelcomePage::pump()
