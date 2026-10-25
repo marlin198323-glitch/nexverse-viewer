@@ -48,14 +48,25 @@ int main()
     }
     // The first image's native 1648 x 928 reference resolution:
     const NeonLoginLayout ref{1648,928};
-    if(ref.footer_y<800||ref.footer_y>835||
-       ref.username.x<400||ref.username.x>440||
-       ref.password.x<710||ref.password.x>770||
-       ref.enter_world.x<1030||ref.enter_world.x>1090||
-       ref.enter_world.w<250||
-       ref.grid.x<640||ref.grid.x>685)
+    // Compact top/bottom bars leave more of the actual NexVerse
+    // welcome page visible than the first reference implementation.
+    if(ref.header_h>74.0f||ref.header_h<64.0f||
+       ref.footer_h>80.0f||ref.footer_h<70.0f||
+       ref.footer_y<845.0f||
+       ref.username.x<335.0f||ref.username.x>365.0f||
+       ref.username.w>250.0f||ref.username.h>41.0f||
+       ref.password.x<590.0f||ref.password.x>620.0f||
+       ref.enter_world.x<845.0f||ref.enter_world.x>880.0f||
+       ref.enter_world.w>220.0f||
+       ref.grid.x<665.0f||ref.grid.x>690.0f)
         return 7;
-    std::cout << "OGL_NEON_LOGIN_LAYOUT_PASS "
+    // Header and footer must be far apart; status/fields cannot
+    // overlap. Particularly important in 720p and ultra-wide layouts.
+    if(!disjoint(ref.brand,ref.grid)||
+       !disjoint(ref.grid,ref.grid_status)||
+       !disjoint(ref.login_status,ref.world_status))
+        return 8;
+    std::cout << "OGL_NEON_LOGIN_COMPACT_LAYOUT_PASS "
               << "1648x928 and 5 scaled/ultrawide windows; "
               << "render and input share exact rectangles\n";
     return 0;

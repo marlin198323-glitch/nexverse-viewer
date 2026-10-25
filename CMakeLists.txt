@@ -383,6 +383,16 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
         nexverse_enable_warnings(nexverse-http-credential-redirect-tests)
         add_test(NAME nexverse-http-credential-redirect-tests
             COMMAND nexverse-http-credential-redirect-tests)
+
+        # Real stalled loopback CAPS transfer abort: viewer close should
+        # cancel active HTTP instead of waiting the long-poll timeout.
+        add_executable(nexverse-http-viewer-shutdown-tests
+            tests/http_viewer_shutdown_tests.cpp)
+        target_link_libraries(nexverse-http-viewer-shutdown-tests
+            PRIVATE NexVerse::Net Threads::Threads)
+        nexverse_enable_warnings(nexverse-http-viewer-shutdown-tests)
+        add_test(NAME nexverse-http-viewer-shutdown-tests
+            COMMAND nexverse-http-viewer-shutdown-tests)
     endif()
 
     add_executable(nexverse-grid-info-tests tests/grid_info_tests.cpp)

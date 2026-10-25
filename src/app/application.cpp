@@ -3763,7 +3763,8 @@ void render_shell(
         // Compress only the snapshot vertically: at 1648x928 this
         // preserves the target's hero/news proportions and keeps the
         // real Grid-Informationen title out of the opaque header.
-        renderer.image(welcome_texture,0.0f,72.0f*sc,w,h*0.82f,1.0f);
+        renderer.image(welcome_texture,0.0f,l.header_h,w,
+            l.footer_y-l.header_h,1.0f);
         // The old 56% scrim made the hero/news barely legible.
         renderer.rect(0.0f,l.header_h,w,h-l.header_h-l.footer_h,
             Color{0.004f,0.008f,0.022f,0.07f});
@@ -3785,9 +3786,9 @@ void render_shell(
     if(brand_texture)
         renderer.image(brand_texture,l.brand.x,l.brand.y,
             l.brand.w,l.brand.h,1.0f);
-    renderer.text(113.0f*sc,28.0f*sc,24.0f*sc,
+    renderer.text(87.0f*sc,17.0f*sc,20.0f*sc,
         "OpenGenesisLINK",theme::text);
-    renderer.text(114.0f*sc,59.0f*sc,10.5f*sc,
+    renderer.text(88.0f*sc,43.0f*sc,8.7f*sc,
         "VIEWER FUER NEXVERSE",theme::cyan);
 
     renderer.rect(l.grid.x-1.0f*sc,l.grid.y-1.0f*sc,
@@ -3795,14 +3796,14 @@ void render_shell(
         Color{0.11f,0.31f,0.48f,0.85f},12.0f*sc);
     renderer.rect(l.grid.x,l.grid.y,l.grid.w,l.grid.h,
         Color{0.032f,0.090f,0.151f,0.99f},11.0f*sc);
-    renderer.rect(l.grid.x+19.0f*sc,l.grid.y+17.0f*sc,
-        31.0f*sc,26.0f*sc,with_alpha(theme::cyan,0.19f),8.0f*sc);
-    renderer.text(l.grid.x+28.0f*sc,l.grid.y+19.0f*sc,
-        15.0f*sc,"G",theme::cyan);
-    renderer.text(l.grid.x+68.0f*sc,l.grid.y+9.0f*sc,
-        10.0f*sc,"NEXVERSE GRID",theme::cyan);
-    renderer.text(l.grid.x+68.0f*sc,l.grid.y+29.0f*sc,
-        16.0f*sc,grid_name,theme::text);
+    renderer.rect(l.grid.x+13.0f*sc,l.grid.y+10.0f*sc,
+        25.0f*sc,23.0f*sc,with_alpha(theme::cyan,0.19f),8.0f*sc);
+    renderer.text(l.grid.x+21.0f*sc,l.grid.y+13.0f*sc,
+        12.0f*sc,"G",theme::cyan);
+    renderer.text(l.grid.x+48.0f*sc,l.grid.y+6.0f*sc,
+        9.0f*sc,"NEXVERSE GRID",theme::cyan);
+    renderer.text(l.grid.x+48.0f*sc,l.grid.y+23.0f*sc,
+        13.0f*sc,grid_name,theme::text);
     // Do not draw a fake nonfunctional dropdown: this installation
     // currently has one configured grid.
     const auto status_chip_neon=[&](
@@ -3814,12 +3815,12 @@ void render_shell(
             Color{0.065f,0.275f,0.43f,0.8f},12.0f*sc);
         renderer.rect(box.x,box.y,box.w,box.h,
             Color{0.012f,0.045f,0.085f,0.99f},11.0f*sc);
-        renderer.rect(box.x+12.0f*sc,box.y+24.0f*sc,
-            9.0f*sc,9.0f*sc,color,5.0f*sc);
-        renderer.text(box.x+29.0f*sc,box.y+9.0f*sc,
-            10.0f*sc,title,theme::cyan);
-        renderer.text(box.x+29.0f*sc,box.y+29.0f*sc,
-            11.5f*sc,value,theme::text);
+        renderer.rect(box.x+9.0f*sc,box.y+18.0f*sc,
+            7.0f*sc,7.0f*sc,color,5.0f*sc);
+        renderer.text(box.x+23.0f*sc,box.y+6.0f*sc,
+            8.5f*sc,title,theme::cyan);
+        renderer.text(box.x+23.0f*sc,box.y+22.0f*sc,
+            10.0f*sc,value,theme::text);
     };
     status_chip_neon(l.grid_status,"GRID",grid_status,grid_status_color);
     status_chip_neon(l.login_status,"LOGIN",login.status,login_color);
@@ -3836,31 +3837,30 @@ void render_shell(
     renderer.rect(l.avatar_icon.x,l.avatar_icon.y,
         l.avatar_icon.w,l.avatar_icon.h,
         Color{0.024f,0.160f,0.270f,0.98f},33.0f*sc);
-    renderer.text(l.avatar_icon.x+21.0f*sc,
-        l.avatar_icon.y+17.0f*sc,27.0f*sc,"@",theme::cyan);
-    renderer.text(128.0f*sc,l.footer_y+27.0f*sc,
-        11.0f*sc,"ANMELDUNG",theme::cyan);
-    renderer.text(128.0f*sc,l.footer_y+49.0f*sc,
-        9.6f*sc,"Mit deinem NexVerse-Avatar anmelden",theme::text);
-    renderer.text(128.0f*sc,l.footer_y+68.0f*sc,
-        9.6f*sc,"und deine Welt betreten.",theme::text_muted);
-    renderer.rect(l.username.x-26.0f*sc,l.footer_y+27.0f*sc,
-        1.0f*sc,48.0f*sc,with_alpha(theme::cyan,0.36f));
+    renderer.text(l.avatar_icon.x+12.0f*sc,
+        l.avatar_icon.y+10.0f*sc,20.0f*sc,"@",theme::cyan);
+    renderer.text(82.0f*sc,l.footer_y+15.0f*sc,
+        9.0f*sc,"ANMELDUNG",theme::cyan);
+    renderer.text(82.0f*sc,l.footer_y+31.0f*sc,
+        8.5f*sc,"Mit deinem NexVerse-Avatar anmelden",theme::text);
+    renderer.text(82.0f*sc,l.footer_y+46.0f*sc,
+        8.5f*sc,"und deine Welt betreten.",theme::text_muted);
+    renderer.rect(l.username.x-15.0f*sc,l.footer_y+17.0f*sc,
+        1.0f*sc,39.0f*sc,with_alpha(theme::cyan,0.36f));
 
     const auto field=[&](const nexverse::ui::NeonRect& box,
                          bool focused,bool secret,std::string_view label)
     {
         renderer.rect(box.x-1.0f*sc,box.y-1.0f*sc,
             box.w+2.0f*sc,box.h+2.0f*sc,
-            focused?theme::cyan:
-                Color{0.115f,0.320f,0.470f,0.88f},11.0f*sc);
+            Color{0.075f,0.240f,0.355f,0.75f},9.0f*sc);
         renderer.rect(box.x,box.y,box.w,box.h,
-            focused?Color{0.036f,0.095f,0.158f,0.98f}:
-                Color{0.026f,0.060f,0.106f,0.98f},10.0f*sc);
-        renderer.text(box.x+16.0f*sc,box.y+13.0f*sc,
-            18.0f*sc,secret?"#":"@",theme::text_muted);
-        renderer.text(box.x+44.0f*sc,box.y+16.0f*sc,
-            11.3f*sc,label,
+            focused?Color{0.030f,0.078f,0.125f,0.98f}:
+                Color{0.026f,0.060f,0.106f,0.98f},8.0f*sc);
+        renderer.text(box.x+13.0f*sc,box.y+10.0f*sc,
+            14.0f*sc,secret?"#":"@",theme::text_muted);
+        renderer.text(box.x+37.0f*sc,box.y+12.0f*sc,
+            10.0f*sc,label,
             (secret?login.password.empty():login.username.empty())
                 ?theme::text_muted:theme::text);
     };
@@ -3873,8 +3873,8 @@ void render_shell(
     renderer.rect(l.password_eye.x,l.password_eye.y,
         l.password_eye.w,l.password_eye.h,
         with_alpha(theme::blue,login.show_password?0.32f:0.12f),7.0f*sc);
-    renderer.text(l.password_eye.x+7.0f*sc,l.password_eye.y+12.0f*sc,
-        10.0f*sc,login.show_password?"ZU":"AN",
+    renderer.text(l.password_eye.x+5.0f*sc,l.password_eye.y+9.0f*sc,
+        9.0f*sc,login.show_password?"ZU":"AN",
         login.show_password?theme::cyan:theme::text_muted);
 
     const bool neon_can_submit=!login.busy&&!login.username.empty()&&
@@ -3891,30 +3891,30 @@ void render_shell(
         with_alpha(theme::cyan,neon_can_submit?0.93f:0.25f),12.0f*sc);
     renderer.rect(l.enter_world.x,l.enter_world.y,
         l.enter_world.w,l.enter_world.h,neon_button_color,11.0f*sc);
-    renderer.text(l.enter_world.x+38.0f*sc,
-        l.enter_world.y+16.0f*sc,13.0f*sc,
+    renderer.text(l.enter_world.x+27.0f*sc,
+        l.enter_world.y+13.0f*sc,11.5f*sc,
         login.busy?"VERBINDE...":"WELT BETRETEN",
         neon_can_submit?theme::text:theme::text_muted);
-    renderer.text(l.enter_world.x+l.enter_world.w-30.0f*sc,
-        l.enter_world.y+13.0f*sc,17.0f*sc,">",
+    renderer.text(l.enter_world.x+l.enter_world.w-25.0f*sc,
+        l.enter_world.y+10.0f*sc,15.0f*sc,">",
         neon_can_submit?theme::text:theme::text_muted);
     // A working password visibility toggle (not the mockup's
     // misleading "stay signed in" persistence claim).
     renderer.rect(l.remember_avatar.x,l.remember_avatar.y,
-        22.0f*sc,22.0f*sc,
+        18.0f*sc,18.0f*sc,
         with_alpha(theme::blue,0.20f),6.0f*sc);
     renderer.text(l.remember_avatar.x+5.0f*sc,
-        l.remember_avatar.y+3.0f*sc,
-        12.0f*sc,login.show_password?"X":"",theme::cyan);
-    renderer.text(l.remember_avatar.x+29.0f*sc,
+        l.remember_avatar.y+2.0f*sc,
+        10.0f*sc,login.show_password?"X":"",theme::cyan);
+    renderer.text(l.remember_avatar.x+22.0f*sc,
         l.remember_avatar.y+5.0f*sc,
-        10.0f*sc,"Passwort zeigen",theme::text_muted);
+        9.0f*sc,"Passwort zeigen",theme::text_muted);
     const std::string neon_version=std::string{nexverse::core::version()};
     renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
-        l.footer_y-22.0f*sc,9.0f*sc,neon_version,theme::text_muted);
+        l.footer_y-14.0f*sc,8.0f*sc,neon_version,theme::text_muted);
     const std::string notice=login.notice.substr(0U,86U);
-    renderer.text(l.username.x,l.footer_y+l.footer_h-19.0f*sc,
-        8.6f*sc,notice,
+    renderer.text(l.username.x,l.footer_y+l.footer_h-14.0f*sc,
+        8.0f*sc,notice,
         login.status=="ERROR"?theme::magenta:theme::text_muted);
     return;
 
@@ -4678,6 +4678,9 @@ int Application::run(bool enable_developer_modules)
     glfwSetWindowFocusCallback(window,window_focus_callback);
 
     auto transport = std::make_shared<net::CurlHttpTransport>();
+    // Must outlive the scoped OpenGL frame/render resources to log
+    // the real post-login worker shutdown duration.
+    std::chrono::steady_clock::time_point shutdown_started{};
     auto discovery_future = std::async(
         std::launch::async,
         [transport]
@@ -14928,6 +14931,13 @@ int Application::run(bool enable_developer_modules)
             glfwSwapBuffers(window);
         }
 
+        // Close promptly even with authenticated CAPS/texture workers
+        // outstanding: abort HTTP and LLUDP before GPU teardown/joins.
+        shutdown_started=std::chrono::steady_clock::now();
+        circuit_stop.store(true);
+        caps_stop.store(true);
+        transport->request_stop();
+        core::info("Viewer shutdown requested; cancelling network transfers");
         renderer.destroy_texture(brand_texture);
         renderer.destroy_texture(welcome_texture);
         for(const auto& [folder,image]:gallery_gpu_textures)
@@ -14953,6 +14963,14 @@ int Application::run(bool enable_developer_modules)
     }
     for(auto& pending:region_event_queue_futures)
         pending.wait();
+    // Profiling marker for real authenticated close sessions. Some
+    // CPU-bound std::async tasks are not cancellable yet, so log
+    // total close latency rather than claim all exits are instant.
+    const auto shutdown_ms=std::chrono::duration_cast<
+        std::chrono::milliseconds>(
+            std::chrono::steady_clock::now()-shutdown_started).count();
+    core::info("Viewer shutdown cleanup elapsed_ms="+
+               std::to_string(shutdown_ms));
 
     glfwSetWindowUserPointer(window, nullptr);
     core::info("OpenGenesisLINK Viewer shutdown");

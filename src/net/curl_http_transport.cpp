@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 
 #include <algorithm>
+#include <atomic>
 #include <limits>
 #include <mutex>
 #include <string>
@@ -49,6 +50,14 @@ std::size_t write_body(char* data, std::size_t size, std::size_t count, void* us
     return bytes;
 }
 
+int stop_on_shutdown(void* stop_flag, curl_off_t, curl_off_t,
+                     curl_off_t, curl_off_t)
+{
+    const auto* stopping=static_cast<const std::atomic<bool>*>(stop_flag);
+    return stopping != nullptr &&
+           stopping->load(std::memory_order_acquire) ? 1 : 0;
+}
+
 long timeout_ms(std::chrono::milliseconds value)
 {
     const auto bounded = std::clamp<std::chrono::milliseconds::rep>(
@@ -64,8 +73,11 @@ nexverse::net::HttpResponse perform_request(
     RequestMethod method,
     std::size_t max_bytes,
     std::chrono::milliseconds connect_timeout,
-    std::chrono::milliseconds total_timeout)
+    std::chrono::milliseconds total_timeout,
+    const std::atomic<bool>& stopping)
 {
+    if(stopping.load(std::memory_order_acquire))
+        return {0, {}, "HTTP cancelled: Viewer is closing"};
     std::call_once(curl_init_flag, initialize_curl);
     if (curl_init_result != CURLE_OK)
     {
@@ -99,6 +111,13 @@ nexverse::net::HttpResponse perform_request(
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms(connect_timeout));
     curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms(total_timeout));
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+    // Shared shutdown flag aborts active transfers, including stalled
+    // CAPS/EventQueue and slow texture requests, without waiting the
+    // full HTTP timeout. All callers retain the transport shared_ptr.
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, stop_on_shutdown);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
+                     const_cast<std::atomic<bool>*>(&stopping));
     curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
     curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_body);
@@ -137,6 +156,9 @@ nexverse::net::HttpResponse perform_request(
         return {status_code, {}, "HTTP response exceeds configured size limit"};
     }
 
+    if (stopping.load(std::memory_order_acquire))
+        return {0, {}, "HTTP cancelled: Viewer is closing"};
+
     if (result != CURLE_OK)
     {
         return {status_code, {}, std::string{"HTTP request failed: "} + curl_easy_strerror(result)};
@@ -160,7 +182,7 @@ HttpResponse CurlHttpTransport::get(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(
-        url, {}, {}, RequestMethod::get, max_bytes, connect_timeout, total_timeout);
+        url, {}, {}, RequestMethod::get, max_bytes, connect_timeout, total_timeout, stopping_);
 }
 
 HttpResponse CurlHttpTransport::post(
@@ -173,7 +195,7 @@ HttpResponse CurlHttpTransport::post(
 {
     return perform_request(
         url, content_type, body, RequestMethod::post, max_bytes,
-        connect_timeout, total_timeout);
+        connect_timeout, total_timeout, stopping_);
 }
 HttpResponse CurlHttpTransport::put(
     std::string_view url,
@@ -184,7 +206,7 @@ HttpResponse CurlHttpTransport::put(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(url,content_type,body,RequestMethod::put,
-                           max_bytes,connect_timeout,total_timeout);
+                           max_bytes,connect_timeout,total_timeout,stopping_);
 }
 HttpResponse CurlHttpTransport::remove(
     std::string_view url,std::size_t max_bytes,
@@ -192,6 +214,6 @@ HttpResponse CurlHttpTransport::remove(
     std::chrono::milliseconds total_timeout)
 {
     return perform_request(url,{}, {},RequestMethod::remove,
-                           max_bytes,connect_timeout,total_timeout);
+                           max_bytes,connect_timeout,total_timeout,stopping_);
 }
 }

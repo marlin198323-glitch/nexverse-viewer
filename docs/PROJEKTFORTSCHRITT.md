@@ -981,3 +981,21 @@ Neues NeonLoginLayout ist responsiv und in Maus-/Renderpfad
 gemeinsam implementiert. Weiterhin keine authentifizierte
 Grid-Login-/WASD-/Outfit-Endabnahme dieser Code-SHA,
 kein main-Merge/Produktivdeploy.
+
+## v0.4.0.0 – Login-UI kompakt und Schließen beschleunigt (25.10.2026)
+
+Gemäß echten User-Screenshots Header 93 -> 72 px und
+unteres Login-Dock 105 -> 77 px bei 1648x928.
+Eingaben 298x49 -> 245x39 px, Welt-Betreten
+259x49 -> 210x39 px. Echte WebKit-Hero-Seite
+nutzt zusätzliche Bildhöhe, Input-Fokusrahmen
+nicht mehr leuchtend, stattdessen dezente Färbung.
+Aktiver CurlHttpTransport unterstützt atomaren Abbruch
+aller aktiven HTTP-Übertragungen; die Viewer-Schließroutine
+fordert LLUDP/CAPS/HTTP-Stop VOR GPU-Aufräumen an.
+Echter C++-Loopback-Stall-/Abbruchtest und
+`Viewer shutdown cleanup elapsed_ms`-Log hinzugefügt.
+Reguläres Herunterfahren in echter eingeloggter
+Grid-Sitzung bleibt noch zu messen; kein neues
+vollständiges Release-E2E. Einzelheiten in
+`docs/V0_4_0_0_NEON_COMPACT_AND_FAST_SHUTDOWN.md`.

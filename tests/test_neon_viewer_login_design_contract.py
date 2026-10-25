@@ -11,7 +11,8 @@ class NeonLoginDesignContract(unittest.TestCase):
   self.assertIn("const nexverse::ui::NeonLoginLayout l{width,height};",a)
  def test_original_live_nexverse_welcome_retained_not_fake_image(self):
   a=src("src/app/application.cpp")
-  self.assertIn("renderer.image(welcome_texture,0.0f,72.0f*sc,w,h*0.82f,1.0f);",a)
+  self.assertIn("renderer.image(welcome_texture,0.0f,l.header_h,w,",a)
+  self.assertIn("l.footer_y-l.header_h,1.0f);",a)
   self.assertIn("Color{0.004f,0.008f,0.022f,0.07f}",a)
   self.assertIn("https://stadt-nexverse.de/service/welcome",src("include/nexverse/ui/welcome_page.hpp"))
  def test_centered_dark_modal_removed_from_actual_login_draw_path(self):
@@ -33,9 +34,20 @@ class NeonLoginDesignContract(unittest.TestCase):
   for key in ("l.avatar_icon","l.username","l.password",
       "l.enter_world","l.remember_avatar", "WELT BETRETEN"):
    self.assertIn(key,a)
-  for key in ("width/1648.0f","height/928.0f","259.0f*scale",
-      "298.0f*scale","footer_y=height-footer_h"):
+  for key in ("width/1648.0f","height/928.0f","210.0f*scale",
+      "245.0f*scale","footer_y=height-footer_h"):
    self.assertIn(key,h)
+ def test_compact_header_dock_and_subtle_input_focus(self):
+  a=src("src/app/application.cpp")
+  h=src("include/nexverse/ui/neon_login_layout.hpp")
+  self.assertIn("header_h=72.0f*scale;",h)
+  self.assertIn("footer_h=77.0f*scale;",h)
+  self.assertIn("field_w=245.0f*scale;",h)
+  self.assertIn("field_w,39.0f*scale",h)
+  self.assertNotIn("focused?theme::cyan:",a)
+  self.assertIn("Color{0.075f,0.240f,0.355f,0.75f}",a)
+  self.assertIn("focused?Color{0.030f,0.078f,0.125f,0.98f}",a)
+
  def test_actual_mouse_hit_matches_rendered_geometries(self):
   a=src("src/app/application.cpp")
   section=a[a.index("const nexverse::ui::NeonLoginLayout layout{width,height};"):a.index("// Shared with native login regression tests:")]

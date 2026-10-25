@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <string>
@@ -63,6 +64,20 @@ public:
 class CurlHttpTransport final : public IHttpTransport
 {
 public:
+    // A logged-in viewer can have many pending CAPS/texture/mesh HTTP
+    // futures when the user closes the window. Abort those transfers
+    // before waiting for worker threads, rather than waiting full HTTP
+    // timeouts. Thread-safe: shared by every CurlHttpTransport request.
+    void request_stop() noexcept
+    {
+        stopping_.store(true, std::memory_order_release);
+    }
+
+    [[nodiscard]] bool stopping() const noexcept
+    {
+        return stopping_.load(std::memory_order_acquire);
+    }
+
     HttpResponse get(
         std::string_view url,
         std::size_t max_bytes,
@@ -87,5 +102,7 @@ public:
         std::string_view url,std::size_t max_bytes,
         std::chrono::milliseconds connect_timeout,
         std::chrono::milliseconds total_timeout) override;
+private:
+    std::atomic<bool> stopping_{false};
 };
 }

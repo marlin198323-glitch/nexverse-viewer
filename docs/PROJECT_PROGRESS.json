@@ -294,5 +294,25 @@
     "local_python_tests": "PASS: 658/658",
     "real_xvfb_firestorm_gui_and_ogl_128px_systemicon": "PASS",
     "real_first_reference_resolution": "1648x928"
+  },
+  "v0400_compact_login_shutdown": {
+    "status": "implemented_and_local_tested",
+    "reference": "docs/V0_4_0_0_NEON_COMPACT_AND_FAST_SHUTDOWN.md",
+    "header_reference_px": 72,
+    "footer_reference_px": 77,
+    "input_reference_px": [
+      245,
+      39
+    ],
+    "enter_reference_px": [
+      210,
+      39
+    ],
+    "focus_glow_border": false,
+    "curl_shutdown_abort": true,
+    "authenticated_live_shutdown_benchmark_verified": false,
+    "still_open": "Actual logged-in exit duration, Grid appearance and movement E2E",
+    "local_validation": "187/187 CTests, 666/666 Python, Firestorm Xvfb GUI/GL/X11 icon PASS",
+    "stalled_http_loopback_cancel": "PASS around 0.5 seconds, max test deadline 2.5 seconds against 4.5 seconds request timeout"
   }
 }
