@@ -8043,8 +8043,38 @@ int Application::run(bool enable_developer_modules)
                         1U,std::memory_order_relaxed);
                     avatar_appearance_self_accepted.fetch_add(
                         1U,std::memory_order_relaxed);
+                    // A real FastRez Low158 can be buffered just before
+                    // circuit readiness. Unlike the direct live packet,
+                    // this path previously omitted all bake evidence,
+                    // obscuring whether the simulator supplied real
+                    // Head/Upper/Lower textures at login.
+                    const auto& accepted_self=world_model.self_appearance();
+                    std::size_t low158_body_count=0U;
+                    if(accepted_self)
+                    {
+                        const auto body=protocol::extract_avatar_bakes(
+                            accepted_self->texture_entry).visible_body();
+                        low158_body_count=std::count_if(
+                            body.begin(),body.end(),
+                            [](const auto& id){return !id.empty();});
+                    }
+                    const auto chosen=world_model.self_bake_selection();
+                    const auto renderable_body_count=std::count_if(
+                        chosen.ids.begin(),chosen.ids.end(),
+                        [](const auto& id){return !id.empty();});
+                    const auto provisional_object_count=std::count_if(
+                        chosen.from_object_update.begin(),
+                        chosen.from_object_update.end(),
+                        [](bool b){return b;});
                     core::info("Early authenticated Low158 SELF released "
-                               "after circuit readiness; no GPU claim");
+                               "after circuit readiness; body_bakes_low158="+
+                        std::to_string(low158_body_count)+"/3"+
+                        "; body_bakes_candidates="+
+                        std::to_string(renderable_body_count)+"/3"+
+                        "; provisional_object_faces="+
+                        std::to_string(provisional_object_count)+
+                        "; GPU textures/skin/COF not verified; "
+                        "asset IDs omitted");
                 }
                 if(recovered.wearables)
                     core::info("Early authenticated Low382 wearables "

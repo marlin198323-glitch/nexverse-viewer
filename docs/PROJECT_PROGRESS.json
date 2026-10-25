@@ -445,5 +445,21 @@
     "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
     "live_authenticated_region_movement_e2e": "OPEN",
     "project_weighted_progress_pct": 38.65
+  },
+  "v0400_fastrez_skin_bake_provenance_and_mesh_log_20261025": {
+    "status": "IMPLEMENTED_MINT_TESTED_LIVE_AVATAR_E2E_OPEN",
+    "date": "2026-10-25",
+    "document": "docs/V0_4_0_0_FASTREZ_BAKE_DIAG_AND_MESH_LOG_20261025.md",
+    "early_validated_low158_bake_coverage_logged_without_asset_ids": true,
+    "render_candidate_and_provisional_object_source_counts": true,
+    "successful_mesh_upload_log_frequency": 128,
+    "historical_mesh_success_entries_observed": 102762,
+    "local_native_ctests": "189/189 PASS",
+    "local_python_tests": "694/694 PASS",
+    "firestorm_opengl_gui_icon": "PASS",
+    "real_self_skin_and_cof_available": "UNVERIFIED",
+    "remaining_mesh_decode_invalid_triangles": "OPEN",
+    "remaining_gettexture_jpeg2000_metadata_warning": "OPEN",
+    "project_weighted_progress_percent": 38.65
   }
 }

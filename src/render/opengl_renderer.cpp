@@ -12,6 +12,7 @@
 #include "nexverse/render/attachment_scene_classification.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
+#include "nexverse/render/mesh_upload_log_checkpoint.hpp"
 #include "nexverse/render/material_pass.hpp"
 #include "nexverse/render/particle_motion.hpp"
 #include "nexverse/render/particle_emission.hpp"
@@ -3179,9 +3180,20 @@ public:
             old->second = std::move(gpu);
         }
         else mesh_assets_.emplace(mesh_id, std::move(gpu));
-        nexverse::core::info(
-            "OGLRender mesh geometry uploaded: triangles=" +
-            std::to_string(geometry.indices.size() / 3U));
+        // A busy region can upload thousands of real mesh LODs; a
+        // successful per-mesh INFO flooded the diagnostic logfile and
+        // buried CAPS/AvatarAppearance failure evidence. Keep an
+        // aggregate checkpoint (first and every 128), not asset IDs.
+        ++mesh_upload_success_count_;
+        mesh_upload_triangle_sum_+=geometry.indices.size()/3U;
+        if(nexverse::render::mesh_upload_log_checkpoint(
+               mesh_upload_success_count_))
+            nexverse::core::info(
+                "OGLRender mesh GPU uploads: count="+
+                std::to_string(mesh_upload_success_count_)+
+                "; triangles_total="+
+                std::to_string(mesh_upload_triangle_sum_)+
+                "; resident="+std::to_string(mesh_assets_.size()));
         return {true,GpuUploadFailure::none,0U};
     }
 
@@ -5913,6 +5925,9 @@ private:
     std::unordered_map<std::uint64_t, GpuMesh> profile_mesh_cache_;
     std::unordered_map<std::uint64_t, GpuMesh> curved_sweep_mesh_cache_;
     std::unordered_map<std::string, GpuMesh> mesh_assets_;
+    // Cumulative diagnostic-only counts, never asset identities.
+    std::uint64_t mesh_upload_success_count_=0U;
+    std::uint64_t mesh_upload_triangle_sum_=0U;
     GLuint avatar_eyelash_visibility_texture_=0U;
     std::array<GLuint,3U> self_avatar_local_layer_textures_{};
     std::unordered_map<std::string, GLuint> object_textures_;

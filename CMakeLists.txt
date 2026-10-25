@@ -1193,6 +1193,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-self-avatar-pose-authority-tests
         COMMAND nexverse-self-avatar-pose-authority-tests)
 
+    add_executable(nexverse-mesh-upload-log-checkpoint-tests
+        tests/mesh_upload_log_checkpoint_tests.cpp)
+    target_include_directories(nexverse-mesh-upload-log-checkpoint-tests
+        PRIVATE include)
+    nexverse_enable_warnings(nexverse-mesh-upload-log-checkpoint-tests)
+    add_test(NAME nexverse-mesh-upload-log-checkpoint-tests
+        COMMAND nexverse-mesh-upload-log-checkpoint-tests)
+
     add_executable(nexverse-early-avatar-readback-tests
         tests/early_avatar_readback_tests.cpp)
     target_link_libraries(nexverse-early-avatar-readback-tests

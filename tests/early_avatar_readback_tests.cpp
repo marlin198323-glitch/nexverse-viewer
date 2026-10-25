@@ -2,6 +2,7 @@
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/world/self_avatar_localid_lease.hpp"
 #include "nexverse/protocol/avatar_cof_revision.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -82,6 +83,16 @@ int main()
            *model.self_appearance())!=17U||
        !model.self_wearables()||model.self_wearables()->serial!=8U)
         return 10;
+    // A valid, early released Low158 with no baked faces is still a
+    // successfully accepted appearance. It must NOT manufacture an
+    // in-world Head/Upper/Lower skin or a false GPU-ready indicator.
+    const auto empty_body=model.self_bake_selection();
+    if(std::any_of(empty_body.ids.begin(),empty_body.ids.end(),
+                   [](const auto& id){return !id.empty();})||
+       std::any_of(empty_body.from_low158.begin(),
+                   empty_body.from_low158.end(),
+                   [](bool b){return b;}))
+        return 39;
     const auto repeated=model.flush_early_self_readbacks();
     if(repeated.appearance||repeated.wearables)return 11;
     if(model.stage_early_self_appearance(appearance())||
