@@ -369,5 +369,27 @@
     "original_firestorm_xvfb_gl_gui_x11_icon": "PASS",
     "live_authenticated_grid_e2e": "NOT_VERIFIED",
     "total_weighted_progress_percent": 38.65
+  },
+  "v0400_welcome_snapshot_bugfix_20261025": {
+    "status": "LOCAL_MINT_VERIFIED",
+    "source_branch": "develop-current",
+    "starting_commit": "4a726ff7c4d394651a349248177a95ac2b6b3c81",
+    "documentation": "docs/V0_4_0_0_WELCOME_SNAPSHOT_ERROR_REPAIR_2026_10_25.md",
+    "async_stale_frame_invalidation": true,
+    "retry_limit": 3,
+    "periodic_welcome_snapshot_seconds": 30,
+    "same_size_gpu_refresh": true,
+    "safe_webkit_callback_lifetime": true,
+    "x11_gui_resize_checks": [
+      "1100x640",
+      "1910x790",
+      "1280x720",
+      "1648x928"
+    ],
+    "local_native_tests": "188/188 PASS",
+    "local_python_tests": "675/675 PASS",
+    "original_firestorm_gl_gui_x11_icon": "PASS",
+    "authenticated_grid_acceptance": "OPEN",
+    "weighted_progress_pct": 38.65
   }
 }

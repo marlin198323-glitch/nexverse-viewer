@@ -6579,6 +6579,7 @@ int Application::run(bool enable_developer_modules)
         unsigned int welcome_texture = 0U;
         int welcome_texture_width = 0;
         int welcome_texture_height = 0;
+        std::uint64_t welcome_texture_generation=0U;
         bool welcome_failure_logged = false;
 
         // The WebKit viewport MUST equal the actually visible center
@@ -8267,6 +8268,8 @@ int Application::run(bool enable_developer_modules)
                         welcome_frame.rgba.data());
                     welcome_texture_width = welcome_frame.width;
                     welcome_texture_height = welcome_frame.height;
+                    if(welcome_texture != 0U)
+                        welcome_texture_generation=welcome_frame.generation;
                     if (welcome_texture != 0U)
                     {
                         core::info(
@@ -8274,17 +8277,20 @@ int Application::run(bool enable_developer_modules)
                             std::string{ui::nexverse_welcome_url});
                     }
                 }
-                else if (welcome_texture_width != welcome_frame.width ||
-                         welcome_texture_height != welcome_frame.height)
+                else if (welcome_texture_generation!=welcome_frame.generation ||
+                         welcome_texture_width!=welcome_frame.width ||
+                         welcome_texture_height!=welcome_frame.height)
                 {
-                    if (renderer.update_rgba_texture(
-                            welcome_texture,
-                            welcome_frame.width,
-                            welcome_frame.height,
-                            welcome_frame.rgba.data()))
+                    // A fresh live WebKit snapshot can have IDENTICAL
+                    // dimensions but different grid/news pixels.
+                    if(renderer.update_rgba_texture(
+                           welcome_texture,welcome_frame.width,
+                           welcome_frame.height,welcome_frame.rgba.data()))
                     {
-                        welcome_texture_width = welcome_frame.width;
-                        welcome_texture_height = welcome_frame.height;
+                        welcome_texture_width=welcome_frame.width;
+                        welcome_texture_height=welcome_frame.height;
+                        welcome_texture_generation=welcome_frame.generation;
+                        welcome_failure_logged=false;
                     }
                 }
             }

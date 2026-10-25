@@ -21,6 +21,9 @@ struct WelcomeFrame
     std::vector<std::uint8_t> rgba;
     bool ready = false;
     bool failed = false;
+    // Increments even when the snapshot retains its previous dimensions.
+    // The GL uploader must compare this, not only width/height.
+    std::uint64_t generation = 0U;
     std::string status;
 };
 

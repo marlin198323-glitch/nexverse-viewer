@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/ui/welcome_page.hpp"
+#include "nexverse/ui/welcome_snapshot_policy.hpp"
 
 #if defined(__linux__)
 
@@ -11,6 +12,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <utility>
 
 namespace nexverse::ui
@@ -31,12 +33,23 @@ struct WelcomePage::Impl
     int width = 1;
     int height = 1;
     bool loaded = false;
-    bool snapshot_pending = false;
+    WelcomeSnapshotPolicy snapshot_policy;
+    struct Lifetime { Impl* owner=nullptr; };
+    struct SnapshotRequest
+    {
+        std::shared_ptr<Lifetime> lifetime;
+        std::uint64_t revision=0U;
+        int width=1,height=1;
+    };
+    std::shared_ptr<Lifetime> lifetime=std::make_shared<Lifetime>();
 
     void request_snapshot()
     {
-        if (!loaded || snapshot_pending || web_view == nullptr) return;
-        snapshot_pending = true;
+        if (!loaded || web_view == nullptr) return;
+        const auto revision=snapshot_policy.begin(
+            WelcomeSnapshotPolicy::Clock::now());
+        if(revision==0U)return;
+        auto* request=new SnapshotRequest{lifetime,revision,width,height};
 
         webkit_web_view_get_snapshot(
             web_view,
@@ -45,36 +58,52 @@ struct WelcomePage::Impl
             nullptr,
             [](GObject* source, GAsyncResult* result, gpointer user_data)
             {
-                auto* self = static_cast<Impl*>(user_data);
-                self->snapshot_pending = false;
-
+                std::unique_ptr<SnapshotRequest> request{
+                    static_cast<SnapshotRequest*>(user_data)};
                 GError* error = nullptr;
                 cairo_surface_t* surface = webkit_web_view_get_snapshot_finish(
-                    WEBKIT_WEB_VIEW(source),
-                    result,
-                    &error);
-
-                if (surface == nullptr)
+                    WEBKIT_WEB_VIEW(source),result,&error);
+                Impl* self=request->lifetime->owner;
+                // Closing the viewer must never dereference an Impl whose
+                // offscreen GtkWindow and WebKitView have been destroyed.
+                if(self==nullptr)
                 {
-                    self->frame.failed = true;
-                    self->frame.status =
-                        error != nullptr && error->message != nullptr
-                            ? error->message
-                            : "Welcome snapshot failed";
-                    if (error != nullptr) g_error_free(error);
+                    if(surface)cairo_surface_destroy(surface);
+                    if(error)g_error_free(error);
                     return;
                 }
-
+                const auto now=WelcomeSnapshotPolicy::Clock::now();
+                if(!self->snapshot_policy.is_current(request->revision))
+                {
+                    (void)self->snapshot_policy.finish(request->revision,
+                                                         false,now);
+                    if(surface)cairo_surface_destroy(surface);
+                    if(error)g_error_free(error);
+                    return;
+                }
+                if(surface==nullptr)
+                {
+                    (void)self->snapshot_policy.finish(request->revision,
+                                                         false,now);
+                    self->frame.failed=self->snapshot_policy.exhausted();
+                    self->frame.status=error!=nullptr && error->message!=nullptr
+                        ? error->message:"Welcome snapshot failed";
+                    if(error)g_error_free(error);
+                    return;
+                }
+                if(error)g_error_free(error);
                 cairo_rectangle_int_t extents{
-                    0, 0,
-                    std::max(self->width, 1),
-                    std::max(self->height, 1)};
+                    0,0,
+                    std::max(request->width,1),
+                    std::max(request->height,1)};
                 cairo_surface_t* image = cairo_surface_map_to_image(surface, &extents);
                 if (image == nullptr)
                 {
                     cairo_surface_destroy(surface);
-                    self->frame.failed = true;
-                    self->frame.status = "Welcome snapshot could not be mapped";
+                    (void)self->snapshot_policy.finish(
+                        request->revision,false,now);
+                    self->frame.failed=self->snapshot_policy.exhausted();
+                    self->frame.status="Welcome snapshot could not be mapped";
                     return;
                 }
 
@@ -88,8 +117,10 @@ struct WelcomePage::Impl
                 {
                     cairo_surface_unmap_image(surface, image);
                     cairo_surface_destroy(surface);
-                    self->frame.failed = true;
-                    self->frame.status = "Welcome snapshot is empty";
+                    (void)self->snapshot_policy.finish(
+                        request->revision,false,now);
+                    self->frame.failed=self->snapshot_policy.exhausted();
+                    self->frame.status="Welcome snapshot is empty";
                     return;
                 }
 
@@ -127,11 +158,15 @@ struct WelcomePage::Impl
                 cairo_surface_unmap_image(surface, image);
                 cairo_surface_destroy(surface);
 
-                self->frame.ready = true;
-                self->frame.failed = false;
-                self->frame.status = "Welcome page ready";
+                if(self->snapshot_policy.finish(request->revision,true,now))
+                {
+                    self->frame.ready=true;
+                    self->frame.failed=false;
+                    ++self->frame.generation;
+                    self->frame.status="Welcome page ready";
+                }
             },
-            this);
+            request);
     }
 };
 
@@ -141,6 +176,9 @@ WelcomePage::~WelcomePage()
 {
     if (impl_ != nullptr)
     {
+        impl_->lifetime->owner=nullptr;
+        if(impl_->web_view)
+            g_signal_handlers_disconnect_by_data(impl_->web_view,impl_);
         if (impl_->window != nullptr)
         {
             gtk_widget_destroy(impl_->window);
@@ -162,6 +200,7 @@ bool WelcomePage::initialize(int width, int height)
     }
 
     impl_ = new Impl{};
+    impl_->lifetime->owner=impl_;
     impl_->width = std::max(width, 1);
     impl_->height = std::max(height, 1);
     impl_->frame.status = "Loading NexVerse welcome page";
@@ -189,6 +228,8 @@ bool WelcomePage::initialize(int width, int height)
             gpointer user_data) -> gboolean
         {
             auto* self = static_cast<Impl*>(user_data);
+            self->loaded=false;
+            self->snapshot_policy.invalidate();
             self->frame.failed = true;
             self->frame.status =
                 error != nullptr && error->message != nullptr
@@ -224,7 +265,9 @@ bool WelcomePage::initialize(int width, int height)
                 return;
             }
 
-            self->loaded = true;
+            self->loaded=true;
+            self->frame.failed=false;
+            self->snapshot_policy.invalidate();
             self->request_snapshot();
         }),
         impl_);
@@ -247,7 +290,9 @@ void WelcomePage::resize(int width, int height)
         impl_->web_view,welcome_zoom(new_width,new_height));
     gtk_widget_set_size_request(GTK_WIDGET(impl_->web_view), new_width, new_height);
     gtk_window_resize(GTK_WINDOW(impl_->window), new_width, new_height);
-    impl_->frame.ready = false;
+    impl_->frame.ready=false;
+    impl_->frame.failed=false;
+    impl_->snapshot_policy.invalidate();
     // Wait for GTK's layout allocation before taking the snapshot;
     // otherwise a resized frame can still carry old viewport pixels.
     // pump() drains GTK events and then requests the new visible frame.
@@ -262,10 +307,11 @@ void WelcomePage::pump()
         gtk_main_iteration_do(FALSE);
     }
 
-    if (impl_->loaded && !impl_->frame.ready && !impl_->frame.failed)
-    {
+    // Refresh the snapshot every 30 seconds even if the pixel size is
+    // unchanged. The real welcome page updates its news/grid counters.
+    // Retries are bounded and throttled by WelcomeSnapshotPolicy.
+    if(impl_->loaded && !impl_->snapshot_policy.exhausted())
         impl_->request_snapshot();
-    }
 }
 
 const WelcomeFrame& WelcomePage::frame() const noexcept

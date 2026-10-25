@@ -992,6 +992,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-avatar-diagnostic-report-tests
         COMMAND nexverse-avatar-diagnostic-report-tests)
 
+    add_executable(nexverse-welcome-snapshot-policy-tests
+        tests/welcome_snapshot_policy_tests.cpp)
+    target_link_libraries(nexverse-welcome-snapshot-policy-tests
+        PRIVATE nexverse-ui)
+    nexverse_enable_warnings(nexverse-welcome-snapshot-policy-tests)
+    add_test(NAME nexverse-welcome-snapshot-policy-tests
+        COMMAND nexverse-welcome-snapshot-policy-tests)
+
     add_executable(nexverse-neon-login-layout-tests
         tests/neon_login_layout_tests.cpp)
     target_link_libraries(nexverse-neon-login-layout-tests

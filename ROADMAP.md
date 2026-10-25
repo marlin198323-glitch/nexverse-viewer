@@ -33,6 +33,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 
 **T01 visuelle Feinabstimmung:** Dokumentierte reale GUI-Prüfung für 1648x928 und 2048x838. WebKit-Zoom vereinheitlicht Seite für kurze UltraWide-Fenster ohne verzerrten Text oder verdeckte News. Fokusglow entfernt, Einfassungen dauerhaft neutral, Header/Dock weiterhin kompakt. 187/187 native CTests + 671/671 Python, Original-Firestorm-Xvfb-GL/GUI/X11-Icon PASS. Noch kein authentifizierter E2E-Login. Details docs/V0_4_0_0_VISUAL_REFERENCE_RECHECK_2026_10_25.md.
 
+**T01 WebKit-Snapshot-Fehlerbehebung:** Native Snapshot-Revisionsprüfung, Callback-Lifetime-Gate, 3 bounded retries, 30s-WebKit-Refresh, GPU-Frame-Generations-Upload und realer Xlib-Resize-Regressionstest für vier Größen; 188/188 native und 675/675 Python, GUI/GL/Icon PASS. Authentifiziertes Grid-E2E bleibt offen. Details docs/V0_4_0_0_WELCOME_SNAPSHOT_ERROR_REPAIR_2026_10_25.md.
+
 **T01 UI/UX-Teilarbeit:** programmierter Neon-Login statt Popup, Original-NexVerse-Welcome, responsiver Footer und echte GLFW-Hitboxes, Paswortanzeige, sechsfache Auflösungsabnahme. Backend-Grid-E2E bleibt offen. Siehe docs/V0_4_0_0_NEON_LOGIN_REFERENCE_IMPLEMENTATION.md.
 
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect
