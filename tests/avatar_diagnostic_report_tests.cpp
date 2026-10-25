@@ -112,15 +112,29 @@ int main()
     if(std::string(avatar_skin_blocker_key(stage))!=
        "original_body_bake_gl_draw_missing")return 36;
     stage.self_low158_current_body_gl_drawn={true,true,true};
+    // Aggregated GL "known/passed" can be true with only Head known.
+    // Upper and Lower must not be certified until their own queries end.
+    stage.gpu_fragment_result_known=true;
+    stage.gpu_fragments_passed=true;
+    stage.avatar_depth_known={true,false,false};
+    stage.avatar_depth_passed={true,false,false};
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "depth_visibility_unverified")return 37;
+    stage.avatar_depth_known={true,true,false};
+    if(std::string(avatar_skin_blocker_key(stage))!=
+       "depth_visibility_unverified")return 38;
+    stage.avatar_depth_known={true,true,true};
+    stage.avatar_depth_passed={false,false,false};
     if(std::string(avatar_skin_blocker_key(stage))!=
        "avatar_depth_fragments_zero")return 31;
-    stage.gpu_fragments_passed=true;
+    stage.avatar_depth_passed={true,false,false};
     if(std::string(avatar_skin_blocker_key(stage))!=
        "depth_visible_final_skin_pixels_unverified")return 32;
-    stage.gpu_fragment_result_known=false;
+    stage.avatar_depth_known={false,true,true};
     if(std::string(avatar_skin_blocker_key(stage))!=
        "depth_visibility_unverified")return 33;
-    stage.gpu_fragment_result_known=true;
+    stage.avatar_depth_known={true,true,true};
+    stage.avatar_depth_passed={false,false,false};
     stage.gpu_fragments_passed=false;
     const std::string text=nexverse::ui::avatar_diagnostic_text(r);
     if(text.find("self_skin_blocker_stage=self_low158_missing")==

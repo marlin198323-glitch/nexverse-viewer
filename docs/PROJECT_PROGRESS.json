@@ -524,5 +524,20 @@
     "live_avatar_bakes_skin_cof": "OPEN",
     "authenticated_viewer_shutdown": "OPEN",
     "weighted_project_completion_pct": 38.65
+  },
+  "v0400_avatar_three_part_async_depth_proof_20261025": {
+    "status": "IMPLEMENTED_MINT_TESTED_AUTHENTICATED_GRID_E2E_PENDING",
+    "documentation": "docs/V0_4_0_0_AVATAR_THREE_PART_DEPTH_QUERY_PROOF_20261025.md",
+    "original_head_upper_lower_depth_query_all_known_required": true,
+    "aggregate_one_part_depth_result_not_sufficient": true,
+    "single_visible_part_never_proves_final_skin_rgb": true,
+    "per_part_live_depth_known_passed_in_trace": true,
+    "native_ctests": "192/192 PASS",
+    "python_unittests": "722/722 PASS",
+    "xvfb_original_firestorm_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_head_upper_lower_rgb": "OPEN",
+    "real_cof_outfit": "OPEN",
+    "authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

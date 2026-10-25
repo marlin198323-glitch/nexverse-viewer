@@ -51,7 +51,16 @@ int main()
     r.self_low158_current_body_gl_drawn={true,true,true};
     r.gpu_fragment_result_known=true;
     r.gpu_fragments_passed=true;
+    // A single Head GPU query must NOT complete 3/3 Depth proof.
+    r.avatar_depth_known={true,false,false};
+    r.avatar_depth_passed={true,false,false};
     stage=logger.observe(7U,r,now+33s);
+    if(!stage||stage->find("depth_visibility_unverified")==
+                  std::string::npos||
+       stage->find("depth_part_known=1,0,0")==std::string::npos)
+        return 15;
+    r.avatar_depth_known={true,true,true};
+    stage=logger.observe(7U,r,now+33s+300ms);
     if(!stage||stage->find("depth_visible_final_skin_pixels_unverified")==
                    std::string::npos)
         return 7;
@@ -61,8 +70,9 @@ int main()
     // Rapidly oscillating asynchronous readiness should not spam logs;
     // stable changes are reported after the minimum transition window.
     r.gpu_fragments_passed=false;
-    if(logger.observe(7U,r,now+33s+20ms))return 13;
-    stage=logger.observe(7U,r,now+33s+300ms);
+    r.avatar_depth_passed={false,false,false};
+    if(logger.observe(7U,r,now+33s+320ms))return 13;
+    stage=logger.observe(7U,r,now+33s+600ms);
     if(!stage||stage->find("avatar_depth_fragments_zero")==
                    std::string::npos)return 14;
     // Another region cannot inherit previous progress / suppression.

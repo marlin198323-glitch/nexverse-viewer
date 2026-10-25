@@ -31,9 +31,18 @@ const char* avatar_skin_blocker_key(const AvatarDiagnosticReport& r) noexcept
        !r.self_low158_current_body_gl_drawn[1]||
        !r.self_low158_current_body_gl_drawn[2])
         return "original_body_bake_gl_draw_missing";
-    if(!r.gpu_fragment_result_known)
+    // The renderer's aggregate GL flag means ANY part query returned.
+    // That is not proof for all three current Low158 body LLM draws.
+    // Do not call 3/3 visibility complete if Upper or Lower is pending.
+    if(!r.avatar_depth_known[0]||!r.avatar_depth_known[1]||
+       !r.avatar_depth_known[2])
         return "depth_visibility_unverified";
-    if(!r.gpu_fragments_passed)
+    // Distinguish fully resolved, fully occluded geometry from merely
+    // pending asynchronous GPU queries. One visible body region can
+    // prove some fragments passed but cannot prove final Skin RGB.
+    if(!(r.avatar_depth_passed[0]||
+         r.avatar_depth_passed[1]||
+         r.avatar_depth_passed[2]))
         return "avatar_depth_fragments_zero";
     // Depth query is not an image readback of the final RGB skin.
     return "depth_visible_final_skin_pixels_unverified";

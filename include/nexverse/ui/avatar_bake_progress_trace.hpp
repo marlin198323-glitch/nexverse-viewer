@@ -51,6 +51,8 @@ public:
         next.gpu_count=r.avatar_body_bakes_gpu;
         next.depth_known=r.gpu_fragment_result_known;
         next.depth_visible=r.gpu_fragments_passed;
+        next.body_depth_known=r.avatar_depth_known;
+        next.body_depth_passed=r.avatar_depth_passed;
         next.provisional=r.self_object_bake_candidate_active;
         const bool changed=!last_||*last_!=next;
         // Prevent rapidly oscillating asynchronous GetTexture/GL
@@ -92,6 +94,8 @@ public:
             "; gpu_body="+std::to_string(next.gpu_count)+"/3"+
             "; depth_known="+(next.depth_known?"1":"0")+
             "; depth_passed="+(next.depth_visible?"1":"0")+
+            "; depth_part_known="+bool_tri(next.body_depth_known)+
+            "; depth_part_passed="+bool_tri(next.body_depth_passed)+
             "; provisional_objte="+(next.provisional?"1":"0")+
             "; final_skin_rgb_unverified";
     }
@@ -104,6 +108,8 @@ private:
         std::array<std::uint8_t,3U> sources{};
         std::array<std::uint8_t,3U> selected_stages{};
         std::array<bool,3U> source_gl{};
+        std::array<bool,3U> body_depth_known{};
+        std::array<bool,3U> body_depth_passed{};
         std::uint32_t gpu_count=0U;
         bool depth_known=false,depth_visible=false,provisional=false;
         bool operator==(const State&) const = default;

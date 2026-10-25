@@ -9,7 +9,7 @@ class SelfBakeGLAndTraceContract(unittest.TestCase):
   self.assertIn("r.self_low158_current_body_gl_drawn[0]",s)
   self.assertIn("r.self_low158_current_body_gl_drawn[1]",s)
   self.assertIn("r.self_low158_current_body_gl_drawn[2]",s)
-  prefix=s[:s.index("if(!r.gpu_fragment_result_known)")]
+  prefix=s[:s.index("if(!r.avatar_depth_known[0]")]
   self.assertNotIn("if(r.avatar_body_bakes_gl<3U)",prefix)
  def test_provenance_must_match_current_server_texture_and_gl_draw(self):
   s=read("src/app/application.cpp")
