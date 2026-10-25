@@ -38,6 +38,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 **T01 UI/UX-Teilarbeit:** programmierter Neon-Login statt Popup, Original-NexVerse-Welcome, responsiver Footer und echte GLFW-Hitboxes, Paswortanzeige, sechsfache Auflösungsabnahme. Backend-Grid-E2E bleibt offen. Siehe docs/V0_4_0_0_NEON_LOGIN_REFERENCE_IMPLEMENTATION.md.
 
 - [ ] v0.4.0.0-T02 – CAPS, EventQueue, LLUDP, MovementComplete und Region-/Teleport-Reconnect
+**v0.4.0.0 P0 CAPS-REPLAY Login + Region (25.10.2026):** Die Login-CAPS- und Region-CAPS-EventQueue schützen jetzt beide vor nichtadjazenten Batch-Replays (z.B. 17/18/17), behalten beim Replay den aktuellen ACK, resetten die 64er Recent-Historie nach 404 selbst bei identischer URL und pacen ID-lose leere 200-Antworten. Workerlogs melden ausschließlich Zähler, keine URLs/Token/UUID/Eventinhalte. Linux Mint vollständig: 188/188 native CTests, 685/685 Python, Firestorm Xvfb OpenGL GUI und X11-Systemicon PASS. Authentifizierter Live-Grid-Login/Teleport/Avatar-/WASD-Nachweis OFFEN. Details docs/V0_4_0_0_CAPS_REPLAY_LOGIN_REGION_FIX_20261025.md. Version v0.4.0.0 IN_ARBEIT, Projektfortschritt weiterhin 39 % (38,65 %). Kein main-Merge, kein Release.
+
 **T02 Region-CAPS-Reconnect (25.10.2026):** Erstes fehlgeschlagenes Seed-CAPS/EventQueueGet kann in derselben Region mit 5–60s Cooldown neu gestartet werden; alte Worker dürfen aktuelle Region nicht deaktivieren; HTTP 404 + gleicher Queue-URI setzt ACK zurück. Native Region-Tests inkl. HTTP503/404/Lease PASS, Linux Mint x64 komplett 188/188 CTests, 680/680 Python, Firestorm Xvfb/GL/X11-Icon PASS. Echte Live-Grid-Region/Teleport-Abnahme offen. Dokument: docs/V0_4_0_0_REGION_EVENTQUEUE_RECONNECT_20261025.md. Projekt 39 %; v0.4.0.0 IN_ARBEIT.
 
 

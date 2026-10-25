@@ -7493,6 +7493,7 @@ int Application::run(bool enable_developer_modules)
                                     }
 
                                     std::optional<std::int32_t> acknowledgement;
+                                    protocol::EventQueueRecentBatches login_recent_batches;
                                     protocol::EventQueueRecovery recovery;
                                     bool event_queue_live_logged = false;
                                     bool idle_logged = false;
@@ -7571,6 +7572,28 @@ int Application::run(bool enable_developer_modules)
 
                                         if (batch.success)
                                         {
+                                            // Idless HTTP 200 with no events is
+                                            // a legitimate but non-ACKable idle
+                                            // response; never mark CAPS LIVE,
+                                            // overwrite the cursor or spin.
+                                            if(!batch.id)
+                                            {
+                                                recovery.on_contact();
+                                                pause_until_retry(
+                                                    std::chrono::milliseconds{150});
+                                                continue;
+                                            }
+                                            // Replays need not be adjacent
+                                            // (17,18,17); do not duplicate
+                                            // teleport/inventory side effects.
+                                            if(!login_recent_batches.first_delivery(
+                                                   *batch.id))
+                                            {
+                                                recovery.on_contact();
+                                                pause_until_retry(
+                                                    std::chrono::milliseconds{150});
+                                                continue;
+                                            }
                                             const auto recovered = recovery.failures();
                                             acknowledgement = batch.id;
                                             recovery.on_contact();
@@ -7647,10 +7670,15 @@ int Application::run(bool enable_developer_modules)
                                                 if (found != refreshed.capabilities.end() &&
                                                     !found->second.empty())
                                                 {
-                                                    if (event_queue_uri != found->second)
+                                                    if (event_queue_uri != found->second||
+                                                        batch.expired)
                                                     {
+                                                        // A simulator may
+                                                        // recreate a queue
+                                                        // with the same URI.
                                                         event_queue_uri = found->second;
                                                         acknowledgement.reset();
+                                                        login_recent_batches.reset();
                                                         event_queue_live_logged = false;
                                                         idle_logged = false;
                                                         core::info(
@@ -8658,7 +8686,17 @@ int Application::run(bool enable_developer_modules)
                     core::info("Region EventQueue worker stopped; events="+
                         std::to_string(result.accepted_events)+
                         "; endpoint="+
-                        (result.advertised?"advertised":"unavailable"));
+                        (result.advertised?"advertised":"unavailable")+
+                        "; duplicate_batches="+
+                        std::to_string(result.replayed_batches)+
+                        "; idless_batches="+
+                        std::to_string(result.idless_batches)+
+                        "; idle_polls="+
+                        std::to_string(result.idle_polls)+
+                        "; failed_polls="+
+                        std::to_string(result.failed_polls)+
+                        "; rediscoveries="+
+                        std::to_string(result.rediscoveries));
                 }
                 catch(const std::exception&)
                 {

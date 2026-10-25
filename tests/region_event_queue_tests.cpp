@@ -20,6 +20,7 @@ struct MockHttp final : nexverse::net::IHttpTransport
     std::vector<int> acks;
     bool duplicate_forever=false;
     bool missing_id_forever=false;
+    std::vector<int> scripted_ids;
     nexverse::net::HttpResponse get(std::string_view,
         std::size_t,std::chrono::milliseconds,std::chrono::milliseconds) override
     { return {405,{},"unsupported"}; }
@@ -49,7 +50,11 @@ struct MockHttp final : nexverse::net::IHttpTransport
                 ?static_cast<int>(ack->integer_value):-1);
             if((expire&&queue_calls==1)||
                (expire_second&&queue_calls==2))return {404,{},""};
-            const int id=duplicate_forever?17:(queue_calls==1?17:
+            const int id=!scripted_ids.empty()?
+                scripted_ids[std::min<std::size_t>(
+                    static_cast<std::size_t>(queue_calls-1),
+                    scripted_ids.size()-1U)]:
+                duplicate_forever?17:(queue_calls==1?17:
                 queue_calls==2?17:18);
             return {200,serialize_llsd_xml(LlsdValue::map({
                 {"id",missing_id_forever?LlsdValue{}:
@@ -127,6 +132,7 @@ int main()
         stop,receive,4U);
     const auto elapsed=std::chrono::steady_clock::now()-tick;
     if(replay.polls!=4U||replay.accepted_events!=1U||
+       replay.replayed_batches!=3U||
        replay_mock->acks!=std::vector<int>({-1,17,17,17})||
        elapsed<std::chrono::milliseconds{300})return 6;
     // Malformed HTTP-200 replies without an ACK cursor never dispatch
@@ -138,6 +144,7 @@ int main()
         no_id_mock,"https://sim.test/seed",last_epoch,lease,
         stop,receive,2U);
     if(broken.accepted_events!=0U||broken.polls!=2U||
+       broken.failed_polls!=2U||
        no_id_mock->acks!=std::vector<int>({-1,-1}))
        return 7;
     // Expiration may return a new queue incarnation at the identical
@@ -198,6 +205,43 @@ int main()
     if(!recovered.advertised||recovered.issued_epoch!=missing_epoch||
        recovered.polls!=1U||no_seed->seed_calls!=2)
        return 18;
+    // Reordered replay after a newer ACK: 17,18,17,19 must deliver
+    // exactly three batches, and fourth POST must still ACK 18.
+    auto reordered=std::make_shared<MockHttp>();
+    reordered->scripted_ids={17,18,17,19};
+    last_epoch=lease.enter(559U,2U,"https://sim.test/replay-older");
+    const auto reordered_result=poll_region_event_queue(
+        reordered,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,4U);
+    if(reordered_result.accepted_events!=3U ||
+       reordered_result.replayed_batches!=1U ||
+       reordered->acks!=std::vector<int>({-1,17,18,18}))
+        return 19;
+    // Bounded history must not grow forever; oldest IDs age out.
+    EventQueueRecentBatches recent;
+    for(int i=0;i<70;++i)
+        if(!recent.first_delivery(i))return 20;
+    if(recent.size()!=EventQueueRecentBatches::capacity||
+       recent.first_delivery(69)||!recent.first_delivery(0))
+        return 21;
+    recent.reset();
+    if(recent.size()!=0U||!recent.first_delivery(69))
+        return 22;
+    // A new Queue at the same URL is a new incarnation and can reuse
+    // a previously accepted ID. Historical ACKs never cross HTTP 404.
+    auto replay_after_404=std::make_shared<MockHttp>();
+    replay_after_404->expire_second=true;
+    replay_after_404->same_uri_after_refresh=true;
+    replay_after_404->scripted_ids={17,17,17};
+    last_epoch=lease.enter(560U,2U,"https://sim.test/expired-replay");
+    const auto after_rebind=poll_region_event_queue(
+        replay_after_404,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,3U);
+    if(after_rebind.accepted_events!=2U ||
+       replay_after_404->acks!=std::vector<int>({-1,17,-1}))
+        return 23;
+    std::cout<<"Region EventQueue nonadjacent replay and 64-ID "
+                "bounded ACK history PASS\n";
     std::cout<<"Region EventQueue same-URI 404 ACK reset and "
                 "bounded initial-seed retry PASS\n";
     std::cout<<"Region-scoped EventQueue duplicate replay bounded "

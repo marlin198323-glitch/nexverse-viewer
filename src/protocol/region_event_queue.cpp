@@ -33,6 +33,7 @@ RegionEventQueueStats poll_region_event_queue(
     std::string uri=queue->second;
     stats.advertised=true;
     std::optional<std::int32_t> ack;
+    EventQueueRecentBatches recent_batches;
     EventQueueRecovery recovery;
     const auto pause=[&](std::chrono::milliseconds time)
     {
@@ -50,6 +51,7 @@ RegionEventQueueStats poll_region_event_queue(
         if(!active())break;
         if(batch.idle)
         {
+            ++stats.idle_polls;
             recovery.on_contact();
             pause(std::chrono::milliseconds{150});
             continue;
@@ -61,17 +63,18 @@ RegionEventQueueStats poll_region_event_queue(
             // the prior acknowledged cursor on malformed idle replies.
             if(!batch.id)
             {
+                ++stats.idless_batches;
                 recovery.on_contact();
                 pause(std::chrono::milliseconds{150});
                 continue;
             }
-            // A duplicate acknowledgement/batch may be retransmitted.
-            // Don't dispatch again in the same queue epoch.
-            if(batch.id && ack && *batch.id==*ack)
+            // Ignore repeated old batches, even if a newer ACK was
+            // accepted between two deliveries (17,18,17). Preserve the
+            // latest cursor; otherwise old inventory/teleport messages
+            // would execute twice and roll the ACK backwards.
+            if(!recent_batches.first_delivery(*batch.id))
             {
-                // A misbehaving simulator/proxy can replay an already
-                // acknowledged batch immediately. Without a pause an
-                // unlimited long-poll worker becomes a CPU hot loop.
+                ++stats.replayed_batches;
                 recovery.on_contact();
                 pause(std::chrono::milliseconds{150});
                 continue;
@@ -86,6 +89,7 @@ RegionEventQueueStats poll_region_event_queue(
             }
             continue;
         }
+        ++stats.failed_polls;
         const auto decision=recovery.on_failure(batch.expired);
         if(decision.refresh_seed&&active())
         {
@@ -103,6 +107,7 @@ RegionEventQueueStats poll_region_event_queue(
                     // The old cursor must never be sent to the new one.
                     uri=found->second;
                     ack.reset();
+                    recent_batches.reset();
                     recovery.on_contact();
                 }
             }

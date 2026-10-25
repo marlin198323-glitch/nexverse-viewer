@@ -7,6 +7,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <string_view>
@@ -24,6 +25,11 @@ struct RegionEventQueueStats
     std::size_t accepted_events=0U;
     std::size_t polls=0U;
     std::size_t rediscoveries=0U;
+    // Counts only; never log capability URLs, raw bodies or avatar IDs.
+    std::size_t replayed_batches=0U;
+    std::size_t idless_batches=0U;
+    std::size_t idle_polls=0U;
+    std::size_t failed_polls=0U;
 };
 // Render-thread restart gate. A failed first seed discovery used to strand
 // EventQueueGet for the entire region until teleport. Retry only after
@@ -70,6 +76,28 @@ private:
     std::uint64_t started_epoch_=0U, retry_epoch_=0U;
     unsigned failures_=0U;
     Time retry_after_{};
+};
+// A simulator/proxy may replay an older acknowledged batch AFTER a newer
+// batch has arrived (e.g. 17,18,17). Checking only the latest ACK then
+// delivers the old inventory/teleport event twice and moves the cursor
+// backwards. Bound memory and scope history to ONE queue incarnation.
+class EventQueueRecentBatches
+{
+public:
+    static constexpr std::size_t capacity=64U;
+    [[nodiscard]] bool first_delivery(std::int32_t id)
+    {
+        if(std::find(seen_.begin(),seen_.end(),id)!=seen_.end())
+            return false;
+        if(seen_.size()==capacity)
+            seen_.pop_front();
+        seen_.push_back(id);
+        return true;
+    }
+    void reset() noexcept {seen_.clear();}
+    [[nodiscard]] std::size_t size() const noexcept {return seen_.size();}
+private:
+    std::deque<std::int32_t> seen_;
 };
 using RegionEventSink=std::function<void(const EventQueueEvent&)>;
 [[nodiscard]] RegionEventQueueStats poll_region_event_queue(

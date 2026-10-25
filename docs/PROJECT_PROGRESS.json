@@ -410,5 +410,26 @@
     "expired_http_404_same_uri_ack_reset": true,
     "authenticated_region_teleport_readback": "OPEN",
     "total_weighted_pct": 38.65
+  },
+  "v0400_caps_login_region_replay_20261025": {
+    "status": "MINT_X64_TESTED_LIVE_GRID_UNVERIFIED",
+    "date": "2026-10-25",
+    "document": "docs/V0_4_0_0_CAPS_REPLAY_LOGIN_REGION_FIX_20261025.md",
+    "recent_ack_history_cap": 64,
+    "login_and_region_replay_guard": true,
+    "empty_idless_http_200_login_backoff_ms": 150,
+    "same_uri_http_404_ack_reset": true,
+    "region_stat_counter_labels": [
+      "duplicate_batches",
+      "idless_batches",
+      "idle_polls",
+      "failed_polls",
+      "rediscoveries"
+    ],
+    "native_tests": "188/188 PASS",
+    "python_tests": "685/685 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_caps_eventqueue_e2e": "OPEN",
+    "weighted_project_percent": 38.65
   }
 }
