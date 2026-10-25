@@ -3,6 +3,7 @@
  * License, v. 2.0.
  */
 #include "nexverse/assets/texture_loader.hpp"
+#include "nexverse/assets/jpeg2000_metadata_limits.hpp"
 
 #include <openjpeg-2.5/openjpeg.h>
 #include <algorithm>
@@ -18,8 +19,6 @@
 namespace
 {
 constexpr std::size_t max_compressed_bytes = 32U * 1024U * 1024U;
-constexpr std::uint32_t max_dimension = 4096U;
-constexpr std::size_t max_rgba_bytes = 64U * 1024U * 1024U;
 
 struct MemorySource
 {
@@ -105,26 +104,24 @@ std::uint8_t sample_component(const opj_image_comp_t& comp,
         std::int64_t{0}, std::int64_t{255}));
 }
 
-bool valid_image(const opj_image_t& image)
+std::string_view image_metadata_issue(const opj_image_t& image)
 {
-    if (image.x1 <= image.x0 || image.y1 <= image.y0 ||
-        image.numcomps < 1U || image.numcomps > 4U)
-        return false;
-    const std::uint32_t w = image.x1 - image.x0;
-    const std::uint32_t h = image.y1 - image.y0;
-    if (w > max_dimension || h > max_dimension ||
-        static_cast<std::size_t>(w) * h * 4U > max_rgba_bytes)
-        return false;
-    for (OPJ_UINT32 i = 0U; i < image.numcomps; ++i)
+    if(image.x1<=image.x0 || image.y1<=image.y0)
+        return "image_extent";
+    const auto issue=nexverse::assets::jpeg2000_image_limits_reason(
+        static_cast<std::uint64_t>(image.x1)-image.x0,
+        static_cast<std::uint64_t>(image.y1)-image.y0,
+        image.numcomps);
+    if(!issue.empty())return issue;
+    if(image.comps==nullptr)return "component_header";
+    for(OPJ_UINT32 i=0U;i<image.numcomps;++i)
     {
-        const auto& c = image.comps[i];
-        if (c.w == 0U || c.h == 0U ||
-            c.w > max_dimension || c.h > max_dimension ||
-            c.dx == 0U || c.dy == 0U ||
-            c.prec < 1U || c.prec > 16U)
-            return false;
+        const auto& c=image.comps[i];
+        const auto comp_issue=nexverse::assets::jpeg2000_component_limits_reason(
+            c.w,c.h,c.dx,c.dy,c.prec);
+        if(!comp_issue.empty())return comp_issue;
     }
-    return true;
+    return {};
 }
 }
 
@@ -191,9 +188,12 @@ TextureAssetResult decode_jpeg2000_texture(
         return result;
     }
     Image image{decoded, &opj_image_destroy};
-    if (!image || !valid_image(*image))
+    const auto header_issue=image
+        ? image_metadata_issue(*image) : std::string_view{"image_header"};
+    if(!header_issue.empty())
     {
-        result.message = "JPEG2000 image metadata exceeds safe limits";
+        result.message = "JPEG2000 image metadata exceeds safe limits; reason=" +
+            std::string{header_issue};
         return result;
     }
     if (!opj_decode(codec.get(), stream.get(), image.get()) ||
@@ -202,9 +202,11 @@ TextureAssetResult decode_jpeg2000_texture(
         result.message = "JPEG2000 decode failed: " + error;
         return result;
     }
-    if (!valid_image(*image))
+    const auto decoded_issue=image_metadata_issue(*image);
+    if(!decoded_issue.empty())
     {
-        result.message = "JPEG2000 decoded metadata is invalid";
+        result.message = "JPEG2000 decoded metadata is invalid; reason=" +
+            std::string{decoded_issue};
         return result;
     }
     for (OPJ_UINT32 i = 0U; i < image->numcomps; ++i)

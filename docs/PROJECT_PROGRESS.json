@@ -461,5 +461,20 @@
     "remaining_mesh_decode_invalid_triangles": "OPEN",
     "remaining_gettexture_jpeg2000_metadata_warning": "OPEN",
     "project_weighted_progress_percent": 38.65
+  },
+  "v0400_mesh_partial_triangle_repair_j2c_diagnostics_20261025": {
+    "status": "IMPLEMENTED_MINT_TESTED_REAL_ASSET_RECHECK_OPEN",
+    "date": "2026-10-25",
+    "document": "docs/V0_4_0_0_MESH_TRIANGLE_RECOVERY_J2C_METADATA_20261025.md",
+    "mesh_mixed_valid_invalid_triangles_preserved": true,
+    "all_invalid_lods_rejected": true,
+    "jpeg2000_rejection_reason_categorized": true,
+    "jpeg2000_security_limits_unchanged": true,
+    "native_ctests": "190/190 PASS",
+    "python_tests": "699/699 PASS",
+    "firestorm_xvfb_open_gl_gui_x11_icon": "PASS",
+    "actual_grid_jpeg2000_asset_retested": false,
+    "actual_grid_avatar_skin_cof_verified": false,
+    "weighted_progress_pct": 38.65
   }
 }

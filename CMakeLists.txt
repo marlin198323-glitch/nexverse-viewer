@@ -1249,6 +1249,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     nexverse_enable_warnings(nexverse-firestorm-avatar-mesh-tests)
     add_test(NAME nexverse-firestorm-avatar-mesh-tests
         COMMAND nexverse-firestorm-avatar-mesh-tests)
+    add_executable(nexverse-jpeg2000-metadata-limits-tests
+        tests/jpeg2000_metadata_limits_tests.cpp)
+    target_include_directories(nexverse-jpeg2000-metadata-limits-tests
+        PRIVATE include)
+    nexverse_enable_warnings(nexverse-jpeg2000-metadata-limits-tests)
+    add_test(NAME nexverse-jpeg2000-metadata-limits-tests
+        COMMAND nexverse-jpeg2000-metadata-limits-tests)
+
     add_executable(nexverse-mesh-loader-tests tests/mesh_loader_tests.cpp)
     target_link_libraries(nexverse-mesh-loader-tests PRIVATE NexVerse::Assets)
     nexverse_enable_warnings(nexverse-mesh-loader-tests)

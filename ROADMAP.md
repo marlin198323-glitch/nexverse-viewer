@@ -72,6 +72,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 **Status:** GEPLANT – Entwicklungsmeilenstein, kein Produktionsrelease
 **Aufgaben:**
 - [ ] v0.6.0.0-T01 – Prim/Skulpt/Mesh/LOD/Animesh, Streaming und Objekt-Hierarchie
+**P0 v0.4.0.0 GetMesh/JPEG2000 25.10.2026:** Valid triangles within an OpenSim mesh face survive out-of-range or degenerate sibling triangles; fully invalid faces/LODs still reject and use normal LOD fallback. Error counts: invalid_faces/invalid_triangles and successful skipped_invalid_triangles. JPEG2000 reports reason=image_extent, image_dimensions, channel_count, component_dimensions, component_subsampling or component_precision, with existing 4096px/64MiB/16bit caps unchanged. Local Mint gates: 190/190 CTests, 699/699 Python, Firestorm-Xvfb OpenGL/GUI/X11 icon PASS. Real authenticated J2C asset not yet retested; Avatar/COF/skin E2E and live shutdown pending. Documentation: docs/V0_4_0_0_MESH_TRIANGLE_RECOVERY_J2C_METADATA_20261025.md. Project still 39% (38.65% weighted); v0.4.0.0 IN_ARBEIT, no main merge.
+
 - [ ] v0.6.0.0-T02 – JPEG2000, TextureEntry, PBR/glTF, Transparenz, UV, Texturqualität
 - [ ] v0.6.0.0-T03 – Terrain, Wasser, Himmel, Sonne/Mond, Licht, EEP, Wetter und Sichtbarkeit
 **Abnahmekriterien:**

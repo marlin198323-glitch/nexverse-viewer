@@ -100,7 +100,8 @@ float unit_u16(std::span<const std::uint8_t> data, std::size_t offset,
 }
 
 bool append_submesh(const LlsdValue& part,
-                    std::uint32_t face, nexverse::assets::MeshGeometry& geometry)
+                    std::uint32_t face, nexverse::assets::MeshGeometry& geometry,
+                    std::size_t& skipped_triangles)
 {
     if (!part.is_map()) return false;
     if (const auto* skipped = part.find("NoGeometry");
@@ -157,8 +158,15 @@ bool append_submesh(const LlsdValue& part,
     {
         const std::array<std::uint16_t, 3> ids{
             le16(tris, i), le16(tris, i + 2U), le16(tris, i + 4U)};
-        if (ids[0] >= count || ids[1] >= count || ids[2] >= count)
-            return false;
+        // A single malformed index must not discard valid triangles of
+        // the same uploaded OpenSim mesh face. Never clamp it to another
+        // vertex (that would manufacture geometry).
+        if (ids[0] >= count || ids[1] >= count || ids[2] >= count ||
+            ids[0] == ids[1] || ids[1] == ids[2] || ids[0] == ids[2])
+        {
+            ++skipped_triangles;
+            continue;
+        }
         std::array<std::array<float, 3>, 3> xyz{};
         for (std::size_t j = 0U; j < 3U; ++j)
         {
@@ -179,10 +187,14 @@ bool append_submesh(const LlsdValue& part,
             a[0] * b[1] - a[1] * b[0]};
         const float length =
             std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
-        if (!std::isfinite(length)) return false;
-        if (length > 0.000001f)
-            for (float& value : n) value /= length;
-        else n = {0.0f, 0.0f, 1.0f};
+        if (!std::isfinite(length) || length == 0.0f)
+        {
+            // Zero-area triangles have no renderable surface; they must
+            // not be counted as successful mesh geometry.
+            ++skipped_triangles;
+            continue;
+        }
+        for (float& value : n) value /= length;
 
         for (std::size_t j = 0U; j < 3U; ++j)
         {
@@ -199,6 +211,7 @@ bool append_submesh(const LlsdValue& part,
                              umin[1], umax[1]) : 0.0f});
         }
     }
+    if (geometry.indices.size() == first_index) return false;
     geometry.faces.push_back({
         face, first_index,
         static_cast<std::uint32_t>(geometry.indices.size()) - first_index});
@@ -303,13 +316,15 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         }
         MeshGeometry geometry;
         std::size_t skipped_faces = 0U;
+        std::size_t skipped_triangles = 0U;
         for (std::size_t i = 0U; i < parsed.value->array_value.size(); ++i)
         {
             const auto vertex_count = geometry.vertices.size();
             const auto index_count = geometry.indices.size();
             const auto face_count = geometry.faces.size();
             if (!append_submesh(parsed.value->array_value[i],
-                                static_cast<std::uint32_t>(i), geometry))
+                                static_cast<std::uint32_t>(i), geometry,
+                                skipped_triangles))
             {
                 geometry.vertices.resize(vertex_count);
                 geometry.indices.resize(index_count);
@@ -321,7 +336,10 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         {
             last_error = "Mesh LOD contains no valid renderable triangles" +
                 (skipped_faces > 0U
-                    ? "; invalid_faces=" + std::to_string(skipped_faces) : "");
+                    ? "; invalid_faces=" + std::to_string(skipped_faces) : "")+
+                (skipped_triangles > 0U
+                    ? "; invalid_triangles=" +
+                        std::to_string(skipped_triangles) : "");
             continue;
         }
         result.geometry = std::move(geometry);
@@ -336,6 +354,9 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         if (skipped_faces > 0U)
             result.message += "; skipped_invalid_faces=" +
                 std::to_string(skipped_faces);
+        if (skipped_triangles > 0U)
+            result.message += "; skipped_invalid_triangles=" +
+                std::to_string(skipped_triangles);
         return result;
     }
     result.message = any_lod ? last_error : "Mesh has no supported LOD descriptor";

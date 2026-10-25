@@ -16,13 +16,25 @@ namespace
 using nexverse::protocol::LlsdValue;
 
 std::string small_mesh(bool with_uv_domain = true,
-                       bool invalid_first_face = false)
+                       bool invalid_first_face = false,
+                       bool bad_triangle_tail = false,
+                       bool bad_triangles_only = false)
 {
     const std::vector<std::uint8_t> positions{
         0U, 0U, 0U, 0U, 0U, 0U,
         255U, 255U, 0U, 0U, 0U, 0U,
         0U, 0U, 255U, 255U, 0U, 0U};
-    const std::vector<std::uint8_t> triangles{0U, 0U, 1U, 0U, 2U, 0U};
+    std::vector<std::uint8_t> triangles{0U, 0U, 1U, 0U, 2U, 0U};
+    if(bad_triangle_tail)
+    {
+        // Index 3 is outside the 3-vertex face; repeated vertex 0
+        // makes another zero-area triangle. Neither must be emitted.
+        const std::vector<std::uint8_t> corrupt{
+            0U,0U, 1U,0U, 3U,0U,
+            0U,0U, 0U,0U, 2U,0U};
+        if(bad_triangles_only)triangles=corrupt;
+        else triangles.insert(triangles.end(),corrupt.begin(),corrupt.end());
+    }
     const std::vector<std::uint8_t> uv{
         0U, 0U, 0U, 0U,
         255U, 255U, 0U, 0U,
@@ -233,6 +245,32 @@ int main()
         std::cerr << "Valid faces not preserved after damaged submesh: "
                   << partially_valid.message << '\n';
         return 9;
+    }
+
+    // Preserve a GOOD face triangle even when two triangles within
+    // the SAME face are corrupt. Old decoder discarded the entire face.
+    const auto mixed = decode_mesh_asset(
+        id, small_mesh(true,false,true,false));
+    if(!mixed.success || mixed.geometry.indices.size()!=3U ||
+       mixed.geometry.faces.size()!=1U ||
+       mixed.geometry.faces[0].index_count!=3U ||
+       mixed.message.find("skipped_invalid_triangles=2")==
+           std::string::npos)
+    {
+        std::cerr<<"Valid triangle was dropped with corrupt siblings: "
+                 <<mixed.message<<'\n';
+        return 14;
+    }
+    // Never claim success when no renderable triangles remain.
+    const auto corrupt_only=decode_mesh_asset(
+        id,small_mesh(true,false,true,true));
+    if(corrupt_only.success ||
+       corrupt_only.message.find("invalid_faces=1")==std::string::npos||
+       corrupt_only.message.find("invalid_triangles=2")==std::string::npos)
+    {
+        std::cerr<<"All-invalid LOD was spuriously accepted: "
+                 <<corrupt_only.message<<'\n';
+        return 15;
     }
 
     transport->bad_getmesh2 = "invalid";
