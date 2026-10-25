@@ -8,6 +8,12 @@
 int main()
 {
     using nexverse::assets::is_native_jpeg2000_payload;
+    using nexverse::assets::is_png_payload;
+    if(!is_png_payload(std::string_view{"\x89PNG\r\n\x1a\n",8U})||
+       is_png_payload(std::string_view{"\x89PNG\r\n",6U})||
+       is_png_payload(std::string_view{"\xff\x4f",2U})||
+       is_png_payload(""))
+        return 3;
     if(!is_native_jpeg2000_payload(std::string_view{
            reinterpret_cast<const char*>(j2c_fixture),
            sizeof(j2c_fixture)}) ||

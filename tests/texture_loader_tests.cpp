@@ -22,6 +22,8 @@ public:
         png_returns_native_j2c,
         png_returns_native_jp2,
         png_returns_truncated_j2c,
+        j2c_returns_valid_png,
+        j2c_returns_truncated_png,
         both_missing,
         both_unavailable,
         first_j2c_truncated_then_valid,
@@ -61,13 +63,19 @@ public:
                 return {200,"This is not PNG",{}};
             if (mode == Mode::png_missing || mode == Mode::both_missing)
                 return {404, {}, "HTTP server returned status 404"};
-            if (mode == Mode::png_invalid)
+            if (mode == Mode::png_invalid ||
+                mode==Mode::j2c_returns_valid_png ||
+                mode==Mode::j2c_returns_truncated_png)
                 return {200, "This is not PNG", {}};
             return {200, body, {}};
         }
         if (url.find("format=x-j2c") != std::string_view::npos)
         {
             ++j2c_requests;
+            if(mode==Mode::j2c_returns_valid_png)
+                return {200,body,{}};
+            if(mode==Mode::j2c_returns_truncated_png)
+                return {200,body.substr(0U,12U),{}};
             if((mode==Mode::first_j2c_truncated_then_valid&&
                 j2c_requests==1U)||
                 mode==Mode::always_j2c_truncated)
@@ -272,6 +280,35 @@ int main()
        transport->j2c_requests!=1U||
        bad_native.message.find("fallback succeeded")==std::string::npos)
         return 30;
+
+    // Reverse format mismatch: a proxy serves PNG bytes despite the
+    // x-j2c query. Recover only if libpng fully validates RGBA output.
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::j2c_returns_valid_png;
+    const auto png_on_j2c=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(!png_on_j2c.success||!png_on_j2c.image.valid()||
+       png_on_j2c.image.width!=1U||
+       png_on_j2c.image.height!=1U||
+       transport->requests.size()!=2U||
+       transport->j2c_requests!=1U||
+       png_on_j2c.message!="GetTexture x-j2c returned valid PNG")
+        return 31;
+    // A complete PNG magic header followed by truncated data must
+    // never cause an invented successful texture, or another retry.
+    transport->requests.clear();
+    transport->j2c_requests=0U;
+    transport->mode=MockTransport::Mode::j2c_returns_truncated_png;
+    const auto truncated_png=loader.fetch_rgba(
+        "https://caps.example/GetTexture/",id);
+    if(truncated_png.success||
+       truncated_png.failure!=AssetFailure::invalid||
+       transport->requests.size()!=2U||
+       transport->j2c_requests!=1U||
+       truncated_png.message.find("x-j2c returned invalid PNG")==
+           std::string::npos)
+        return 32;
 
     transport->requests.clear();
     transport->mode = MockTransport::Mode::png_invalid;

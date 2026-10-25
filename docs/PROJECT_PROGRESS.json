@@ -509,5 +509,20 @@
     "authenticated_shutdown_total": "OPEN",
     "weighted_project_completion_percent": 38.65,
     "minimum_time_between_rapid_stage_changes_ms": 250
+  },
+  "v0400_reverse_j2c_png_and_gpu_warning_privacy_20261025": {
+    "status": "IMPLEMENTED_AND_LOCAL_MINT_TESTED_LIVE_GRID_RESPONSE_UNVERIFIED",
+    "documentation": "docs/V0_4_0_0_GETTEXTURE_REVERSE_PNG_AND_PRIVACY_20261025.md",
+    "png_on_j2c_valid_decode": true,
+    "truncated_png_on_j2c_still_invalid": true,
+    "jpeg2000_and_png_decoder_bounds_unchanged": true,
+    "gpu_warning_texture_uuid_omitted": true,
+    "native_ctests": "192/192 PASS",
+    "python_unittests": "716/716 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "live_authenticated_texture_response_retest": "OPEN",
+    "live_avatar_bakes_skin_cof": "OPEN",
+    "authenticated_viewer_shutdown": "OPEN",
+    "weighted_project_completion_pct": 38.65
   }
 }

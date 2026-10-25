@@ -4,6 +4,15 @@
 #include <string_view>
 namespace nexverse::assets
 {
+// Detect the complete eight-byte PNG signature; a valid signature is
+// necessary, not sufficient. libpng still validates the entire decoded
+// image, dimensions, allocation bounds and CRC.
+[[nodiscard]] constexpr bool is_png_payload(std::string_view bytes) noexcept
+{
+    constexpr std::string_view signature{"\x89PNG\r\n\x1a\n",8U};
+    return bytes.size()>=signature.size() &&
+           bytes.substr(0U,signature.size())==signature;
+}
 // Payload-based format recognition is required because some OpenSim
 // GetTexture endpoints serve a codestream even for format=png.
 // This is only a gate for the existing size-limited OpenJPEG decoder,

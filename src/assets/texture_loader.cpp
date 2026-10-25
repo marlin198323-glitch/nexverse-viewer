@@ -271,6 +271,26 @@ TextureAssetResult TextureAssetLoader::fetch_rgba(
     AssetFailure j2c_failure = classify_http_asset_failure(j2c_response);
     if (j2c_response.ok())
     {
+        // Some CAPS/proxy implementations ignore format=x-j2c and
+        // return a valid PNG instead. Do not let OpenJPEG reject valid
+        // body pixels merely because the requested MIME type differs.
+        // A signature by itself is NOT success: libpng validates every
+        // byte plus RGBA dimensions and allocation limits.
+        if(is_png_payload(j2c_response.body))
+        {
+            result=decode_png_texture(texture_id,j2c_response.body);
+            if(result.success)
+            {
+                result.message="GetTexture x-j2c returned valid PNG";
+                return result;
+            }
+            j2c_failure=merge_asset_failure(
+                j2c_failure,AssetFailure::invalid);
+            result.message="png: "+png_error+
+                "; x-j2c returned invalid PNG: "+result.message;
+            result.failure=merge_asset_failure(png_failure,j2c_failure);
+            return result;
+        }
         result = decode_jpeg2000_texture(texture_id, j2c_response.body);
         if (result.success)
         {

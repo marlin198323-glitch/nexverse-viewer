@@ -12381,9 +12381,8 @@ int Application::run(bool enable_developer_modules)
                             std::chrono::steady_clock::now(),
                             texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
                         ++texture_budget_rejections;
-                        core::warning("Deferred GetTexture GPU upload " +
-                            object_texture_loading_id +
-                            ": texture byte/slot budget exhausted");
+                        core::warning("Deferred GetTexture GPU upload [asset id omitted]: "
+                            "texture byte/slot budget exhausted");
                     }
                     else
                     {
@@ -12428,8 +12427,7 @@ int Application::run(bool enable_developer_modules)
                                 object_texture_loading_id,kind,
                                 gpu_submission_end);
                             core::warning(
-                                "GetTexture GPU upload rejected for " +
-                                object_texture_loading_id +
+                                "GetTexture GPU upload rejected [asset id omitted]"
                                 "; gpu_failure=" +
                                 std::string(render::gpu_upload_failure_name(type)) +
                                 "; gl_error=" +
