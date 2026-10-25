@@ -135,9 +135,13 @@ public:
     {
         std::scoped_lock lock{mutex_};
         if(!active_)
+        {
+            if(awaiting_after_discontinuity_)
+                return "WASD: Positionssprung/Teleport, neuer UDP-Versand ausstehend";
             return queued_direction_?
                 "WASD: Richtung wartet auf UDP-Versand":
                 "WASD: kein Richtungsbefehl";
+        }
         if(confirmed_)
         {
             switch(confirmed_source_)
@@ -188,7 +192,13 @@ public:
                 latest_=position;
                 last_sample_at_=now;
                 baseline_=position;
+                // No old AgentUpdate can prove travel AFTER a teleport.
+                // The circuit must physically send a fresh directional
+                // AgentUpdate before we establish another motion baseline.
+                active_=false;
                 active_since_=now;
+                expected_direction_.reset();
+                last_direction_bits_=0U;
                 confirmed_=false;
                 stalled_reported_=false;
                 awaiting_after_discontinuity_=true;

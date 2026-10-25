@@ -431,5 +431,19 @@
     "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
     "real_authenticated_caps_eventqueue_e2e": "OPEN",
     "weighted_project_percent": 38.65
+  },
+  "v0400_post_teleport_movement_evidence_guard_20261025": {
+    "status": "IMPLEMENTED_LOCAL_MINT_VERIFIED_LIVE_GRID_OPEN",
+    "date": "2026-10-25",
+    "documentation": "docs/V0_4_0_0_POST_TELEPORT_MOVEMENT_PROOF_20261025.md",
+    "horizontal_proof_requires_new_socket_send_after_teleport": true,
+    "vertical_proof_requires_new_socket_send_after_teleport": true,
+    "queued_only_input_not_sufficient_after_jump": true,
+    "post_teleport_status_indicates_waiting_udp": true,
+    "native_tests": "188/188 PASS",
+    "python_tests": "689/689 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "live_authenticated_region_movement_e2e": "OPEN",
+    "project_weighted_progress_pct": 38.65
   }
 }

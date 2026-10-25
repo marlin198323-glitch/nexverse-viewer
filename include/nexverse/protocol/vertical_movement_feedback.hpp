@@ -17,6 +17,7 @@ struct VerticalMovementSnapshot
     bool queued=false, sent=false, confirmed=false, stalled=false;
     int requested_sign=0;
     std::uint32_t server_samples=0U, contradictory_samples=0U;
+    bool awaiting_fresh_udp_after_jump=false;
 };
 class VerticalMovementFeedbackMonitor
 {
@@ -29,13 +30,18 @@ public:
         queued_=false;queued_seen_=false;sign_=0;sent_=false;
         confirmed_=false;stalled_=false;samples_=0U;
         contradictory_samples_=0U;last_fly_=false;
+        awaiting_fresh_udp_after_jump_=false;
     }
     void queued_controls(std::uint32_t flags)
     {
         std::scoped_lock lock{mutex_};
         queued_seen_=true;
         queued_=direction(flags)!=0;
-        if(!queued_)clear_active();
+        if(!queued_)
+        {
+            clear_active();
+            awaiting_fresh_udp_after_jump_=false;
+        }
     }
     void outbound_controls(std::uint32_t flags,TimePoint now)
     {
@@ -54,20 +60,27 @@ public:
             confirmed_=false;stalled_=false;samples_=0U;
             contradictory_samples_=0U;baseline_=latest_;
             sent_at_=now;
+            awaiting_fresh_udp_after_jump_=false;
         }
     }
     [[nodiscard]] VerticalMovementSnapshot snapshot() const
     {
         std::scoped_lock lock{mutex_};
         return {queued_,sent_,confirmed_,stalled_,sign_,
-                samples_,contradictory_samples_};
+                samples_,contradictory_samples_,
+                awaiting_fresh_udp_after_jump_};
     }
     [[nodiscard]] const char* status() const
     {
         std::scoped_lock lock{mutex_};
-        if(!sent_)return queued_?
-            "Hoehe: Befehl wartet auf UDP":
-            "Hoehe: kein Steig-/Sinkbefehl";
+        if(!sent_)
+        {
+            if(awaiting_fresh_udp_after_jump_)
+                return "Hoehe: Positionssprung/Teleport, neuer UDP-Versand ausstehend";
+            return queued_?
+                "Hoehe: Befehl wartet auf UDP":
+                "Hoehe: kein Steig-/Sinkbefehl";
+        }
         if(confirmed_)return sign_>0?
             "Steigen/Sprung: Simulatorhoehe bestaetigt":
             "Sinken: Simulatorhoehe bestaetigt";
@@ -96,9 +109,14 @@ public:
             {
                 latest_=position;last_sample_at_=now;
                 baseline_=position;
+                // Old jump/fly request was sent on the pre-teleport
+                // position lease. Disarm proof until another UDP datagram
+                // is actually sent; a post-teleport Z correction alone
+                // is not a verified response to an earlier command.
+                sent_=false;sign_=0;last_fly_=false;
+                awaiting_fresh_udp_after_jump_=true;
                 confirmed_=false;stalled_=false;samples_=0U;
                 contradictory_samples_=0U;
-                if(sent_)sent_at_=now;
                 return false;
             }
         }
@@ -140,6 +158,7 @@ private:
     TimePoint sent_at_{};
     bool queued_=false,queued_seen_=false,last_fly_=false;
     bool sent_=false,confirmed_=false,stalled_=false;
+    bool awaiting_fresh_udp_after_jump_=false;
     int sign_=0;
     std::uint32_t samples_=0U,contradictory_samples_=0U;
 };

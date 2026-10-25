@@ -45,7 +45,21 @@ int main()
     if(monitor.server_position({100,100,55},t+22s)||
        monitor.snapshot().confirmed)return 11; // teleport
     if(monitor.server_position({100,100,55},t+23s))return 12;
-    if(!monitor.server_position({100,100,55.4f},t+24s))return 13;
+    if(monitor.server_position({100,100,55.4f},t+24s)||
+       monitor.snapshot().sent||monitor.snapshot().confirmed||
+       !monitor.snapshot().awaiting_fresh_udp_after_jump)
+       return 13;
+    if(std::string_view(monitor.status()).find("neuer UDP-Versand")==
+       std::string_view::npos)return 18;
+    monitor.queued_controls(control_up_pos);
+    if(monitor.server_position({100,100,55.55f},t+24s+100ms)||
+       monitor.snapshot().sent||monitor.snapshot().confirmed)return 19;
+    monitor.outbound_controls(control_up_pos,t+25s);
+    if(!monitor.snapshot().sent||monitor.snapshot().confirmed||
+       monitor.snapshot().awaiting_fresh_udp_after_jump)
+       return 16;
+    if(!monitor.server_position({100,100,55.90f},t+26s)||
+       !monitor.snapshot().confirmed)return 17;
     monitor.reset();
     (void)monitor.server_position({10,20,30},t+30s);
     monitor.queued_controls(control_up_neg);

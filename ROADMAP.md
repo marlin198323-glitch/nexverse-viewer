@@ -48,6 +48,8 @@ Die vollständige Version v0.4.0.0 bleibt IN ARBEIT.
 **Geführte manuelle Abnahme:** Acht Bedien- und Beobachtungstests in docs/ACCEPTANCE_GUIDED_V0400.json. Nutzer meldet sichtbare Resultate, Entwickler prüft Logs/Server-Readback. Weiterhin keine offizielle Live-Freigabe.
 
 - [ ] v0.4.0.0-T03 – WASD, Rotation, Sprung/Flug und Kamera im echten Grid inklusive serverseitigem Positions-/Yaw-/Z-Readback
+**P0 v0.4.0.0-T03 – POST-TELEPORT BEWEGUNG (25.10.2026):** Der WASD- und Steigen/Sinken-Nachweismonitor darf nach einem großen Simulatorpositionssprung nicht mehr die VOR dem Teleport gesendeten AgentUpdate-Datagramme für neue Serverpositionsänderungen als Beweis verwenden. Beide Monitore setzen die socket-sent-Freigabe zurück und zeigen 'neuer UDP-Versand ausstehend'; reine UI-Queue-Eingaben bleiben unbestätigt. Erst tatsächlicher neuer UDP-Send und authentischer Simulatorpositionsreadback können Bewegung/Höhe erneut belegen. Native Regressionen und vier Python-Verträge ergänzt. Linux Mint: 188/188 CTests, 689/689 Python, Firestorm-Xvfb-OpenGL-GUI/X11-Icon PASS. Authentifizierter Live-Teleport, COF/Skin und WASD/Flugserverreadback OFFEN. Details docs/V0_4_0_0_POST_TELEPORT_MOVEMENT_PROOF_20261025.md. Status v0.4.0.0 IN_ARBEIT, Projekt 38,65 % (39 %); kein main-Release.
+
 **Abnahmekriterien:**
 - [ ] v0.4.0.0-A01 – Echter authentifizierter NexVerse-Login/Re-Login, Region-Handoff, Teleport und Rückkehr reproduzierbar
 - [ ] v0.4.0.0-A02 – W/S/A/D/Yaw/Jump/Fly auf dem aktuellen Server tatsächlich sichtbar und protokolliert, nicht nur UDP-Send

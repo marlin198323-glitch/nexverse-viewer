@@ -97,13 +97,29 @@ int main()
            std::string_view::npos)return 21;
     if(monitor.server_position({100,100,5},now+102s)!=
        MovementEvidence::none)return 22;
+    // A post-teleport motion sample cannot validate the PRE-teleport
+    // packet. Another successful socket-sent command is mandatory.
     if(monitor.server_position({100.4f,100,5},now+103s,
+        MovementPositionSource::compressed_object)!=MovementEvidence::none||
+       monitor.snapshot().server_confirmed||
+       monitor.snapshot().socket_direction_sent)return 23;
+    if(std::string_view(monitor.status()).find("neuer UDP-Versand")==
+       std::string_view::npos)return 24;
+    monitor.queued_controls(control_at_pos); // UI queue != real send
+    if(monitor.server_position({100.6f,100,5},now+103s+100ms)!=
+           MovementEvidence::none ||
+       monitor.snapshot().server_confirmed ||
+       monitor.snapshot().socket_direction_sent)return 41;
+    monitor.outbound_controls(control_at_pos,now+104s);
+    if(monitor.snapshot().server_confirmed||
+       !monitor.snapshot().socket_direction_sent)return 38;
+    if(monitor.server_position({100.92f,100,5},now+105s,
         MovementPositionSource::compressed_object)!=
-       MovementEvidence::server_position_changed)return 23;
+       MovementEvidence::server_position_changed)return 39;
     if(!monitor.snapshot().server_confirmed ||
        monitor.snapshot().awaiting_after_discontinuity ||
        monitor.snapshot().confirmed_source!=
-           MovementPositionSource::compressed_object)return 24;
+           MovementPositionSource::compressed_object)return 40;
 
     // Ignore server observations explicitly timestamped before a socket
     // send and out-of-order server samples without advancing baseline.
