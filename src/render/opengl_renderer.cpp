@@ -9,6 +9,7 @@
 #include "nexverse/render/avatar_skin_weight_pair.hpp"
 #include "nexverse/render/avatar_attachment_anchor.hpp"
 #include "nexverse/render/avatar_proxy_pose_integrity.hpp"
+#include "nexverse/render/self_avatar_visibility_source_gate.hpp"
 #include "nexverse/render/attachment_scene_classification.hpp"
 #include "nexverse/render/terrain_mesh.hpp"
 #include "nexverse/render/terrain_texture_readiness.hpp"
@@ -3018,6 +3019,18 @@ public:
         if(it->second!=0U)glDeleteTextures(1,&it->second);
         object_textures_.erase(it);
         object_texture_alpha_.erase(id);
+        // The same bake UUID may be requested again after eviction.
+        // A resolved old GL visibility result does not describe the
+        // untextured fallback now submitted for that body part.
+        for(const auto& avatar:avatar_proxies_)
+            if(avatar.is_self&&
+               std::find(avatar.baked_texture_ids.begin(),
+                         avatar.baked_texture_ids.end(),id)!=
+                         avatar.baked_texture_ids.end())
+            {
+                reset_self_avatar_visibility();
+                break;
+            }
     }
     [[nodiscard]] unsigned int avatar_bake_preview_handle(
         const std::string& server_bake_id) const override
@@ -3035,6 +3048,7 @@ public:
         }
         object_textures_.clear();
         object_texture_alpha_.clear();
+        reset_self_avatar_visibility();
     }
     [[nodiscard]] bool set_object_texture(
         const std::string& texture_id,
@@ -3124,6 +3138,19 @@ public:
         }
         else object_textures_.emplace(texture_id,candidate);
         object_texture_alpha_[texture_id]=texture_has_alpha(image);
+        // Texture content may change under the SAME server bake ID
+        // (successful replacement/refresh). The old async depth result
+        // could refer to different alpha pixels. Failed uploads do not
+        // invalidate because the old GPU texture remains untouched.
+        for(const auto& avatar:avatar_proxies_)
+            if(avatar.is_self&&
+               std::find(avatar.baked_texture_ids.begin(),
+                         avatar.baked_texture_ids.end(),texture_id)!=
+                         avatar.baked_texture_ids.end())
+            {
+                reset_self_avatar_visibility();
+                break;
+            }
         return {true,GpuUploadFailure::none,0U};
     }
 
@@ -3483,6 +3510,21 @@ public:
             if(audit.rotation_repaired)++avatar_rotation_repaired_;
             avatar_proxies_.push_back(std::move(candidate));
         }
+        // A rebake or outfit/COF change within the SAME simulator region
+        // invalidates old asynchronous depth queries. A previously
+        // visible Head cannot certify a newly loaded Upper/Lower skin.
+        // Only change the epoch if actual SELF 3-slot source IDs change,
+        // never on every identical per-frame set_avatar_proxies call.
+        std::optional<SelfAvatarVisibilitySourceGate::BakeIds>
+            current_self_bakes;
+        for(const auto& avatar:avatar_proxies_)
+            if(avatar.is_self)
+            {
+                current_self_bakes=avatar.baked_texture_ids;
+                break;
+            }
+        if(self_avatar_visibility_sources_.observe(current_self_bakes))
+            reset_self_avatar_visibility();
     }
 
     void begin_frame() override
@@ -5869,6 +5911,7 @@ private:
     // Remote bodies continue original slots 1/2.
     std::array<GpuMesh,10U> avatar_body_meshes_{};
     std::array<int,2U> avatar_eye_joint_indices_{{-1,-1}};
+    SelfAvatarVisibilitySourceGate self_avatar_visibility_sources_{};
     std::array<GLuint,6U> self_avatar_visibility_queries_{};
     std::array<bool,6U> self_avatar_visibility_pending_{};
     std::array<std::uint64_t,6U> self_avatar_visibility_query_epoch_{};

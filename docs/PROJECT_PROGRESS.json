@@ -539,5 +539,21 @@
     "real_cof_outfit": "OPEN",
     "authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_self_bake_source_gpu_query_invalidation_20261025": {
+    "status": "IMPLEMENTED_LOCAL_MINT_AND_XVFB_OPENGL_VERIFIED_REAL_GRID_E2E_OPEN",
+    "documentation": "docs/V0_4_0_0_REBAKE_INVALIDATES_GPU_DEPTH_20261025.md",
+    "self_head_upper_lower_bake_change_invalidates_depth": true,
+    "successful_same_id_bake_texture_replacement_invalidates_depth": true,
+    "self_bake_texture_eviction_invalidates_depth": true,
+    "unrelated_asset_does_not_reset_depth": true,
+    "identical_bake_source_does_not_repeat_reset_every_frame": true,
+    "local_native_ctests": "193/193 PASS",
+    "local_python_unittests": "728/728 PASS",
+    "original_firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "authenticated_head_upper_lower_rgb": "OPEN",
+    "authenticated_cof_outfit_after_teleport": "OPEN",
+    "authenticated_shutdown_duration": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

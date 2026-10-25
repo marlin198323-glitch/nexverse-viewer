@@ -205,6 +205,57 @@ int main()
                             }
                         }
                         if(!result_observed)error=43;
+                        if(!error)
+                        {
+                            // Region unchanged: replace just one current
+                            // server bake while the last GPU query reports
+                            // known. Old-skin queries must be discarded.
+                            RenderAvatarProxy changed_self{};
+                            changed_self.position={3.0f,0.0f,0.0f};
+                            changed_self.is_self=true;
+                            changed_self.baked_texture_ids={
+                                "avatar-bake","new-upper","avatar-bake"};
+                            renderer->set_avatar_proxies({changed_self});
+                            const auto after_rebake=render();
+                            if(after_rebake.self_avatar_visible_samples_known)
+                                error=48;
+                            // Identical source on the NEXT frame must NOT
+                            // invalidate every ongoing query indefinitely.
+                            renderer->set_avatar_proxies({changed_self});
+                            glFinish(); // isolated test only
+                            const auto same_bakes=render();
+                            if(error==0&&
+                               !same_bakes.self_avatar_visible_samples_known)
+                                error=49;
+                            // The old source is also a distinct incarnation.
+                            changed_self.baked_texture_ids={
+                                "avatar-bake","avatar-bake","avatar-bake"};
+                            renderer->set_avatar_proxies({changed_self});
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=50;
+                            // Re-uploading the SAME server texture UUID
+                            // can change alpha-tested coverage even without
+                            // a new bake ID. Old depth result must expire.
+                            glFinish();
+                            (void)render();
+                            if(error==0&&
+                               !renderer->set_object_texture(
+                                   "avatar-bake",opaque))error=51;
+                            if(error==0&&
+                               render().self_avatar_visible_samples_known)
+                                error=52;
+                            // Unrelated object updates must NOT retire the
+                            // self visibility proof.
+                            glFinish();
+                            (void)render();
+                            if(error==0&&
+                               !renderer->set_object_texture(
+                                   "unrelated-asset",opaque))error=53;
+                            if(error==0&&
+                               !render().self_avatar_visible_samples_known)
+                                error=54;
+                        }
                         // The SAME camera GL sample must become UNKNOWN
                         // when the user pans/zooms/rotates. Old GPU samples
                         // are no longer evidence for a new camera pose.
