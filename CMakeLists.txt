@@ -1016,6 +1016,14 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-neon-login-layout-tests
         COMMAND nexverse-neon-login-layout-tests)
 
+    add_executable(nexverse-marketplace-hop-r536-tests
+        tests/marketplace_hop_r536_tests.cpp)
+    target_include_directories(nexverse-marketplace-hop-r536-tests
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    nexverse_enable_warnings(nexverse-marketplace-hop-r536-tests)
+    add_test(NAME nexverse-marketplace-hop-r536-tests
+        COMMAND nexverse-marketplace-hop-r536-tests)
+
     add_executable(nexverse-viewer-shell-tests
         tests/viewer_shell_tests.cpp)
     target_link_libraries(nexverse-viewer-shell-tests

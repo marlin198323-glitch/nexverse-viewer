@@ -4429,7 +4429,8 @@ void glfw_error_callback(int error, const char* description)
 
 namespace nexverse::app
 {
-int Application::run(bool enable_developer_modules)
+int Application::run(bool enable_developer_modules,
+                     std::optional<MarketplaceHop> startup_hop)
 {
     core::info(
         std::string{"Starting "} +
@@ -7824,7 +7825,7 @@ int Application::run(bool enable_developer_modules)
                         }
                         credentials.password = std::move(login_ui.password);
                         login_ui.password.clear();
-                        credentials.start = "last";
+                        credentials.start = startup_hop?startup_hop->login_start():"last";
                         // Only the user's actual click, scoped to this
                         // avatar/grid, authorizes a future true value.
                         credentials.agree_to_tos=login_ui.tos.approved_for(
