@@ -7,6 +7,11 @@ on:
       - "**/*.md"
       - "docs/**"
   workflow_dispatch:
+  pull_request:
+    branches: [develop-current]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
@@ -36,10 +41,10 @@ jobs:
       - name: CMake full GUI configure
         run: cmake --preset debug -DNEXVERSE_BUILD_TESTS=ON
       - name: Compile actual viewer and login parser
-        run: cmake --build --preset debug --parallel 3 --target nexverse-viewer nexverse-login-tests nexverse-login-tos-consent-tests
+        run: cmake --build --preset debug --parallel 3 --target nexverse-viewer nexverse-login-tests nexverse-login-tos-consent-tests nexverse-marketplace-hop-r536-tests
       - name: Run actual compiled LoginService XML-RPC + TOS tests
         run: |
-          ctest --test-dir build/debug --output-on-failure -R "^nexverse-login(-tos-consent)?-tests$"
+          ctest --test-dir build/debug --output-on-failure -R "^(nexverse-login(-tos-consent)?-tests|nexverse-marketplace-hop-r536-tests)$"
       - name: Full viewer binary exists
         run: |
           test -x build/debug/nexverse-viewer
