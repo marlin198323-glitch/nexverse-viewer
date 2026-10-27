@@ -51,6 +51,18 @@ int main(int argc, char** argv)
             return 0;
         }
 
+        if (argument.starts_with("hop://"))
+        {
+            const auto destination=nexverse::app::parse_marketplace_hop(argument);
+            if(!destination)
+            {
+                std::cerr << "Untrusted or invalid NexVerse hop link rejected.\n";
+                return 2;
+            }
+            nexverse::app::Application application;
+            return application.run(false,destination);
+        }
+
         if (argument == "--dev-modules")
         {
             nexverse::app::Application application;
@@ -66,7 +78,7 @@ int main(int argc, char** argv)
         {
             std::cout
                 << "OpenGenesisLINK Viewer for NexVerse\n"
-                << "Usage: nexverse-viewer [--version|--grid-info|--dev-modules|--help]\n\n"
+                << "Usage: nexverse-viewer [--version|--grid-info|--dev-modules|--help|hop://hg.stadt-nexverse.de:80/Region/X/Y/Z]\n\n"
                 << "--grid-info  Refresh and print the current NexVerse GridInfo.\n"
                 << "Normal startup refreshes GridInfo automatically.\n"
                 << "--dev-modules  Enable explicitly installed/activated unsigned developer modules.\n";

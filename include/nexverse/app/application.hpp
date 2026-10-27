@@ -5,12 +5,15 @@
  */
 
 #pragma once
+#include "nexverse/app/marketplace_hop.hpp"
+#include <optional>
 
 namespace nexverse::app
 {
 class Application
 {
 public:
-    int run(bool enable_developer_modules = false);
+    int run(bool enable_developer_modules = false,
+            std::optional<MarketplaceHop> startup_hop = std::nullopt);
 };
 }
