@@ -692,5 +692,26 @@
     "real_region_teleport": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_gridinfo_nexverse_only_password_destination_pin_20261030": {
+    "status": "IMPLEMENTED_NATIVE_AND_MINT_GUI_VERIFIED_LIVE_GRID_LOGIN_PENDING",
+    "documentation": "docs/V0_4_0_0_NEXVERSE_GRID_LOGIN_AUTHORITY_PIN_20261030.md",
+    "live_gridinfo_login_authority_pinned_exact_host": true,
+    "offline_gridinfo_cache_authority_pinned_exact_host": true,
+    "http_login_port_8002_only": true,
+    "https_login_ports_443_and_8002": true,
+    "untrusted_foreign_host_or_port_cannot_replace_valid_cache": true,
+    "poisoned_offline_cache_fails_closed": true,
+    "login_uri_not_logged_full": true,
+    "libcurl_redirects_off": true,
+    "not_a_tls_confidentiality_fix": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "795/795 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_grid_login": "OPEN",
+    "real_avatar_skin_cof": "OPEN",
+    "real_teleport_wasd_flight": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

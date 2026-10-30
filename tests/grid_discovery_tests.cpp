@@ -3,6 +3,8 @@
 
 #include <chrono>
 #include <filesystem>
+#include <fstream>
+#include <string_view>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -87,6 +89,75 @@ int main()
        still_safe.info.grid_name()!="NexVerse")return 8;
 
     if (transport->calls != 6) return 6;
+
+    // GridInfo is plain HTTP; the login URL is a password-bearing
+    // XML-RPC destination. The XML parser accepts any well-formed URL,
+    // but THIS NexVerse-only client must never cache/choose an attacker
+    // hostname or unauthorized port from the HTTP response.
+    const std::string_view foreign_logins[]{
+        "http://evil.invalid:8002/login",
+        "http://hg.stadt-nexverse.de.evil.invalid:8002/",
+        "http://hg.stadt-nexverse.de--evil.invalid:8002/",
+        "http://192.0.2.10:8002/",
+        "http://hg.stadt-nexverse.de:8003/",
+        "http://hg.stadt-nexverse.de/",
+        "https://hg.stadt-nexverse.de:8443/",
+        "https://hg.stadt-nexverse.de.attacker.example/",
+        "http://hg.stadt-nexverse.de:8002@evil.invalid/",
+    };
+    for(auto candidate:foreign_logins)
+    {
+        transport->response={
+            200,"<gridinfo><login>"+std::string{candidate}+
+            "</login><gridname>Attacker</gridname></gridinfo>",{}};
+        const auto refused=discovery.refresh();
+        if(!refused.success||refused.source!=GridInfoSource::cache||
+           refused.info.grid_name()!="NexVerse"||
+           refused.info.login_uri()!="http://hg.stadt-nexverse.de:8002/")
+            return 9;
+    }
+    // ASCII hostnames are case-insensitive; the exact trusted hostname
+    // may be advertised in different case or with HTTPS/TLS.
+    transport->response={200,
+        "<gridinfo><login>http://HG.STADT-NEXVERSE.DE:8002/</login>"
+        "<gridname>Case</gridname></gridinfo>",{}};
+    const auto case_ok=discovery.refresh();
+    if(!case_ok.success||case_ok.source!=GridInfoSource::live||
+       case_ok.info.grid_name()!="Case")return 10;
+
+    transport->response={200,
+        "<gridinfo><login>https://hg.stadt-nexverse.de:443/</login>"
+        "<gridname>TLS</gridname></gridinfo>",{}};
+    const auto tls_ok=discovery.refresh();
+    if(!tls_ok.success||tls_ok.source!=GridInfoSource::live||
+       tls_ok.info.grid_name()!="TLS")return 11;
+    transport->response={200,
+        "<gridinfo><login>https://hg.stadt-nexverse.de:8002/</login>"
+        "<gridname>Secure8002</gridname></gridinfo>",{}};
+    const auto secure_port=discovery.refresh();
+    if(!secure_port.success||secure_port.source!=GridInfoSource::live||
+       secure_port.info.grid_name()!="Secure8002")return 12;
+
+    // A malicious or corrupted disk cache is also untrusted. Even
+    // during an outage it cannot become the next login destination.
+    {
+        std::ofstream output{cache,std::ios::binary|std::ios::trunc};
+        output<<"<gridinfo><login>http://evil.invalid:8002/</login>"
+                 "<gridname>PoisonedCache</gridname></gridinfo>";
+    }
+    transport->response={0,{},"offline"};
+    const auto poisoned_disk=discovery.refresh();
+    if(poisoned_disk.success||poisoned_disk.source!=GridInfoSource::none)
+        return 13;
+    {
+        std::ofstream output{cache,std::ios::binary|std::ios::trunc};
+        output<<"<gridinfo><login>http://hg.stadt-nexverse.de:8002/</login>"
+                 "<gridname>NexVerse</gridname></gridinfo>";
+    }
+    const auto restored_cache=discovery.refresh();
+    if(!restored_cache.success||
+       restored_cache.source!=GridInfoSource::cache||
+       restored_cache.info.grid_name()!="NexVerse")return 14;
 
     std::filesystem::remove_all(root);
     std::cout << "Grid discovery tests passed\n";

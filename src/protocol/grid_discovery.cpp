@@ -6,6 +6,7 @@
 #include "nexverse/core/logger.hpp"
 
 #include <chrono>
+#include <cctype>
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
@@ -14,6 +15,35 @@
 
 namespace
 {
+// GridInfo is an untrusted HTTP discovery response. This viewer logs in
+// ONLY to the configured NexVerse grid; generic URI syntax validation
+// does not protect credentials from an attacker-supplied alternate host.
+// Pin the destination *authority*, not an attacker-controlled URL string
+// prefix. Never log/print the rejected value or follow redirects.
+bool trusted_nexverse_login_uri(std::string_view uri)
+{
+    if(!nexverse::protocol::is_valid_http_uri(uri))return false;
+    const bool https=uri.starts_with("https://");
+    const std::size_t start=https?8U:7U;
+    const auto end=uri.find_first_of("/?",start);
+    const auto authority=uri.substr(
+        start,end==std::string_view::npos?std::string_view::npos:end-start);
+    const auto separator=authority.find(':');
+    const auto host=authority.substr(0U,separator);
+    constexpr auto trusted=nexverse::protocol::nexverse_grid_host;
+    if(host.size()!=trusted.size())return false;
+    for(std::size_t i=0U;i<host.size();++i)
+        if(std::tolower(static_cast<unsigned char>(host[i]))!=trusted[i])
+            return false;
+    // Current OpenSim XML-RPC login service is :8002. Allow HTTPS
+    // on its standard port or :8002 if the grid enables TLS there.
+    // No arbitrary simulator/CAPS ports in a *password-bearing* URL.
+    const auto port=separator==std::string_view::npos
+        ?std::string_view{}:authority.substr(separator+1U);
+    return https
+        ?(port.empty()||port=="443"||port=="8002")
+        :(port=="8002");
+}
 std::filesystem::path home_directory()
 {
 #if defined(_WIN32)
@@ -39,7 +69,9 @@ std::optional<nexverse::protocol::GridInfoDocument> read_grid_info_file(
         std::istreambuf_iterator<char>{}};
 
     auto parsed = nexverse::protocol::parse_grid_info_xml(xml);
-    if (!parsed.ok()) return std::nullopt;
+    if (!parsed.ok()||
+        !trusted_nexverse_login_uri(parsed.document->info.login_uri()))
+        return std::nullopt;
 
     return std::move(parsed.document);
 }
@@ -94,7 +126,8 @@ GridDiscoveryResult GridDiscoveryService::refresh()
         if (response.ok())
         {
             GridInfoParseResult parsed = parse_grid_info_xml(response.body);
-            if (parsed.ok())
+            if (parsed.ok()&&
+                trusted_nexverse_login_uri(parsed.document->info.login_uri()))
             {
                 GridInfoDocument live = std::move(*parsed.document);
                 const bool changed = !cached.has_value() || !(cached->info == live.info);
@@ -110,7 +143,11 @@ GridDiscoveryResult GridDiscoveryService::refresh()
                                 : "Current GridInfo loaded; cache update failed"};
             }
 
-            core::warning(parsed.error);
+            // A public GridInfo may be spoofed on an HTTP path.
+            // Do not print its untrusted URI, including query secrets.
+            core::warning(parsed.ok()
+                ?"GridInfo rejected: login authority is not the NexVerse grid"
+                :parsed.error);
         }
         else
         {

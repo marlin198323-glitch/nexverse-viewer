@@ -45,7 +45,8 @@ class GridLoginTransportHardening(unittest.TestCase):
   self.assertIn("transport->posted_body!=accepted_body",src("tests/login_tests.cpp"))
  def test_poisoned_grid_info_never_overwrites_last_good_cached_login(self):
   s=src("src/protocol/grid_discovery.cpp")
-  self.assertIn("if (parsed.ok())",s)
+  self.assertIn("if (parsed.ok()&&",s)
+  self.assertIn("trusted_nexverse_login_uri(parsed.document->info.login_uri())",s)
   self.assertIn("GridInfoSource::cache",s)
   t=src("tests/grid_discovery_tests.cpp")
   self.assertIn("poisoned.source!=GridInfoSource::cache",t)

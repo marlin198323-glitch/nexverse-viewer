@@ -7015,9 +7015,11 @@ int Application::run(bool enable_developer_modules)
                         }
 
                         active_login_uri = std::string{result.info.login_uri()};
-                        core::info(
-                            std::string{"Active OpenSim login URI: "} +
-                            active_login_uri);
+                        // GridInfo is fetched using HTTP. Its URL may
+                        // carry query credentials, so log only the fact
+                        // that pinned-host admission was completed.
+                        core::info("Active NexVerse login URI accepted "
+                                   "from validated grid discovery");
                     }
                     else
                     {
