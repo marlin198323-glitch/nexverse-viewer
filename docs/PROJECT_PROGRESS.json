@@ -902,5 +902,33 @@
     "server_avatar_head_upper_lower_bakes": "OPEN",
     "real_wasd_translation": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_firestorm_parity_lossless_persistent_texture_cache_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_TESTED_REAL_WORLD_CACHE_REUSE_VISUAL_PARITY_PENDING",
+    "documentation": "docs/V0_4_0_0_FIRESTORM_VISUAL_PARITY_LOSSLESS_CACHE_20261030.md",
+    "firestorm_and_ogl_same_region_user_screenshots_compared": true,
+    "texture_disk_cache_already_existed": true,
+    "old_raw_texture_cache_assets": 81,
+    "old_raw_texture_cache_mib": 255.7,
+    "persistent_mesh_cache_assets": 1722,
+    "persistent_mesh_cache_mib": 254.5,
+    "live_texture_http_attempts_last_session": 221,
+    "live_texture_network_success": 216,
+    "live_texture_disk_hits": 0,
+    "texture_disk_format_v2_lossless_zlib": true,
+    "old_ogltex01_read_migrate_on_verified_use": true,
+    "bounded_zip_bomb_safe_exact_stream_and_checksum": true,
+    "disk_cache_default_mib": 512,
+    "disk_cache_environment_range_mib": "128..2048",
+    "no_gpu_vram_adjustments_or_vendor_pinning": true,
+    "read_only_cache_inspection_script": "scripts/ogl-cache-status.py",
+    "sample_12_existing_textures_zlib_level1_median_stored_percent": 24.6,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "922/922 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "after_patch_authentic_world_disk_cache_hit_and_loading_speed": "OPEN",
+    "firestorm_visual_material_uv_shadow_vegetation_parity": "OPEN",
+    "avatar_head_upper_lower_bakes": "0/3 OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

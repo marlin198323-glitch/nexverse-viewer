@@ -3,9 +3,11 @@
  * License, v. 2.0.
  */
 #include "nexverse/assets/texture_disk_cache.hpp"
+#include <zlib.h>
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <charconv>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -17,7 +19,8 @@ namespace nexverse::assets
 namespace
 {
 constexpr std::uint64_t max_image_bytes = 64ULL * 1024ULL * 1024ULL;
-constexpr std::array<char,8> magic{'O','G','L','T','E','X','0','1'};
+constexpr std::array<char,8> legacy_magic{'O','G','L','T','E','X','0','1'};
+constexpr std::array<char,8> compressed_magic{'O','G','L','T','E','X','0','2'};
 bool safe_uuid(std::string_view id)
 {
     if (id.size()!=36U) return false;
@@ -76,6 +79,21 @@ bool read_le(std::istream& f,T& out)
     return true;
 }
 }
+std::uint64_t TextureDiskCache::default_budget_bytes() noexcept
+{
+    constexpr std::uint64_t mib=1024ULL*1024ULL;
+    constexpr std::uint64_t fallback=512ULL*mib;
+    const char* raw=std::getenv("OGL_TEXTURE_CACHE_MIB");
+    if(raw==nullptr||*raw=='\0')return fallback;
+    const std::string_view value{raw};
+    if(value.size()>4U)return fallback;
+    unsigned size=0U;
+    const auto [end,error]=std::from_chars(
+        value.data(),value.data()+value.size(),size);
+    if(error!=std::errc{}||end!=value.data()+value.size()||
+       size<128U||size>2048U)return fallback;
+    return static_cast<std::uint64_t>(size)*mib;
+}
 TextureDiskCache::TextureDiskCache(std::filesystem::path directory,
     std::uint64_t budget_bytes)
     : directory_(std::move(directory)),budget_bytes_(budget_bytes)
@@ -115,7 +133,8 @@ std::optional<ImageRgba8> TextureDiskCache::load(
         std::ifstream f{path,std::ios::binary};
         std::array<char,8> marker{};
         if(!f.read(marker.data(),static_cast<std::streamsize>(marker.size()))||
-           marker!=magic)return std::nullopt;
+           (marker!=legacy_magic&&marker!=compressed_magic))
+            return std::nullopt;
         ImageRgba8 image;
         std::uint64_t stored_hash=0U;
         if(!read_le(f,image.width)||!read_le(f,image.height)||
@@ -124,15 +143,53 @@ std::optional<ImageRgba8> TextureDiskCache::load(
             return std::nullopt;
         const std::uint64_t byte_count =
             static_cast<std::uint64_t>(image.width)*image.height*4U;
-        if(byte_count>max_image_bytes||
-           std::filesystem::file_size(path)!=24U+byte_count)
+        const auto file_bytes=std::filesystem::file_size(path);
+        if(byte_count>max_image_bytes||file_bytes<24U||
+           file_bytes>24U+max_image_bytes ||
+           (marker==legacy_magic&&file_bytes!=24U+byte_count))
             return std::nullopt;
         image.pixels.resize(static_cast<std::size_t>(byte_count));
-        if(!f.read(reinterpret_cast<char*>(image.pixels.data()),
-                   static_cast<std::streamsize>(byte_count)))
-            return std::nullopt;
+        if(marker==legacy_magic)
+        {
+            if(!f.read(reinterpret_cast<char*>(image.pixels.data()),
+                       static_cast<std::streamsize>(byte_count)))
+                return std::nullopt;
+        }
+        else
+        {
+            // Defend against malformed/zip-bomb files: the output is
+            // bounded by the independently validated image dimensions
+            // (at most 64 MiB), and the entire input must be consumed.
+            const auto packed_bytes=file_bytes-24U;
+            if(packed_bytes==0U)return std::nullopt;
+            std::vector<std::uint8_t> packed(
+                static_cast<std::size_t>(packed_bytes));
+            if(!f.read(reinterpret_cast<char*>(packed.data()),
+                       static_cast<std::streamsize>(packed.size())))
+                return std::nullopt;
+            z_stream stream{};
+            stream.next_in=packed.data();
+            stream.avail_in=static_cast<uInt>(packed.size());
+            stream.next_out=image.pixels.data();
+            stream.avail_out=static_cast<uInt>(image.pixels.size());
+            if(inflateInit(&stream)!=Z_OK)return std::nullopt;
+            const int result=inflate(&stream,Z_FINISH);
+            const bool complete=result==Z_STREAM_END&&
+                stream.total_out==byte_count&&
+                stream.total_in==packed_bytes;
+            inflateEnd(&stream);
+            if(!complete)return std::nullopt;
+        }
         if(!image.valid() || checksum(image)!=stored_hash)
             return std::nullopt;
+        // Repack validated legacy RGBA lazily when used. This migrates
+        // existing 256 MiB caches without losing assets on upgrade.
+        // Save errors do not invalidate a successfully decoded image.
+        if(marker==legacy_magic&&byte_count>=4096U)
+        {
+            f.close();
+            (void)store(id,image);
+        }
         // Using last-write-time as access time keeps eviction portable.
         std::error_code error;
         std::filesystem::last_write_time(path,
@@ -161,18 +218,43 @@ bool TextureDiskCache::store(std::string_view id,const ImageRgba8& image) const
     {
         std::filesystem::create_directories(directory_);
         const auto dest=file_for(directory_,id);
+        // zlib is already a portable dependency of NexVerse::Assets.
+        // Lossless compression preserves every RGBA pixel; on noisy
+        // incompressible images retain the legacy raw format.
+        std::vector<std::uint8_t> packed;
+        bool compressible=false;
+        if(image.pixels.size()>=4096U)
+        {
+            const auto bound=compressBound(
+                static_cast<uLong>(image.pixels.size()));
+            packed.resize(static_cast<std::size_t>(bound));
+            uLongf size=bound;
+            if(compress2(packed.data(),&size,image.pixels.data(),
+                         static_cast<uLong>(image.pixels.size()),
+                         Z_BEST_SPEED)==Z_OK &&
+               size<image.pixels.size())
+            {
+                packed.resize(static_cast<std::size_t>(size));
+                compressible=true;
+            }
+        }
         // Temp is per-call; the sequential GetTexture pipeline owns writes.
         auto temp=dest;
         temp+=".part";
         {
             std::ofstream f{temp,std::ios::binary|std::ios::trunc};
             if(!f)return false;
-            f.write(magic.data(),static_cast<std::streamsize>(magic.size()));
+            const auto& marker=compressible?compressed_magic:legacy_magic;
+            f.write(marker.data(),static_cast<std::streamsize>(marker.size()));
             write_le<std::uint32_t>(f,image.width);
             write_le<std::uint32_t>(f,image.height);
             write_le<std::uint64_t>(f,checksum(image));
-            f.write(reinterpret_cast<const char*>(image.pixels.data()),
-                    static_cast<std::streamsize>(image.pixels.size()));
+            if(compressible)
+                f.write(reinterpret_cast<const char*>(packed.data()),
+                        static_cast<std::streamsize>(packed.size()));
+            else
+                f.write(reinterpret_cast<const char*>(image.pixels.data()),
+                        static_cast<std::streamsize>(image.pixels.size()));
             f.flush();
             if(!f)return false;
         }
