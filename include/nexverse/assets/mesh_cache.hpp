@@ -24,8 +24,12 @@ namespace nexverse::assets
 class MeshDiskCache
 {
 public:
+    [[nodiscard]] static std::uint64_t default_budget_bytes() noexcept;
     explicit MeshDiskCache(std::filesystem::path directory,
-        std::uint64_t budget_bytes = 512ULL * 1024ULL * 1024ULL);
+        std::uint64_t budget_bytes = default_budget_bytes());
+    // Metadata probe only. The actual load still validates checksum and LOD.
+    [[nodiscard]] bool contains(std::string_view id,
+        MeshLod lod = MeshLod::high) const noexcept;
     [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id,
         MeshLod lod = MeshLod::high) const;
     [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh,
@@ -40,9 +44,11 @@ private:
 class MeshMemoryCache
 {
 public:
-    explicit MeshMemoryCache(std::size_t budget_bytes = 64U * 1024U * 1024U);
+    explicit MeshMemoryCache(std::size_t budget_bytes = 96U * 1024U * 1024U);
     [[nodiscard]] std::optional<MeshGeometry> load(std::string_view id,
         MeshLod lod = MeshLod::high);
+    [[nodiscard]] bool contains(std::string_view id,
+        MeshLod lod = MeshLod::high) const;
     [[nodiscard]] bool store(std::string_view id, const MeshGeometry& mesh,
         MeshLod lod = MeshLod::high);
     [[nodiscard]] std::size_t bytes() const;

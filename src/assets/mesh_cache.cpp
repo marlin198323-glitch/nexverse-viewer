@@ -2,6 +2,9 @@
  * License, v. 2.0. */
 #include "nexverse/assets/mesh_cache.hpp"
 #include <algorithm>
+#include <atomic>
+#include <charconv>
+#include <chrono>
 #include <array>
 #include <bit>
 #include <cmath>
@@ -11,6 +14,7 @@
 #include <iterator>
 #include <new>
 #include <vector>
+#include <system_error>
 
 namespace nexverse::assets
 {
@@ -117,6 +121,32 @@ bool cacheable_mesh(const MeshGeometry& m) noexcept
             return false;
     return true;
 }
+std::uint64_t MeshDiskCache::default_budget_bytes() noexcept
+{
+    constexpr std::uint64_t mib=1024ULL*1024ULL;
+    constexpr std::uint64_t fallback=1024ULL*mib;
+    const char* raw=std::getenv("OGL_MESH_CACHE_MIB");
+    if(raw==nullptr||*raw=='\0')return fallback;
+    const std::string_view value{raw};
+    if(value.size()>4U)return fallback;
+    unsigned size=0U;
+    const auto [end,error]=std::from_chars(
+        value.data(),value.data()+value.size(),size);
+    if(error!=std::errc{}||end!=value.data()+value.size()||
+       size<128U||size>4096U)return fallback;
+    return static_cast<std::uint64_t>(size)*mib;
+}
+bool MeshDiskCache::contains(std::string_view id,MeshLod lod) const noexcept
+{
+    if(!safe_uuid(id)||directory_.empty())return false;
+    std::error_code error;
+    const auto path=directory_/(cache_key(id,lod)+".mesh");
+    if(!std::filesystem::is_regular_file(
+            std::filesystem::symlink_status(path,error))||error)
+        return false;
+    const auto size=std::filesystem::file_size(path,error);
+    return !error&&size>=header_bytes&&size<=header_bytes+max_payload;
+}
 MeshDiskCache::MeshDiskCache(std::filesystem::path directory,
     std::uint64_t budget_bytes)
     : directory_(std::move(directory)), budget_bytes_(budget_bytes)
@@ -216,8 +246,14 @@ bool MeshDiskCache::store(std::string_view id, const MeshGeometry& geometry, Mes
             bytes[20U+i] = static_cast<std::uint8_t>(hash >> (8U*i));
         std::filesystem::create_directories(directory_);
         const auto dest = directory_/(cache_key(id,lod)+".mesh");
-        auto temp = dest;
-        temp += ".part";
+        // Parallel GetMesh jobs may share a UUID/LOD across region epochs.
+        // Never allow two writers to truncate the same intermediate file.
+        static std::atomic<std::uint64_t> temp_sequence{0U};
+        auto temp=dest;
+        temp+=".part."+std::to_string(
+            temp_sequence.fetch_add(1U,std::memory_order_relaxed)+1U)+
+            "."+std::to_string(std::chrono::steady_clock::now()
+                .time_since_epoch().count());
         {
             std::ofstream f{temp,std::ios::binary|std::ios::trunc};
             if (!f) return false;
@@ -314,6 +350,12 @@ bool MeshMemoryCache::store(std::string_view id, const MeshGeometry& geometry, M
     items_.emplace(key,Entry{geometry,size,age});
     used_ += size;
     return true;
+}
+bool MeshMemoryCache::contains(std::string_view id,MeshLod lod) const
+{
+    if(!safe_uuid(id))return false;
+    std::lock_guard guard{mutex_};
+    return items_.contains(cache_key(id,lod));
 }
 std::size_t MeshMemoryCache::bytes() const
 {

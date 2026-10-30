@@ -65,11 +65,11 @@ class PersistentLosslessCacheContract(unittest.TestCase):
                 "decode" ):
    self.assertIn(token,s.replace("'O','G','L','T','E','X','0','2'","OGLTEX02"))
  def test_read_only_stats_budget(self):
-  self.assertEqual(tool.budget_mib(None),512)
+  self.assertEqual(tool.budget_mib(None),1024)
   self.assertEqual(tool.budget_mib("128"),128)
   self.assertEqual(tool.budget_mib("2048"),2048)
   for bad in ("", "99999","0","42","3e2","-1","abc"):
-   self.assertEqual(tool.budget_mib(bad),512)
+   self.assertEqual(tool.budget_mib(bad),1024)
  def test_read_only_stats_counts_records_with_no_uuid_output(self):
   with tempfile.TemporaryDirectory() as temp:
    root=Path(temp)/"textures-v1";root.mkdir()

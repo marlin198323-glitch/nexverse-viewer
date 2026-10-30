@@ -4,6 +4,9 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <future>
+#include <vector>
+#include <cstdlib>
 
 using namespace nexverse::assets;
 namespace fs = std::filesystem;
@@ -175,6 +178,49 @@ int main()
             MeshLod::high,[&]{return active;});
         if(!error && (!success.asset.success || downloads!=2 ||
             !disk.load(id) || !ram.load(id)))error=20;
+    }
+    // Three concurrent GetMesh slots plus stale region workers can
+    // write the same UUID+LOD. Verify an independently reopened record
+    // is complete and no shared .part temporary remains.
+    if(!error)
+    {
+        const std::string key{"66666666-6666-6666-6666-666666666666"};
+        std::vector<std::future<bool>> writers;
+        for(int i=0;i<12;++i)
+            writers.push_back(std::async(std::launch::async,
+                [root,key,i]()
+                {
+                    MeshDiskCache disk{root,16U*1024U*1024U};
+                    return disk.store(key,triangle(static_cast<float>(i)));
+                }));
+        for(auto& worker:writers)if(!worker.get())error=21;
+        const MeshDiskCache reopened{root,16U*1024U*1024U};
+        const auto result=reopened.load(key);
+        if(!result||!cacheable_mesh(*result)||!reopened.contains(key)||
+           reopened.contains("../escape"))error=22;
+        for(const auto& entry:fs::directory_iterator(root))
+            if(entry.path().filename().string().find(".part.")!=
+                std::string::npos)error=23;
+    }
+    // Disk budget is independent of GPU and can be overridden safely.
+    if(!error)
+    {
+        constexpr std::uint64_t mib=1024ULL*1024ULL;
+        if(MeshDiskCache::default_budget_bytes()!=1024ULL*mib)
+            error=24;
+        ::setenv("OGL_MESH_CACHE_MIB","128",1);
+        if(MeshDiskCache::default_budget_bytes()!=128ULL*mib)
+            error=25;
+        ::setenv("OGL_MESH_CACHE_MIB","4096",1);
+        if(MeshDiskCache::default_budget_bytes()!=4096ULL*mib)
+            error=26;
+        for(const char* malformed:{"garbage","4097","-1","99999"})
+        {
+            ::setenv("OGL_MESH_CACHE_MIB",malformed,1);
+            if(MeshDiskCache::default_budget_bytes()!=1024ULL*mib)
+                error=27;
+        }
+        ::unsetenv("OGL_MESH_CACHE_MIB");
     }
     std::error_code ec;
     fs::remove_all(root,ec);

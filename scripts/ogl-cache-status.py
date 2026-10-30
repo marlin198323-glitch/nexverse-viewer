@@ -13,18 +13,21 @@ import struct
 import sys
 
 MAX_IMAGE_BYTES = 64 * 1024 * 1024
-DEFAULT_BUDGET_MIB = 512
+DEFAULT_BUDGET_MIB = 1024
+DEFAULT_MESH_BUDGET_MIB = 1024
+MAX_MESH_BUDGET_MIB = 4096
 MIN_BUDGET_MIB = 128
 MAX_BUDGET_MIB = 2048
 
 
-def budget_mib(config: str | None) -> int:
+def budget_mib(config: str | None, default: int = DEFAULT_BUDGET_MIB,
+               maximum: int = MAX_BUDGET_MIB) -> int:
     if config is None or not config.isascii() or not config.isdecimal():
-        return DEFAULT_BUDGET_MIB
+        return default
     if len(config) > 4:
-        return DEFAULT_BUDGET_MIB
+        return default
     size = int(config)
-    return size if MIN_BUDGET_MIB <= size <= MAX_BUDGET_MIB else DEFAULT_BUDGET_MIB
+    return size if MIN_BUDGET_MIB <= size <= maximum else default
 
 
 def cache_base() -> Path:
@@ -75,7 +78,7 @@ def measure_meshes(folder: Path) -> tuple[int, int]:
     used = 0
     for entry in folder.iterdir():
         try:
-            if entry.is_file() and not entry.name.endswith(".part"):
+            if entry.is_file() and entry.suffix == ".mesh":
                 count += 1
                 used += entry.stat().st_size
         except OSError:
@@ -89,6 +92,8 @@ def main() -> int:
     m_count, m_used = measure_meshes(root / "meshes-v1")
     show = lambda b: f"{b / 1048576:.1f} MiB"
     print(f"Cache-Budget: {budget_mib(os.getenv('OGL_TEXTURE_CACHE_MIB'))} MiB (Texturen)")
+    print(f"Mesh-Cache-Budget: "
+          f"{budget_mib(os.getenv('OGL_MESH_CACHE_MIB'), DEFAULT_MESH_BUDGET_MIB, MAX_MESH_BUDGET_MIB)} MiB")
     print(f"Texturen: {t['raw'] + t['compressed']} Assets "
           f"({t['compressed']} verlustfrei komprimiert, {t['raw']} RGBA)")
     print(f"Textur-Speicher: {show(t['bytes'])} auf Platte, "

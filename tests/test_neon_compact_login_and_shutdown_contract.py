@@ -42,7 +42,8 @@ class CompactNeonAndFastClose(unittest.TestCase):
  def test_all_background_work_is_joined_and_shutdown_is_timed(self):
   app=source("src/app/application.cpp")
   for worker in ("LLUDP circuit","CAPS EventQueue","region EventQueue",
-                 "login","outfit images","mesh asset","texture prefetch"):
+                 "login","outfit images","mesh GPU admission",
+                 "parallel mesh asset","texture prefetch"):
    self.assertIn('"'+worker+'"',app)
   self.assertIn("Viewer shutdown waiting on ",app)
   self.assertIn("Viewer shutdown total elapsed_ms=",app)

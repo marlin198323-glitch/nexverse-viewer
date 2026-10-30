@@ -6118,6 +6118,18 @@ int Application::run(bool enable_developer_modules)
     std::string scoped_get_mesh_alt_uri;
     auto mesh_memory_cache = std::make_shared<assets::MeshMemoryCache>();
     std::future<assets::CachedMeshResult> mesh_asset_future;
+    struct MeshInFlight
+    {
+        std::future<assets::CachedMeshResult> future;
+        std::string id;
+        assets::MeshLod lod=assets::MeshLod::high;
+        std::uint64_t epoch=0U;
+        std::chrono::steady_clock::time_point started{};
+    };
+    // Three bounded network/decoding slots, with serial GPU admission.
+    constexpr std::size_t max_parallel_mesh_downloads=3U;
+    std::vector<MeshInFlight> mesh_in_flight;
+    std::size_t mesh_peak_in_flight=0U;
     std::string mesh_asset_loading_id;
     assets::MeshLod mesh_asset_loading_lod = assets::MeshLod::high;
     std::unordered_map<std::string, assets::MeshLod> mesh_desired_lods;
@@ -6170,7 +6182,7 @@ int Application::run(bool enable_developer_modules)
     std::size_t mesh_network_loads = 0U;
     std::size_t mesh_gpu_evictions = 0U;
     assets::AssetRequestPacer mesh_request_pacer{
-        std::chrono::milliseconds{180}};
+        std::chrono::milliseconds{60}};
     assets::AssetRequestFairness mesh_request_fairness;
     std::size_t mesh_request_dispatches = 0U;
     std::chrono::steady_clock::time_point last_mesh_telemetry{};
@@ -12930,12 +12942,17 @@ int Application::run(bool enable_developer_modules)
                                      world_model.self_appearance().has_value()};
                  }()
                 :std::pair{false,false};
+            const auto self_body_ref_count=std::count_if(
+                self_bake_ids.begin(),self_bake_ids.end(),
+                [](const auto& id){return !id.empty();});
             std::string avatar_bake_stream_status=
                 !self_bake_authenticated || !self_bake_lease
                     ?"Bakes: keine gueltige Self-/Regionssitzung"
-                :self_bake_ids[0].empty()&&self_bake_ids[1].empty()&&
-                 self_bake_ids[2].empty()
-                    ?"Bakes: Server-TE Head/Upper/Lower fehlen"
+                :self_body_ref_count==0
+                    ?"Avatar grau: 0/3 Server-Koerpertexturen. F9 Outfit/COF pruefen; Grid-Bake fehlt."
+                :self_body_ref_count<3
+                    ?"Avatar nur teilweise: "+std::to_string(self_body_ref_count)+
+                     "/3 Server-Bakes. F9 Outfit/COF pruefen."
                 :texture_capability.empty()
                     ?"Bakes: GetTexture-CAP fehlt"
                 :object_texture_loading
@@ -13499,6 +13516,27 @@ int Application::run(bool enable_developer_modules)
             // Asset decoding runs off-thread, GPU uploads only on the
             // renderer thread. Never upload results from a former region
             // or for meshes that have left the current residency set.
+            // Promote one ready job per frame; the original admission
+            // pipeline keeps all byte/slot/LOD/epoch checks authoritative.
+            if(!mesh_asset_future.valid())
+            {
+                const auto ready=std::find_if(mesh_in_flight.begin(),
+                    mesh_in_flight.end(),[](const MeshInFlight& task)
+                    {
+                        return task.future.valid() &&
+                            task.future.wait_for(std::chrono::seconds{0})==
+                                std::future_status::ready;
+                    });
+                if(ready!=mesh_in_flight.end())
+                {
+                    mesh_asset_future=std::move(ready->future);
+                    mesh_asset_loading_id=std::move(ready->id);
+                    mesh_asset_loading_lod=ready->lod;
+                    mesh_asset_request_epoch=ready->epoch;
+                    mesh_request_started=ready->started;
+                    mesh_in_flight.erase(ready);
+                }
+            }
             if (mesh_asset_future.valid() &&
                 mesh_asset_future.wait_for(std::chrono::seconds{0}) ==
                     std::future_status::ready &&
@@ -13717,14 +13755,52 @@ int Application::run(bool enable_developer_modules)
                 }
                 mesh_asset_loading_id.clear();
             }
-            if (!mesh_asset_future.valid() &&
+            if(mesh_in_flight.size()<max_parallel_mesh_downloads &&
+                !mesh_asset_future.valid() &&
                 !scoped_get_mesh_uri.empty() &&
                 mesh_request_pacer.ready(mesh_plan_now))
             {
                 // Keep original view/distance ranking inside each class,
                 // but permit ready retries to run after a burst of new assets.
-                const auto request_choice=mesh_request_fairness.choose(
-                    mesh_residency.prioritized_ids,{},
+                std::unordered_set<std::string> pending_mesh_ids;
+                for(const auto& task:mesh_in_flight)
+                    pending_mesh_ids.insert(task.id);
+                // Warm-start: two cache-first dispatches per three.
+                // Every third checks the global priority list, preventing
+                // unseen/network-only meshes from starving indefinitely.
+                std::optional<assets::AssetRequestChoice> request_choice;
+                if(mesh_request_fairness.dispatched_count()%3U!=2U)
+                {
+                    const assets::MeshDiskCache disk{
+                        assets::MeshDiskCache::default_directory()};
+                    request_choice=mesh_request_fairness.choose(
+                        mesh_residency.prioritized_ids,pending_mesh_ids,
+                        mesh_gpu_budget_deferred_ids,mesh_asset_retries,
+                        mesh_plan_now,
+                        [&](const std::string& id)
+                        {
+                            const auto desired=mesh_desired_lods.find(id);
+                            return desired==mesh_desired_lods.end()
+                                ?std::string{}:id+"."+
+                                 std::string(assets::mesh_lod_name(desired->second));
+                        },
+                        [&](const std::string& id)
+                        {
+                            const auto desired=mesh_desired_lods.find(id);
+                            if(desired==mesh_desired_lods.end())return false;
+                            const auto existing=mesh_gpu_lods.find(id);
+                            const bool fits=(existing!=mesh_gpu_lods.end()&&
+                                existing->second==desired->second)||
+                                mesh_asset_loaded_ids.contains(id)||
+                                mesh_asset_loaded_ids.size()<mesh_gpu_asset_budget;
+                            return fits&&
+                                (mesh_memory_cache->contains(id,desired->second)||
+                                 disk.contains(id,desired->second));
+                        });
+                }
+                if(!request_choice)
+                    request_choice=mesh_request_fairness.choose(
+                    mesh_residency.prioritized_ids,pending_mesh_ids,
                     mesh_gpu_budget_deferred_ids,mesh_asset_retries,
                     mesh_plan_now,
                     [&](const std::string& id)
@@ -13751,20 +13827,18 @@ int Application::run(bool enable_developer_modules)
                     const auto lod=mesh_desired_lods.at(id);
                     if (request_choice->is_retry)
                         ++mesh_retry_dispatches;
-                    mesh_asset_loading_id = id;
-                    mesh_request_started = std::chrono::steady_clock::now();
-                    mesh_request_pacer.dispatched(mesh_request_started);
+                    const auto started=std::chrono::steady_clock::now();
+                    mesh_request_pacer.dispatched(started);
                     mesh_request_fairness.dispatched();
                     ++mesh_request_dispatches;
-                    mesh_asset_loading_lod = lod;
-                    mesh_asset_request_epoch = material_scope.epoch();
-                    const std::string cap = scoped_get_mesh_uri;
-                    const std::string alt_cap = scoped_get_mesh_alt_uri;
-                    mesh_asset_future = std::async(
+                    const auto request_epoch=material_scope.epoch();
+                    const std::string cap=scoped_get_mesh_uri;
+                    const std::string alt_cap=scoped_get_mesh_alt_uri;
+                    auto future=std::async(
                         std::launch::async,
                         [transport, cap, alt_cap, id, lod, mesh_memory_cache,
                          live_epoch=texture_prefetch_live_epoch,
-                         expected_epoch=mesh_asset_request_epoch]()
+                         expected_epoch=request_epoch]()
                         {
                             const auto active=[&]()
                             {
@@ -13781,6 +13855,10 @@ int Application::run(bool enable_developer_modules)
                                         .fetch(cap,id,alt_cap,lod);
                                 },lod,active);
                         });
+                    mesh_in_flight.push_back(MeshInFlight{
+                        std::move(future),id,lod,request_epoch,started});
+                    mesh_peak_in_flight=std::max(mesh_peak_in_flight,
+                        mesh_in_flight.size());
                     core::info("GetMesh request started for " + id +
                         "; requested_lod=" + std::string(assets::mesh_lod_name(lod)));
                 }
@@ -13791,7 +13869,10 @@ int Application::run(bool enable_developer_modules)
                     std::chrono::seconds{60})
             {
                 last_mesh_telemetry = mesh_plan_now;
-                core::info("GetMesh streaming metrics: ram_hits=" +
+                core::info("GetMesh streaming metrics: parallel_in_flight=" +
+                    std::to_string(mesh_in_flight.size()) +
+                    " parallel_peak=" + std::to_string(mesh_peak_in_flight) +
+                    " ram_hits=" +
                     std::to_string(mesh_ram_hits) +
                     " disk_hits=" + std::to_string(mesh_disk_hits) +
                     " network_loads=" + std::to_string(mesh_network_loads) +
@@ -13884,7 +13965,9 @@ int Application::run(bool enable_developer_modules)
                 snapshot.texture_in_flight=static_cast<std::uint32_t>(
                     texture_in_flight.size()+
                     (object_texture_future.valid()?1U:0U));
-                snapshot.mesh_in_flight=mesh_asset_future.valid()?1U:0U;
+                snapshot.mesh_in_flight=static_cast<std::uint32_t>(
+                    mesh_in_flight.size()+
+                    (mesh_asset_future.valid()?1U:0U));
                 snapshot.texture_retry_blocked=
                     object_texture_retries.blocked_count(mesh_plan_now);
                 snapshot.mesh_retry_blocked=
@@ -14055,7 +14138,8 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_in_flight.size()+
                         (object_texture_future.valid()?1U:0U)) +
                     " mesh_in_flight=" +
-                    std::to_string(mesh_asset_future.valid()?1U:0U) +
+                    std::to_string(mesh_in_flight.size()+
+                        (mesh_asset_future.valid()?1U:0U)) +
                     " texture_failures_tracked=" +
                     std::to_string(object_texture_retries.count()) +
                     " mesh_failures_tracked=" +
@@ -15501,7 +15585,9 @@ int Application::run(bool enable_developer_modules)
     shutdown_wait(gallery_sync_future,"outfit inventory");
     shutdown_wait_group(gallery_image_futures,"outfit images");
     shutdown_wait(region_material_discovery_future,"region materials discovery");
-    shutdown_wait(mesh_asset_future,"mesh asset");
+    shutdown_wait(mesh_asset_future,"mesh GPU admission");
+    for(auto& task:mesh_in_flight)
+        shutdown_wait(task.future,"parallel mesh asset");
     shutdown_wait(render_materials_future,"render materials GET");
     shutdown_wait(render_materials_post_future,"render materials POST");
     shutdown_wait(terrain_texture_future,"terrain textures");
