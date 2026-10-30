@@ -251,6 +251,112 @@ int main()
             LlsdValue::uri(invalid_seed);
         if(parse_crossed_region_caps_event(bad))return 14;
     }
+    // A syntactically accepted, but structurally invalid
+    // EstablishAgentCommunication previously appeared as VALIDATED in
+    // logs. Never advertise an unusable socket or untrusted seed.
+    for(const auto* invalid:{
+        "", "192.0.2.5", "192.0.2.5:0", "192.0.2.5:65536",
+        "192.0.2.5:99999", "192.0.2.5:-1",
+        "192.0.2.5:9999junk", "256.0.2.5:9000",
+        "192.0.2.999:9000", "192.0.2.5:9000/path",
+        "https://evil.invalid:9000", "192.0.2.5:9000@evil.invalid",
+        "[2001:db8::1]:0", "[2001:db8::1]:65536",
+        "2001:db8::1:9000", "[2001:db8::1]9000"})
+    {
+        auto bad=establish;
+        bad.body.map_value["sim-ip-and-port"]=
+            LlsdValue::string(invalid);
+        if(parse_establish_agent_communication_event(bad))return 19;
+    }
+    for(const auto* valid:{
+        "127.0.0.1:9000", "192.0.2.5:65535",
+        "simulator.nexverse.example:9000", "[2001:db8::1]:9000"})
+    {
+        auto good=establish;
+        good.body.map_value["sim-ip-and-port"]=
+            LlsdValue::string(valid);
+        if(const auto e=parse_establish_agent_communication_event(good);
+           !e||e->simulator_endpoint!=valid)return 20;
+    }
+    for(const auto* invalid:{
+        "", "file:///tmp/token", "http://evil.invalid:443@caps.test/",
+        "http://caps.example/seed#fragment", "https://caps.example\\bad/"})
+    {
+        auto bad=establish;
+        bad.body.map_value["seed-capability"]=LlsdValue::uri(invalid);
+        if(parse_establish_agent_communication_event(bad))return 21;
+    }
+    auto valid_seed=establish;
+    valid_seed.body.map_value["seed-capability"]=
+        LlsdValue::uri("https://caps.example:443/seed?identity=opaque");
+    if(!parse_establish_agent_communication_event(valid_seed))return 22;
+    // Host-only and bracketed-port IPv6 parsing must reject malformed
+    // hextet counts, triple-colons, oversized segments and mapped
+    // IPv4 octets without disabling legitimate IPv6 socket handoff.
+    for(const auto* invalid:{
+        "[1:2:3]:9000", "[1:::2]:9000",
+        "[1:2:3:4:5:6:7:8:9]:9000",
+        "[fffff::1]:9000", "[::ffff:999.1.2.3]:9000",
+        "[1::2::3]:9000", "[]:9000"})
+    {
+        auto bad=establish;
+        bad.body.map_value["sim-ip-and-port"]=LlsdValue::string(invalid);
+        if(parse_establish_agent_communication_event(bad))return 30;
+    }
+    for(const auto* valid:{
+        "[::1]:9000", "[2001:db8::1]:9000",
+        "[1:2:3:4:5:6:7:8]:9000",
+        "[::ffff:192.0.2.5]:9000"})
+    {
+        auto good=establish;
+        good.body.map_value["sim-ip-and-port"]=LlsdValue::string(valid);
+        if(!parse_establish_agent_communication_event(good))return 31;
+    }
+    // Every CAPS event carrying simulator address text shares the
+    // same strict host check; binary IPv4/IPv6 remains interoperable.
+    for(const auto* invalid:{
+        "", "999.1.2.3", "10.20.30.999", "1.2.3",
+        "1.2.3.4/path", "host:9000", "bad host",
+        "fake.invalid@127.0.0.1"})
+    {
+        auto bad=teleport;
+        bad.body.map_value.at("Info").array_value.at(0U)
+           .map_value["SimIP"]=LlsdValue::string(invalid);
+        if(parse_teleport_finish_caps_event(bad))return 23;
+    }
+    for(const auto* valid:{
+        "192.0.2.5", "my-region.example", "2001:db8::1"})
+    {
+        auto good=teleport;
+        good.body.map_value.at("Info").array_value.at(0U)
+           .map_value["SimIP"]=LlsdValue::string(valid);
+        if(!parse_teleport_finish_caps_event(good))return 24;
+    }
+    // EnableSimulator/CrossedRegion share the exact same string-IP
+    // validator as TeleportFinish (binary IPv4/IPv6 remain intact).
+    auto bad_enable=enable;
+    bad_enable.body.map_value.at("SimulatorInfo").array_value.at(0U)
+        .map_value["IP"]=LlsdValue::string("192.0.2.999");
+    if(parse_enable_simulator_event(bad_enable))return 25;
+    auto hostname_enable=enable;
+    hostname_enable.body.map_value.at("SimulatorInfo").array_value.at(0U)
+        .map_value["IP"]=LlsdValue::string("region.example");
+    if(!parse_enable_simulator_event(hostname_enable))return 26;
+    auto bad_crossed=crossed;
+    region_of(bad_crossed).map_value["SimIP"]=
+        LlsdValue::string("10.0.0.0:9999");
+    if(parse_crossed_region_caps_event(bad_crossed))return 27;
+    auto ipv6_crossed=crossed;
+    region_of(ipv6_crossed).map_value["SimIP"]=
+        LlsdValue::string("2001:db8::1");
+    if(!parse_crossed_region_caps_event(ipv6_crossed))return 28;
+    auto binary_ipv6=crossed;
+    region_of(binary_ipv6).map_value["SimIP"]=
+        LlsdValue::binary({0x20U,0x01U,0x0dU,0xb8U,0U,0U,0U,0U,
+                            0U,0U,0U,0U,0U,0U,0U,1U});
+    if(const auto parsed=parse_crossed_region_caps_event(binary_ipv6);
+       !parsed||parsed->simulator.simulator_ip!="2001:db8:0:0:0:0:0:1")
+        return 29;
     // A normal HTTPS seed, 512m region and valid negative position
     // remain fully compatible with modern OpenSim grid events.
     if(!parse_crossed_region_caps_event(crossed))return 15;

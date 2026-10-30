@@ -4806,10 +4806,17 @@ int Application::run(bool enable_developer_modules)
         "EstablishAgentCommunication",
         [](const protocol::EventQueueEvent& event)
         {
-            if (protocol::parse_establish_agent_communication_event(event).has_value())
+            if(protocol::parse_establish_agent_communication_event(event))
             {
-                core::info(
-                    "CAPS EstablishAgentCommunication world event validated");
+                // This confirms input syntax only. The event currently
+                // does not activate a second UDP circuit by itself.
+                core::info("CAPS EstablishAgentCommunication parsed; "
+                           "no new circuit activated");
+            }
+            else
+            {
+                // Do not log an untrusted seed URL or agent identity.
+                core::warning("CAPS EstablishAgentCommunication rejected");
             }
         });
 

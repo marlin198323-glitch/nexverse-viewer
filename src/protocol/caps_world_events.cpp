@@ -6,6 +6,10 @@
 #include "nexverse/protocol/grid_info.hpp"
 
 #include <array>
+#include <algorithm>
+#include <charconv>
+#include <cctype>
+#include <string_view>
 #include <cstddef>
 #include <cmath>
 #include <limits>
@@ -117,6 +121,158 @@ bool read_region_handle(
     return false;
 }
 
+// A valid IPv6 literal has eight hex groups, or fewer when precisely
+// one :: compresses missing groups. IPv4-mapped endings count as two
+// groups. Reject impostors such as triple colons and too many groups.
+bool valid_ipv6_literal(std::string_view address)
+{
+    if(address.size()<2U||address.size()>45U)return false;
+    const auto compressed=address.find("::");
+    if(compressed!=std::string_view::npos&&
+       address.find("::",compressed+2U)!=std::string_view::npos)
+        return false;
+    if(compressed==std::string_view::npos&&
+       (address.front()==':'||address.back()==':'))
+        return false;
+    unsigned groups=0U;
+    std::size_t pos=0U;
+    while(pos<address.size())
+    {
+        if(address[pos]==':')
+        {
+            if(pos!=compressed)return false;
+            pos+=2U;
+            continue;
+        }
+        const auto end=address.find(':',pos);
+        const auto part=address.substr(pos,
+            end==std::string_view::npos?
+                std::string_view::npos:end-pos);
+        if(part.empty())return false;
+        if(part.find('.')!=std::string_view::npos)
+        {
+            // A mapped IPv4 tail must be the final two groups.
+            if(end!=std::string_view::npos||part.size()>15U)
+                return false;
+            std::size_t start=0U;
+            for(unsigned i=0U;i<4U;++i)
+            {
+                const auto stop=part.find('.',start);
+                if(i==3U?stop!=std::string_view::npos:
+                         stop==std::string_view::npos)return false;
+                const auto octet_text=part.substr(start,
+                    stop==std::string_view::npos?
+                        std::string_view::npos:stop-start);
+                if(octet_text.empty()||octet_text.size()>3U)
+                    return false;
+                unsigned octet=0U;
+                const auto result=std::from_chars(octet_text.data(),
+                    octet_text.data()+octet_text.size(),octet);
+                if(result.ec!=std::errc{}||
+                   result.ptr!=octet_text.data()+octet_text.size()||
+                   octet>255U)return false;
+                start=stop+1U;
+            }
+            groups+=2U;
+        }
+        else
+        {
+            if(part.size()>4U)return false;
+            if(!std::all_of(part.begin(),part.end(),
+                  [](unsigned char ch){return std::isxdigit(ch)!=0;}))
+                return false;
+            ++groups;
+        }
+        if(groups>8U)return false;
+        pos=end==std::string_view::npos?address.size():end;
+        if(pos<address.size())
+        {
+            if(pos==compressed)pos+=2U;
+            else ++pos;
+        }
+    }
+    return compressed==std::string_view::npos?
+        groups==8U:groups<8U;
+}
+// CAPS simulator addresses come from untrusted LLSD. Preserve DNS,
+// IPv4 and unbracketed IPv6 literals, but never accept URL paths,
+// embedded credentials, socket delimiters, or malformed IPv4 octets.
+bool valid_simulator_host(std::string_view host)
+{
+    if(host.empty()||host.size()>253U||
+       host.find_first_of("/?#@\\ \r\n\t")!=std::string_view::npos)
+        return false;
+    if(host.find(':')!=std::string_view::npos)
+    {
+        // IPv6 SimIP strings carry no brackets; the existing hardened
+        // URI validator accepts the bracketed form without zone IDs.
+        if(host.find('[')!=std::string_view::npos||
+           host.find(']')!=std::string_view::npos||
+           std::count(host.begin(),host.end(),':')<2)
+            return false;
+        return valid_ipv6_literal(host);
+    }
+    if(!nexverse::protocol::is_valid_http_uri(
+        "http://"+std::string{host}+"/"))
+        return false;
+    const bool dotted_numeric=host.find('.')!=std::string_view::npos&&
+        std::all_of(host.begin(),host.end(),[](unsigned char ch)
+        {return (ch>='0'&&ch<='9')||ch=='.';});
+    if(!dotted_numeric)return true; // DNS name is resolved by transport
+    std::size_t start=0U;
+    for(int group=0;group<4;++group)
+    {
+        const auto end=host.find('.',start);
+        if(group==3?end!=std::string_view::npos:
+                    end==std::string_view::npos)return false;
+        const auto part=host.substr(
+            start,end==std::string_view::npos
+                ?std::string_view::npos:end-start);
+        if(part.empty()||part.size()>3U)return false;
+        unsigned octet=0U;
+        const auto result=std::from_chars(
+            part.data(),part.data()+part.size(),octet);
+        if(result.ec!=std::errc{}||
+           result.ptr!=part.data()+part.size()||octet>255U)
+            return false;
+        start=end+1U;
+    }
+    return true;
+}
+bool valid_simulator_endpoint(std::string_view endpoint)
+{
+    // EstablishAgentCommunication has an explicit host:port value.
+    // URI-like strings and omitted/overflowing ports are not sockets.
+    if(endpoint.empty()||endpoint.size()>300U||
+       endpoint.find_first_of("/?#@\\ \r\n\t")!=std::string_view::npos)
+        return false;
+    std::string_view host,port;
+    if(endpoint.front()=='[')
+    {
+        const auto close=endpoint.find(']');
+        if(close==std::string_view::npos||close+1U>=endpoint.size()||
+           endpoint[close+1U]!=':')return false;
+        host=endpoint.substr(1U,close-1U);
+        port=endpoint.substr(close+2U);
+        if(host.find(':')==std::string_view::npos)return false;
+    }
+    else
+    {
+        const auto split=endpoint.rfind(':');
+        if(split==std::string_view::npos||
+           endpoint.find(':')!=split)return false;
+        host=endpoint.substr(0U,split);
+        port=endpoint.substr(split+1U);
+    }
+    if(!valid_simulator_host(host)||port.empty()||port.size()>5U)
+        return false;
+    unsigned number=0U;
+    const auto result=std::from_chars(
+        port.data(),port.data()+port.size(),number);
+    return result.ec==std::errc{}&&
+        result.ptr==port.data()+port.size()&&
+        number>=1U&&number<=65535U;
+}
 bool read_ip(
     const LlsdValue* value,
     std::string& out)
@@ -129,7 +285,7 @@ bool read_ip(
     if (value->type == LlsdType::string)
     {
         out = value->string_value;
-        return !out.empty();
+        return valid_simulator_host(out);
     }
 
     if (value->type != LlsdType::binary)
@@ -324,9 +480,11 @@ parse_establish_agent_communication_event(const EventQueueEvent& event)
         !read_string_like(
             event.body.find("sim-ip-and-port"),
             parsed.simulator_endpoint) ||
+        !valid_simulator_endpoint(parsed.simulator_endpoint) ||
         !read_string_like(
             event.body.find("seed-capability"),
-            parsed.seed_capability))
+            parsed.seed_capability) ||
+        !is_valid_http_uri(parsed.seed_capability))
     {
         return std::nullopt;
     }

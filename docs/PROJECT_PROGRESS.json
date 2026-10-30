@@ -752,5 +752,26 @@
     "real_region_teleport_movement": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_caps_establishagent_simulator_endpoint_validation_20261030": {
+    "status": "IMPLEMENTED_MINT_FULL_TESTED_AUTHENTICATED_LIVE_HANDOFF_UNVERIFIED",
+    "documentation": "docs/V0_4_0_0_CAPS_ESTABLISH_SIMULATOR_ENDPOINT_VALIDATION_20261030.md",
+    "strict_ipv4_host_numeric_octets": true,
+    "valid_dns_ipv4_and_ipv6_sockets_preserved": true,
+    "bracketed_ipv6_exact_compression_and_mapped_ipv4": true,
+    "simulator_endpoint_port_required_1_to_65535": true,
+    "caps_seed_uri_uses_hardened_validator": true,
+    "enable_teleport_crossed_string_sim_ip_uses_shared_validator": true,
+    "binary_ipv4_ipv6_llsd_unchanged": true,
+    "event_parsed_not_claimed_as_circuit_started": true,
+    "rejected_event_logs_do_not_include_caps_url_or_agent_ids": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "825/825 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_caps_region_handoff": "OPEN",
+    "real_avatar_head_upper_lower_skin_cof": "OPEN",
+    "real_wasd_flight_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
