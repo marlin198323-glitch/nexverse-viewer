@@ -70,5 +70,22 @@ int main()
        !monitor.snapshot().stalled)return 14;
     if(std::string_view(monitor.status()).find("bleibt aus")==
        std::string_view::npos)return 15;
+    // Contradictory simulated vertical controls cannot create a
+    // server-authoritative flight/jump acknowledgement even if a
+    // pre-existing Z correction arrives after a socket callback.
+    monitor.reset();
+    (void)monitor.server_position({10,20,30},t+40s);
+    monitor.queued_controls(control_up_pos|control_up_neg);
+    monitor.outbound_controls(control_up_pos|control_up_neg,t+41s);
+    if(monitor.snapshot().queued||monitor.snapshot().sent||
+       monitor.server_position({10,20,30.9f},t+42s)||
+       monitor.snapshot().confirmed)return 20;
+    // After cancelling Space+C, the new actual UDP sign can be armed
+    // and later confirmed by a fresh simulator Z delta.
+    monitor.queued_controls(control_up_pos);
+    monitor.outbound_controls(control_up_pos,t+43s);
+    if(!monitor.snapshot().sent||monitor.snapshot().confirmed||
+       !monitor.server_position({10,20,31.2f},t+44s)||
+       !monitor.snapshot().confirmed)return 21;
     std::cout<<"OGL_REAL_SIMULATOR_VERTICAL_POSITION_READBACK_SIGN_AND_RESET_PASS\n";
 }

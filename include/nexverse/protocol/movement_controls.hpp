@@ -75,13 +75,19 @@ public:
         const bool move_backward=keys.backward&&!keys.forward;
         const bool strafe_left=keys.left&&!keys.right;
         const bool strafe_right=keys.right&&!keys.left;
+        // Space and C are competing directions on the same simulator
+        // vertical axis. Mirroring both bits at once gives the server
+        // ambiguous input (and can incorrectly arm flight evidence).
+        // Treat them as neutral, consistent with W+S and A+D.
+        const bool move_up=keys.jump&&!keys.descend;
+        const bool move_down=keys.descend&&!keys.jump;
         out.control_flags =
             (move_forward ? control_at_pos : 0U) |
             (move_backward ? control_at_neg : 0U) |
             (strafe_left ? control_left_pos : 0U) |
             (strafe_right ? control_left_neg : 0U) |
-            (keys.jump ? control_up_pos : 0U) |
-            (keys.descend ? control_up_neg : 0U) |
+            (move_up ? control_up_pos : 0U) |
+            (move_down ? control_up_neg : 0U) |
             // OpenGenesisLINK ScenePresence.cs: TURN_LEFT is paired
             // with YAW_POS, TURN_RIGHT with YAW_NEG. Sending the opposite
             // yaw sign makes the server's flying-roll/rotation disagree
@@ -90,8 +96,17 @@ public:
             (rotate_right ? control_yaw_neg | control_turn_right : 0U) |
             (fly_ ? control_fly : 0U);
         if (keys.sprint)
-            out.control_flags |= control_fast_at |
-                control_fast_left | control_fast_up;
+        {
+            // Fast flags are modifiers of an active translational axis.
+            // Do not send FAST_UP while only sprinting forward, or
+            // send any fast-movement bits while idle/turning/blocked.
+            if(move_forward||move_backward)
+                out.control_flags|=control_fast_at;
+            if(strafe_left||strafe_right)
+                out.control_flags|=control_fast_left;
+            if(move_up||move_down)
+                out.control_flags|=control_fast_up;
+        }
         return out;
     }
 

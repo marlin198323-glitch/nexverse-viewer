@@ -672,5 +672,25 @@
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65,
     "historical_failed_assets_repair_unverified": true
+  },
+  "v0400_agentupdate_vertical_key_conflict_and_axis_sprint_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_TESTED_LIVE_GRID_MOVEMENT_UNVERIFIED",
+    "documentation": "docs/V0_4_0_0_AGENTUPDATE_VERTICAL_CONFLICT_SPRINT_20261030.md",
+    "space_c_up_down_cancel": true,
+    "shift_fast_at_only_forward_backward": true,
+    "shift_fast_left_only_strafe": true,
+    "shift_fast_up_only_unambiguous_vertical": true,
+    "same_key_release_restores_vertical_without_new_toggle": true,
+    "fly_toggle_and_diagonal_packets_preserved": true,
+    "actual_lludp_high4_serialized_control_bits_tested": true,
+    "server_vertical_readback_does_not_confirm_cancelled_inputs": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "785/785 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "authenticated_simulator_wasd_z_yaw_flight_ack": "OPEN",
+    "real_avatar_head_upper_lower_skin_cof": "OPEN",
+    "real_region_teleport": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

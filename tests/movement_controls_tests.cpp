@@ -136,16 +136,76 @@ int main()
     const auto diagonal=c.step(k,0.1f);
     if(server_control_bits(diagonal)!=(control_at_pos|control_left_pos))
         return 28;
-    k = {};
-    k.jump = true;
-    k.descend = true;
-    auto vertical = c.step(k, 0.1f);
-    if ((vertical.control_flags & control_up_pos) == 0U ||
-        (vertical.control_flags & control_up_neg) == 0U)
+    k={};
+    k.jump=true;
+    k.descend=true;
+    const auto cancel_vertical=c.step(k,0.1f);
+    if((server_control_bits(cancel_vertical)&
+        (control_up_pos|control_up_neg))!=0U)
     {
-        std::cerr << "Jump/down input missing\n";
+        std::cerr << "Opposing jump/descend must cancel on LLUDP wire\n";
         return 7;
     }
+    // The actual encoded High4 AgentUpdate must carry exactly one
+    // vertical direction when only Space or only C is pressed.
+    k={};k.jump=true;
+    const auto jump=c.step(k,0.1f);
+    if(server_control_bits(jump)!=control_up_pos)return 44;
+    k={};k.descend=true;
+    const auto descend=c.step(k,0.1f);
+    if(server_control_bits(descend)!=control_up_neg)return 45;
+    // Shift on its own is not a movement command. Restrict each
+    // modifier to its active translational axis, preserving diagonal
+    // motion and flying jump/crouch while suppressing phantom speeds.
+    k={};k.sprint=true;
+    if(server_control_bits(c.step(k,0.1f))!=0U)return 46;
+    k={};k.sprint=true;k.turn_left=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_turn_left|control_yaw_pos))return 47;
+    k={};k.sprint=true;k.forward=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_at_pos|control_fast_at))return 48;
+    k={};k.sprint=true;k.left=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_left_pos|control_fast_left))return 49;
+    k={};k.sprint=true;k.jump=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_up_pos|control_fast_up))return 50;
+    k={};k.sprint=true;k.descend=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_up_neg|control_fast_up))return 51;
+    k={};k.sprint=true;k.forward=true;k.left=true;k.jump=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_at_pos|control_left_pos|control_up_pos|
+        control_fast_at|control_fast_left|control_fast_up))
+        return 52;
+    k={};k.sprint=true;k.jump=true;k.descend=true;
+    if(server_control_bits(c.step(k,0.1f))!=0U)return 53;
+    k={};k.sprint=true;k.forward=true;k.backward=true;
+    if(server_control_bits(c.step(k,0.1f))!=0U)return 54;
+    k={};k.sprint=true;k.left=true;k.right=true;
+    if(server_control_bits(c.step(k,0.1f))!=0U)return 55;
+    // A held Space+C chord releases cleanly when either key is lifted.
+    c.reset();
+    k={};k.jump=true;k.descend=true;
+    if(server_control_bits(c.step(k,0.1f))!=0U)return 56;
+    k.descend=false;
+    if(server_control_bits(c.step(k,0.1f))!=control_up_pos)return 57;
+    k.descend=true;k.jump=false;
+    if(server_control_bits(c.step(k,0.1f))!=control_up_neg)return 58;
+    // Flight remains toggled on; opposing height controls never send
+    // stale FAST_UP, nor do they turn F flight mode off.
+    c.reset();
+    k={};k.toggle_fly=true;
+    if((server_control_bits(c.step(k,0.1f))&control_fly)==0U)return 59;
+    k.toggle_fly=false;k.jump=true;k.descend=true;k.sprint=true;
+    if(server_control_bits(c.step(k,0.1f))!=control_fly)return 60;
+    k.descend=false;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_fly|control_up_pos|control_fast_up))return 61;
+    k.jump=false;k.descend=true;
+    if(server_control_bits(c.step(k,0.1f))!=
+       (control_fly|control_up_neg|control_fast_up))return 62;
     c.reset();
     if (c.flying())
     {
