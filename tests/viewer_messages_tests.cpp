@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 
 int main()
 {
@@ -1159,6 +1160,32 @@ int main()
         std::cerr << "TeleportLocationRequest encoding failed\n";
         return 6;
     }
+
+    // Even direct encoding of an invalid teleport is fail-closed:
+    // never send IEEE NaN/Inf to the simulator as coordinates, nor
+    // serialize an all-zero region handle by accident.
+    for(const float bad:{
+        std::numeric_limits<float>::quiet_NaN(),
+        std::numeric_limits<float>::infinity(),
+        -std::numeric_limits<float>::infinity()})
+    {
+        auto target=teleport;
+        target.position.y=bad;
+        if(!encode_teleport_location_request(90U,session,target).empty())
+            return 62;
+        target=teleport;
+        target.look_at.x=bad;
+        if(!encode_teleport_location_request(90U,session,target).empty())
+            return 63;
+    }
+    auto region_zero=teleport;
+    region_zero.region_handle=0U;
+    if(!encode_teleport_location_request(90U,session,region_zero).empty())
+        return 64;
+    auto zero_look=teleport;
+    zero_look.look_at={};
+    if(encode_teleport_location_request(90U,session,zero_look).empty())
+        return 65;
 
     std::vector<std::uint8_t> progress_payload(16U, 0U);
     progress_payload.push_back(0x04U);

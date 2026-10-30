@@ -2,6 +2,7 @@
 #include "nexverse/protocol/movement_controls.hpp"
 
 #include <iostream>
+#include <limits>
 
 int main()
 {
@@ -16,6 +17,7 @@ int main()
     chat.message = "Hallo";
 
     TeleportLocation teleport;
+    teleport.region_handle=0x0000010000000200ULL;
 
     if (!queue.push(movement) ||
         !queue.push(chat) ||
@@ -43,6 +45,32 @@ int main()
         std::cerr << "Outbound queue refill failed\n";
         return 3;
     }
+    // No malformed internal teleport may enter the reliable queue.
+    // Rejection must preserve already-enqueued chat/agent commands and
+    // must NOT turn a routine bad target into a disconnected circuit.
+    queue.clear();
+    if(!queue.push(chat)||queue.size()!=1U)return 40;
+    for(const float bad:{
+        std::numeric_limits<float>::quiet_NaN(),
+        std::numeric_limits<float>::infinity(),
+        -std::numeric_limits<float>::infinity()})
+    {
+        auto invalid=teleport;
+        invalid.position.x=bad;
+        if(queue.push(invalid)||queue.size()!=1U)return 41;
+        invalid=teleport;
+        invalid.look_at.z=bad;
+        if(queue.push(invalid)||queue.size()!=1U)return 42;
+    }
+    auto no_region=teleport;
+    no_region.region_handle=0U;
+    if(queue.push(no_region)||queue.size()!=1U)return 43;
+    const auto preserved=queue.try_pop();
+    if(!preserved||!std::holds_alternative<LocalChatMessage>(*preserved)||
+       queue.try_pop())return 44;
+    auto valid_zero_look=teleport;
+    valid_zero_look.look_at={0.0f,0.0f,0.0f};
+    if(!queue.push(valid_zero_look)||queue.size()!=1U)return 45;
     queue.clear();
     if (queue.size() != 0U)
     {

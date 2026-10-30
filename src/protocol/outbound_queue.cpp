@@ -16,6 +16,12 @@ OutboundCommandQueue::OutboundCommandQueue(std::size_t max_pending)
 
 bool OutboundCommandQueue::push(OutboundCommand command)
 {
+    // Reject malformed teleport commands BEFORE they occupy the reliable
+    // queue. Otherwise encoding an invalid target inside CircuitConnection
+    // reports an LLUDP failure and tears down a healthy world connection.
+    if(const auto* teleport=std::get_if<TeleportLocation>(&command);
+       teleport&&!valid_teleport_location(*teleport))
+        return false;
     std::scoped_lock lock{mutex_};
     if (std::holds_alternative<AgentUpdateData>(command))
     {

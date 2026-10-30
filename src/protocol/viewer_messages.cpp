@@ -1683,6 +1683,7 @@ std::vector<std::uint8_t> encode_teleport_location_request(
     const LoginSession& session,
     const TeleportLocation& target)
 {
+    if(!valid_teleport_location(target))return {};
     std::vector<std::uint8_t> payload;
     if (!append_uuid(payload, session.agent_id) ||
         !append_uuid(payload, session.session_id))

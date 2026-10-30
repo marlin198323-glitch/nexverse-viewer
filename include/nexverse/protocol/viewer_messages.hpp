@@ -8,6 +8,7 @@
 #include "nexverse/protocol/texture_entry.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -440,6 +441,21 @@ struct TeleportLocation
     Vec3 look_at{1.0f, 0.0f, 0.0f};
 };
 
+// The actual XML-RPC/grid UI validates region-local coordinates; this
+// second check protects ANY internal caller of the reliable LLUDP queue.
+// Never serialize NaN/Inf or a region handle of zero into a TeleportLocation.
+// A look_at of {0,0,0} is permitted for legacy simulator compatibility.
+[[nodiscard]] inline bool valid_teleport_location(
+    const TeleportLocation& location) noexcept
+{
+    const auto finite=[](const Vec3& v) noexcept
+    {
+        return std::isfinite(v.x)&&std::isfinite(v.y)&&
+            std::isfinite(v.z);
+    };
+    return location.region_handle!=0U &&
+        finite(location.position)&&finite(location.look_at);
+}
 struct TeleportProgressEvent
 {
     std::uint32_t flags = 0U;
