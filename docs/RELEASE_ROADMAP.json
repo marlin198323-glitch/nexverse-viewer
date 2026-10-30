@@ -10,6 +10,15 @@
   },
   "current_version": "v0.4.0.0",
   "current_status": "IN_ARBEIT_DEV_ONLY_NOT_RELEASED",
+  "current_development_batch": {
+    "date": "2026-10-30",
+    "topic": "bounded 4-way GetTexture, safe concurrent cache, secure login, sky",
+    "report": "docs/V0_4_0_0_TEN_BLOCKS_PARALLEL_TEXTURES_SKY_LOGIN_20261030.md",
+    "live_benchmark_after_changes": "OFFEN",
+    "server_texture_http404": 12,
+    "server_self_body_bakes_confirmed": 0,
+    "release": false
+  },
   "first_stable_release": "v1.0.0.0",
   "after_first_release": "v1.0.0.1",
   "legacy_alpha_history": "0.2.0-alpha.1194; previously numbered alpha blocks are historical development work, not main releases",

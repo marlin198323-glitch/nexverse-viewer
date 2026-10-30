@@ -51,7 +51,7 @@ class PersistentLosslessCacheContract(unittest.TestCase):
  def test_configurable_disk_not_user_gpu_vendor(self):
   s=source("src/assets/texture_disk_cache.cpp")
   self.assertIn('std::getenv("OGL_TEXTURE_CACHE_MIB")',s)
-  self.assertIn("constexpr std::uint64_t fallback=512ULL*mib",s)
+  self.assertIn("constexpr std::uint64_t fallback=1024ULL*mib",s)
   self.assertIn("size<128U||size>2048U",s)
  def test_existing_texture_path_and_two_tier_cache(self):
   s=source("src/assets/texture_disk_cache.cpp")

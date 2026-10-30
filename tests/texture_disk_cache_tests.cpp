@@ -7,6 +7,7 @@
 #include <iostream>
 #include <array>
 #include <vector>
+#include <future>
 
 using nexverse::assets::TextureDiskCache;
 using nexverse::assets::AssetCacheLookup;
@@ -75,7 +76,7 @@ int main()
         for(const char* malformed:{"0","99999","garbage","1x2","2049"})
         {
             ::setenv("OGL_TEXTURE_CACHE_MIB",malformed,1);
-            if(TextureDiskCache::default_budget_bytes()!=512ULL*mib)
+            if(TextureDiskCache::default_budget_bytes()!=1024ULL*mib)
                 error=33;
         }
     }
@@ -173,6 +174,41 @@ int main()
         AssetCacheLookup status=AssetCacheLookup::not_checked;
         if(cache.load(corrupted,&status)||status!=AssetCacheLookup::corrupt)
             error=25;
+    }
+    // Distinct and duplicate UUID writers may now run on parallel network
+    // futures. Only complete checksummed records must ever become visible;
+    // no shared ".part" temporary file may be left behind.
+    if(!error)
+    {
+        constexpr const char* parallel_ids[]={
+            "66666666-6666-6666-6666-666666666666",
+            "77777777-7777-7777-7777-777777777777",
+            "88888888-8888-8888-8888-888888888888"};
+        std::vector<std::future<bool>> writes;
+        for(int index=0;index<8;++index)
+        {
+            const std::string id{parallel_ids[index%3]};
+            writes.push_back(std::async(std::launch::async,
+                [root,index,id]()
+                {
+                    TextureDiskCache cache{root,8U*1024U*1024U};
+                    const ImageRgba8 pixel{1U,1U,{
+                        static_cast<std::uint8_t>(index),100U,200U,255U}};
+                    return cache.store(id,pixel);
+                }));
+        }
+        for(auto& f:writes)if(!f.get())error=36;
+        const TextureDiskCache reopened{root,8U*1024U*1024U};
+        for(const auto* id:parallel_ids)
+        {
+            AssetCacheLookup status=AssetCacheLookup::not_checked;
+            const auto got=reopened.load(id,&status);
+            if(!got||!got->valid()||status!=AssetCacheLookup::hit)
+                error=37;
+        }
+        for(const auto& item:std::filesystem::directory_iterator(root))
+            if(item.path().filename().string().find(".part.")!=
+                std::string::npos)error=38;
     }
     std::error_code ec;
     std::filesystem::remove_all(root,ec);

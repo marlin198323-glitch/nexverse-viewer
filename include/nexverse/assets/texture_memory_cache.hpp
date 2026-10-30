@@ -18,7 +18,7 @@ class TextureMemoryCache
 {
 public:
     explicit TextureMemoryCache(
-        std::size_t byte_budget = 96U*1024U*1024U);
+        std::size_t byte_budget = 128U*1024U*1024U);
     [[nodiscard]] std::optional<ImageRgba8> load(std::string_view id);
     [[nodiscard]] bool contains(std::string_view id) const;
     [[nodiscard]] bool store(std::string_view id,const ImageRgba8& image);

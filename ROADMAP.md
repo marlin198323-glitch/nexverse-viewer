@@ -1,3 +1,5 @@
+**30.10.2026 – 10-BLOCK-P0 CACHE/LOGIN/HIMMEL:** 4 gleichzeitige GetTexture HTTP-Worker statt 1, In-flight-UUID-Dedup, ID/Mip/Epoch-Guards, nur GL-Thread-GPU-Uploads, 1 GiB Diskcache (128–2048 MiB konfigurierbar), 128 MiB RAM-LRU, 16-ms adaptives GPU-Upload-Gate, atomare parallele .part-Schreibvorgänge, GNOME-Keyring-Login-Opt-in mit Erfolgshinweis, Kamera-/WindLight-abhängige Sonne und Sky-Diagnose. Native Concurrency-/Sun-Tests und 10 Python-Verträge ergänzt. Letztes bestehendes Live-Log: 268/280 Texturen (95 %), zwölf serverseitige 404, Avatar 0/3 Bakes; echte Nachher-Live- und visuelle Abnahme OFFEN. Kein Release, v0.4.0.0 IN ARBEIT, 39 % (38,65 %). Details `docs/V0_4_0_0_TEN_BLOCKS_PARALLEL_TEXTURES_SKY_LOGIN_20261030.md`.
+
 # OpenGenesisLINK Viewer – Versionierte Roadmap
 
 **Aktives Entwicklungsziel v0.4.0.0 – IN ARBEIT, nicht released.**

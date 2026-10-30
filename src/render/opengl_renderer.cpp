@@ -2403,15 +2403,23 @@ void main()
     // upward/downward and placed the sun at a fictitious screen position.
     float elevation = uCameraPitch +
         (vUv.y - 0.5) * max(uVerticalFov, 0.1);
-    float y = clamp(elevation / max(uVerticalFov, 0.1) + 0.40, 0.0, 1.0);
-    float gradientPower = clamp(0.62 + uHazeDensity * 0.20, 0.55, 1.15);
-    vec3 sky = mix(uHorizon, uZenith, pow(y, gradientPower));
-
-    float sunDist = distance(vUv, uSunPosition);
-    float sun = uSunVisible * (1.0 - smoothstep(0.013, 0.029, sunDist));
-    float glow = uSunVisible * (1.0 - smoothstep(0.025, 0.19, sunDist));
-    sky += uSunColor * sun * 0.85;
-    sky += uSunColor * glow * 0.10;
+    // Atmospheric horizon remains visible at real camera elevations.
+    // Preserve WindLight blue-horizon/blue-density colours without a
+    // bitmap sky replacement or an invented fixed-position solar disc.
+    float rise = clamp(elevation / max(uVerticalFov, 0.1) + 0.46, 0.0, 1.0);
+    float haze = clamp(uHazeDensity, 0.0, 4.0);
+    float gradientPower = clamp(0.62 + haze * 0.20, 0.55, 1.20);
+    vec3 sky = mix(uHorizon, uZenith, pow(rise, gradientPower));
+    // Distance to actual projected sun, in aspect-ratio-corrected screen
+    // coordinates. Disc and corona brighten independently at any FOV.
+    vec2 sunOffset = vUv - uSunPosition;
+    float sunDist = length(vec2(sunOffset.x * (1.0 + 0.12 * haze),
+                                sunOffset.y));
+    float sun = uSunVisible * (1.0 - smoothstep(0.008, 0.022, sunDist));
+    float corona = uSunVisible * (1.0 - smoothstep(0.018, 0.17, sunDist));
+    float scatter = uSunVisible * (1.0 - smoothstep(0.06, 0.40, sunDist));
+    sky += max(uSunColor,vec3(0.0)) *
+        (sun * 1.45 + corona * 0.26 + scatter * 0.055);
 
     float subtle = 0.006 * sin(uTime * 0.08);
     sky += vec3(subtle);
@@ -3265,6 +3273,17 @@ public:
         const RenderEnvironment& environment) override
     {
         environment_ = environment;
+        // An environment revision is a low-frequency, credential-free
+        // diagnostic. It distinguishes missing simulator sky settings from
+        // a camera-facing/occlusion problem during real-world inspection.
+        nexverse::core::info(
+            "OGL sky environment: available="+
+            std::to_string(environment.available?1:0)+
+            " sun_angle="+std::to_string(environment.sun_angle)+
+            " east_angle="+std::to_string(environment.east_angle)+
+            " horizon_rgb="+std::to_string(environment.blue_horizon.x)+","+
+                std::to_string(environment.blue_horizon.y)+","+
+                std::to_string(environment.blue_horizon.z));
     }
 
     void set_scene_objects(

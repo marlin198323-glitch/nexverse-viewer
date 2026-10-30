@@ -6,6 +6,7 @@
 #include <zlib.h>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <charconv>
 #include <cctype>
@@ -82,7 +83,7 @@ bool read_le(std::istream& f,T& out)
 std::uint64_t TextureDiskCache::default_budget_bytes() noexcept
 {
     constexpr std::uint64_t mib=1024ULL*1024ULL;
-    constexpr std::uint64_t fallback=512ULL*mib;
+    constexpr std::uint64_t fallback=1024ULL*mib;
     const char* raw=std::getenv("OGL_TEXTURE_CACHE_MIB");
     if(raw==nullptr||*raw=='\0')return fallback;
     const std::string_view value{raw};
@@ -246,9 +247,15 @@ bool TextureDiskCache::store(std::string_view id,const ImageRgba8& image) const
                 compressible=true;
             }
         }
-        // Temp is per-call; the sequential GetTexture pipeline owns writes.
+        // Parallel GetTexture requests (and separate terrain/COF readers)
+        // must never truncate each other's partial files. Publish only a
+        // complete, checksummed file through the atomic destination rename.
+        static std::atomic<std::uint64_t> temp_sequence{0U};
         auto temp=dest;
-        temp+=".part";
+        temp+=".part."+std::to_string(
+            temp_sequence.fetch_add(1U,std::memory_order_relaxed)+1U)+
+            "."+std::to_string(std::chrono::steady_clock::now()
+                .time_since_epoch().count());
         {
             std::ofstream f{temp,std::ios::binary|std::ios::trunc};
             if(!f)return false;

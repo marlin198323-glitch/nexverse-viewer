@@ -98,6 +98,14 @@ int main()
     env.sun_angle=std::numeric_limits<float>::quiet_NaN();
     if(nexverse::render::project_environment_sun(
         env,camera,16.0f/9.0f).sun_in_view)return 17;
+    // Nighttime: even a geometrically front-facing sun below the
+    // WindLight horizon must not be painted onto the visible sky.
+    env.sun_angle=4.71238898f;
+    camera.forward={0.0f,0.0f,-1.0f};
+    camera.up={1.0f,0.0f,0.0f};
+    const auto night=nexverse::render::project_environment_sun(
+        env,camera,16.0f/9.0f);
+    if(night.sun_in_view)return 19;
     // A newly visible near-side building no longer receives distant
     // 64m/128m low-res mips, while texture GPU budgets still apply.
     const auto near_high=plan_texture_mip_levels(

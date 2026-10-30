@@ -48,7 +48,8 @@ class SecureLoginCacheAndSkyContracts(unittest.TestCase):
   a=src("src/app/application.cpp")
   self.assertIn("load_texture_cached_scoped(",a)
   self.assertIn("texture_gpu_budget_bytes =",a)
-  self.assertIn("object_texture_request_epoch = material_scope.epoch()",a)
+  self.assertIn("const auto request_epoch=material_scope.epoch()",a)
+  self.assertIn("object_texture_request_epoch=ready->epoch;",a)
  def test_sun_position_camera_not_fixed_viewport(self):
   r=src("src/render/opengl_renderer.cpp")
   self.assertIn("project_environment_sun(env,camera_,sky_aspect)",r)

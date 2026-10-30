@@ -6130,7 +6130,10 @@ int Application::run(bool enable_developer_modules)
     constexpr std::size_t max_mesh_pick_cpu_bytes=24U*1024U*1024U;
     assets::AssetLodDwell<assets::MeshLod> mesh_lod_dwell;
     bool mesh_last_planned_quality=true;
-    assets::AssetGpuUploadGate asset_gpu_upload_gate;
+    // Frame-budgeted uploads: 16ms base; submission-latency feedback
+    // increases this automatically under GPU/driver pressure.
+    assets::AssetGpuUploadGate asset_gpu_upload_gate{
+        std::chrono::milliseconds{16}};
     assets::AssetUploadTelemetry asset_gpu_upload_telemetry;
     assets::AssetScenePriorityFeedback mesh_priority_feedback;
     assets::AssetScenePriorityFeedback texture_priority_feedback;
@@ -6329,11 +6332,24 @@ int Application::run(bool enable_developer_modules)
     std::size_t texture_prefetch_stale = 0U;
     assets::AssetRequestPacer texture_prefetch_pacer{
         std::chrono::milliseconds{650}};
+    // Four bounded GetTexture requests can overlap network latency. The
+    // render thread still alone owns GPU uploads and admission decisions.
     assets::AssetRequestPacer texture_request_pacer{
-        std::chrono::milliseconds{125}};
+        std::chrono::milliseconds{35}};
     assets::AssetRequestFairness texture_request_fairness;
     std::size_t texture_request_dispatches = 0U;
     std::future<assets::TextureAssetResult> object_texture_future;
+    struct TextureInFlight
+    {
+        std::future<assets::TextureAssetResult> future;
+        std::string id;
+        std::uint8_t mip=0U;
+        std::uint64_t epoch=0U;
+        std::chrono::steady_clock::time_point started{};
+    };
+    constexpr std::size_t max_parallel_texture_downloads=4U;
+    std::vector<TextureInFlight> texture_in_flight;
+    std::size_t texture_peak_in_flight=0U;
     bool object_texture_loading = false;
     std::uint64_t object_texture_request_epoch = 0U;
     std::string object_texture_loading_id;
@@ -7150,8 +7166,9 @@ int Application::run(bool enable_developer_modules)
                             // give a truthful status without leaking data.
                             const bool saved=ui::save_ogl_login(
                                 login_ui.username,pending_login_password_for_keyring);
-                            if(!saved)login_ui.notice=
-                                "Angemeldet; Schlüsselbund konnte Login nicht speichern.";
+                            login_ui.notice=saved
+                                ? "Angemeldet. Login sicher im Schlüsselbund gespeichert."
+                                : "Angemeldet; Schlüsselbund konnte Login nicht speichern.";
                         }
                         std::fill(pending_login_password_for_keyring.begin(),
                                   pending_login_password_for_keyring.end(),'\0');
@@ -12499,8 +12516,29 @@ int Application::run(bool enable_developer_modules)
             const auto admitted_bakes=
                 assets::admit_avatar_bake_gpu_candidates(
                     avatar_proxy_update);
-            if (object_texture_loading &&
-                object_texture_future.valid() &&
+            // Promote at most one ready request per frame into the existing
+            // serial GPU upload path. Network/decoding run in parallel, while
+            // exact id/mip/epoch provenance travels with each future.
+            if (!object_texture_future.valid())
+            {
+                const auto ready=std::find_if(texture_in_flight.begin(),
+                    texture_in_flight.end(),[](const TextureInFlight& task)
+                    {
+                        return task.future.valid() &&
+                            task.future.wait_for(std::chrono::seconds{0}) ==
+                                std::future_status::ready;
+                    });
+                if(ready!=texture_in_flight.end())
+                {
+                    object_texture_future=std::move(ready->future);
+                    object_texture_loading_id=std::move(ready->id);
+                    object_texture_loading_mip=ready->mip;
+                    object_texture_request_epoch=ready->epoch;
+                    texture_request_started=ready->started;
+                    texture_in_flight.erase(ready);
+                }
+            }
+            if (object_texture_future.valid() &&
                 object_texture_future.wait_for(
                     std::chrono::seconds{0}) ==
                     std::future_status::ready &&
@@ -12824,6 +12862,7 @@ int Application::run(bool enable_developer_modules)
                 }
 
                 object_texture_loading_id.clear();
+                object_texture_loading=!texture_in_flight.empty();
             }
 
             // Capped texture streaming: prioritize nearby particle
@@ -13083,10 +13122,16 @@ int Application::run(bool enable_developer_modules)
                     core::info("GetTexture GPU residency evicted=" +
                         std::to_string(evicted));
             }
-            if (!object_texture_loading && !texture_capability.empty() &&
+            if (texture_in_flight.size()<max_parallel_texture_downloads &&
+                !object_texture_future.valid() &&
+                !texture_capability.empty() &&
                 texture_request_pacer.ready(texture_plan_now))
             {
                 std::unordered_set<std::string> satisfied;
+                // Never download a UUID twice, even if multiple mip levels
+                // or a changing residency plan request it concurrently.
+                for(const auto& task:texture_in_flight)
+                    satisfied.insert(task.id);
                 for (const auto& [id,level] : texture_gpu_mips)
                 {
                     const auto target = texture_desired_mips.find(id);
@@ -13142,26 +13187,24 @@ int Application::run(bool enable_developer_modules)
                     {
                     if (request_choice->is_retry)
                         ++texture_retry_dispatches;
-                    object_texture_loading_id = texture_id;
-                    const auto desired_mip = texture_desired_mips.find(texture_id);
-                    object_texture_loading_mip =
-                        desired_mip == texture_desired_mips.end()
+                    const auto desired_mip=texture_desired_mips.find(texture_id);
+                    const std::uint8_t requested_mip=
+                        desired_mip==texture_desired_mips.end()
                             ? 0U : desired_mip->second;
-                    object_texture_loading = true;
-                    texture_request_started = std::chrono::steady_clock::now();
-                    texture_request_pacer.dispatched(texture_request_started);
+                    const auto started=std::chrono::steady_clock::now();
+                    texture_request_pacer.dispatched(started);
                     texture_request_fairness.dispatched();
                     ++texture_request_dispatches;
-                    object_texture_request_epoch = material_scope.epoch();
-                    const std::string capability = texture_capability;
-                    const std::string requested_id = texture_id;
-                    object_texture_future = std::async(
+                    const auto request_epoch=material_scope.epoch();
+                    const std::string capability=texture_capability;
+                    const std::string requested_id=texture_id;
+                    auto future=std::async(
                         std::launch::async,
                         [transport, capability, requested_id,
-                         mip=object_texture_loading_mip, texture_memory_cache,
+                         mip=requested_mip, texture_memory_cache,
                          texture_format_preference,
                          live_epoch=texture_prefetch_live_epoch,
-                         expected_epoch=object_texture_request_epoch]()
+                         expected_epoch=request_epoch]()
                         {
                             const auto active = [&]()
                             {
@@ -13181,6 +13224,12 @@ int Application::run(bool enable_developer_modules)
                                         capability,requested_id);
                                 },active);
                         });
+                    texture_in_flight.push_back(TextureInFlight{
+                        std::move(future),requested_id,requested_mip,
+                        request_epoch,started});
+                    object_texture_loading=true;
+                    texture_peak_in_flight=std::max(texture_peak_in_flight,
+                                                  texture_in_flight.size());
                     }
                 }
             }
@@ -13246,7 +13295,10 @@ int Application::run(bool enable_developer_modules)
             {
                 last_texture_telemetry = texture_plan_now;
                 const auto format_stats=texture_format_preference->statistics();
-                core::info("GetTexture streaming metrics: ram_hits=" +
+                core::info("GetTexture streaming metrics: parallel_in_flight=" +
+                    std::to_string(texture_in_flight.size()) +
+                    " parallel_peak=" + std::to_string(texture_peak_in_flight) +
+                    " ram_hits=" +
                     std::to_string(texture_ram_hits) +
                     " ram_assets=" +
                     std::to_string(texture_memory_cache->count()) +
@@ -13829,7 +13881,9 @@ int Application::run(bool enable_developer_modules)
                 snapshot.renderer_mesh_slot_capacity=
                     assets::max_mesh_resident_assets;
                 snapshot.mesh_requested_slot_budget=mesh_gpu_asset_budget;
-                snapshot.texture_in_flight=object_texture_loading?1U:0U;
+                snapshot.texture_in_flight=static_cast<std::uint32_t>(
+                    texture_in_flight.size()+
+                    (object_texture_future.valid()?1U:0U));
                 snapshot.mesh_in_flight=mesh_asset_future.valid()?1U:0U;
                 snapshot.texture_retry_blocked=
                     object_texture_retries.blocked_count(mesh_plan_now);
@@ -13998,7 +14052,8 @@ int Application::run(bool enable_developer_modules)
                     " meshes_pending=" +
                     std::to_string(mesh_coverage.pending) +
                     " texture_in_flight=" +
-                    std::to_string(object_texture_loading?1U:0U) +
+                    std::to_string(texture_in_flight.size()+
+                        (object_texture_future.valid()?1U:0U)) +
                     " mesh_in_flight=" +
                     std::to_string(mesh_asset_future.valid()?1U:0U) +
                     " texture_failures_tracked=" +
@@ -15451,7 +15506,9 @@ int Application::run(bool enable_developer_modules)
     shutdown_wait(render_materials_post_future,"render materials POST");
     shutdown_wait(terrain_texture_future,"terrain textures");
     shutdown_wait(texture_prefetch_future,"texture prefetch");
-    shutdown_wait(object_texture_future,"object textures");
+    shutdown_wait(object_texture_future,"object texture GPU admission");
+    for(auto& task:texture_in_flight)
+        shutdown_wait(task.future,"parallel object texture");
     shutdown_wait(inventory_folder_future,"inventory folders");
     shutdown_wait(inventory_item_detail_future,"inventory item");
     // All async workers are now joined before the frame's local state

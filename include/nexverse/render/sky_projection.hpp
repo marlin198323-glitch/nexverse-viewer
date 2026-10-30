@@ -47,7 +47,11 @@ struct SkyScreenPosition
     const float ndc_y=dot(sun,camera.up)/(z*tan_half);
     result.x=0.5f+ndc_x*0.5f;
     result.y=0.5f+ndc_y*0.5f;
-    result.sun_in_view=std::abs(ndc_x)<=1.2f&&std::abs(ndc_y)<=1.2f;
+    // EEP/legacy sky angles may wrap around 2pi. At night the sunlight
+    // vector points below the horizon even if the camera faces it.
+    const bool sun_above_horizon=std::sin(alt)>=-0.001f;
+    result.sun_in_view=sun_above_horizon &&
+        std::abs(ndc_x)<=1.2f&&std::abs(ndc_y)<=1.2f;
     return result;
 }
 }
