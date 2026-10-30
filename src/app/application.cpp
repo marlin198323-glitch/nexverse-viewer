@@ -6148,11 +6148,15 @@ int Application::run(bool enable_developer_modules)
     // UseCircuitCode/CompleteAgentMovement handshake is attempted.
     std::string circuit_target_ip;
     std::uint16_t circuit_target_port=0U;
+    std::uint64_t circuit_target_handle=0U;
+    std::uint32_t circuit_target_generation=0U;
     auto launch_circuit=[&](protocol::LoginSession circuit_session)
     {
         circuit_future = std::async(
             std::launch::async,
             [circuit_session = std::move(circuit_session),
+                                 target_handle=circuit_target_handle,
+                                 target_generation=circuit_target_generation,
                                  &circuit_stop,
                                  &circuit_mutex,
                                  &circuit_status,
@@ -6195,17 +6199,21 @@ int Application::run(bool enable_developer_modules)
                                             [&packet_dispatcher,
                                              &world_model,&world_mutex,
                                              &circuit_stop,
-                                             &circuit_session](
+                                             &circuit_session,
+                                             target_handle,target_generation](
                                                 const protocol::DecodedPacket& packet)
                                             {
                                                 if(circuit_stop.load())return;
                                                 {
                                                     std::scoped_lock lock{world_mutex};
+                                                    const auto& region=world_model.region();
                                                     if(!protocol::region_packet_matches(
-                                                           circuit_session.simulator_ip,
-                                                           circuit_session.simulator_port,
-                                                           world_model.region().simulator_ip,
-                                                           world_model.region().simulator_port,
+                                                           {circuit_session.simulator_ip,
+                                                            circuit_session.simulator_port,
+                                                            target_handle,target_generation},
+                                                           {region.simulator_ip,
+                                                            region.simulator_port,
+                                                            region.handle,region.generation},
                                                            circuit_stop.load()))
                                                         return;
                                                 }
@@ -7850,6 +7858,11 @@ int Application::run(bool enable_developer_modules)
                             circuit_started = true;
                             circuit_target_ip=active_session->simulator_ip;
                             circuit_target_port=active_session->simulator_port;
+                            {
+                                std::scoped_lock lock{world_mutex};
+                                circuit_target_handle=world_model.region().handle;
+                                circuit_target_generation=world_model.region().generation;
+                            }
                             launch_circuit(*active_session);
                         }
                     }
@@ -7999,17 +8012,28 @@ int Application::run(bool enable_developer_modules)
             {
                 std::string destination_ip;
                 std::uint16_t destination_port=0U;
+                std::uint64_t destination_handle=0U;
+                std::uint32_t destination_generation=0U;
+                bool destination_transition_pending=false;
                 {
                     std::scoped_lock lock{world_mutex};
-                    destination_ip=world_model.region().simulator_ip;
-                    destination_port=world_model.region().simulator_port;
+                    const auto& region=world_model.region();
+                    destination_ip=region.simulator_ip;
+                    destination_port=region.simulator_port;
+                    destination_handle=region.handle;
+                    destination_generation=region.generation;
+                    destination_transition_pending=
+                        world_model.region_transition_pending();
                 }
                 const bool old_finished=!circuit_future.valid() ||
                     circuit_future.wait_for(std::chrono::seconds{0})==
                         std::future_status::ready;
                 const auto handoff=protocol::region_handoff_action(
-                    circuit_target_ip,circuit_target_port,
-                    destination_ip,destination_port,old_finished);
+                    {circuit_target_ip,circuit_target_port,
+                     circuit_target_handle,circuit_target_generation},
+                    {destination_ip,destination_port,
+                     destination_handle,destination_generation},
+                    old_finished,destination_transition_pending);
                 if(handoff==protocol::RegionHandoffAction::wait_for_old_worker ||
                    handoff==protocol::RegionHandoffAction::launch_new_worker)
                 {
@@ -8036,9 +8060,21 @@ int Application::run(bool enable_developer_modules)
                         }
                         circuit_target_ip=destination_ip;
                         circuit_target_port=destination_port;
+                        circuit_target_handle=destination_handle;
+                        circuit_target_generation=destination_generation;
                         protocol::LoginSession next=*active_session;
                         next.simulator_ip=destination_ip;
                         next.simulator_port=destination_port;
+                        // Never reuse the OLD circuit active state
+                        // for a same-socket new region generation before
+                        // UseCircuitCode / movement handshake completes.
+                        {
+                            std::scoped_lock lock{circuit_mutex};
+                            circuit_status.state=
+                                protocol::CircuitState::opening_socket;
+                            circuit_status.message=
+                                "New region circuit handshake pending";
+                        }
                         circuit_stop.store(false);
                         launch_circuit(std::move(next));
                         core::info(
@@ -8100,6 +8136,11 @@ int Application::run(bool enable_developer_modules)
                     movement_heading_initialized=false;
                     local_heading_preview.reset();
                     last_reported_control_flags=0U;
+                    {
+                        std::scoped_lock lock{world_mutex};
+                        circuit_target_handle=world_model.region().handle;
+                        circuit_target_generation=world_model.region().generation;
+                    }
                     protocol::LoginSession retry_session=*active_session;
                     retry_session.simulator_ip=circuit_target_ip;
                     retry_session.simulator_port=circuit_target_port;
@@ -8129,9 +8170,11 @@ int Application::run(bool enable_developer_modules)
                 const world::RegionState region_snapshot = world_model.region();
                 const bool region_circuit_active =
                     protocol::region_circuit_ready(
-                        circuit_target_ip,circuit_target_port,
-                        region_snapshot.simulator_ip,
-                        region_snapshot.simulator_port,
+                        {circuit_target_ip,circuit_target_port,
+                         circuit_target_handle,circuit_target_generation},
+                        {region_snapshot.simulator_ip,
+                         region_snapshot.simulator_port,
+                         region_snapshot.handle,region_snapshot.generation},
                         circuit_active,circuit_stop.load());
 
                 world_model.apply_region({
@@ -8878,6 +8921,8 @@ int Application::run(bool enable_developer_modules)
                 !current_region_seed.empty() &&
                 current_region_simulator_ip==circuit_target_ip &&
                 current_region_simulator_port==circuit_target_port &&
+                current_region_handle==circuit_target_handle &&
+                current_region_generation==circuit_target_generation &&
                 current_region_handle!=0U &&active_session.has_value();
             if(destination_circuit_active&&
                region_event_restart.can_start(

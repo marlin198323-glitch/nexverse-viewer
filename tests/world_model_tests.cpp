@@ -310,6 +310,7 @@ int main()
         "192.0.2.10",9100U,"https://caps.example/new",{},0U,
         0U,0U,0U,0.0f,{},256U,256U,false};
     world.begin_region_transition(pending_target);
+    if(!world.region_transition_pending())return 117;
     if(world.region().generation!=first_transition_generation ||
        world.region().handle!=pending_target.handle)return 108;
     // A distinct destination agent position is NOT a replay, even
@@ -335,6 +336,7 @@ int main()
     // Partial RegionHandshake with connected=false must NOT clear
     // pending source evidence and allow a duplicate to kill the world.
     world.apply_region(new_socket);
+    if(!world.region_transition_pending())return 118;
     const auto generation_after_handshake=world.region().generation;
     world.begin_region_transition(new_socket);
     if(world.region().generation!=generation_after_handshake)
@@ -353,6 +355,7 @@ int main()
     auto live=new_socket;
     live.connected=true;
     world.apply_region(live);
+    if(world.region_transition_pending())return 119;
     const auto connected_generation=world.region().generation;
     world.begin_region_transition(new_socket);
     if(world.region().generation!=connected_generation+1U ||
@@ -363,6 +366,7 @@ int main()
     if(world.region().generation!=1U)return 114;
 
     world.reset();
+    if(world.region_transition_pending())return 120;
     if (world.ready() || world.scene_ready() ||
         world.region().connected || world.agent().present ||
         world.self_appearance().has_value() ||

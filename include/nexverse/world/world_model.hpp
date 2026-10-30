@@ -398,6 +398,10 @@ public:
 
     [[nodiscard]] const GridState& grid() const noexcept;
     [[nodiscard]] const RegionState& region() const noexcept;
+    [[nodiscard]] bool region_transition_pending() const noexcept
+    {
+        return pending_region_transition_.has_value();
+    }
     [[nodiscard]] const AgentState& agent() const noexcept;
     [[nodiscard]] const AgentProfileState& agent_profile() const noexcept;
     [[nodiscard]] const std::optional<protocol::AvatarAppearanceMessage>&

@@ -773,5 +773,25 @@
     "real_wasd_flight_readback": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_same_socket_region_handoff_generation_20261030": {
+    "status": "IMPLEMENTED_MINT_FULL_TESTED_AUTHENTICATED_GRID_HANDOFF_NOT_YET_VERIFIED",
+    "documentation": "docs/V0_4_0_0_SAME_SOCKET_REGION_HANDOFF_EPOCH_20261030.md",
+    "same_udp_socket_different_region_handle_triggers_handoff": true,
+    "same_region_new_pending_teleport_generation_triggers_handoff": true,
+    "ordinary_disconnect_without_teleport_does_not_auto_restart_loop": true,
+    "old_lludp_worker_stops_and_joins_before_new_socket": true,
+    "stale_packets_blocked_by_region_handle_and_generation": true,
+    "circuit_ready_and_new_region_eventqueue_gated_by_generation": true,
+    "old_active_circuit_state_reset_to_opening_socket": true,
+    "manual_retry_captures_current_region_generation": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "835/835 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_same_socket_region_crossing": "OPEN",
+    "real_avatar_rgb_skin_cof": "OPEN",
+    "real_wasd_jump_fly_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
