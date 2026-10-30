@@ -46,6 +46,7 @@
 #include "nexverse/assets/avatar_bake_stream_priority.hpp"
 #include "nexverse/assets/avatar_bake_gpu_admission.hpp"
 #include "nexverse/assets/avatar_bake_mip_priority.hpp"
+#include "nexverse/assets/scene_texture_budget_rescue.hpp"
 #include "nexverse/assets/texture_cached_request.hpp"
 #include "nexverse/core/logger.hpp"
 #include "nexverse/core/system_metrics.hpp"
@@ -6104,6 +6105,11 @@ int Application::run(bool enable_developer_modules)
     bool gallery_verify_awaiting=false;
     std::chrono::steady_clock::time_point last_gallery_verify{};
     auto last_gallery_sync=std::chrono::steady_clock::now();
+    // Missing COF on first authenticated login must not wait 30s before
+    // the first read-only InventoryDescendents2 fetch. One probe per
+    // current region epoch; normal 30s/2s rules govern later requests.
+    std::uint64_t gallery_bootstrap_cof_polled_epoch=0U;
+    std::uint64_t gallery_bootstrap_cof_reported_epoch=0U;
     std::vector<std::future<GalleryTextureReply>> gallery_image_futures;
     std::map<std::string,std::pair<std::string,unsigned int>,std::less<>>
         gallery_gpu_textures;
@@ -6321,6 +6327,8 @@ int Application::run(bool enable_developer_modules)
     using TerrainTextureResults =
         std::array<assets::TextureAssetResult, 4>;
     assets::TerrainDetailRetry terrain_detail_retry;
+    assets::SceneTextureMipRescueCooldown scene_texture_mip_rescue;
+    std::size_t scene_texture_rescued_uploads=0U;
     assets::AvatarBakeRecheck avatar_bake_recheck;
     assets::AvatarBakeSourceRefresh avatar_bake_source_refresh;
     render::RenderTerrainTextures terrain_cached_textures;
@@ -9565,6 +9573,25 @@ int Application::run(bool enable_developer_modules)
                 !bootstrap_cof.empty()&&
                 (bootstrap_items==caps_state.outfit_folder_items.end()||
                  bootstrap_items->second.empty());
+            if(login_ui.authenticated&&simulation_ready&&active_session&&
+               (bootstrap_cof.empty()||auto_cof_metadata_missing)&&
+               gallery_bootstrap_cof_reported_epoch!=current_firestorm_epoch)
+            {
+                gallery_bootstrap_cof_reported_epoch=current_firestorm_epoch;
+                // COF may be absent in the login inventory skeleton, in
+                // which case there is no trusted owner/COF identifier to
+                // use for a read or an appearance mutation.
+                core::info("Avatar COF bootstrap: original outfit metadata "
+                    "missing; skeleton_cof_available="+
+                    std::to_string(!bootstrap_cof.empty()?1:0)+
+                    " inventory_cap_available="+
+                    std::to_string(!gallery_inventory_cap.empty()?1:0)+
+                    " fetch_cap_available="+
+                    std::to_string(!gallery_inventory_items_cap.empty()?1:0)+
+                    " current_region_lease="+
+                    std::to_string(firestorm_region_lease.matches(
+                        current_firestorm_epoch)?1:0));
+            }
             if((outfit_gallery_open||auto_cof_metadata_missing||
                 gallery_link_consent.awaiting_server()||
                 gallery_cof_batch.awaiting_readback()||
@@ -9572,12 +9599,20 @@ int Application::run(bool enable_developer_modules)
                !gallery_sync_future.valid() &&
                !gallery_inventory_cap.empty()&&active_session &&
                firestorm_region_lease.matches(current_firestorm_epoch)&&
-               (std::chrono::steady_clock::now()-last_gallery_sync >=
+               ((auto_cof_metadata_missing &&
+                 gallery_bootstrap_cof_polled_epoch!=current_firestorm_epoch) ||
+                std::chrono::steady_clock::now()-last_gallery_sync >=
                     std::chrono::seconds{30} ||
                 (gallery_force_refresh &&
                  std::chrono::steady_clock::now()-last_gallery_sync >=
                     std::chrono::seconds{2})))
             {
+                if(auto_cof_metadata_missing)
+                {
+                    gallery_bootstrap_cof_polled_epoch=current_firestorm_epoch;
+                    core::info("Avatar COF bootstrap: owner/epoch-bound "
+                        "read-only InventoryDescendents2 launched");
+                }
                 last_gallery_sync=std::chrono::steady_clock::now();
                 gallery_sync_issued_epoch=current_firestorm_epoch;
                 gallery_sync_dirty_revision=inventory_dirty_revision;
@@ -11205,6 +11240,8 @@ int Application::run(bool enable_developer_modules)
                 texture_desired_mips.clear();
                 texture_gpu_mips.clear();
                 texture_lod_dwell.reset();
+                scene_texture_mip_rescue.enter(material_scope.epoch());
+                scene_texture_rescued_uploads=0U;
                 texture_gpu_bytes.clear();
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
@@ -12616,6 +12653,7 @@ int Application::run(bool enable_developer_modules)
                     // Only the *current* authenticated region/session self
                     // proxy may use this rescue; other scene assets retain
                     // the original policy and all GPU slot checks.
+                    std::optional<std::uint8_t> rescued_scene_mip;
                     std::optional<std::uint8_t> rescued_self_mip;
                     const auto own_proxy=std::find_if(
                         admitted_bakes.accepted.begin(),
@@ -12664,6 +12702,53 @@ int Application::run(bool enable_developer_modules)
                                         static_cast<std::uint8_t>(
                                             object_texture_loading_mip+*extra);
                                     rescued_self_mip=object_texture_loading_mip;
+                                }
+                        }
+                    }
+                    // If an actual scene material cannot fit at its
+                    // preferred mip, preserve a lower-resolution real image
+                    // instead of leaving the material blank. Baked avatar
+                    // skin is explicitly excluded from this fallback.
+                    const bool other_avatar_bake=std::any_of(
+                        admitted_bakes.accepted.begin(),
+                        admitted_bakes.accepted.end(),
+                        [&](const auto& avatar)
+                        {
+                            return std::find(avatar.body.begin(),
+                                             avatar.body.end(),
+                                             object_texture_loading_id)!=
+                                       avatar.body.end() ||
+                                avatar.eyes_bake_id==object_texture_loading_id||
+                                avatar.hair_bake_id==object_texture_loading_id;
+                        });
+                    if(!current_self_bake&&!other_avatar_bake)
+                    {
+                        const auto slot_preflight=
+                            assets::plan_texture_slot_admission(
+                                texture_residency.preferred_ids,
+                                object_texture_loaded_ids,
+                                texture_residency.eviction_ids,
+                                object_texture_loading_id,
+                                max_object_texture_assets);
+                        if(slot_preflight.fits)
+                        {
+                            const auto extra=
+                                assets::choose_scene_texture_budget_mip_rescue(
+                                    result.image.width,result.image.height,
+                                    object_texture_loading_mip,
+                                    texture_gpu_used_bytes,mesh_gpu_estimated_bytes,
+                                    shared_gpu_budget_bytes,texture_gpu_budget_bytes,
+                                    texture_residency.preferred_ids,
+                                    texture_gpu_bytes,object_texture_loading_id);
+                            if(extra)
+                                if(auto reduced=assets::texture_mip_image(
+                                       result.image,*extra))
+                                {
+                                    result.image=std::move(*reduced);
+                                    object_texture_loading_mip=
+                                        static_cast<std::uint8_t>(
+                                            object_texture_loading_mip+*extra);
+                                    rescued_scene_mip=object_texture_loading_mip;
                                 }
                         }
                     }
@@ -12807,6 +12892,19 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
+                        if(rescued_scene_mip)
+                        {
+                            scene_texture_mip_rescue.admitted(
+                                object_texture_loading_id,*rescued_scene_mip,
+                                gpu_submission_end);
+                            texture_desired_mips[object_texture_loading_id]=
+                                *rescued_scene_mip;
+                            ++scene_texture_rescued_uploads;
+                            core::info("GetTexture scene GPU real-pixel "
+                                "rescue admitted; mip="+
+                                std::to_string(*rescued_scene_mip)+
+                                "; bounded quality recovery pending");
+                        }
                         if(rescued_self_mip)
                         {
                             // Commit the quality floor ONLY after the
@@ -13050,6 +13148,11 @@ int Application::run(bool enable_developer_modules)
                     resident_texture_samples,render_agent.position.x,
                     render_agent.position.y,render_agent.position.z,
                     texture_desired_mips,active_particles);
+                scene_texture_mip_rescue.enter(material_scope.epoch());
+                for(auto& [id,mip]:planned_mips)
+                    mip=std::max(mip,
+                        scene_texture_mip_rescue.minimum_mip(
+                            id,texture_plan_now));
                 texture_lod_dwell.prune(planned_mips);
                 for (auto& [id,level]:planned_mips)
                     if (!active_particles.contains(id))
@@ -13408,6 +13511,10 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_gpu_used_bytes) +
                     " gpu_texture_byte_budget=" +
                     std::to_string(texture_gpu_budget_bytes) +
+                    " scene_mip_rescue_uploads=" +
+                    std::to_string(scene_texture_rescued_uploads) +
+                    " scene_mip_rescue_cooldowns=" +
+                    std::to_string(scene_texture_mip_rescue.count()) +
                     " gpu_resident=" +
                     std::to_string(object_texture_loaded_ids.size()) +
                     " gpu_budget=" +
@@ -13788,12 +13895,9 @@ int Application::run(bool enable_developer_modules)
                         {
                             const auto desired=mesh_desired_lods.find(id);
                             if(desired==mesh_desired_lods.end())return false;
-                            const auto existing=mesh_gpu_lods.find(id);
-                            const bool fits=(existing!=mesh_gpu_lods.end()&&
-                                existing->second==desired->second)||
-                                mesh_asset_loaded_ids.contains(id)||
-                                mesh_asset_loaded_ids.size()<mesh_gpu_asset_budget;
-                            return fits&&
+                            return assets::mesh_gpu_request_needed(
+                                id,desired->second,mesh_gpu_lods,
+                                mesh_asset_loaded_ids,mesh_gpu_asset_budget)&&
                                 (mesh_memory_cache->contains(id,desired->second)||
                                  disk.contains(id,desired->second));
                         });
@@ -13815,11 +13919,9 @@ int Application::run(bool enable_developer_modules)
                     {
                         const auto desired=mesh_desired_lods.find(id);
                         if(desired==mesh_desired_lods.end())return false;
-                        const auto existing=mesh_gpu_lods.find(id);
-                        if(existing!=mesh_gpu_lods.end() &&
-                           existing->second==desired->second)return false;
-                        return mesh_asset_loaded_ids.contains(id) ||
-                            mesh_asset_loaded_ids.size()<mesh_gpu_asset_budget;
+                        return assets::mesh_gpu_request_needed(
+                            id,desired->second,mesh_gpu_lods,
+                            mesh_asset_loaded_ids,mesh_gpu_asset_budget);
                     });
                 if (request_choice)
                 {

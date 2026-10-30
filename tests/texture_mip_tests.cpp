@@ -1,5 +1,6 @@
 #include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/render/sky_projection.hpp"
+#include "nexverse/assets/scene_texture_budget_rescue.hpp"
 #include <iostream>
 #include <limits>
 
@@ -114,6 +115,28 @@ int main()
     if(near_high.at("street")!=0U||
        near_high.at("trees")!=1U||
        near_high.at("far")!=3U)return 18;
+    // 1024x1024 RGBA requires >5 MiB including mipmaps. With a strict
+    // 5 MiB family cap, admit real decoded pixels one mip smaller.
+    const auto scene_rescue=choose_scene_texture_budget_mip_rescue(
+        1024U,1024U,0U,0U,0U,128U*1024U*1024U,5U*1024U*1024U,
+        {"scene"},{},"scene");
+    if(!scene_rescue||*scene_rescue!=1U)return 20;
+    if(choose_scene_texture_budget_mip_rescue(
+        512U,512U,1U,0U,0U,128U*1024U*1024U,5U*1024U*1024U,
+        {"scene"},{},"scene"))return 21;
+    if(choose_scene_texture_budget_mip_rescue(
+        2048U,2048U,6U,0U,0U,128U*1024U*1024U,1U,
+        {"scene"},{},"scene"))return 22;
+    SceneTextureMipRescueCooldown scene_cooldown;
+    using Clock=SceneTextureMipRescueCooldown::Clock;
+    const auto now=Clock::now();
+    scene_cooldown.enter(2U);
+    scene_cooldown.admitted("scene",3U,now);
+    if(scene_cooldown.minimum_mip("scene",now)!=3U ||
+       scene_cooldown.minimum_mip("scene",now+
+           std::chrono::seconds{91})!=0U)return 23;
+    scene_cooldown.enter(3U);
+    if(scene_cooldown.minimum_mip("scene",now)!=0U)return 24;
     std::cout<<"CPU mip RGBA, alpha, distance hysteresis and byte-budget OK\n";
     return 0;
 }

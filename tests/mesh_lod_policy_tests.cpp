@@ -38,6 +38,21 @@ int main()
     const auto kept=plan_mesh_lods({{"near",50,0,0,1}},0,0,0,
         detailed,true);
     if(kept.at("near")!=MeshLod::high)return 10;
+    // Live regression: the old cache-first path reloaded an already
+    // resident HIGH mesh 237 times in ~50 seconds and counted 366 LOD swaps.
+    const std::unordered_map<std::string,MeshLod> gpu_lods{
+        {"a",MeshLod::high},{"b",MeshLod::medium}};
+    const std::unordered_set<std::string> gpu_ids{"a","b"};
+    if(mesh_gpu_request_needed("a",MeshLod::high,gpu_lods,gpu_ids,2U))
+        return 11;
+    if(!mesh_gpu_request_needed("a",MeshLod::medium,gpu_lods,gpu_ids,2U))
+        return 12;
+    if(mesh_gpu_request_needed("new",MeshLod::high,gpu_lods,gpu_ids,2U))
+        return 13;
+    if(!mesh_gpu_request_needed("new",MeshLod::high,gpu_lods,gpu_ids,3U))
+        return 14;
+    if(!mesh_gpu_request_needed("b",MeshLod::high,gpu_lods,gpu_ids,2U))
+        return 15;
     std::cout<<"Mesh LOD selection, reuse, hysteresis and limits OK\n";
     return 0;
 }

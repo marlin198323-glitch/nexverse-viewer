@@ -8,10 +8,27 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace nexverse::assets
 {
+// Shared predicate used by BOTH cache-first and network fallback planners.
+// A resident asset at the requested LOD is ALREADY satisfied. Reuploading
+// the same mesh used to exhaust the 16ms GPU upload gate and cause hundreds
+// of false LOD swaps per minute when the disk cache was warm.
+[[nodiscard]] inline bool mesh_gpu_request_needed(
+    const std::string& id,MeshLod target,
+    const std::unordered_map<std::string,MeshLod>& gpu_lods,
+    const std::unordered_set<std::string>& gpu_ids,
+    std::size_t gpu_slots)
+{
+    if(const auto current=gpu_lods.find(id);
+       current!=gpu_lods.end() && current->second==target)
+        return false;
+    return gpu_ids.contains(id)||gpu_ids.size()<gpu_slots;
+}
+
 // Selection by apparent-size proxy (distance / sqrt(max prim dimension)).
 // The closest instance controls LOD when many objects reuse one mesh UUID.
 // Hysteresis prevents oscillation near distance thresholds.

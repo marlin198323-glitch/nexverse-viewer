@@ -74,13 +74,39 @@ def summarize(raw: str) -> list[str]:
         if records:
             s = records[-1]
             fields = re.findall(
-                r"(parallel_peak|parallel_in_flight|disk_hits|network_loads)"
+                r"(parallel_peak|parallel_in_flight|disk_hits|network_loads"
+                r"|lod_swaps|mip_swaps|scene_mip_rescue_uploads)"
                 r"=(\d+)", s)
             if fields:
                 output.append(label + ": " +
                               ", ".join(f"{key}={value}" for key, value in fields))
             if "parallel_peak=" not in s:
                 output.append(label + ": Altes Binary ohne Paralleltelemetrie.")
+    # No asset identifiers leave the log parser; only repetition counts.
+    mesh_uploads = re.findall(
+        r"GetMesh loaded ([0-9a-f-]{36}); requested_lod=([a-z]+)",
+        "\n".join(session))
+    if mesh_uploads:
+        from collections import Counter
+        repeats = Counter(mesh_uploads)
+        duplicated = sum(count - 1 for count in repeats.values()
+                         if count > 1)
+        output.append("Mesh-Uploads: " + str(len(mesh_uploads)) +
+                      " gesamt, " + str(len(repeats)) +
+                      " verschiedene UUID/LOD-Paare, " + str(duplicated) +
+                      " Wiederholungen (keine IDs ausgegeben).")
+    cof = [line for line in session if
+           "Avatar COF bootstrap:" in line]
+    if cof:
+        last = cof[-1]
+        state = re.findall(
+            r"(skeleton_cof_available|inventory_cap_available|"
+            r"fetch_cap_available|current_region_lease)=(\d+)", last)
+        if state:
+            output.append("COF-Bootstrap: " +
+                          ", ".join(f"{key}={value}" for key, value in state))
+        else:
+            output.append("COF-Bootstrap: Schreibgeschuetzte Nachfrage ausgefuehrt.")
     return output
 
 
