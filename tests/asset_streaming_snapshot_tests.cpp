@@ -10,6 +10,9 @@ int main()
     snapshot.mesh_scene_samples=11U;
     snapshot.textures={4U,3U,1U};
     snapshot.meshes={2U,1U,1U};
+    snapshot.texture_mips={1U,1U,1U};
+    snapshot.renderer_mesh_slot_capacity=384U;
+    snapshot.mesh_requested_slot_budget=256U;
     snapshot.texture_retry_blocked=2U;
     snapshot.mesh_ready_retries=1U;
     snapshot.gpu_texture_bytes=240U;
@@ -64,12 +67,21 @@ int main()
     snapshot.previous_frame_scene_draw_calls=9U;
     snapshot.previous_frame_scene_mesh_draw_calls=7U;
     snapshot.previous_frame_scene_prim_draw_calls=2U;
+    snapshot.previous_frame_scene_textured_draw_calls=6U;
+    snapshot.previous_frame_scene_requested_texture_fallback_draw_calls=3U;
     const auto json=snapshot.json();
     if(json.rfind("{\"schema\":\"ogl.asset.streaming.v1\"",0U)!=0U ||
        json.back()!='}' ||
        json.find("\"region_epoch\":77")==std::string::npos ||
        json.find("\"textures_wanted\":4")==std::string::npos ||
        json.find("\"texture_coverage_pct\":75")==std::string::npos ||
+       json.find("\"texture_ids_gpu_resident\":3")==std::string::npos ||
+       json.find("\"texture_mip0_gpu_ids\":1")==std::string::npos ||
+       json.find("\"texture_reduced_mip_gpu_ids\":1")==std::string::npos ||
+       json.find("\"texture_unknown_mip_gpu_ids\":1")==std::string::npos ||
+       json.find("\"texture_visual_quality_verified\":0")==std::string::npos ||
+       json.find("\"renderer_mesh_slot_capacity\":384")==std::string::npos ||
+       json.find("\"mesh_requested_slot_budget\":256")==std::string::npos ||
        json.find("\"mesh_coverage_pct\":50")==std::string::npos ||
        json.find("\"textures_pending\":1")==std::string::npos ||
        json.find("\"mesh_retry_blocked\":0")==std::string::npos ||
@@ -109,6 +121,8 @@ int main()
        json.find("\"previous_frame_scene_missing_mesh_triangles\":36")==std::string::npos ||
        json.find("\"texture_gpu_staging_deferrals\":5")==std::string::npos ||
        json.find("\"previous_frame_scene_mesh_draw_calls\":7")==std::string::npos ||
+       json.find("\"previous_frame_scene_textured_draw_calls\":6")==std::string::npos ||
+       json.find("\"previous_frame_scene_requested_texture_fallback_draw_calls\":3")==std::string::npos ||
        json.find("\"previous_frame_scene_prim_draw_calls\":2")==std::string::npos)
         return 1;
     AssetStreamingSnapshot none;

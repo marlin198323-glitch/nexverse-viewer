@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/assets/mesh_residency_target.hpp"
 #include "nexverse/render/scene_forward_visibility.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
 #include "nexverse/render/avatar_skin_weight_pair.hpp"
@@ -3190,7 +3191,8 @@ public:
                 }))
             return {false,GpuUploadFailure::invalid_input,0U};
         const auto old = mesh_assets_.find(mesh_id);
-        if (old == mesh_assets_.end() && mesh_assets_.size() >= 256U)
+        if(old==mesh_assets_.end()&&
+           mesh_assets_.size()>=assets::max_mesh_resident_assets)
             return {false,GpuUploadFailure::capacity,0U};
         MeshData mesh;
         mesh.vertices = geometry.vertices;
@@ -3571,6 +3573,8 @@ public:
         diagnostics_.scene_draw_calls = 0U;
         diagnostics_.scene_mesh_draw_calls = 0U;
         diagnostics_.scene_prim_draw_calls = 0U;
+        diagnostics_.scene_textured_draw_calls=0U;
+        diagnostics_.scene_requested_texture_fallback_draw_calls=0U;
         diagnostics_.scene_opaque_draw_calls = 0U;
         diagnostics_.scene_alpha_draw_calls = 0U;
         diagnostics_.scene_alpha_mask_draw_calls = 0U;
@@ -4408,6 +4412,10 @@ public:
 
                         ++diagnostics_.draw_calls;
                         ++diagnostics_.scene_draw_calls;
+                        if(use_object_texture)
+                            ++diagnostics_.scene_textured_draw_calls;
+                        else if(!texture_id.empty())
+                            ++diagnostics_.scene_requested_texture_fallback_draw_calls;
                         if(pass==1U)++diagnostics_.scene_alpha_draw_calls;
                         else ++diagnostics_.scene_opaque_draw_calls;
                         if(alpha_mode==2U)

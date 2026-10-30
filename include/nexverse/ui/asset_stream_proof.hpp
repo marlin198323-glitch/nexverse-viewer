@@ -34,8 +34,10 @@ template<typename SampleRange>
 [[nodiscard]] inline std::string describe_asset_stream(
     const AssetStreamProof& p)
 {
-    return "Tex "+std::to_string(p.textures.gpu_resident)+"/"+
-        std::to_string(p.textures.requested)+" GPU | Mesh "+
+    // Clarify that numbers are unique GPU-resident UUIDs; the
+    // dashboard must not imply full visible texture or mesh quality.
+    return "Tex-IDs "+std::to_string(p.textures.gpu_resident)+"/"+
+        std::to_string(p.textures.requested)+" GPU | Mesh-IDs "+
         std::to_string(p.meshes.gpu_resident)+"/"+
         std::to_string(p.meshes.requested)+" GPU";
 }

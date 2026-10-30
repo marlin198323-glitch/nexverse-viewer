@@ -1,4 +1,5 @@
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/assets/mesh_residency_target.hpp"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -42,7 +43,7 @@ int main()
                 const auto id="tex-"+std::to_string(n);
                 if(!renderer->set_object_texture(id,texture))
                 {error=3;break;}
-                if(n<256U)
+                if(n<nexverse::assets::max_mesh_resident_assets)
                 {
                     const auto mesh_id="mesh-"+std::to_string(n);
                     if(!renderer->set_mesh_asset(mesh_id,mesh))
@@ -72,13 +73,36 @@ int main()
                        health.scene_mesh_draw_calls==0U ||
                        health.scene_draw_calls!=
                            health.scene_mesh_draw_calls+
-                               health.scene_prim_draw_calls)
+                               health.scene_prim_draw_calls||
+                       health.scene_textured_draw_calls==0U||
+                       health.scene_requested_texture_fallback_draw_calls!=0U)
                     {error=5;break;}
                     if(glGetError()!=GL_NO_ERROR){error=6;break;}
                 }
             }
             if(!error)
             {
+                // Distinguish a resident-but-not-bound or unavailable
+                // texture from a genuinely textured OpenGL draw. The
+                // present scene references tex-0, so removing just it
+                // must produce a real requested-texture fallback draw.
+                renderer->remove_object_texture("tex-0");
+                renderer->begin_frame();
+                renderer->render_world(2.0);
+                renderer->end_frame();
+                const auto missing_tex=renderer->diagnostics();
+                if(missing_tex.scene_requested_texture_fallback_draw_calls==0U||
+                   missing_tex.scene_textured_draw_calls==0U)
+                    error=27;
+                if(!renderer->set_object_texture("tex-0",texture))
+                    error=28;
+                renderer->begin_frame();
+                renderer->render_world(3.0);
+                renderer->end_frame();
+                const auto recovered=renderer->diagnostics();
+                if(recovered.scene_requested_texture_fallback_draw_calls!=0U||
+                   recovered.scene_textured_draw_calls==0U)
+                    error=29;
                 if(renderer->set_object_texture("tex-over",texture))
                     error=7;
                 const auto mesh_full=renderer->upload_mesh_asset("mesh-over",mesh);
@@ -148,11 +172,24 @@ int main()
                         error=24; // new UUID remains resident
                 }
                 renderer->remove_object_texture("tex-transaction");
-                renderer->remove_mesh_asset("mesh-255");
+                // Reproduce the live-grid regression: planner requested
+                // 384 distinct meshes while the previous renderer
+                // rejected every mesh from 257 onward with capacity=0x0.
+                // A small mesh must fit through 384 slots, but the 385th
+                // is still rejected independent of GPU brand/VRAM size.
+                const auto overflow=renderer->upload_mesh_asset(
+                    "mesh-over-limit",mesh);
+                if(overflow.success||
+                   overflow.failure!=GpuUploadFailure::capacity)
+                    error=25;
+                renderer->remove_mesh_asset(
+                    "mesh-"+std::to_string(
+                        nexverse::assets::max_mesh_resident_assets-1U));
+                if(!renderer->set_mesh_asset("mesh-reused",mesh))
+                    error=26;
                 if(!renderer->set_object_texture("tex-reused",texture))
                     error=13;
-                if(!renderer->set_mesh_asset("mesh-reused",mesh))
-                    error=14;
+
                 if(glGetError()!=GL_NO_ERROR)error=15;
             }
             renderer->clear_object_textures();
@@ -170,7 +207,7 @@ int main()
     }
     const auto elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now()-stress_started).count();
-    std::cout<<"GPU 512 textures / 256 meshes, 4 draw stages, rejection,"
+    std::cout<<"GPU 512 textures / 384 meshes, 4 draw stages, rejection,"
         " replacement and recovery OK; CPU wall_ms="<<elapsed<<'\n';
     return 0;
 }

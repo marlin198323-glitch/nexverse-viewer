@@ -21,6 +21,7 @@
 #include "nexverse/assets/mesh_cache.hpp"
 #include "nexverse/assets/mesh_residency.hpp"
 #include "nexverse/assets/mesh_residency_target.hpp"
+#include "nexverse/assets/texture_mip_evidence.hpp"
 #include "nexverse/assets/mesh_lod_policy.hpp"
 #include "nexverse/assets/terrain_detail_retry.hpp"
 #include "nexverse/assets/avatar_bake_recheck.hpp"
@@ -13732,6 +13733,12 @@ int Application::run(bool enable_developer_modules)
                 snapshot.mesh_scene_samples=scene_mesh_samples.size();
                 snapshot.textures=texture_coverage;
                 snapshot.meshes=mesh_coverage;
+                snapshot.texture_mips=assets::texture_mip_evidence(
+                    texture_residency.preferred_ids,
+                    object_texture_loaded_ids,texture_gpu_mips);
+                snapshot.renderer_mesh_slot_capacity=
+                    assets::max_mesh_resident_assets;
+                snapshot.mesh_requested_slot_budget=mesh_gpu_asset_budget;
                 snapshot.texture_in_flight=object_texture_loading?1U:0U;
                 snapshot.mesh_in_flight=mesh_asset_future.valid()?1U:0U;
                 snapshot.texture_retry_blocked=
@@ -13853,6 +13860,10 @@ int Application::run(bool enable_developer_modules)
                     previous_render.scene_mesh_draw_calls;
                 snapshot.previous_frame_scene_prim_draw_calls=
                     previous_render.scene_prim_draw_calls;
+                snapshot.previous_frame_scene_textured_draw_calls=
+                    previous_render.scene_textured_draw_calls;
+                snapshot.previous_frame_scene_requested_texture_fallback_draw_calls=
+                    previous_render.scene_requested_texture_fallback_draw_calls;
                 snapshot.previous_frame_scene_opaque_draw_calls=
                     previous_render.scene_opaque_draw_calls;
                 snapshot.previous_frame_scene_alpha_draw_calls=
@@ -13872,9 +13883,19 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(scene_texture_samples.size()) +
                     " scene_mesh_samples=" +
                     std::to_string(scene_mesh_samples.size()) +
-                    " textures_loaded=" +
+                    " texture_gpu_ids=" +
                     std::to_string(texture_coverage.resident) +
                     "/" + std::to_string(texture_coverage.requested) +
+                    " texture_mip0_ids=" +
+                    std::to_string(snapshot.texture_mips.base_mip) +
+                    " texture_reduced_mip_ids=" +
+                    std::to_string(snapshot.texture_mips.reduced_mip) +
+                    " texture_quality_unverified=1" +
+                    " scene_gl_textured_draws=" +
+                    std::to_string(previous_render.scene_textured_draw_calls) +
+                    " scene_gl_requested_texture_fallback_draws=" +
+                    std::to_string(
+                        previous_render.scene_requested_texture_fallback_draw_calls) +
                     " texture_coverage_pct=" +
                     std::to_string(texture_coverage.percentage()) +
                     " textures_pending=" +

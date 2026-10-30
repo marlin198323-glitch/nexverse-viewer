@@ -344,6 +344,11 @@ struct RenderDiagnostics
     std::uint64_t scene_draw_calls = 0U;
     std::uint64_t scene_mesh_draw_calls = 0U;
     std::uint64_t scene_prim_draw_calls = 0U;
+    // Actual per-frame GL shader material routing, NOT GPU UUID counts:
+    // a bound nonzero scene texture versus a requested texture ID for
+    // which no current-region GPU texture could be bound.
+    std::uint64_t scene_textured_draw_calls=0U;
+    std::uint64_t scene_requested_texture_fallback_draw_calls=0U;
     // Actual OpenGL draw routing: opaque/depth-writing vs alpha-blended.
     std::uint64_t scene_opaque_draw_calls = 0U;
     std::uint64_t scene_alpha_draw_calls = 0U;

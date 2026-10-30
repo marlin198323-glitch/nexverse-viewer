@@ -2,6 +2,7 @@
  * License, v. 2.0. */
 #pragma once
 #include "nexverse/assets/asset_scene_coverage.hpp"
+#include "nexverse/assets/texture_mip_evidence.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -19,6 +20,11 @@ struct AssetStreamingSnapshot
     std::size_t mesh_scene_samples=0U;
     AssetSceneCoverage textures{};
     AssetSceneCoverage meshes{};
+    // Separate texture GPU UUID count from its actual uploaded mip level.
+    // None of these prove visual material fidelity or draw coverage.
+    TextureMipEvidence texture_mips{};
+    std::size_t renderer_mesh_slot_capacity=0U;
+    std::size_t mesh_requested_slot_budget=0U;
     std::size_t texture_in_flight=0U;
     std::size_t mesh_in_flight=0U;
     std::size_t texture_retry_blocked=0U;
@@ -87,6 +93,8 @@ struct AssetStreamingSnapshot
     std::uint64_t previous_frame_scene_draw_calls=0U;
     std::uint64_t previous_frame_scene_mesh_draw_calls=0U;
     std::uint64_t previous_frame_scene_prim_draw_calls=0U;
+    std::uint64_t previous_frame_scene_textured_draw_calls=0U;
+    std::uint64_t previous_frame_scene_requested_texture_fallback_draw_calls=0U;
     std::uint64_t previous_frame_scene_opaque_draw_calls=0U;
     std::uint64_t previous_frame_scene_alpha_draw_calls=0U;
     std::uint64_t previous_frame_scene_alpha_mask_draw_calls=0U;
@@ -113,7 +121,17 @@ struct AssetStreamingSnapshot
         field("textures_wanted",textures.requested);
         field("textures_resident",textures.resident);
         field("textures_pending",textures.pending);
+        // Legacy key retained for log collectors; it was always
+        // GPU UUID residency, NOT visual texture quality or fidelity.
         field("texture_coverage_pct",textures.percentage());
+        field("texture_ids_gpu_resident",textures.resident);
+        field("texture_ids_gpu_residency_pct",textures.percentage());
+        field("texture_mip0_gpu_ids",texture_mips.base_mip);
+        field("texture_reduced_mip_gpu_ids",texture_mips.reduced_mip);
+        field("texture_unknown_mip_gpu_ids",texture_mips.unknown_mip);
+        field("texture_visual_quality_verified",0U);
+        field("renderer_mesh_slot_capacity",renderer_mesh_slot_capacity);
+        field("mesh_requested_slot_budget",mesh_requested_slot_budget);
         field("meshes_wanted",meshes.requested);
         field("meshes_resident",meshes.resident);
         field("meshes_pending",meshes.pending);
@@ -190,6 +208,10 @@ struct AssetStreamingSnapshot
             previous_frame_scene_draw_calls);
         field("previous_frame_scene_mesh_draw_calls",
             previous_frame_scene_mesh_draw_calls);
+        field("previous_frame_scene_textured_draw_calls",
+              previous_frame_scene_textured_draw_calls);
+        field("previous_frame_scene_requested_texture_fallback_draw_calls",
+              previous_frame_scene_requested_texture_fallback_draw_calls);
         field("previous_frame_scene_prim_draw_calls",
             previous_frame_scene_prim_draw_calls);
         field("previous_frame_scene_opaque_draw_calls",

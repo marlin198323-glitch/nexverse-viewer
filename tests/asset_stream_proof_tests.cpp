@@ -16,7 +16,7 @@ int main()
         return 2;
     const AssetStreamProof proof{first,asset_gpu_coverage(
         std::array<Asset,2U>{{{"mesh1"},{"mesh2"}}},{"mesh2"})};
-    if(describe_asset_stream(proof)!="Tex 1/2 GPU | Mesh 1/2 GPU")
+    if(describe_asset_stream(proof)!="Tex-IDs 1/2 GPU | Mesh-IDs 1/2 GPU")
         return 3;
     std::cout<<"World GPU texture and mesh asset residency provenance PASS\n";
     return 0;

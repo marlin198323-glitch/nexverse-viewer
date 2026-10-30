@@ -4,6 +4,8 @@
 using nexverse::assets::mesh_resident_count_target;
 int main()
 {
+    static_assert(nexverse::assets::max_mesh_resident_assets==384U);
+    static_assert(nexverse::assets::economy_mesh_resident_assets==256U);
     static_assert(mesh_resident_count_target(0U,true)==256U);
     static_assert(mesh_resident_count_target(200U,true)==256U);
     static_assert(mesh_resident_count_target(292U,true)==292U);

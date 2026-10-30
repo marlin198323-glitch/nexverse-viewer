@@ -854,5 +854,30 @@
     "real_region_teleport_wasd_flight": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_universal_mesh_slot_capacity_and_texture_draw_truth_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_TESTED_REAL_UPDATED_RENDERER_GRID_VISUAL_RECHECK_PENDING",
+    "documentation": "docs/V0_4_0_0_UNIVERSAL_GPU_MESH_CAP_AND_TEXTURE_VISUAL_EVIDENCE_20261030.md",
+    "real_login_verified_with_numeric_wire_version": true,
+    "real_lludp_caps_self_appearance_wearables_and_yaw_verified": true,
+    "real_screenshot_uuid_texture_coverage_not_visual_quality": true,
+    "live_renderer_gpu_capacity_256_count_failures_557": true,
+    "renderer_planner_same_max_mesh_count_384": true,
+    "economy_profile_mesh_count_256": true,
+    "same_conservative_shared_and_mesh_gpu_byte_budgets": true,
+    "vendor_specific_gpu_override": false,
+    "native_gl_384_mesh_slots_385th_rejected_eviction_and_replacement": true,
+    "actual_shader_texture_bind_and_requested_fallback_draw_counters": true,
+    "texture_gpu_mip_0_reduced_unknown_counts": true,
+    "texture_visual_quality_verified": false,
+    "legacy_asset_snapshot_schema_fields_kept": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "898/898 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_post_patch_mesh_384_and_visual_quality_recheck": "OPEN",
+    "real_avatar_head_upper_lower_bakes": "0/3 BLOCKED_MISSING_SERVER_REFERENCES",
+    "real_wasd_flight_position_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
