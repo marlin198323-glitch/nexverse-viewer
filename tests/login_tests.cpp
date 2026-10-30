@@ -1,5 +1,6 @@
 #include "nexverse/net/http_transport.hpp"
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/login_failure_diagnostics.hpp"
 #include "nexverse/protocol/avatar_login_identity.hpp"
 
 #include <chrono>
@@ -336,6 +337,78 @@ int main()
        "OpenGenesisLINK Viewer","0.2.0-alpha.744").reason!="missing_credentials")
         return 36;
 
+    // The REAL NexVerse log (30 October 2026) repeatedly received
+    // XML-RPC reason="presence"; it alone does NOT reveal whether
+    // the account is online, unverified or logins are restricted.
+    // Test the server's three known OpenGenesisLINK response messages.
+    const auto presence_xml=[](std::string_view reason,
+                                std::string_view message)
+    {
+        return std::string{"<methodResponse><params><param><value><struct>"
+            "<member><name>login</name><value><boolean>0</boolean></value></member>"
+            "<member><name>reason</name><value><string>"}+
+            std::string{reason}+
+            "</string></value></member>"
+            "<member><name>message</name><value><string>"+
+            std::string{message}+
+            "</string></value></member>"
+            "</struct></value></param></params></methodResponse>";
+    };
+    const auto check_diagnostic=[&](std::string_view server_message,
+                                    std::string_view expected_category,
+                                    std::string_view expected_hint)
+    {
+        const auto reply=parse_login_xml_rpc_response(
+            presence_xml("presence",server_message));
+        const auto diagnosis=
+            nexverse::protocol::diagnose_login_failure(reply);
+        return !reply.success&&!reply.session&&
+            reply.reason=="presence"&&
+            diagnosis.category==expected_category&&
+            diagnosis.user_notice.find(expected_hint)!=
+                std::string_view::npos&&
+            diagnosis.user_notice.find(server_message)==
+                std::string_view::npos;
+    };
+    if(!check_diagnostic(
+        "You appear to be already logged in. Please wait a a minute or two and retry.",
+        "presence_already_online","noch als angemeldet"))return 78;
+    if(!check_diagnostic(
+        "Logins are currently restricted. Please try again later.",
+        "presence_restricted","beschr"))return 79;
+    if(!check_diagnostic(
+        "Your account has not yet been verified. Please check your email.",
+        "presence_unverified","noch nicht bestätigt"))return 80;
+    if(!check_diagnostic(
+        "Unknown server condition", "presence_unknown",
+        "genaue Grund"))return 81;
+    // Do not print attacker-controlled strings (URLs, UUIDs or tokens)
+    // in diagnostics, even when a rogue grid returns non-presence reasons.
+    const auto hostile=parse_login_xml_rpc_response(presence_xml(
+        "https://attacker.invalid/?token=secret",
+        "https://attacker.invalid/?token=secret"));
+    const auto protected_failure=
+        nexverse::protocol::diagnose_login_failure(hostile);
+    if(protected_failure.category!="other"||
+       !protected_failure.user_notice.empty())return 82;
+    const auto presence_with_secret=
+        nexverse::protocol::diagnose_login_failure(
+            parse_login_xml_rpc_response(presence_xml(
+                "presence","http://example.test/?password=secret")));
+    if(presence_with_secret.category!="presence_unknown"||
+       presence_with_secret.user_notice.find("secret")!=
+            std::string_view::npos)return 83;
+    const auto oversized=nexverse::protocol::diagnose_login_failure(
+        {false,std::nullopt,"presence",
+         std::string(3000U,'A')+"already logged in"});
+    if(oversized.category!="presence_unknown")return 84;
+    // Regression for existing ToS challenge: never classify it as a
+    // presence failure or alter the consent / retry protocol.
+    const auto tos_class=nexverse::protocol::diagnose_login_failure(challenge);
+    if(tos_class.category!="tos"||!tos_class.user_notice.empty())
+        return 85;
+    // No network call or automatic session cancellation is attempted
+    // by the diagnostic helper. It is pure classification only.
     std::cout << "OpenSim login protocol tests passed\n";
     return 0;
 }

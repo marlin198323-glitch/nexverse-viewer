@@ -14,7 +14,9 @@ class TosRetry(unittest.TestCase):
  def test_failed_login_revokes_previous_true(self):
   s=txt("src/app/application.cpp")
   i=s.index('if(result.reason=="tos")')
-  segment=s[i:s.index('// No raw server URL/password',i)]
+  # Use the actual fixed-category logger as stable boundary,
+  # not a comment removed during password-safe diagnostics cleanup.
+  segment=s[i:s.index('const auto failure=',i)]
   self.assertIn('login_ui.tos.reset();',segment)
   self.assertIn('pending_login_avatar,pending_login_uri',segment)
   self.assertIn('pending_login_avatar.clear();',s)

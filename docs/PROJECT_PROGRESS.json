@@ -810,5 +810,26 @@
     "real_wasd_fly_readback": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_presence_login_diagnostics_and_neon_utf8_notice_20261030": {
+    "status": "IMPLEMENTED_MINT_TESTED_SERVER_PRESENCE_LOGIN_BLOCKER_UNRESOLVED",
+    "documentation": "docs/V0_4_0_0_PRESENCE_LOGIN_DIAGNOSTICS_20261030.md",
+    "real_gpu_client_login_failed_7_times_reason_presence": true,
+    "server_presence_code_multiple_distinct_causes_verified_from_upstream": true,
+    "separate_known_restricted_already_online_unverified_or_unknown_notices": true,
+    "arbitrary_xmlrpc_reason_and_message_not_logged": true,
+    "no_auto_retry_no_forced_presence_logout_or_db_modification": true,
+    "read_only_login_log_triage_script": true,
+    "utf8_codepoint_and_display_width_safe_compact_notice": true,
+    "original_welcome_and_compact_chrome_unchanged": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "872/872 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_login": "BLOCKED_SERVER_REASON_PRESENCE",
+    "robust_login_service_reason_check": "REQUIRED_ON_GRIDSERVER",
+    "real_avatar_head_upper_lower_skin_cof": "OPEN",
+    "real_teleport_wasd_flight": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

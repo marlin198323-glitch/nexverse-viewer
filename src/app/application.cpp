@@ -71,6 +71,7 @@
 #include "nexverse/protocol/environment_settings.hpp"
 #include "nexverse/protocol/grid_discovery.hpp"
 #include "nexverse/protocol/login.hpp"
+#include "nexverse/protocol/login_failure_diagnostics.hpp"
 #include "nexverse/protocol/avatar_login_identity.hpp"
 #include "nexverse/protocol/login_tos.hpp"
 #include "nexverse/ui/login_tos_layout.hpp"
@@ -140,6 +141,7 @@
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 #include "nexverse/ui/neon_login_layout.hpp"
+#include "nexverse/ui/notice_clipping.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -3916,7 +3918,19 @@ void render_shell(
     const std::string neon_version=std::string{nexverse::core::version()};
     renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
         l.footer_y-14.0f*sc,8.0f*sc,neon_version,theme::text_muted);
-    const std::string notice=login.notice.substr(0U,86U);
+    // The LoginResult can contain a longer Presence explanation.
+    // Do not truncate by raw bytes: UTF-8 letters would be split and
+    // modern wide monitors would lose useful diagnostic detail.
+    // Reserve the version label at the right and fit the actual
+    // glyph width while keeping the original compact 60px footer.
+    const auto notice_width=std::max(0.0f,
+        w-l.username.x-125.0f*sc);
+    const std::string notice=nexverse::ui::fit_notice_to_width(
+        login.notice,notice_width,
+        [&](std::string_view sample)
+        {
+            return renderer.text_width(8.0f*sc,sample);
+        });
     renderer.text(l.username.x,l.footer_y-12.0f*sc,
         8.0f*sc,notice,
         login.status=="ERROR"?theme::magenta:theme::text_muted);
@@ -7897,14 +7911,27 @@ int Application::run(bool enable_developer_modules)
                             login_ui.tos.reset();
                             login_ui.tos_focus=nexverse::ui::TosAction::open_document;
                             login_ui.status = "ERROR";
-                            login_ui.notice = result.message.empty()
-                                ? "OpenSim-Anmeldung fehlgeschlagen."
-                                : result.message;
+                            // Presence is a shared OpenSim reason: the
+                            // server response distinguishes stale online,
+                            // account verification and login restrictions.
+                            // Never show an unbounded untrusted diagnostic
+                            // as the presence cause or claim to fix server DB.
+                            const auto diagnostic=
+                                protocol::diagnose_login_failure(result);
+                            login_ui.notice=diagnostic.user_notice.empty()
+                                ?(result.message.empty()
+                                    ?"OpenSim-Anmeldung fehlgeschlagen."
+                                    :result.message)
+                                :std::string{diagnostic.user_notice};
                         }
-                        // No raw server URL/password in diagnostics.
+                        // Log an allowlisted category only. Untrusted
+                        // server messages and arbitrary reason strings may
+                        // contain URLs, account IDs or secrets.
+                        const auto failure=
+                            protocol::diagnose_login_failure(result);
                         core::warning(
-                            std::string{"OpenSim login failed, reason: "} +
-                            (result.reason.empty() ? "unknown" : result.reason));
+                            std::string{"OpenSim login failed, category: "}+
+                            std::string{failure.category});
                     }
                 }
                 catch (const std::exception& error)
