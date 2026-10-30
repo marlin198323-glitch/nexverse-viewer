@@ -301,6 +301,67 @@ int main()
         return 6;
     }
 
+    // Same transition may be replayed by multiple EventQueue queues.
+    // Identical pending target MUST be idempotent, not clear self
+    // readbacks and increment the region generation repeatedly.
+    const auto first_transition_generation=world.region().generation;
+    const RegionUpdate pending_target{
+        0x0000030000000400ULL,{}, {10.0f,20.0f,30.0f},
+        "192.0.2.10",9100U,"https://caps.example/new",{},0U,
+        0U,0U,0U,0.0f,{},256U,256U,false};
+    world.begin_region_transition(pending_target);
+    if(world.region().generation!=first_transition_generation ||
+       world.region().handle!=pending_target.handle)return 108;
+    // A distinct destination agent position is NOT a replay, even
+    // within the same simulator/seed. It starts a new handoff.
+    auto different_position=pending_target;
+    different_position.agent_position.x=128.0f;
+    world.begin_region_transition(different_position);
+    if(world.region().generation!=first_transition_generation+1U ||
+       world.agent().position.x!=128.0f)return 109;
+    world.begin_region_transition(different_position);
+    if(world.region().generation!=first_transition_generation+1U)
+        return 110;
+    auto new_seed=different_position;
+    new_seed.seed_capability="https://caps.example/other-instance";
+    world.begin_region_transition(new_seed);
+    if(world.region().generation!=first_transition_generation+2U)
+        return 111;
+    auto new_socket=new_seed;
+    new_socket.simulator_port=9101U;
+    world.begin_region_transition(new_socket);
+    if(world.region().generation!=first_transition_generation+3U)
+        return 112;
+    // Partial RegionHandshake with connected=false must NOT clear
+    // pending source evidence and allow a duplicate to kill the world.
+    world.apply_region(new_socket);
+    const auto generation_after_handshake=world.region().generation;
+    world.begin_region_transition(new_socket);
+    if(world.region().generation!=generation_after_handshake)
+        return 115;
+    // Handle is part of destination identity, not just the CAPS URI.
+    WorldModel another_world;
+    another_world.begin_region_transition(pending_target);
+    auto other_handle=pending_target;
+    other_handle.handle+=0x100ULL;
+    another_world.begin_region_transition(other_handle);
+    if(another_world.region().generation!=2U ||
+       another_world.region().handle!=other_handle.handle)
+        return 116;
+    // Once the new simulator circuit is connected, a subsequent
+    // teleport to the exact same target must remain possible.
+    auto live=new_socket;
+    live.connected=true;
+    world.apply_region(live);
+    const auto connected_generation=world.region().generation;
+    world.begin_region_transition(new_socket);
+    if(world.region().generation!=connected_generation+1U ||
+       world.region().connected)return 113;
+    world.reset();
+    // A stale transition must not survive full logout/reset.
+    world.begin_region_transition(new_socket);
+    if(world.region().generation!=1U)return 114;
+
     world.reset();
     if (world.ready() || world.scene_ready() ||
         world.region().connected || world.agent().present ||

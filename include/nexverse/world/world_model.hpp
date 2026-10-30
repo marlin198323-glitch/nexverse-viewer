@@ -421,6 +421,11 @@ public:
 private:
     GridState grid_;
     RegionState region_;
+    // Exact fingerprint of the current *unfinished* TeleportFinish or
+    // CrossedRegion target. Cleared on real circuit readiness, reset,
+    // identity change or transition to a different region/socket.
+    // Never exported, persisted or logged (seed CAPS can contain tokens).
+    std::optional<RegionUpdate> pending_region_transition_;
     AgentState agent_;
     bool self_pose_confirmed_=false;
     AgentProfileState agent_profile_;

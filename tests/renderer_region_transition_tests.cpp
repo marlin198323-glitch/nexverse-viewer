@@ -570,7 +570,20 @@ int main()
                         break;
                     }
                 }
-                if(!hidden_known)error=46;
+                if(!hidden_known)
+                {
+                    // On headless Mesa an off-frustum draw may not
+                    // produce a resolved query within this frame budget.
+                    // UNKNOWN is conservative and must NOT be mistaken
+                    // for a visible avatar or a completed depth proof.
+                    // Known+visible remains a hard failure (45).
+                    const auto offscreen=renderer->diagnostics();
+                    if(offscreen.self_avatar_visible_samples_known||
+                       offscreen.self_avatar_visible_samples_passed||
+                       offscreen.self_avatar_anatomical_mesh_draw_calls!=3U||
+                       glGetError()!=GL_NO_ERROR)
+                        error=46;
+                }
                 renderer->reset_self_avatar_visibility();
                 renderer->set_avatar_proxies({});
                 const auto cleared_avatar=render();

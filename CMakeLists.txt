@@ -1435,10 +1435,10 @@ if(BUILD_TESTING AND NEXVERSE_BUILD_TESTS)
     add_test(NAME nexverse-renderer-region-transition-tests
         COMMAND nexverse-renderer-region-transition-tests)
     # This test waits for actual asynchronous GL_ANY_SAMPLES_PASSED
-    # queries (head/upper/lower) on Mesa llvmpipe. Concurrent 8-way
-    # CTest CPU/GL tests occasionally starve query completion and
-    # produce a false-negative (code 46). Isolate this GL proof only;
-    # keep other 194 CTests parallel and all assertions unchanged.
+    # queries (head/upper/lower) on Mesa llvmpipe. It must not run
+    # concurrently with other OpenGL tests that can starve the worker.
+    # Off-frustum UNKNOWN is conservatively permitted; it may NOT
+    # claim visible fragments or verified body skin.
     set_tests_properties(nexverse-renderer-region-transition-tests
         PROPERTIES SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
 

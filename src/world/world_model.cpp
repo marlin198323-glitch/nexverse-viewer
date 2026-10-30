@@ -21,6 +21,7 @@ void WorldModel::reset()
 {
     grid_ = {};
     region_ = {};
+    pending_region_transition_.reset();
     agent_ = {};
     agent_profile_ = {};
     self_appearance_.reset();
@@ -100,6 +101,8 @@ void WorldModel::apply_region(const RegionUpdate& update)
         (region_.handle!=0U && region_.handle!=update.handle) ||
         (region_.connected && !update.connected) ||
         simulator_socket_changed;
+    if(leave_region||update.connected)
+        pending_region_transition_.reset();
     if(leave_region)
     {
         avatars_.clear();
@@ -159,6 +162,26 @@ void WorldModel::apply_region(const RegionUpdate& update)
 
 void WorldModel::begin_region_transition(const RegionUpdate& update)
 {
+    // A TeleportFinish/CrossedRegion may arrive again from a queue
+    // replay or a restarted EventQueue after its ACK was reset. During
+    // the current not-yet-connected handoff, the EXACT same target must
+    // not wipe the pending world, self appearance and region epoch twice.
+    // A different destination/seed/socket/position remains a real new
+    // transition and MUST increment the epoch.
+    const auto same_target=[](const RegionUpdate& a,
+                              const RegionUpdate& b)
+    {
+        return a.handle==b.handle &&
+            a.simulator_ip==b.simulator_ip &&
+            a.simulator_port==b.simulator_port &&
+            a.seed_capability==b.seed_capability &&
+            a.agent_position.x==b.agent_position.x &&
+            a.agent_position.y==b.agent_position.y &&
+            a.agent_position.z==b.agent_position.z;
+    };
+    if(pending_region_transition_&&
+       same_target(*pending_region_transition_,update))
+        return;
     const std::uint32_t generation = region_.generation + 1U;
 
     avatars_.clear();
@@ -197,6 +220,7 @@ void WorldModel::begin_region_transition(const RegionUpdate& update)
 
     apply_region(update);
     region_.generation = generation;
+    pending_region_transition_=update;
 
     agent_.position = update.agent_position;
     agent_.present = false;
@@ -218,6 +242,7 @@ void WorldModel::apply_agent(const AgentUpdate& update)
             !agent_.agent_id.empty() || !agent_.session_id.empty();
         if(replacing_identity)
         {
+            pending_region_transition_.reset();
             avatars_.clear();
             objects_.clear();
             prim_uuid_to_local_id_.clear();
