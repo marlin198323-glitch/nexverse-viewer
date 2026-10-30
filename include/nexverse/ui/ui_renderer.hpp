@@ -9,6 +9,7 @@
 #include "nexverse/ui/theme.hpp"
 
 #include <string>
+#include <cstdint>
 #include <string_view>
 #include <unordered_map>
 
@@ -25,6 +26,9 @@ public:
 
     bool initialize(int width, int height);
     void resize(int width, int height) noexcept;
+    // Logical-window to actual framebuffer pixel ratio, e.g. 2 on
+    // Retina/HiDPI. Only affects glyph raster selection, not hitboxes.
+    void set_framebuffer_scale(float scale) noexcept;
 
     void rect(float x, float y, float width, float height, Color color, float radius = 0.0f);
     void text(float x, float y, float pixel_size, std::string_view value, Color color);
@@ -69,7 +73,8 @@ private:
     unsigned int image_vao_ = 0;
     unsigned int image_vbo_ = 0;
 
-    std::unordered_map<char, Glyph> glyphs_;
+    std::unordered_map<std::uint64_t, Glyph> glyphs_;
+    float framebuffer_scale_=1.0f;
     bool font_ready_ = false;
 };
 }

@@ -8512,6 +8512,13 @@ int Application::run(bool enable_developer_modules)
                 continue;
             }
 
+            // Use actual physical framebuffer/window ratio (Retina/HiDPI)
+            // for FreeType raster selection. Do not change UI hitboxes,
+            // WebKit's original content or the 3D world viewport.
+            renderer.set_framebuffer_scale(std::max(
+                static_cast<float>(framebuffer_width)/window_width,
+                static_cast<float>(framebuffer_height)/window_height));
+
             const ui::NeonLoginLayout welcome_layout{
                 window_width,window_height};
             const int welcome_viewport_height=login_ui.authenticated

@@ -879,5 +879,28 @@
     "real_wasd_flight_position_readback": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_firestorm_style_font_dpi_multires_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_TESTED_REAL_USER_LIVE_VISUAL_ABNAHME_PENDING",
+    "documentation": "docs/V0_4_0_0_FIRESTORM_STYLE_DPI_FONT_RASTER_20261030.md",
+    "real_login_and_world_screens_examined_at_222619_223725": true,
+    "original_firestorm_ui_and_font_settings_read": true,
+    "old_48px_bitmap_downsampling_removed": true,
+    "freetype_raster_sizes": "12,16,24,36,56,96 physical pixels",
+    "logical_minimum_font_size_px": 10.5,
+    "framebuffer_ratio_for_hi_dpi_and_multi_monitor": true,
+    "unicode_utf8_codepoint_support_with_invalid_sequence_fallback": true,
+    "latin_greek_cyrillic_system_font_glyphs": true,
+    "same_glyph_metrics_for_measure_and_draw": true,
+    "original_welcome_and_compact_login_geometry_unchanged": true,
+    "gpu_vendor_or_user_resolution_hardcoded": false,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "910/910 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "new_real_restarted_viewer_visual_readability_abnahme": "OPEN",
+    "user_font_scale_adjustment_setting": "OPEN",
+    "server_avatar_head_upper_lower_bakes": "OPEN",
+    "real_wasd_translation": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

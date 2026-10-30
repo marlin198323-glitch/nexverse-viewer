@@ -5,6 +5,7 @@
  */
 
 #include "nexverse/ui/ui_renderer.hpp"
+#include "nexverse/ui/font_raster_policy.hpp"
 
 #include "nexverse/core/logger.hpp"
 
@@ -14,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -227,6 +229,11 @@ void UiRenderer::resize(int width, int height) noexcept
     width_ = width > 0 ? width : 1;
     height_ = height > 0 ? height : 1;
 }
+void UiRenderer::set_framebuffer_scale(float scale) noexcept
+{
+    framebuffer_scale_=std::isfinite(scale)?
+        std::clamp(scale,1.0f,3.0f):1.0f;
+}
 
 unsigned int UiRenderer::compile_program(const char* vertex_source, const char* fragment_source)
 {
@@ -385,45 +392,47 @@ bool UiRenderer::initialize_text()
         return false;
     }
 
-    FT_Set_Pixel_Sizes(face, 0, 48);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    for (unsigned char character = 32; character < 127; ++character)
+    // Firestorm uses independent UI and font sizing, not one huge
+    // font texture rescaled to microscopic dimensions. Use real
+    // FreeType raster sizes for each physical screen density. Cache
+    // Latin-1/Latin Extended and Cyrillic/Greek alongside ASCII
+    // so German umlauts and other residents' names remain legible.
+    for(const auto raster_px:nexverse::ui::font_raster_tiers)
     {
-        if (FT_Load_Char(face, character, FT_LOAD_RENDER) != 0)
+        if(FT_Set_Pixel_Sizes(face,0,raster_px)!=0)continue;
+        const auto add_glyph=[&](std::uint32_t codepoint)
         {
-            continue;
-        }
-
-        unsigned int texture = 0;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RED,
-            static_cast<GLsizei>(face->glyph->bitmap.width),
-            static_cast<GLsizei>(face->glyph->bitmap.rows),
-            0,
-            GL_RED,
-            GL_UNSIGNED_BYTE,
-            face->glyph->bitmap.buffer);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glyphs_.emplace(
-            static_cast<char>(character),
-            Glyph{
-                texture,
-                static_cast<int>(face->glyph->bitmap.width),
-                static_cast<int>(face->glyph->bitmap.rows),
-                face->glyph->bitmap_left,
-                face->glyph->bitmap_top,
-                static_cast<unsigned int>(face->glyph->advance.x)
-            });
+            if(FT_Load_Char(face,codepoint,FT_LOAD_RENDER)!=0)
+                return;
+            if(FT_Get_Char_Index(face,codepoint)==0U)
+                return;
+            unsigned int texture=0U;
+            if(face->glyph->bitmap.width!=0U&&
+               face->glyph->bitmap.rows!=0U)
+            {
+                glGenTextures(1,&texture);
+                glBindTexture(GL_TEXTURE_2D,texture);
+                glTexImage2D(GL_TEXTURE_2D,0,GL_RED,
+                    static_cast<GLsizei>(face->glyph->bitmap.width),
+                    static_cast<GLsizei>(face->glyph->bitmap.rows),0,
+                    GL_RED,GL_UNSIGNED_BYTE,face->glyph->bitmap.buffer);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            }
+            glyphs_.emplace(nexverse::ui::glyph_cache_key(raster_px,codepoint),
+                Glyph{texture,
+                    static_cast<int>(face->glyph->bitmap.width),
+                    static_cast<int>(face->glyph->bitmap.rows),
+                    face->glyph->bitmap_left,face->glyph->bitmap_top,
+                    static_cast<unsigned int>(face->glyph->advance.x)});
+        };
+        for(std::uint32_t codepoint=32U;codepoint<=0x024FU;++codepoint)
+            add_glyph(codepoint);
+        for(std::uint32_t codepoint=0x0370U;codepoint<=0x052FU;++codepoint)
+            add_glyph(codepoint);
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -444,7 +453,9 @@ bool UiRenderer::initialize_text()
     glBindVertexArray(0);
 
     font_ready_ = !glyphs_.empty();
-    core::info(std::string{"UI font: "} + selected_font.string());
+    core::info(std::string{"UI font: "} + selected_font.string()+
+        "; HiDPI FreeType raster tiers=12/16/24/36/56/96; "
+        "UTF-8 and 10.5px logical font floor enabled");
     return font_ready_;
 }
 
@@ -489,8 +500,11 @@ void UiRenderer::text(float x, float y, float pixel_size, std::string_view value
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const float scale = pixel_size / 48.0f;
-    float cursor = x;
+    const float logical_size=nexverse::ui::readable_ui_font_size(pixel_size);
+    const unsigned raster=nexverse::ui::font_raster_tier(
+        pixel_size,framebuffer_scale_);
+    const float scale=logical_size/static_cast<float>(raster);
+    float cursor=x;
 
     glUseProgram(text_program_);
     glUniform2f(glGetUniformLocation(text_program_, "uViewport"), static_cast<float>(width_), static_cast<float>(height_));
@@ -500,17 +514,19 @@ void UiRenderer::text(float x, float y, float pixel_size, std::string_view value
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(text_vao_);
 
-    for (const char character : value)
+    nexverse::ui::for_each_ui_codepoint(value,[&](std::uint32_t cp)
     {
-        const auto found = glyphs_.find(character);
+        auto found=glyphs_.find(nexverse::ui::glyph_cache_key(raster,cp));
         if (found == glyphs_.end())
         {
-            continue;
+            // Unsupported glyph: show a visible replacement marker.
+            found=glyphs_.find(nexverse::ui::glyph_cache_key(raster,'?'));
+            if(found==glyphs_.end())return;
         }
 
         const Glyph& glyph = found->second;
         const float xpos = cursor + static_cast<float>(glyph.bearing_x) * scale;
-        const float ypos = y + (48.0f - static_cast<float>(glyph.bearing_y)) * scale;
+        const float ypos = y + (static_cast<float>(raster) - static_cast<float>(glyph.bearing_y)) * scale;
         const float width = static_cast<float>(glyph.width) * scale;
         const float height = static_cast<float>(glyph.height) * scale;
 
@@ -524,13 +540,16 @@ void UiRenderer::text(float x, float y, float pixel_size, std::string_view value
             xpos + width, ypos,          1.0f, 0.0f
         };
 
+        if(glyph.texture!=0U)
+        {
         glBindTexture(GL_TEXTURE_2D, glyph.texture);
         glBindBuffer(GL_ARRAY_BUFFER, text_vbo_);
         glBufferSubData(GL_ARRAY_BUFFER, 0, static_cast<GLsizeiptr>(sizeof(vertices)), vertices.data());
         glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
         cursor += static_cast<float>(glyph.advance >> 6U) * scale;
-    }
+    });
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -545,17 +564,20 @@ float UiRenderer::text_width(float pixel_size, std::string_view value) const noe
         return 0.0f;
     }
 
-    const float scale = pixel_size / 48.0f;
-    float width = 0.0f;
-
-    for (const char character : value)
+    const float scale=nexverse::ui::readable_ui_font_size(pixel_size)/
+        static_cast<float>(nexverse::ui::font_raster_tier(
+            pixel_size,framebuffer_scale_));
+    const unsigned raster=nexverse::ui::font_raster_tier(
+        pixel_size,framebuffer_scale_);
+    float width=0.0f;
+    nexverse::ui::for_each_ui_codepoint(value,[&](std::uint32_t cp)
     {
-        const auto found = glyphs_.find(character);
-        if (found != glyphs_.end())
-        {
-            width += static_cast<float>(found->second.advance >> 6U) * scale;
-        }
-    }
+        auto found=glyphs_.find(nexverse::ui::glyph_cache_key(raster,cp));
+        if(found==glyphs_.end())
+            found=glyphs_.find(nexverse::ui::glyph_cache_key(raster,'?'));
+        if(found!=glyphs_.end())
+            width+=static_cast<float>(found->second.advance>>6U)*scale;
+    });
 
     return width;
 }

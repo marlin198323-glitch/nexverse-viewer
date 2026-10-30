@@ -3,8 +3,11 @@
  */
 #include "nexverse/ui/neon_login_layout.hpp"
 #include "nexverse/ui/notice_clipping.hpp"
+#include "nexverse/ui/font_raster_policy.hpp"
 #include <array>
 #include <iostream>
+#include <cstdint>
+#include <vector>
 
 int main()
 {
@@ -133,6 +136,45 @@ int main()
         std::string(600U,'x'),10000.0f,glyph_width);
     if(hostile.size()>515U||!hostile.ends_with("..."))
         return 24;
+
+    // Independent of any monitor vendor and window resolution:
+    // readable logical font size and physically appropriate FreeType
+    // glyphs for 1x/1.5x/2x HiDPI displays.
+    using nexverse::ui::readable_ui_font_size;
+    using nexverse::ui::font_raster_tier;
+    if(readable_ui_font_size(5.0f)!=10.5f||
+       readable_ui_font_size(9.0f)!=10.5f||
+       readable_ui_font_size(14.0f)!=14.0f||
+       font_raster_tier(8.0f,1.0f)!=12U||
+       font_raster_tier(8.0f,2.0f)!=24U||
+       font_raster_tier(18.0f,2.0f)!=36U||
+       font_raster_tier(18.0f,3.0f)!=56U)
+        return 25;
+    std::vector<std::uint32_t> decoded;
+    nexverse::ui::for_each_ui_codepoint(
+        "Ärger über Größe – Wohnen / Киев / Αθήνα",
+        [&](std::uint32_t cp){decoded.push_back(cp);});
+    if(decoded.size()<15U||
+       std::find(decoded.begin(),decoded.end(),0x00C4U)==decoded.end()||
+       std::find(decoded.begin(),decoded.end(),0x00FCU)==decoded.end()||
+       std::find(decoded.begin(),decoded.end(),0x00DFU)==decoded.end()||
+       std::find(decoded.begin(),decoded.end(),0x041AU)==decoded.end()||
+       std::find(decoded.begin(),decoded.end(),0x0391U)==decoded.end())
+        return 26;
+    decoded.clear();
+    nexverse::ui::for_each_ui_codepoint(
+        std::string_view{"\xC3",1U},
+        [&](std::uint32_t cp){decoded.push_back(cp);});
+    if(decoded.size()!=1U||decoded.front()!='?')return 27;
+    decoded.clear();
+    nexverse::ui::for_each_ui_codepoint(
+        std::string_view{"\xC0\xAF",2U},
+        [&](std::uint32_t cp){decoded.push_back(cp);});
+    if(decoded.size()!=2U||decoded[0]!='?'||decoded[1]!='?')
+        return 28;
+    if(nexverse::ui::glyph_cache_key(12U,0x00DCU)==
+       nexverse::ui::glyph_cache_key(24U,0x00DCU))
+        return 29;
 
     std::cout << "OGL_NEON_LOGIN_COMPACT_LAYOUT_PASS "
               << "1648x928 and 5 scaled/ultrawide windows; "
