@@ -125,6 +125,7 @@
 #include "nexverse/protocol/legacy_wearables_cof_audit.hpp"
 #include "nexverse/protocol/legacy_wearable_inventory_probe.hpp"
 #include "nexverse/protocol/legacy_wearable_local_preview.hpp"
+#include "nexverse/protocol/firestorm_wearable_viewer_asset.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
@@ -5993,6 +5994,16 @@ int Application::run(bool enable_developer_modules)
     std::string gallery_texture_cap;
     std::string gallery_inventory_cap;
     std::string gallery_inventory_items_cap;
+    std::string gallery_viewer_asset_cap;
+    // Genuine ORIGINAL clothing/bodypart data via OpenSim ViewerAsset CAP.
+    // If missing/invalid, fall back to legacy bounded LLUDP TransferRequest.
+    std::future<protocol::WearableViewerAssetResult>
+        gallery_viewer_asset_future;
+    std::set<std::string> gallery_viewer_asset_fallback_ids;
+    std::size_t gallery_viewer_asset_successes=0U;
+    std::size_t gallery_viewer_asset_failures=0U;
+    std::size_t gallery_wearable_udp_timeouts=0U;
+    std::size_t gallery_wearable_udp_successes=0U;
     std::future<protocol::InventoryItemFetch> gallery_item_fetch_future;
     std::future<protocol::InventoryItemFetch> gallery_wearables_fetch_future;
     // Read-only fallback: confirm simulator-selected Low382 originals when
@@ -8837,6 +8848,10 @@ int Application::run(bool enable_developer_modules)
                 legacy_originals_matched=0U;
                 legacy_originals_bodyparts=0U;
                 legacy_originals_status="Legacy-Originalitems: Region gewechselt";
+                gallery_viewer_asset_cap.clear();
+                gallery_viewer_asset_fallback_ids.clear();
+                gallery_viewer_asset_successes=gallery_viewer_asset_failures=0U;
+                gallery_wearable_udp_timeouts=gallery_wearable_udp_successes=0U;
                 legacy_cof_raw_empty=false;
                 legacy_cof_raw_epoch=legacy_cof_raw_version=0U;
                 legacy_local_preview_active=false;
@@ -8976,6 +8991,10 @@ int Application::run(bool enable_developer_modules)
                 gallery_item_fetch_folder.clear();
                 gallery_item_fetch_completed_folder.clear();
                 gallery_inventory_items_cap.clear();
+                gallery_viewer_asset_cap.clear();
+                gallery_viewer_asset_fallback_ids.clear();
+                gallery_viewer_asset_successes=gallery_viewer_asset_failures=0U;
+                gallery_wearable_udp_timeouts=gallery_wearable_udp_successes=0U;
                 caps_state.experience_permission_status.clear();
                 experience_permission_cap.clear();
                 experience_consent.cancel();
@@ -9267,6 +9286,14 @@ int Application::run(bool enable_developer_modules)
                                     active_session->inventory_skeleton).value_or("")
                                 :"";
                             gallery_texture_cap=std::move(reply.get_texture_uri);
+                            gallery_viewer_asset_cap=
+                                std::move(reply.viewer_asset_uri);
+                            core::info("Avatar original asset transports: "
+                                "ViewerAsset CAP available="+
+                                std::to_string(!gallery_viewer_asset_cap.empty()
+                                   ?1:0)+
+                                "; LLUDP fallback always retained; "
+                                "CAP URL secret omitted");
                             gallery_inventory_cap=std::move(
                                 reply.inventory_folder_uri);
                             gallery_inventory_items_cap=std::move(
@@ -10199,11 +10226,104 @@ int Application::run(bool enable_developer_modules)
                     }
                 }
             }
-            // A completed transfer is not a successful bake. The raw
-            // immutable wearable is only accepted if it belongs to the
-            // same authoritative owner-scoped COF and inventory subtype.
-            while(auto completed=wearable_transfers.pop())
+            // HTTP ViewerAsset can deliver wearable-original bytes even
+            // when LLUDP TransferRequest is disabled on the simulator.
+            // The HTTP worker never touches GPU or mutates the outfit.
+            std::optional<protocol::WearableTransferInbox::Result>
+                viewerasset_completed;
+            if(gallery_viewer_asset_future.valid()&&
+               gallery_viewer_asset_future.wait_for(
+                   std::chrono::seconds{0})==std::future_status::ready)
             {
+                try
+                {
+                    auto response=gallery_viewer_asset_future.get();
+                    const bool current=response.epoch==gallery_asset_epoch&&
+                        firestorm_region_lease.matches(response.epoch)&&
+                        response.asset_id==gallery_asset_active_id&&
+                        !gallery_asset_active_id.empty();
+                    if(current&&response.asset)
+                    {
+                        viewerasset_completed=protocol::
+                            WearableTransferInbox::Result{
+                                response.asset_id,std::move(response.asset),{}};
+                        ++gallery_viewer_asset_successes;
+                        core::info("Avatar original wearable ViewerAsset: "
+                            "HTTP source validated; server item/type "
+                            "check follows; UUID/CAP omitted");
+                    }
+                    else if(current)
+                    {
+                        ++gallery_viewer_asset_failures;
+                        gallery_viewer_asset_fallback_ids.insert(
+                            response.asset_id);
+                        const auto item=std::find_if(
+                            gallery_wearable_originals.begin(),
+                            gallery_wearable_originals.end(),
+                            [&](const auto& x)
+                            {return x.asset_id==response.asset_id;});
+                        if(item!=gallery_wearable_originals.end()&&
+                           gallery_asset_pending.size()<16U)
+                        {
+                            gallery_asset_pending.insert(
+                                gallery_asset_pending.begin(),*item);
+                            gallery_asset_status=
+                                "ViewerAsset nicht verfügbar; "
+                                "echtes LLUDP Wearable wird angefordert";
+                        }
+                        else
+                        {
+                            ++gallery_asset_errors;
+                            gallery_asset_status=
+                                "ViewerAsset abgelehnt; Originalitem verfallen";
+                        }
+                        gallery_asset_active_id.clear();
+                        core::info("Avatar original wearable ViewerAsset: "
+                            "bounded HTTP attempt failed; "
+                            "fallback LLUDP queued where safe");
+                    }
+                }
+                catch(const std::exception&)
+                {
+                    ++gallery_viewer_asset_failures;
+                    if(!gallery_asset_active_id.empty())
+                    {
+                        gallery_viewer_asset_fallback_ids.insert(
+                            gallery_asset_active_id);
+                        const auto item=std::find_if(
+                            gallery_wearable_originals.begin(),
+                            gallery_wearable_originals.end(),
+                            [&](const auto& x){return x.asset_id==
+                                gallery_asset_active_id;});
+                        if(item!=gallery_wearable_originals.end()&&
+                           gallery_asset_pending.size()<16U)
+                            gallery_asset_pending.insert(
+                                gallery_asset_pending.begin(),*item);
+                        else ++gallery_asset_errors;
+                        gallery_asset_active_id.clear();
+                    }
+                    core::warning("Avatar original wearable ViewerAsset: "
+                        "HTTP exception; bounded LLUDP fallback only");
+                }
+            }
+            // A completed transfer is not a successful bake. Only an
+            // original matching owner/COF/type/subtype is accepted.
+            // One common GPU-independent verified result path for both
+            // modern ViewerAsset HTTP and legacy LLUDP downloads.
+            for(;;)
+            {
+                const bool from_http=viewerasset_completed.has_value();
+                std::optional<protocol::WearableTransferInbox::Result>
+                    completed;
+                if(from_http)
+                {
+                    completed=std::move(viewerasset_completed);
+                    // Moving std::optional does NOT disengage it.
+                    // Consume once, or an HTTP response loops forever.
+                    viewerasset_completed.reset();
+                }
+                else completed=wearable_transfers.pop();
+                if(!completed)break;
                 if(completed->asset_id!=gallery_asset_active_id)continue;
                 const auto& versions=gallery_inventory_sync.versions();
                 const auto v=versions.find(gallery_asset_cof);
@@ -10226,6 +10346,14 @@ int Application::run(bool enable_developer_modules)
                 {
                     gallery_decoded_wearable_assets.insert_or_assign(
                         completed->asset_id,*completed->asset);
+                    core::info("Avatar original wearable accepted: "
+                        "owner/COF/asset-type/subtype verified, "
+                        "params="+std::to_string(
+                            completed->asset->visual_params.size())+
+                        " textures="+std::to_string(
+                            completed->asset->textures.size())+
+                        "; local preview, NOT a simulator bake");
+                    if(!from_http)++gallery_wearable_udp_successes;
                     gallery_asset_status=
                         "LLWearable dekodiert: "+
                         std::to_string(completed->asset->visual_params.size())+
@@ -10240,6 +10368,9 @@ int Application::run(bool enable_developer_modules)
                         completed->error.empty()
                             ?"Asset-Typ/COF/Region ungueltig":
                              "Asset abgelehnt: "+completed->error;
+                    core::warning("Avatar original wearable rejected: "
+                        "owner/COF/type/transfer evidence invalid; "
+                        "no bake or asset IDs accepted");
                 }
                 gallery_asset_active_id.clear();
                 if(gallery_asset_pending.empty()&&
@@ -10439,11 +10570,16 @@ int Application::run(bool enable_developer_modules)
             {
                 ++gallery_asset_errors;
                 gallery_asset_status=
-                    "Asset Transfer Timeout - kein automatischer Retry";
+                    "Original-Asset-Transfer Timeout; kein Auto-Resend";
+                ++gallery_wearable_udp_timeouts;
+                core::warning("Avatar original wearable LLUDP/HTTP timeout: "
+                    "bounded transfer did not complete; "
+                    "no GPU preview or bake claimed");
                 gallery_asset_active_id.clear();
                 wearable_transfers.reset(current_firestorm_epoch);
             }
             if(!gallery_asset_pending.empty()&&gallery_asset_active_id.empty()&&
+               !gallery_viewer_asset_future.valid()&&
                simulation_ready&&login_ui.authenticated&&
                active_session&&outbound_queue.size()<480U&&
                gallery_asset_epoch==current_firestorm_epoch&&
@@ -10451,24 +10587,54 @@ int Application::run(bool enable_developer_modules)
             {
                 const auto next=gallery_asset_pending.front();
                 gallery_asset_pending.erase(gallery_asset_pending.begin());
-                protocol::WearableAssetRequest request{
-                    next.asset_id,protocol::random_animation_transfer_id(),
-                    next.asset_type};
-                if(wearable_transfers.begin(gallery_asset_epoch,request)&&
-                   outbound_queue.push(request))
+                if(!gallery_viewer_asset_cap.empty()&&
+                   !gallery_viewer_asset_fallback_ids.contains(next.asset_id))
                 {
                     gallery_asset_active_id=next.asset_id;
                     gallery_asset_started=std::chrono::steady_clock::now();
-                    gallery_asset_status="Asset "+std::to_string(
-                        gallery_decoded_wearable_assets.size()+
-                        gallery_asset_errors+1U)+"/"+
-                        std::to_string(gallery_asset_total)+" angefordert";
+                    gallery_asset_status="Original-Asset "+
+                        std::to_string(gallery_decoded_wearable_assets.size()+
+                            gallery_asset_errors+1U)+"/"+
+                        std::to_string(gallery_asset_total)+
+                        " ViewerAsset HTTP";
+                    gallery_viewer_asset_future=std::async(
+                        std::launch::async,
+                        [transport,cap=gallery_viewer_asset_cap,
+                         id=next.asset_id,type=next.asset_type,
+                         epoch=gallery_asset_epoch,
+                         &firestorm_region_lease]()
+                        {
+                            return protocol::fetch_wearable_viewer_asset(
+                                transport,cap,id,type,epoch,
+                                firestorm_region_lease);
+                        });
+                    core::info("Avatar original wearable request: "
+                        "authenticated ViewerAsset GET (read-only); "
+                        "asset/CAP URL omitted");
                 }
                 else
                 {
-                    ++gallery_asset_errors;
-                    gallery_asset_status="Asset Queue blockiert, kein Retry";
-                    wearable_transfers.reset(current_firestorm_epoch);
+                    protocol::WearableAssetRequest request{
+                        next.asset_id,protocol::random_animation_transfer_id(),
+                        next.asset_type};
+                    if(wearable_transfers.begin(gallery_asset_epoch,request)&&
+                       outbound_queue.push(request))
+                    {
+                        gallery_asset_active_id=next.asset_id;
+                        gallery_asset_started=std::chrono::steady_clock::now();
+                        gallery_asset_status="Original-Asset "+
+                            std::to_string(gallery_decoded_wearable_assets.size()+
+                                gallery_asset_errors+1U)+"/"+
+                            std::to_string(gallery_asset_total)+" LLUDP";
+                        core::info("Avatar original wearable request: "
+                            "bounded LLUDP transfer dispatched; UUID omitted");
+                    }
+                    else
+                    {
+                        ++gallery_asset_errors;
+                        gallery_asset_status="LLUDP Asset Queue blockiert";
+                        wearable_transfers.reset(current_firestorm_epoch);
+                    }
                 }
             }
             // Explicit F9 click. This is a read-only preview of original
@@ -16117,6 +16283,7 @@ int Application::run(bool enable_developer_modules)
     shutdown_wait(gallery_item_fetch_future,"COF item");
     shutdown_wait(gallery_wearables_fetch_future,"COF wearables");
     shutdown_wait(legacy_originals_future,"legacy original wearable lookup");
+    shutdown_wait(gallery_viewer_asset_future,"wearable ViewerAsset GET");
     shutdown_wait(gallery_local_texture_future,"wearable textures");
     shutdown_wait(gallery_sync_future,"outfit inventory");
     shutdown_wait_group(gallery_image_futures,"outfit images");

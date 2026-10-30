@@ -34,6 +34,8 @@ struct FirestormRegionRead
     OutfitInventoryRead outfit_inventory;
     // Secret CAPS URI: runtime-only. Never serialize or log.
     std::string get_texture_uri;
+    // Optional OpenSim read-only ViewerAsset CAP (wearable original bytes).
+    std::string viewer_asset_uri;
     std::string inventory_folder_uri;
     std::string inventory_items_uri;
     std::string experience_permissions_uri;

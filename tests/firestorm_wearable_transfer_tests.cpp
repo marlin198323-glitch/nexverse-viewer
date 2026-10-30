@@ -1,5 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
+#include "nexverse/protocol/firestorm_wearable_viewer_asset.hpp"
 #include <cassert>
 #include <iostream>
 using namespace nexverse::protocol;
@@ -120,6 +121,78 @@ int main()
     if(!finished||finished->asset||finished->error.empty())return 18;
     inbox.reset(12U);
     if(inbox.pop()||inbox.pending_count()!=0U)return 19;
+    // OpenSim ViewerAsset authentic original wearable GET, not a bake.
+    struct TestViewerAsset : nexverse::net::IHttpTransport
+    {
+        std::string seen;
+        std::string fixture;
+        long code=200;
+        nexverse::net::HttpResponse get(std::string_view url,
+            std::size_t max,std::chrono::milliseconds,
+            std::chrono::milliseconds) override
+        {
+            seen=std::string{url};
+            if(max!=nexverse::assets::max_firestorm_wearable_bytes)
+                return {400,{},"unbounded"};
+            return {code,fixture,{}};
+        }
+        nexverse::net::HttpResponse post(std::string_view,std::string_view,
+            std::string_view,std::size_t,std::chrono::milliseconds,
+            std::chrono::milliseconds) override
+        {return {405,{},"read-only"};}
+    };
+    const auto url=wearable_viewer_asset_url("https://caps.test/asset",
+        ASSET,asset_type_clothing);
+    if(!url||*url!="https://caps.test/asset?clothing_id="+
+        std::string{ASSET} ||
+       wearable_viewer_asset_url("https://caps.test/asset?x=1",
+           ASSET,asset_type_clothing)||
+       wearable_viewer_asset_url("https://caps.test/asset#secret",
+           ASSET,asset_type_clothing)||
+       wearable_viewer_asset_url("file:///asset",
+           ASSET,asset_type_clothing)||
+       wearable_viewer_asset_url("https://caps.test/asset",
+           NIL,asset_type_clothing)||
+       wearable_viewer_asset_url("https://caps.test/asset",
+           ASSET,20))
+        return 21;
+    const auto body_url=wearable_viewer_asset_url(
+        "https://caps.test/asset",ASSET,asset_type_bodypart);
+    if(!body_url||*body_url!="https://caps.test/asset?bodypart_id="+
+        std::string{ASSET})return 22;
+    auto http=std::make_shared<TestViewerAsset>();
+    http->fixture=asset;
+    FirestormRegionLease lease;
+    const auto epoch=lease.enter(1U,1U,"https://caps.test/seed");
+    const auto via_cap=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease);
+    if(!via_cap.asset||via_cap.asset->type!=4 ||
+       via_cap.asset->name!="White Shirt"||
+       via_cap.epoch!=epoch||via_cap.asset_id!=ASSET||
+       !via_cap.capability_attempted||http->seen!=*url)return 23;
+    const auto mismatched_category=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_bodypart,
+        epoch,lease);
+    if(mismatched_category.asset||
+       mismatched_category.error.find("category")==std::string::npos)
+        return 24;
+    http->code=404;
+    const auto missing=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease);
+    if(missing.asset||!missing.capability_attempted ||
+       missing.error.find("HTTP failure")==std::string::npos)
+        return 25;
+    http->code=200;http->fixture="invalid wearable binary";
+    if(fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease).asset)return 26;
+    const auto next_epoch=lease.enter(2U,2U,"https://caps.test/new");
+    (void)next_epoch;
+    if(fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease).capability_attempted)return 27;
     std::cout<<"Wearable LLUDP Low153 real Clothing/Bodypart transfer multi-packet, owner type/transfer/epoch isolation and malformed/timeout failure OK\n";
     return 0;
 }

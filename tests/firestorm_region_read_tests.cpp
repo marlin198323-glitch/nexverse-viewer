@@ -65,7 +65,8 @@ public:
             {"GetExperienceInfo",LlsdValue::uri("https://caps.test/info")},
             {"FetchInventoryDescendents2",LlsdValue::uri(
                 "https://caps.test/inventory")},
-            {"GetTexture",LlsdValue::uri("https://caps.test/texture")}
+            {"GetTexture",LlsdValue::uri("https://caps.test/texture")},
+            {"ViewerAsset",LlsdValue::uri("https://caps.test/assets")}
         })),{}};
     }
     nexverse::net::HttpResponse get(
@@ -176,6 +177,7 @@ int main()
        fresh.outfit_inventory.thumbnails.at(A).asset_id!=THUMB ||
        fresh.outfit_inventory.versions.at(A)!=18U||
        fresh.get_texture_uri!="https://caps.test/texture" ||
+       fresh.viewer_asset_uri!="https://caps.test/assets" ||
        fresh.profiles.at(A).description!="A real description" ||
        fresh.profiles.at(A).maturity!=21)
         return 6;

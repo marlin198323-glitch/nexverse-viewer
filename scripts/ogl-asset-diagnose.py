@@ -164,6 +164,35 @@ def summarize(raw: str) -> list[str]:
             output.append("Simulator-Wearables / Originalinventar: "+
                           ", ".join(f"{key}={value}" for key,value in details)+
                           " (keine Server-Bake-Bestaetigung).")
+    originals_http = {
+        "http_requests":sum("Avatar original wearable request: "
+            "authenticated ViewerAsset GET" in line for line in session),
+        "http_validated":sum("Avatar original wearable ViewerAsset: "
+            "HTTP source validated" in line for line in session),
+        "http_fallback":sum("Avatar original wearable ViewerAsset: "
+            "bounded HTTP attempt failed" in line for line in session),
+        "udp_dispatches":sum("Avatar original wearable request: "
+            "bounded LLUDP transfer dispatched" in line for line in session),
+        "udp_timeouts":sum("Avatar original wearable LLUDP/HTTP timeout:"
+            in line for line in session),
+        "originals_accepted":sum("Avatar original wearable accepted:"
+            in line for line in session),
+        "originals_rejected":sum("Avatar original wearable rejected:"
+            in line for line in session),
+    }
+    cap = [line for line in session if
+           "Avatar original asset transports:" in line]
+    if cap:
+        c = re.search(r"ViewerAsset CAP available=(\d+)", cap[-1])
+        if c:
+            output.append("Wearable-HTTP-CAP angeboten: " +
+                          ("ja" if c.group(1)=="1" else "nein") +
+                          "; nur schreibgeschuetzte Originalassets.")
+    if any(originals_http.values()):
+        output.append("Wearable-Originaltransfer: " +
+                      ", ".join(f"{key}={value}"
+                                for key,value in originals_http.items()) +
+                      "; kein Server-Bake-Beleg.")
     local = [line for line in session
              if "Avatar local unbaked self-preview:" in line]
     if local:

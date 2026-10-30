@@ -112,7 +112,7 @@ FirestormRegionRead fetch_firestorm_region(
     const auto caps=client.discover(seed,{
         "AgentExperiences","GetExperiences","GetExperienceInfo",
         "FetchInventory2","FetchInventoryDescendents2",
-        "InventoryThumbnailUpload","GetTexture",
+        "InventoryThumbnailUpload","GetTexture","ViewerAsset",
         "ExperiencePreferences"});
     if(!caps.success ||!lease.matches(issued_epoch))return result;
     result.discovered=true;
@@ -123,6 +123,12 @@ FirestormRegionRead fetch_firestorm_region(
     if(const auto it=caps.capabilities.find("GetTexture");
        it!=caps.capabilities.end())
         result.get_texture_uri=it->second;
+    if(const auto it=caps.capabilities.find("ViewerAsset");
+       it!=caps.capabilities.end()&&
+       is_valid_http_uri(it->second)&&
+       it->second.find('?')==std::string::npos&&
+       it->second.find('#')==std::string::npos)
+        result.viewer_asset_uri=it->second;
     if(const auto it=caps.capabilities.find("FetchInventoryDescendents2");
        it!=caps.capabilities.end())
         result.inventory_folder_uri=it->second;
