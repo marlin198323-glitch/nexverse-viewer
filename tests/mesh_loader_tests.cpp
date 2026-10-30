@@ -18,7 +18,9 @@ using nexverse::protocol::LlsdValue;
 std::string small_mesh(bool with_uv_domain = true,
                        bool invalid_first_face = false,
                        bool bad_triangle_tail = false,
-                       bool bad_triangles_only = false)
+                       bool bad_triangles_only = false,
+                       std::size_t incomplete_triangle_bytes = 0U,
+                       bool only_incomplete_triangle = false)
 {
     const std::vector<std::uint8_t> positions{
         0U, 0U, 0U, 0U, 0U, 0U,
@@ -35,6 +37,12 @@ std::string small_mesh(bool with_uv_domain = true,
         if(bad_triangles_only)triangles=corrupt;
         else triangles.insert(triangles.end(),corrupt.begin(),corrupt.end());
     }
+    // An uploader may append a truncated final index/triangle.
+    // The decoder must never read those one-to-five bytes as a full
+    // triangle or discard valid geometry which precedes them.
+    if(only_incomplete_triangle)triangles.clear();
+    for(std::size_t i=0U;i<incomplete_triangle_bytes;++i)
+        triangles.push_back(static_cast<std::uint8_t>(0xe0U+i));
     const std::vector<std::uint8_t> uv{
         0U, 0U, 0U, 0U,
         255U, 255U, 0U, 0U,
@@ -261,6 +269,43 @@ int main()
                  <<mixed.message<<'\n';
         return 14;
     }
+    // A real uploaded face can end with incomplete TriangleList bytes.
+    // Preserve the ONE complete valid triangle, drop 1..5 trailing
+    // bytes without ever reading beyond the byte span.
+    for(std::size_t tail=1U;tail<6U;++tail)
+    {
+        const auto partial=decode_mesh_asset(
+            id,small_mesh(true,false,false,false,tail));
+        if(!partial.success||
+           partial.geometry.indices.size()!=3U||
+           partial.geometry.faces.size()!=1U||
+           partial.geometry.faces[0].index_count!=3U||
+           partial.message.find(
+               "skipped_incomplete_triangle_bytes="+
+               std::to_string(tail))==std::string::npos)
+            return 16;
+    }
+    // An entirely truncated TriangleList may contain NO complete
+    // triangle, even when a syntactically valid Position buffer exists.
+    for(std::size_t tail=1U;tail<6U;++tail)
+    {
+        const auto all_incomplete=decode_mesh_asset(
+            id,small_mesh(true,false,false,false,tail,true));
+        if(all_incomplete.success||
+           all_incomplete.geometry.valid())
+            return 18;
+    }
+    // Extra incomplete bytes cannot make 2 invalid full triangles
+    // into apparently valid geometry; still fail closed.
+    const auto only_bad_with_tail=decode_mesh_asset(
+        id,small_mesh(true,false,true,true,5U));
+    if(only_bad_with_tail.success ||
+       only_bad_with_tail.message.find(
+           "invalid_tail_bytes=5")==std::string::npos||
+       only_bad_with_tail.message.find(
+           "invalid_triangles=2")==std::string::npos)
+        return 17;
+
     // Never claim success when no renderable triangles remain.
     const auto corrupt_only=decode_mesh_asset(
         id,small_mesh(true,false,true,true));

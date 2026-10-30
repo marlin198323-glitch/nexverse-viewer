@@ -101,7 +101,8 @@ float unit_u16(std::span<const std::uint8_t> data, std::size_t offset,
 
 bool append_submesh(const LlsdValue& part,
                     std::uint32_t face, nexverse::assets::MeshGeometry& geometry,
-                    std::size_t& skipped_triangles)
+                    std::size_t& skipped_triangles,
+                    std::size_t& skipped_trailing_bytes)
 {
     if (!part.is_map()) return false;
     if (const auto* skipped = part.find("NoGeometry");
@@ -113,8 +114,7 @@ bool append_submesh(const LlsdValue& part,
         !triangles || triangles->type != LlsdType::binary ||
         positions->binary_value.empty() ||
         positions->binary_value.size() % 6U != 0U ||
-        triangles->binary_value.empty() ||
-        triangles->binary_value.size() % 6U != 0U) return false;
+        triangles->binary_value.size() < 6U) return false;
     const std::size_t count = positions->binary_value.size() / 6U;
     const std::size_t faces_indices = triangles->binary_value.size() / 2U;
     if (count > 65536U ||
@@ -151,10 +151,15 @@ bool append_submesh(const LlsdValue& part,
 
     const auto& pos = positions->binary_value;
     const auto& tris = triangles->binary_value;
+    // A malformed final byte/word is NOT an index and must never be
+    // read. Preserve only complete triples preceding the trailing
+    // debris; this is safer than discarding real renderable geometry.
+    // An all-incomplete face (fewer than six bytes) is still rejected.
+    skipped_trailing_bytes+=tris.size()%6U;
     const std::uint32_t first_index =
         static_cast<std::uint32_t>(geometry.indices.size());
     // Generate flat normals per triangle to avoid malformed vertex-normal data.
-    for (std::size_t i = 0U; i < tris.size(); i += 6U)
+    for (std::size_t i = 0U; i + 6U <= tris.size(); i += 6U)
     {
         const std::array<std::uint16_t, 3> ids{
             le16(tris, i), le16(tris, i + 2U), le16(tris, i + 4U)};
@@ -317,6 +322,7 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         MeshGeometry geometry;
         std::size_t skipped_faces = 0U;
         std::size_t skipped_triangles = 0U;
+        std::size_t skipped_tail_bytes = 0U;
         for (std::size_t i = 0U; i < parsed.value->array_value.size(); ++i)
         {
             const auto vertex_count = geometry.vertices.size();
@@ -324,7 +330,7 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
             const auto face_count = geometry.faces.size();
             if (!append_submesh(parsed.value->array_value[i],
                                 static_cast<std::uint32_t>(i), geometry,
-                                skipped_triangles))
+                                skipped_triangles,skipped_tail_bytes))
             {
                 geometry.vertices.resize(vertex_count);
                 geometry.indices.resize(index_count);
@@ -339,7 +345,10 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
                     ? "; invalid_faces=" + std::to_string(skipped_faces) : "")+
                 (skipped_triangles > 0U
                     ? "; invalid_triangles=" +
-                        std::to_string(skipped_triangles) : "");
+                        std::to_string(skipped_triangles) : "")+
+                (skipped_tail_bytes > 0U
+                    ? "; invalid_tail_bytes=" +
+                        std::to_string(skipped_tail_bytes) : "");
             continue;
         }
         result.geometry = std::move(geometry);
@@ -357,6 +366,9 @@ MeshAssetResult decode_mesh_asset(std::string_view asset_id,
         if (skipped_triangles > 0U)
             result.message += "; skipped_invalid_triangles=" +
                 std::to_string(skipped_triangles);
+        if (skipped_tail_bytes > 0U)
+            result.message += "; skipped_incomplete_triangle_bytes=" +
+                std::to_string(skipped_tail_bytes);
         return result;
     }
     result.message = any_lod ? last_error : "Mesh has no supported LOD descriptor";
