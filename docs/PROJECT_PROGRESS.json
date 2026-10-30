@@ -612,5 +612,28 @@
     "real_avatar_skin_rgb_cof_outfit": "OPEN",
     "authenticated_shutdown_time": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_login_seed_caps_eventqueue_retry_20261030": {
+    "status": "IMPLEMENTED_AND_FULL_MINT_TESTED_LIVE_AUTHENTICATED_GRID_OPEN",
+    "documentation": "docs/V0_4_0_0_LOGIN_SEED_EVENTQUEUE_RECONNECT_20261030.md",
+    "initial_login_seed_http503_retry": true,
+    "initial_login_seed_missing_eventqueue_retry": true,
+    "expired_login_eventqueue_with_seed_http503_quarantine": true,
+    "expired_login_eventqueue_with_missing_cap_quarantine": true,
+    "no_polls_to_known_expired_uri": true,
+    "recovered_cap_queue_ack_and_64_id_replay_reset": true,
+    "bounded_1_2_4_8_12_second_backoff": true,
+    "region_lease_and_cancel_checks": true,
+    "native_http_mock_503_missing_queue_404_recovery": true,
+    "private_error_diagnostics_no_caps_urls": true,
+    "native_ctests": "195/195 PASS",
+    "python_tests": "759/759 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_login_reconnect": "OPEN",
+    "real_region_teleport_eventqueue": "OPEN",
+    "real_avatar_rgb_bakes_cof": "OPEN",
+    "real_wasd_jump_fly_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

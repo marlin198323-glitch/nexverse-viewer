@@ -7157,16 +7157,46 @@ int Application::run(bool enable_developer_modules)
                                     protocol::CapabilityDiscoveryResult discovery =
                                         service.discover(seed_capability);
 
-                                    if (!discovery.success)
+                                    // A valid authenticated login can precede
+                                    // simulator-side seed CAPS readiness.
+                                    // Retrying with bounded sleep/region-lease
+                                    // checks is better than permanently
+                                    // disabling all CAPS on one HTTP 503.
+                                    protocol::EventQueueRecovery seed_recovery;
+                                    while(!discovery.success&&!caps_stop.load()&&
+                                          firestorm_region_lease.matches(
+                                              firestorm_issued_epoch))
                                     {
+                                        const auto retry=seed_recovery.on_failure(true);
                                         {
                                             std::scoped_lock lock{caps_mutex};
-                                            caps_state.status = "ERROR";
+                                            caps_state.status=retry.failures>=5U
+                                                ?"CAPS DEGRADED":"CAPS RETRY";
                                         }
-                                        core::error(
-                                            "CAPS seed discovery failed; no capability endpoints accepted");
-                                        return;
+                                        core::warning(
+                                            "CAPS initial seed unavailable; retry="+
+                                            std::to_string(retry.failures));
+                                        auto remaining=retry.pause;
+                                        while(remaining.count()>0&&!caps_stop.load()&&
+                                              firestorm_region_lease.matches(
+                                                  firestorm_issued_epoch))
+                                        {
+                                            const auto step=std::min(
+                                                remaining,
+                                                std::chrono::milliseconds{100});
+                                            std::this_thread::sleep_for(step);
+                                            remaining-=step;
+                                        }
+                                        if(caps_stop.load()||
+                                           !firestorm_region_lease.matches(
+                                               firestorm_issued_epoch))
+                                            return;
+                                        discovery=service.discover(seed_capability);
                                     }
+                                    if(!discovery.success||caps_stop.load()||
+                                       !firestorm_region_lease.matches(
+                                           firestorm_issued_epoch))
+                                        return;
 
                                     core::info(
                                         "CAPS seed discovery succeeded; endpoints=" +
@@ -7482,22 +7512,29 @@ int Application::run(bool enable_developer_modules)
 
                                     if (event_queue_uri.empty())
                                     {
-                                        std::scoped_lock lock{caps_mutex};
-                                        caps_state.event_queue_available = false;
-                                        if (caps_state.status != "ERROR")
+                                        // A login seed may advertise EventQueueGet
+                                        // only after the simulator initializes its
+                                        // queue. Never strand the login region
+                                        // permanently: the bounded seed rediscovery
+                                        // branch below will retry without accessing
+                                        // any missing or expired queue URI.
                                         {
-                                            caps_state.status = "CAPS READY";
+                                            std::scoped_lock lock{caps_mutex};
+                                            caps_state.event_queue_available=false;
+                                            caps_state.status="CAPS RETRY";
                                         }
-                                        core::warning("CAPS EventQueueGet endpoint not advertised");
-                                        return;
+                                        core::warning(
+                                            "CAPS EventQueueGet not yet advertised; "
+                                            "seed rediscovery pending");
                                     }
-
-                                    core::info("CAPS EventQueueGet endpoint available; long-poll starting");
-
+                                    else
                                     {
+                                        core::info(
+                                            "CAPS EventQueueGet endpoint available; "
+                                            "long-poll starting");
                                         std::scoped_lock lock{caps_mutex};
-                                        caps_state.event_queue_available = true;
-                                        caps_state.status = "EVENTQUEUE";
+                                        caps_state.event_queue_available=true;
+                                        caps_state.status="EVENTQUEUE";
                                     }
 
                                     std::optional<std::int32_t> acknowledgement;
@@ -7536,6 +7573,58 @@ int Application::run(bool enable_developer_modules)
                                     while (!caps_stop.load())
                                     {
                                         if(!still_origin())break;
+                                        // A 404 queue is irrevocably expired. If
+                                        // seed rediscovery also failed, never
+                                        // poll its dead URL again. Retry SEED,
+                                        // with the existing bounded backoff,
+                                        // until this same region gets a new CAP.
+                                        if(event_queue_uri.empty())
+                                        {
+                                            const auto refreshed=service.discover(
+                                                seed_capability,{"EventQueueGet"});
+                                            if(caps_stop.load()||!still_origin())
+                                                break;
+                                            bool recovered_endpoint=false;
+                                            if(refreshed.success)
+                                            {
+                                                const auto found=
+                                                    refreshed.capabilities.find(
+                                                        "EventQueueGet");
+                                                if(found!=refreshed.capabilities.end()&&
+                                                   !found->second.empty())
+                                                {
+                                                    event_queue_uri=found->second;
+                                                    acknowledgement.reset();
+                                                    login_recent_batches.reset();
+                                                    event_queue_live_logged=false;
+                                                    idle_logged=false;
+                                                    recovery.on_contact();
+                                                    recovered_endpoint=true;
+                                                    {
+                                                        std::scoped_lock lock{caps_mutex};
+                                                        caps_state.event_queue_available=true;
+                                                        caps_state.status="EVENTQUEUE";
+                                                    }
+                                                    core::info(
+                                                        "Login CAPS EventQueue recovered "
+                                                        "after expired CAP rediscovery");
+                                                }
+                                            }
+                                            if(recovered_endpoint)continue;
+                                            const auto retry=recovery.on_failure(true);
+                                            {
+                                                std::scoped_lock lock{caps_mutex};
+                                                caps_state.event_queue_available=false;
+                                                caps_state.status=retry.failures>=5U
+                                                    ?"CAPS DEGRADED":"CAPS RETRY";
+                                            }
+                                            core::warning(
+                                                "Login CAPS EventQueue seed unavailable "
+                                                "after expired queue; retry="+
+                                                std::to_string(retry.failures));
+                                            pause_until_retry(retry.pause);
+                                            continue;
+                                        }
                                         const auto batch = service.poll_event_queue(
                                             event_queue_uri,
                                             acknowledgement,
@@ -7671,6 +7760,7 @@ int Application::run(bool enable_developer_modules)
                                             {
                                                 break;
                                             }
+                                            bool rediscovered_endpoint=false;
                                             if (refreshed.success)
                                             {
                                                 const auto found = refreshed.capabilities.find(
@@ -7678,6 +7768,7 @@ int Application::run(bool enable_developer_modules)
                                                 if (found != refreshed.capabilities.end() &&
                                                     !found->second.empty())
                                                 {
+                                                    rediscovered_endpoint=true;
                                                     if (event_queue_uri != found->second||
                                                         batch.expired)
                                                     {
@@ -7709,9 +7800,31 @@ int Application::run(bool enable_developer_modules)
                                             }
                                             else
                                             {
+                                                // Never print the raw seed/CAPS
+                                                // response or token-bearing URL.
                                                 core::warning(
-                                                    "CAPS EventQueue seed rediscovery failed: " +
-                                                    refreshed.message);
+                                                    "CAPS EventQueue seed rediscovery failed");
+                                            }
+                                            if(batch.expired&&!rediscovered_endpoint)
+                                            {
+                                                // The old login queue is gone.
+                                                // Clearing it routes the NEXT
+                                                // iteration to bounded seed
+                                                // recovery, not another GET at
+                                                // the confirmed-expired address.
+                                                event_queue_uri.clear();
+                                                acknowledgement.reset();
+                                                login_recent_batches.reset();
+                                                event_queue_live_logged=false;
+                                                idle_logged=false;
+                                                {
+                                                    std::scoped_lock lock{caps_mutex};
+                                                    caps_state.event_queue_available=false;
+                                                    caps_state.status="CAPS RETRY";
+                                                }
+                                                core::warning(
+                                                    "Login CAPS EventQueue expired, "
+                                                    "rediscovery pending");
                                             }
                                         }
 

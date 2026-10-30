@@ -342,6 +342,69 @@ int main()
         return 19;
     }
 
+    // The LOGIN worker now retries both transient seed discovery
+    // failures and a seed that initially lacks EventQueueGet. Exercise
+    // the real CAPS HTTP codec used by that worker, not just the
+    // backoff arithmetic, before marking the endpoint available.
+    auto recover_transport=std::make_shared<FakeTransport>();
+    CapabilityService recover_service{recover_transport};
+    recover_transport->post_response={
+        503,{},"temporary login simulator seed unavailable"};
+    const auto unavailable_seed=recover_service.discover(
+        "https://caps.example.test/seed",{"EventQueueGet"});
+    if(unavailable_seed.success||recover_transport->post_calls!=1)
+        return 42;
+    EventQueueRecovery retry_seed;
+    const auto missing_decision=retry_seed.on_failure(true);
+    if(!missing_decision.refresh_seed||
+       missing_decision.pause!=std::chrono::seconds{1})return 43;
+    recover_transport->post_response={
+        200,
+        "<llsd><map><key>SimulatorFeatures</key>"
+        "<uri>https://caps.example.test/features</uri></map></llsd>",
+        {}};
+    const auto initial_no_queue=recover_service.discover(
+        "https://caps.example.test/seed",{"EventQueueGet"});
+    if(!initial_no_queue.success||
+       initial_no_queue.capabilities.contains("EventQueueGet")||
+       recover_transport->post_calls!=2)return 44;
+    const auto next_decision=retry_seed.on_failure(true);
+    if(!next_decision.refresh_seed||
+       next_decision.pause!=std::chrono::seconds{2})return 45;
+    recover_transport->post_response={
+        200,std::string{seed_response},{}};
+    const auto recovered_seed=recover_service.discover(
+        "https://caps.example.test/seed",{"EventQueueGet"});
+    if(!recovered_seed.success||
+       !recovered_seed.capabilities.contains("EventQueueGet")||
+       recovered_seed.capabilities.at("EventQueueGet")!=
+           "https://caps.example.test/event"||
+       recover_transport->post_calls!=3)return 46;
+    retry_seed.on_contact();
+    if(retry_seed.failures()!=0U)return 47;
+    // HTTP404 invalidates the old queue; a NEW validated seed
+    // response must be used on the next poll, not an old ACK.
+    recover_transport->post_response={404,{},"expired"};
+    const auto old_queue=recover_service.poll_event_queue(
+        recovered_seed.capabilities.at("EventQueueGet"),
+        124,false);
+    if(!old_queue.expired||old_queue.http_status!=404)
+        return 48;
+    recover_transport->post_response={
+        200,std::string{seed_response},{}};
+    const auto renewed_seed=recover_service.discover(
+        "https://caps.example.test/seed",{"EventQueueGet"});
+    if(!renewed_seed.success||
+       renewed_seed.capabilities.at("EventQueueGet")!=
+           "https://caps.example.test/event")return 49;
+    recover_transport->post_response={
+        200,std::string{queue_response},{}};
+    const auto renewed_batch=recover_service.poll_event_queue(
+        renewed_seed.capabilities.at("EventQueueGet"),
+        std::nullopt,false);
+    if(!renewed_batch.success||renewed_batch.id!=124||
+       renewed_batch.events.size()!=2U)return 50;
+
     std::cout << "CAPS discovery and EventQueue tests passed\n";
     return 0;
 }
