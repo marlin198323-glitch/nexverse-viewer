@@ -713,5 +713,22 @@
     "real_teleport_wasd_flight": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_caps_crossedregion_numeric_and_seed_safety_20261030": {
+    "status": "IMPLEMENTED_MINT_TESTED_LIVE_REGION_HANDOFF_PENDING",
+    "documentation": "docs/V0_4_0_0_CAPS_CROSSED_REGION_NUMERIC_SAFETY_20261030.md",
+    "position_and_lookat_nan_inf_overflow_rejected": true,
+    "int64_region_handle_not_truncated": true,
+    "simulator_port_zero_or_over_65535_rejected": true,
+    "region_sizes_bounded_at_16384_varregions_supported": true,
+    "invalid_caps_seed_uri_rejected": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "805/805 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_region_teleport": "OPEN",
+    "real_avatar_skin_rgb_cof": "OPEN",
+    "real_wasd_fly_server_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }

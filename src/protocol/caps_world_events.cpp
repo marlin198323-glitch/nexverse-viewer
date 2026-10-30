@@ -3,9 +3,12 @@
  * License, v. 2.0.
  */
 #include "nexverse/protocol/caps_world_events.hpp"
+#include "nexverse/protocol/grid_info.hpp"
 
 #include <array>
 #include <cstddef>
+#include <cmath>
+#include <limits>
 #include <sstream>
 
 namespace
@@ -55,7 +58,10 @@ bool read_u32(
 {
     if (value == nullptr ||
         value->type != LlsdType::integer ||
-        value->integer_value < 0)
+        value->integer_value < 0 ||
+        value->integer_value >
+            static_cast<std::int64_t>(
+                std::numeric_limits<std::uint32_t>::max()))
     {
         return false;
     }
@@ -69,7 +75,8 @@ bool read_u16(
     std::uint16_t& out)
 {
     std::uint32_t parsed = 0U;
-    if (!read_u32(value, parsed) || parsed > 65535U)
+    if (!read_u32(value, parsed) || parsed == 0U ||
+        parsed > 65535U)
     {
         return false;
     }
@@ -101,7 +108,9 @@ bool read_region_handle(
     if (value->type == LlsdType::integer &&
         value->integer_value > 0)
     {
-        out = static_cast<std::uint32_t>(value->integer_value);
+        // LLSD integer is signed 64-bit. Never truncate region
+        // handles to 32 bits: high bits distinguish neighboring grids.
+        out = static_cast<std::uint64_t>(value->integer_value);
         return true;
     }
 
@@ -169,17 +178,19 @@ bool read_number(
     const LlsdValue& value,
     float& out)
 {
-    if (value.type == LlsdType::real)
-    {
-        out = static_cast<float>(value.real_value);
-        return true;
-    }
-    if (value.type == LlsdType::integer)
-    {
-        out = static_cast<float>(value.integer_value);
-        return true;
-    }
-    return false;
+    if(value.type!=LlsdType::real&&
+       value.type!=LlsdType::integer)return false;
+    const auto number=value.type==LlsdType::real
+        ?value.real_value:static_cast<double>(value.integer_value);
+    // Simulator events must not replace the avatar position/look-at
+    // with NaN, infinity, or values that overflow float during cast.
+    // Preserve ordinary negative coordinates and finite LLSD doubles.
+    if(!std::isfinite(number)||
+       number>static_cast<double>(std::numeric_limits<float>::max())||
+       number<-static_cast<double>(std::numeric_limits<float>::max()))
+        return false;
+    out=static_cast<float>(number);
+    return std::isfinite(out);
 }
 
 bool read_vec3(
@@ -231,7 +242,7 @@ bool parse_simulator_info(
         size_x != nullptr)
     {
         if (!read_u32(size_x, out.region_size_x) ||
-            out.region_size_x == 0U)
+            (out.region_size_x==0U||out.region_size_x>16384U))
         {
             return false;
         }
@@ -241,7 +252,7 @@ bool parse_simulator_info(
         size_y != nullptr)
     {
         if (!read_u32(size_y, out.region_size_y) ||
-            out.region_size_y == 0U)
+            (out.region_size_y==0U||out.region_size_y>16384U))
         {
             return false;
         }
@@ -250,8 +261,11 @@ bool parse_simulator_info(
     if (const LlsdValue* seed = map.find("SeedCapability");
         seed != nullptr)
     {
-        if (!read_string_like(seed, out.seed_capability))
+        if (!read_string_like(seed, out.seed_capability) ||
+            !nexverse::protocol::is_valid_http_uri(out.seed_capability))
         {
+            // The next CAPS worker must not be started on an opaque
+            // or malformed seed URI supplied by a broken event.
             return false;
         }
     }

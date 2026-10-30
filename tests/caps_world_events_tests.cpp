@@ -1,6 +1,7 @@
 #include "nexverse/protocol/caps_world_events.hpp"
 
 #include <iostream>
+#include <limits>
 #include <map>
 #include <string>
 #include <vector>
@@ -168,6 +169,91 @@ int main()
         std::cerr << "Invalid TeleportFinish unexpectedly accepted\n";
         return 5;
     }
+
+    // A CAPS CrossedRegion can be replayed after reconnect or supplied
+    // with malformed LLSD. Reject unsafe simulator positions/LookAt
+    // BEFORE they overwrite the world-model pose or camera.
+    auto position_of=[](EventQueueEvent& e)->LlsdValue& {
+        return e.body.map_value.at("Info").array_value.at(0U)
+            .map_value.at("Position");
+    };
+    auto look_at_of=[](EventQueueEvent& e)->LlsdValue& {
+        return e.body.map_value.at("Info").array_value.at(0U)
+            .map_value.at("LookAt");
+    };
+    auto region_of=[](EventQueueEvent& e)->LlsdValue& {
+        return e.body.map_value.at("RegionData").array_value.at(0U);
+    };
+    const double nan=std::numeric_limits<double>::quiet_NaN();
+    const double inf=std::numeric_limits<double>::infinity();
+    for(const double bad:{nan,inf,-inf,1.0e100,-1.0e100})
+    {
+        auto bad_pose=crossed;
+        position_of(bad_pose).array_value[0U]=LlsdValue::real(bad);
+        if(parse_crossed_region_caps_event(bad_pose))return 8;
+        auto bad_look=crossed;
+        look_at_of(bad_look).array_value[2U]=LlsdValue::real(bad);
+        if(parse_crossed_region_caps_event(bad_look))return 9;
+    }
+    auto valid_negative=crossed;
+    position_of(valid_negative).array_value[0U]=
+        LlsdValue::real(-1024.5);
+    if(const auto valid=parse_crossed_region_caps_event(valid_negative);
+       !valid||valid->position.x!=-1024.5f)return 10;
+    // A malformed port cannot be converted into a default or wrapped
+    // simulator UDP socket.
+    for(const std::int64_t bad_port:{0LL,65536LL,4294967297LL,-1LL})
+    {
+        auto bad=crossed;
+        region_of(bad).map_value["SimPort"]=LlsdValue::integer(bad_port);
+        if(parse_crossed_region_caps_event(bad))return 11;
+    }
+    auto bad_size=crossed;
+    region_of(bad_size).map_value["RegionSizeX"]=
+        LlsdValue::integer(4294967297LL);
+    if(parse_crossed_region_caps_event(bad_size))return 12;
+    // Region size is used for terrain/viewport planning. Never let an
+    // unbounded LLSD region-size value allocate enormous resources.
+    for(const auto dimension:{0LL,16385LL,4294967295LL})
+    {
+        auto x=crossed;
+        region_of(x).map_value["RegionSizeX"]=
+            LlsdValue::integer(dimension);
+        if(parse_crossed_region_caps_event(x))return 16;
+        auto y=crossed;
+        region_of(y).map_value["RegionSizeY"]=
+            LlsdValue::integer(dimension);
+        if(parse_crossed_region_caps_event(y))return 17;
+    }
+    auto variable_region=crossed;
+    region_of(variable_region).map_value["RegionSizeX"]=
+        LlsdValue::integer(8192);
+    region_of(variable_region).map_value["RegionSizeY"]=
+        LlsdValue::integer(4096);
+    if(const auto good=parse_crossed_region_caps_event(variable_region);
+       !good||good->simulator.region_size_x!=8192U||
+       good->simulator.region_size_y!=4096U)
+        return 18;
+    // A positive int64 RegionHandle must not truncate to uint32.
+    auto high_handle=crossed;
+    region_of(high_handle).map_value["RegionHandle"]=
+        LlsdValue::integer(0x11223344556677LL);
+    if(const auto good=parse_crossed_region_caps_event(high_handle);
+       !good||good->simulator.region_handle!=0x11223344556677ULL)
+        return 13;
+    for(const auto* invalid_seed:{
+        "ftp://caps.example/seed",
+        "https://user@caps.example/seed",
+        "https://caps.example/seed#fragment"})
+    {
+        auto bad=crossed;
+        region_of(bad).map_value["SeedCapability"]=
+            LlsdValue::uri(invalid_seed);
+        if(parse_crossed_region_caps_event(bad))return 14;
+    }
+    // A normal HTTPS seed, 512m region and valid negative position
+    // remain fully compatible with modern OpenSim grid events.
+    if(!parse_crossed_region_caps_event(crossed))return 15;
 
     std::cout << "CAPS world event tests passed\n";
     return 0;
