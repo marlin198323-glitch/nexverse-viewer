@@ -20,7 +20,8 @@ class NexverseGridAuthorityPinContract(unittest.TestCase):
  def test_enforce_nexverse_login_ports(self):
   src=read("src/protocol/grid_discovery.cpp")
   self.assertIn('port=="443"||port=="8002"',src)
-  self.assertIn(':(port=="8002")',src)
+  self.assertIn('port.empty()||port=="80"||port=="8002"',src)
+  self.assertIn("http://hg.stadt-nexverse.de/",read("tests/grid_discovery_tests.cpp"))
   native=read("tests/grid_discovery_tests.cpp")
   self.assertIn("http://hg.stadt-nexverse.de:8003/",native)
   self.assertIn("https://hg.stadt-nexverse.de:8443/",native)
@@ -55,5 +56,6 @@ class NexverseGridAuthorityPinContract(unittest.TestCase):
  def test_unsupported_host_generates_generic_warning_no_leak(self):
   source=read("src/protocol/grid_discovery.cpp")
   self.assertIn("GridInfo rejected: login authority is not the NexVerse grid",source)
-  self.assertIn("No arbitrary simulator/CAPS ports",source)
+  self.assertIn("without allowing arbitrary ports",source)
+  self.assertIn("Host pinning alone does NOT make an HTTP login confidential",source)
 if __name__=="__main__":unittest.main()

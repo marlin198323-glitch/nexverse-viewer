@@ -100,7 +100,7 @@ int main()
         "http://hg.stadt-nexverse.de--evil.invalid:8002/",
         "http://192.0.2.10:8002/",
         "http://hg.stadt-nexverse.de:8003/",
-        "http://hg.stadt-nexverse.de/",
+        "http://hg.stadt-nexverse.de:8080/",
         "https://hg.stadt-nexverse.de:8443/",
         "https://hg.stadt-nexverse.de.attacker.example/",
         "http://hg.stadt-nexverse.de:8002@evil.invalid/",
@@ -116,6 +116,29 @@ int main()
            refused.info.login_uri()!="http://hg.stadt-nexverse.de:8002/")
             return 9;
     }
+    // The REAL 2026-10-30 public hg.stadt-nexverse.de/get_grid_info
+    // advertises <login>http://hg.stadt-nexverse.de/</login> (port 80).
+    // Both implicit and explicit port 80 must be accepted AND cached.
+    transport->response={200,
+        "<gridinfo><login>http://hg.stadt-nexverse.de/</login>"
+        "<gridname>Stadt NexVerse</gridname></gridinfo>",{}};
+    const auto live_port80=discovery.refresh();
+    if(!live_port80.success||live_port80.source!=GridInfoSource::live||
+       live_port80.info.login_uri()!="http://hg.stadt-nexverse.de/"||
+       live_port80.info.grid_name()!="Stadt NexVerse")return 15;
+    transport->response={0,{},"temporary grid outage"};
+    const auto cached_port80=discovery.refresh();
+    if(!cached_port80.success||
+       cached_port80.source!=GridInfoSource::cache||
+       cached_port80.info.login_uri()!="http://hg.stadt-nexverse.de/")
+        return 16;
+    transport->response={200,
+        "<gridinfo><login>http://hg.stadt-nexverse.de:80/</login>"
+        "<gridname>Explicit80</gridname></gridinfo>",{}};
+    const auto explicit_port80=discovery.refresh();
+    if(!explicit_port80.success||
+       explicit_port80.source!=GridInfoSource::live||
+       explicit_port80.info.grid_name()!="Explicit80")return 17;
     // ASCII hostnames are case-insensitive; the exact trusted hostname
     // may be advertised in different case or with HTTPS/TLS.
     transport->response={200,

@@ -698,7 +698,6 @@
     "documentation": "docs/V0_4_0_0_NEXVERSE_GRID_LOGIN_AUTHORITY_PIN_20261030.md",
     "live_gridinfo_login_authority_pinned_exact_host": true,
     "offline_gridinfo_cache_authority_pinned_exact_host": true,
-    "http_login_port_8002_only": true,
     "https_login_ports_443_and_8002": true,
     "untrusted_foreign_host_or_port_cannot_replace_valid_cache": true,
     "poisoned_offline_cache_fails_closed": true,
@@ -712,7 +711,9 @@
     "real_avatar_skin_cof": "OPEN",
     "real_teleport_wasd_flight": "OPEN",
     "real_authenticated_shutdown": "OPEN",
-    "weighted_project_completion_percent": 38.65
+    "weighted_project_completion_percent": 38.65,
+    "http_login_ports_80_and_8002": true,
+    "historical_port80_blocking_regression_fixed_by": "docs/V0_4_0_0_LIVE_GRIDINFO_HTTP80_COMPATIBILITY_20261030.md"
   },
   "v0400_caps_crossedregion_numeric_and_seed_safety_20261030": {
     "status": "IMPLEMENTED_MINT_TESTED_LIVE_REGION_HANDOFF_PENDING",
@@ -728,6 +729,27 @@
     "real_authenticated_region_teleport": "OPEN",
     "real_avatar_skin_rgb_cof": "OPEN",
     "real_wasd_fly_server_readback": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
+  },
+  "v0400_live_nexverse_gridinfo_http80_login_compat_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_AND_PUBLIC_HTTP_GRIDINFO_CHECKED_PASSWORD_LOGIN_E2E_PENDING",
+    "documentation": "docs/V0_4_0_0_LIVE_GRIDINFO_HTTP80_COMPATIBILITY_20261030.md",
+    "public_real_gridinfo_http_200_and_port80_login_advertised": true,
+    "https_443_public_endpoint_connect_refused_at_test_time": true,
+    "existing_nexverse_exact_hostname_pin_preserved": true,
+    "http_implicit_80_and_explicit_80_allowed": true,
+    "legacy_http_8002_allowed": true,
+    "https_443_and_8002_allowed_for_future_tls": true,
+    "foreign_hosts_and_unlisted_ports_rejected": true,
+    "valid_live_gridinfo_works_and_offline_cache_recovers": true,
+    "server_login_https_required_for_credential_confidentiality": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "813/813 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_login": "OPEN",
+    "real_avatar_rgb_skin_cof": "OPEN",
+    "real_region_teleport_movement": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
   }

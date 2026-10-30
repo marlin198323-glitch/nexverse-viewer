@@ -32,3 +32,7 @@ Authentifizierter Login gegen den aktuellen Gridserver, Region/Teleport, WASD-/F
 Upstream OpenGenesisLINK-Server am 30.10.2026: Commit `08bf15f306bb4f882f24f32b84eb8df3a3175cea` (Login-Zeitzone); kein für diese Client-URI-Validierung notwendiger Protokollumbau.
 
 **Zielversion `v0.4.0.0` IN ARBEIT. Fortschritt unverändert 38,65 % gewichtet (39 % gerundet). Kein `main`-Merge und kein Release/Deployment.**
+
+## Korrektur 30.10.2026 – Live-GridInfo und tatsächlicher Loginport
+
+Die ursprüngliche Aussage, der NexVerse-Server verwende ausschließlich HTTP/8002, war falsch und sperrte den echten Gridserver aus. Der öffentliche Endpunkt /get_grid_info antwortete mit dem legitimen Loginziel http://hg.stadt-nexverse.de/ (implizit HTTP-Port 80). Die konkrete C++-Regression wurde in docs/V0_4_0_0_LIVE_GRIDINFO_HTTP80_COMPATIBILITY_20261030.md behoben. Die aktuelle zulässige Portliste für den exakt gleichen NexVerse-Hostname lautet HTTP/80 oder /8002 sowie HTTPS/443 oder /8002. Alle fremden Hosts und Ports bleiben gesperrt. Der Gridserver bietet derzeit auf HTTPS/443 keinen erreichbaren Endpunkt; HTTP bleibt **nicht vertraulich**.

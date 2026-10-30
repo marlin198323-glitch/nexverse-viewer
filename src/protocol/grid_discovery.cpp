@@ -35,14 +35,17 @@ bool trusted_nexverse_login_uri(std::string_view uri)
     for(std::size_t i=0U;i<host.size();++i)
         if(std::tolower(static_cast<unsigned char>(host[i]))!=trusted[i])
             return false;
-    // Current OpenSim XML-RPC login service is :8002. Allow HTTPS
-    // on its standard port or :8002 if the grid enables TLS there.
-    // No arbitrary simulator/CAPS ports in a *password-bearing* URL.
+    // The LIVE Stadt NexVerse /get_grid_info advertises an HTTP
+    // login URI on the standard port 80 (often without an explicit
+    // port). Older direct OpenSim logins also use :8002. Keep both
+    // exact-host destinations valid without allowing arbitrary ports.
+    // HTTPS stays accepted on 443 or 8002 when the grid enables TLS.
+    // Host pinning alone does NOT make an HTTP login confidential.
     const auto port=separator==std::string_view::npos
         ?std::string_view{}:authority.substr(separator+1U);
     return https
         ?(port.empty()||port=="443"||port=="8002")
-        :(port=="8002");
+        :(port.empty()||port=="80"||port=="8002");
 }
 std::filesystem::path home_directory()
 {
