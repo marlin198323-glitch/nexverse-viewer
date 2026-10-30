@@ -95,6 +95,18 @@ OutfitInventoryRead parse_outfit_descendents(
         // The request returns category thumbnail metadata in child records.
         // Never trust a category from a different parent/owner.
         const auto* items=data.find("items");
+        const bool is_cof=!current_outfit_folder.empty()&&
+            folder_id->as_string()==current_outfit_folder;
+        if(is_cof)
+        {
+            result.cof_folder_seen=true;
+            result.cof_items_array_present=items&&items->is_array();
+            result.cof_raw_items=result.cof_items_array_present
+                ?items->array_value.size():0U;
+            // Invalid arrays over the 512 limit also count as rejected,
+            // never silently appear as verified empty inventory.
+            result.cof_rejected_items=result.cof_raw_items;
+        }
         if(items&&items->is_array()&&items->array_value.size()<=512U &&
            (wanted.contains(std::string{folder_id->as_string()}) ||
             folder_id->as_string()==current_outfit_folder))
@@ -137,6 +149,9 @@ OutfitInventoryRead parse_outfit_descendents(
                     static_cast<std::int32_t>(inv_type->integer_value),
                     item_flags});
             }
+            if(is_cof)
+                result.cof_rejected_items=
+                    result.cof_raw_items-dest.size();
         }
         for(const auto& child:categories->array_value)
         {

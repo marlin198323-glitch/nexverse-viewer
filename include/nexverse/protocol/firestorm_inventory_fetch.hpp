@@ -41,6 +41,13 @@ struct OutfitInventoryRead
     std::map<std::string,std::vector<OutfitInventoryItem>,std::less<>> items;
     std::map<std::string,InventoryFolder,std::less<>> categories;
     std::size_t returned_folders=0U;
+    // Read-only COF-specific parser evidence. Never include private IDs.
+    // 0 accepted items is not enough to prove the raw server array was
+    // empty: malformed/missing fields can be rejected by this parser.
+    std::size_t cof_raw_items=0U;
+    std::size_t cof_rejected_items=0U;
+    bool cof_folder_seen=false;
+    bool cof_items_array_present=false;
     bool valid=false;
 };
 [[nodiscard]] std::optional<std::string> build_outfit_descendents_request(

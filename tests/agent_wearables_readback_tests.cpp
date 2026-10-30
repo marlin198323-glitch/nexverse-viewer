@@ -2,6 +2,7 @@
  * Not AgentIsNowWearing / AgentSetAppearance, and not COF/bake proof. */
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
+#include "nexverse/protocol/legacy_wearable_inventory_probe.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/wearables_serial_order.hpp"
 #include <array>
@@ -142,5 +143,49 @@ int main()
     w.apply_agent({self_id,session_id,{},{},true});
     if(w.self_wearables()||!w.apply_self_wearables(*worn)||
        w.self_wearables()->serial!=4U)return 21;
+    // Empty authenticated CurrentOutfitFolder cannot infer worn clothing,
+    // but Low382 original item IDs may be independently checked read-only.
+    protocol::AgentWearablesUpdateMessage legacy{};
+    legacy.agent_id=self_id;
+    legacy.session_id=session_id;
+    legacy.serial=42U;
+    const std::array<std::string,4> originals{
+        "10000000-0000-0000-0000-000000000001",
+        "10000000-0000-0000-0000-000000000002",
+        "10000000-0000-0000-0000-000000000003",
+        "10000000-0000-0000-0000-000000000004"};
+    const std::array<std::string,4> assets{
+        "20000000-0000-0000-0000-000000000001",
+        "20000000-0000-0000-0000-000000000002",
+        "20000000-0000-0000-0000-000000000003",
+        "20000000-0000-0000-0000-000000000004"};
+    for(unsigned i=0;i<4;++i)
+        legacy.wearables.push_back({originals[i],assets[i],
+                                   static_cast<std::uint8_t>(i)});
+    const auto plan=protocol::plan_legacy_wearable_inventory_probe(
+        &legacy,self_id,session_id);
+    if(!plan.eligible||plan.ids.size()!=4U ||
+       protocol::plan_legacy_wearable_inventory_probe(
+           &legacy,other_id,session_id).eligible)return 22;
+    protocol::InventoryItemFetch fetched{};
+    fetched.valid=true;
+    for(unsigned i=0;i<4;++i)
+        fetched.items.push_back({originals[i],assets[i],"Body",13,18,i});
+    const auto proof=protocol::audit_legacy_wearable_inventory_probe(
+        plan,fetched);
+    if(!proof.valid||!proof.complete_primary||proof.bodyparts!=4U||
+       proof.matched!=4U||proof.missing!=0U)return 23;
+    fetched.items[2].asset_id=assets[1];
+    const auto mismatch=protocol::audit_legacy_wearable_inventory_probe(
+        plan,fetched);
+    if(mismatch.complete_primary||mismatch.matched!=3U||
+       mismatch.missing!=1U)return 24;
+    legacy.wearables.push_back(legacy.wearables.front());
+    if(protocol::plan_legacy_wearable_inventory_probe(
+           &legacy,self_id,session_id).eligible)return 25;
+    legacy.wearables.pop_back();
+    legacy.wearables[0].wearable_type=17U;
+    if(protocol::plan_legacy_wearable_inventory_probe(
+           &legacy,self_id,session_id).eligible)return 26;
     std::cout<<"OGL_AGENT_WEARABLES_LOW381_382_REAL_DATAGRAM_AUTH_PASS\n";
 }

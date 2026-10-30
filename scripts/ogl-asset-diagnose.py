@@ -131,13 +131,39 @@ def summarize(raw: str) -> list[str]:
         else:
             parts = re.findall(
                 r"(valid|owner_region_current|returned_folders|"
-                r"cof_version_present|cof_item_records)=(\d+)", last)
+                r"cof_version_present|cof_item_records|cof_folder_seen"
+                r"|cof_items_array_present|cof_raw_items|cof_rejected_items)"
+                r"=(\d+)", last)
             if parts:
                 output.append("COF-Readback: " +
                               ", ".join(f"{key}={val}" for key, val in parts))
-                if dict(parts).get("cof_item_records") == "0":
-                    output.append("COF ohne Originalitems: Viewer kann daraus "
-                                  "keine eigene Kleidung oder Bakes ableiten.")
+                info=dict(parts)
+                if "cof_raw_items" not in info:
+                    output.append("COF-Rohdaten nicht belegt: altes Viewer-Binary. "
+                                  "Null gepruefte Items beweist NICHT, dass "
+                                  "der Serverordner leer ist.")
+                elif info.get("cof_raw_items") != "0":
+                    if info.get("cof_rejected_items") != "0":
+                        output.append("COF Parser-Problem moeglich: Server "
+                                      "meldet rohe Eintraege, die beim "
+                                      "Pruefen verworfen wurden.")
+                elif info.get("cof_items_array_present")=="0":
+                    output.append("COF-Antwort ohne Items-Array: kein Beleg "
+                                  "fuer einen tatsaechlich leeren Ordner.")
+                elif info.get("cof_item_records") == "0":
+                    output.append("COF mit authentisch leerem Items-Array: "
+                                  "Viewer kann daraus keine eigene "
+                                  "Kleidung/Bakes ableiten.")
+    legacy = [line for line in session if
+              "Avatar legacy originals readback:" in line]
+    if legacy:
+        details=re.findall(
+            r"(valid|requested|matched|bodyparts|complete_primary)"
+            r"=(\d+)",legacy[-1])
+        if details:
+            output.append("Simulator-Wearables / Originalinventar: "+
+                          ", ".join(f"{key}={value}" for key,value in details)+
+                          " (keine Server-Bake-Bestaetigung).")
     return output
 
 

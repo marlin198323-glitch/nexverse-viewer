@@ -123,6 +123,8 @@ int main()
        with_cof.items.at(COF)[0].asset_id!=T||
        with_cof.items.at(COF)[0].asset_type!=24||
        with_cof.items.at(COF)[0].flags.has_value()||
+       !with_cof.cof_folder_seen||!with_cof.cof_items_array_present||
+       with_cof.cof_raw_items!=1U||with_cof.cof_rejected_items!=0U||
        transport->posts!=2)return 21;
     const auto parsed_query=parse_llsd_xml(transport->request);
     if(!parsed_query.ok())return 22;
@@ -145,6 +147,32 @@ int main()
         })}
     }),outfits,"",O).returned_folders!=0U)
         return 20;
+    const auto read_cof_test=[](std::vector<LlsdValue> items)
+    {
+        return parse_outfit_descendents(LlsdValue::map({
+            {"folders",LlsdValue::array({
+                LlsdValue::map({
+                    {"folder_id",LlsdValue::uuid(COF)},
+                    {"owner_id",LlsdValue::uuid(O)},
+                    {"version",LlsdValue::integer(1)},
+                    {"items",LlsdValue::array(std::move(items))},
+                    {"categories",LlsdValue::array({})}
+                })
+            })}
+        }),{},COF,O);
+    };
+    const auto truly_empty=read_cof_test({});
+    if(!truly_empty.valid||!truly_empty.cof_folder_seen||
+       !truly_empty.cof_items_array_present||
+       truly_empty.cof_raw_items!=0U||truly_empty.cof_rejected_items!=0U||
+       !truly_empty.items.contains(COF)||!truly_empty.items.at(COF).empty())
+        return 25;
+    const auto discarded=read_cof_test({
+        LlsdValue::map({{"item_id",LlsdValue::uuid(LINK)},
+                        {"name",LlsdValue::string("Broken link, missing type")}})});
+    if(!discarded.valid||!discarded.cof_folder_seen||
+       discarded.cof_raw_items!=1U||discarded.cof_rejected_items!=1U||
+       !discarded.items.at(COF).empty())return 26;
     const auto next=lease.enter(101U,1U,"https://caps.test/next");
     (void)next;
     const auto stale=fetch_outfit_descendents(transport,

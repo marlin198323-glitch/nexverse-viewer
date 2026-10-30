@@ -95,7 +95,7 @@ class GpuPressureCofReadback(unittest.TestCase):
        'cof_version_present=1 cof_item_records=0; no inventory UUIDs logged\n')
   result='\n'.join(diag.summarize(raw))
   self.assertIn('cof_item_records=0',result)
-  self.assertIn('keine eigene Kleidung',result)
+  self.assertIn('Rohdaten nicht belegt',result)
  def test_zero_bake_status_is_never_reported_as_loaded(self):
   raw=('2026-10-31 00:00:01 [INFO] OpenSim login succeeded; simulator session established\n'
        '2026-10-31 00:00:02 [INFO] Avatar SELF bake pipeline: '

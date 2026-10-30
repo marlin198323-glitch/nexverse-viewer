@@ -123,6 +123,7 @@
 #include "nexverse/protocol/firestorm_appearance_verification.hpp"
 #include "nexverse/protocol/firestorm_wearable_slots.hpp"
 #include "nexverse/protocol/legacy_wearables_cof_audit.hpp"
+#include "nexverse/protocol/legacy_wearable_inventory_probe.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
@@ -5993,6 +5994,19 @@ int Application::run(bool enable_developer_modules)
     std::string gallery_inventory_items_cap;
     std::future<protocol::InventoryItemFetch> gallery_item_fetch_future;
     std::future<protocol::InventoryItemFetch> gallery_wearables_fetch_future;
+    // Read-only fallback: confirm simulator-selected Low382 originals when
+    // the current COF server folder is demonstrably empty. Not a bake.
+    std::future<protocol::InventoryItemFetch> legacy_originals_future;
+    protocol::LegacyWearableInventoryProbe legacy_originals_plan;
+    std::uint64_t legacy_originals_epoch=0U;
+    std::string legacy_originals_agent;
+    std::string legacy_originals_session;
+    std::uint32_t legacy_originals_serial=0U;
+    std::uint32_t legacy_originals_last_attempted_serial=0U;
+    std::size_t legacy_originals_requests=0U;
+    std::size_t legacy_originals_matched=0U;
+    std::size_t legacy_originals_bodyparts=0U;
+    std::string legacy_originals_status="Legacy-Originalitems: nicht geprueft";
     std::uint64_t gallery_wearables_fetch_epoch=0U;
     std::uint64_t gallery_wearables_fetch_version=0U;
     std::string gallery_wearables_fetch_cof;
@@ -8805,6 +8819,16 @@ int Application::run(bool enable_developer_modules)
                 auto_cof_items_fetching=false;
                 auto_cof_asset_requested=false;
                 auto_cof_read.reset();
+                legacy_originals_plan={};
+                legacy_originals_epoch=0U;
+                legacy_originals_agent.clear();
+                legacy_originals_session.clear();
+                legacy_originals_serial=0U;
+                legacy_originals_last_attempted_serial=0U;
+                legacy_originals_requests=0U;
+                legacy_originals_matched=0U;
+                legacy_originals_bodyparts=0U;
+                legacy_originals_status="Legacy-Originalitems: Region gewechselt";
                 gallery_wearables_fetch_cof.clear();
                 gallery_wearables_status=
                     "Regionswechsel: Wearable-Status unbestimmt";
@@ -9382,6 +9406,14 @@ int Application::run(bool enable_developer_modules)
                             " cof_item_records="+
                             std::to_string(received_items!=update.items.end()
                                 ?received_items->second.size():0U)+
+                            " cof_folder_seen="+
+                            std::to_string(update.cof_folder_seen?1:0)+
+                            " cof_items_array_present="+
+                            std::to_string(update.cof_items_array_present?1:0)+
+                            " cof_raw_items="+
+                            std::to_string(update.cof_raw_items)+
+                            " cof_rejected_items="+
+                            std::to_string(update.cof_rejected_items)+
                             "; no inventory UUIDs logged");
                     }
                     if(gallery_verify_awaiting&&
@@ -9662,6 +9694,135 @@ int Application::run(bool enable_developer_modules)
                             transport,cap,agent,outfits,epoch,
                             firestorm_region_lease,cof);
                     });
+            }
+            // If current-region InventoryDescendents2 accepted no COF
+            // items (raw server array MAY still contain rejected rows),
+            // while authenticated Low382 lists actual worn originals,
+            // verify those exact item IDs separately via owner-scoped
+            // FetchInventory2. This does NOT fabricate an outfit or set
+            // appearance. It diagnoses the server-side COF/body-bake gap.
+            if(legacy_originals_future.valid()&&
+               legacy_originals_future.wait_for(
+                   std::chrono::seconds{0})==std::future_status::ready)
+            {
+                try
+                {
+                    const auto originals=legacy_originals_future.get();
+                    bool current=false;
+                    {
+                        std::scoped_lock lock{world_mutex};
+                        const auto& worn=world_model.self_wearables();
+                        current=login_ui.authenticated&&active_session&&
+                            simulation_ready&&
+                            firestorm_region_lease.matches(legacy_originals_epoch)&&
+                            legacy_originals_agent==active_session->agent_id&&
+                            legacy_originals_session==active_session->session_id&&
+                            world_model.region().connected&&
+                            worn&&worn->serial==legacy_originals_serial&&
+                            worn->agent_id==legacy_originals_agent&&
+                            worn->session_id==legacy_originals_session;
+                    }
+                    if(current)
+                    {
+                        const auto proof=
+                            protocol::audit_legacy_wearable_inventory_probe(
+                                legacy_originals_plan,originals);
+                        legacy_originals_matched=proof.matched;
+                        legacy_originals_bodyparts=proof.bodyparts;
+                        legacy_originals_status=
+                            "Legacy-Originalitems: "+
+                            std::to_string(proof.matched)+"/"+
+                            std::to_string(proof.requested)+
+                            " original bestaetigt, primaere Koerperteile "+
+                            std::to_string(proof.bodyparts)+"/4; "+
+                            (proof.complete_primary
+                                ?"Outfit/Server-Bake trotzdem UNBEWIESEN"
+                                :"Originaldaten fehlen oder passen nicht");
+                        core::info("Avatar legacy originals readback: valid="+
+                            std::to_string(proof.valid?1:0)+
+                            " requested="+std::to_string(proof.requested)+
+                            " matched="+std::to_string(proof.matched)+
+                            " bodyparts="+std::to_string(proof.bodyparts)+
+                            " complete_primary="+
+                            std::to_string(proof.complete_primary?1:0)+
+                            "; COF and body-bakes NOT inferred; UUIDs omitted");
+                        const auto cof_items=
+                            caps_state.outfit_folder_items.find(
+                                caps_state.current_outfit_folder);
+                        if(cof_items==caps_state.outfit_folder_items.end()||
+                           cof_items->second.empty())
+                            gallery_wearables_status=legacy_originals_status;
+                    }
+                    else core::info("Avatar legacy original readback discarded: "
+                        "region/agent/session/serial no longer current");
+                }
+                catch(const std::exception&)
+                {
+                    core::warning("Avatar legacy original inventory request "
+                        "failed; no baked skin or COF inferred");
+                }
+            }
+            if(!legacy_originals_future.valid()&&
+               legacy_originals_requests<3U&&
+               login_ui.authenticated&&simulation_ready&&active_session&&
+               firestorm_region_lease.matches(current_firestorm_epoch)&&
+               !gallery_inventory_items_cap.empty()&&
+               !caps_state.current_outfit_folder.empty())
+            {
+                const auto cof=
+                    caps_state.outfit_folder_items.find(
+                        caps_state.current_outfit_folder);
+                const auto version=gallery_inventory_sync.versions().find(
+                    caps_state.current_outfit_folder);
+                if(gallery_inventory_sync.read()&&
+                   version!=gallery_inventory_sync.versions().end()&&
+                   cof!=caps_state.outfit_folder_items.end()&&
+                   cof->second.empty())
+                {
+                    protocol::LegacyWearableInventoryProbe planned;
+                    std::uint32_t serial=0U;
+                    {
+                        std::scoped_lock lock{world_mutex};
+                        const auto& worn=world_model.self_wearables();
+                        if(worn)
+                        {
+                            planned=protocol::plan_legacy_wearable_inventory_probe(
+                                &*worn,active_session->agent_id,
+                                active_session->session_id);
+                            serial=worn->serial;
+                        }
+                    }
+                    if(planned.eligible&&
+                       (legacy_originals_requests==0U||
+                        serial!=legacy_originals_last_attempted_serial))
+                    {
+                        legacy_originals_plan=std::move(planned);
+                        legacy_originals_epoch=current_firestorm_epoch;
+                        legacy_originals_agent=active_session->agent_id;
+                        legacy_originals_session=active_session->session_id;
+                        legacy_originals_serial=serial;
+                        legacy_originals_last_attempted_serial=serial;
+                        ++legacy_originals_requests;
+                        legacy_originals_status=
+                            "Low382-Originalitems werden schreibgeschuetzt geprueft";
+                        core::info("Avatar legacy originals request: "
+                            "COF parser accepted zero items; "
+                            "FetchInventory2 checking "+
+                            std::to_string(legacy_originals_plan.ids.size())+
+                            " simulator-listed original items; UUIDs omitted");
+                        legacy_originals_future=std::async(std::launch::async,
+                            [transport,cap=gallery_inventory_items_cap,
+                             owner=legacy_originals_agent,
+                             ids=legacy_originals_plan.ids,
+                             epoch=legacy_originals_epoch,
+                             &firestorm_region_lease]()
+                            {
+                                return protocol::fetch_inventory2(
+                                    transport,cap,owner,ids,epoch,
+                                    firestorm_region_lease);
+                            });
+                    }
+                }
             }
             // FetchInventory2 resolves selected outfit's actual item
             // records on demand. All results remain current-epoch and
@@ -13108,6 +13269,19 @@ int Application::run(bool enable_developer_modules)
                     ?"Bakes: Replan-Pause noch aktiv"
                 :"Bakes: "+std::to_string(self_bake_pending)+
                    " fehlende Layer koennen neu eingeplant werden";
+            if(self_bake_authenticated&&self_bake_lease&&
+               self_body_ref_count==0U&&
+               !caps_state.current_outfit_folder.empty()&&
+               gallery_inventory_sync.read())
+            {
+                const auto known_cof=
+                    caps_state.outfit_folder_items.find(
+                        caps_state.current_outfit_folder);
+                if(known_cof!=caps_state.outfit_folder_items.end()&&
+                   known_cof->second.empty())
+                    avatar_bake_stream_status+=
+                        " COF ohne verifizierte Items; Raw-LLSD/Low382 pruefen.";
+            }
             if(object_bake_provenance.first)
                 avatar_bake_stream_status=
                     (object_bake_provenance.second
@@ -13293,6 +13467,19 @@ int Application::run(bool enable_developer_modules)
                         emitter_texture_ids.begin(),emitter_texture_ids.end()};
                     protected_ids.insert(avatar_body_priority.begin(),
                                          avatar_body_priority.end());
+                    // The bake residency *priority* contains Head/Upper/
+                    // Lower, but not necessarily Eyes/Hair. Protect ALL
+                    // currently admitted avatar material IDs, including
+                    // remote avatars, from scene-only VRAM compaction.
+                    for(const auto& avatar:admitted_bakes.accepted)
+                    {
+                        for(const auto& id:avatar.body)
+                            if(!id.empty())protected_ids.insert(id);
+                        if(!avatar.eyes_bake_id.empty())
+                            protected_ids.insert(avatar.eyes_bake_id);
+                        if(!avatar.hair_bake_id.empty())
+                            protected_ids.insert(avatar.hair_bake_id);
+                    }
                     if(const auto compact=assets::choose_scene_texture_compaction(
                         texture_residency.preferred_ids,texture_gpu_bytes,
                         texture_gpu_mips,texture_desired_mips,
@@ -15778,6 +15965,7 @@ int Application::run(bool enable_developer_modules)
     shutdown_wait_group(firestorm_region_read_futures,"region CAPS read");
     shutdown_wait(gallery_item_fetch_future,"COF item");
     shutdown_wait(gallery_wearables_fetch_future,"COF wearables");
+    shutdown_wait(legacy_originals_future,"legacy original wearable lookup");
     shutdown_wait(gallery_local_texture_future,"wearable textures");
     shutdown_wait(gallery_sync_future,"outfit inventory");
     shutdown_wait_group(gallery_image_futures,"outfit images");
