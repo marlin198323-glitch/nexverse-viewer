@@ -18,6 +18,20 @@ namespace nexverse::protocol
 {
 inline constexpr std::size_t max_login_response_bytes = 2U * 1024U * 1024U;
 
+// Human-facing build labels are vMAJOR.MINOR.PATCH.BUILD. OpenGenesisLINK
+// OglApprovedViewerPolicy.IsNumericVersion(clientVersion) requires the XML-RPC
+// "version" field to START with a decimal digit, or it blocks this genuine
+// OGL Viewer with reason="presence" (LoginBlockedProblem). Do not spoof a
+// different viewer name; strip only the purely presentational v/V prefix.
+[[nodiscard]] constexpr std::string_view ogl_login_wire_version(
+    std::string_view display_version) noexcept
+{
+    return display_version.size()>1U&&
+           (display_version.front()=='v'||display_version.front()=='V')&&
+           display_version[1]>='0'&&display_version[1]<='9'
+        ?display_version.substr(1U):display_version;
+}
+
 struct LoginCredentials
 {
     std::string first_name;

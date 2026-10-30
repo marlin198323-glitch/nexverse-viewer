@@ -397,7 +397,10 @@ std::string build_login_xml_rpc(
     append_member(document, structure, "passwd", hash_login_password(credentials.password));
     append_member(document, structure, "start", credentials.start.empty() ? "last" : credentials.start);
     append_member(document, structure, "channel", channel);
-    append_member(document, structure, "version", version);
+    // OpenGenesisLINK's viewer allowlist requires a numeric-leading
+    // XML-RPC version, even though our on-screen build label is vX.X.X.X.
+    append_member(document, structure, "version",
+                  ogl_login_wire_version(version));
 #if defined(_WIN32)
     append_member(document, structure, "platform", "Win");
 #elif defined(__APPLE__)

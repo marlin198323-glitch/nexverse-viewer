@@ -337,6 +337,51 @@ int main()
        "OpenGenesisLINK Viewer","0.2.0-alpha.744").reason!="missing_credentials")
         return 36;
 
+    // The REAL current OpenGenesisLINK server explicitly rejects a
+    // self-reported numeric version starting with "v". The production
+    // VERSION file is v0.4.0.0, but XML-RPC MUST send 0.4.0.0.
+    using nexverse::protocol::ogl_login_wire_version;
+    if(ogl_login_wire_version("v0.4.0.0")!="0.4.0.0"||
+       ogl_login_wire_version("V0.4.0.0")!="0.4.0.0"||
+       ogl_login_wire_version("0.4.0.0")!="0.4.0.0"||
+       ogl_login_wire_version("v")!="v"||
+       ogl_login_wire_version("Firestorm")!="Firestorm")
+        return 86;
+    // Inspect the exact XML-RPC member values, not whitespace or
+    // indentation inserted by TinyXML2::XMLPrinter.
+    const auto contains_rpc_member=[](
+        std::string_view xml,std::string_view name,
+        std::string_view value)
+    {
+        const auto begin=xml.find(std::string{"<name>"}+
+                                  std::string{name}+"</name>");
+        if(begin==std::string_view::npos)return false;
+        const auto end=xml.find("</member>",begin);
+        if(end==std::string_view::npos)return false;
+        const auto slice=xml.substr(begin,end-begin);
+        return slice.find(std::string{"<string>"}+
+                          std::string{value}+"</string>")!=
+               std::string_view::npos;
+    };
+    const auto wire=build_login_xml_rpc(
+        credentials,"OpenGenesisLINK Viewer","v0.4.0.0");
+    if(!contains_rpc_member(wire,"channel","OpenGenesisLINK Viewer")||
+       !contains_rpc_member(wire,"version","0.4.0.0")||
+       contains_rpc_member(wire,"version","v0.4.0.0")||
+       wire.find("secret")!=std::string::npos)
+        return 87;
+    transport->response={200,std::string{success_xml},{}};
+    const auto actual_service=service.login(
+        "http://grid.example.test:8002/",credentials,
+        "OpenGenesisLINK Viewer","v0.4.0.0");
+    if(!actual_service.success||
+       !contains_rpc_member(transport->posted_body,"version","0.4.0.0")||
+       !contains_rpc_member(transport->posted_body,"channel","OpenGenesisLINK Viewer"))
+        return 88;
+    const auto old_version=build_login_xml_rpc(
+        credentials,"OpenGenesisLINK Viewer","0.1.0-alpha.1");
+    if(!contains_rpc_member(old_version,"version","0.1.0-alpha.1"))
+        return 89;
     // The REAL NexVerse log (30 October 2026) repeatedly received
     // XML-RPC reason="presence"; it alone does NOT reveal whether
     // the account is online, unverified or logins are restricted.

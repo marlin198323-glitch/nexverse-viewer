@@ -8003,6 +8003,13 @@ int Application::run(bool enable_developer_modules)
                            !login_ui.tos.visible())
                             login_ui.tos.reset();
                         const std::string viewer_version{core::version()};
+                        // Version is public (unlike avatar credentials).
+                        // ROBUST's OGL viewer policy accepts digit-leading
+                        // versions, not the visible vX.X.X.X label.
+                        core::info(
+                            "OpenSim login client identity: channel=OpenGenesisLINK Viewer; "
+                            "wire_version="+std::string{
+                                protocol::ogl_login_wire_version(viewer_version)});
 
                         login_ui.busy = true;
                         login_ui.status = "CONNECTING";

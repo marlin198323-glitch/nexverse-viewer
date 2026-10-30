@@ -831,5 +831,28 @@
     "real_teleport_wasd_flight": "OPEN",
     "real_authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_opengenesislink_approved_viewer_numeric_wire_version_20261030": {
+    "status": "IMPLEMENTED_FULL_MINT_TESTED_REAL_AUTHENTICATED_LOGIN_REQUIRES_USER_RECHECK",
+    "documentation": "docs/V0_4_0_0_LOGIN_APPROVED_VIEWER_NUMERIC_WIRE_VERSION_20261030.md",
+    "actual_gpu_login_presence_restricted_at_215039_215316_215729": true,
+    "server_policy_numeric_leading_version_requires_digit": true,
+    "previous_display_version_sent_as_wire_with_v_prefix": true,
+    "viewer_xmlrpc_wire_version_now_0_4_0_0": true,
+    "display_and_project_version_stay_v0_4_0_0": true,
+    "viewer_channel_stays_OpenGenesisLINK_Viewer": true,
+    "normalizer_in_actual_xmlrpc_serializer": true,
+    "actual_xml_rpc_wire_member_checked_in_native_mock_tests": true,
+    "password_tos_and_session_unchanged": true,
+    "safe_public_wire_version_logged_before_user_login": true,
+    "possible_other_server_login_denial_rules_unverified": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "884/884 PASS",
+    "firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "real_authenticated_grid_login_after_fix": "NOT_YET_RETESTED",
+    "real_avatar_head_upper_lower_rgb_cof": "OPEN",
+    "real_region_teleport_wasd_flight": "OPEN",
+    "real_authenticated_shutdown": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
