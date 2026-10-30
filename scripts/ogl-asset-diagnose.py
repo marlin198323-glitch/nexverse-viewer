@@ -164,6 +164,24 @@ def summarize(raw: str) -> list[str]:
             output.append("Simulator-Wearables / Originalinventar: "+
                           ", ".join(f"{key}={value}" for key,value in details)+
                           " (keine Server-Bake-Bestaetigung).")
+    local = [line for line in session
+             if "Avatar local unbaked self-preview:" in line]
+    if local:
+        values = re.findall(
+            r"(source|gpu_head_upper_lower|real_local_source_textures"
+            r"|incomplete_layers)=([A-Za-z0-9_/]+)", local[-1])
+        if values:
+            state = dict(values)
+            output.append("EIGENER Avatar – lokale Teilvorschau: " +
+                          ", ".join(f"{key}={value}" for key,value in values))
+            if state.get("source")=="authenticated_legacy_originals":
+                output.append("Lokale Original-Wearables aus dem Simulator "
+                              "sichtbar gemacht; KEINE vom Grid "
+                              "bestätigten Body-Bakes, keine fremden Avatare.")
+    elif any("Avatar legacy local preview:" in line for line in session):
+        output.append("Lokale Low382-Vorschau wurde gestartet; "
+                      "erfolgreiche GPU-Head-/Upper-/Lower-Uploads "
+                      "noch NICHT nachgewiesen.")
     return output
 
 

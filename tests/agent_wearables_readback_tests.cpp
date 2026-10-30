@@ -3,6 +3,7 @@
 #include "nexverse/protocol/lludp.hpp"
 #include "nexverse/protocol/viewer_messages.hpp"
 #include "nexverse/protocol/legacy_wearable_inventory_probe.hpp"
+#include "nexverse/protocol/legacy_wearable_local_preview.hpp"
 #include "nexverse/world/world_model.hpp"
 #include "nexverse/protocol/wearables_serial_order.hpp"
 #include <array>
@@ -187,5 +188,31 @@ int main()
     legacy.wearables[0].wearable_type=17U;
     if(protocol::plan_legacy_wearable_inventory_probe(
            &legacy,self_id,session_id).eligible)return 26;
+    // 2026-10-31 live: all five Low382 originals valid, all four bodypart
+    // originals exist, but COF server returned a genuinely empty array.
+    // This authorizes ONLY an UNBAKED local self preview, never a new
+    // AvatarAppearance or automatic inventory modification.
+    const auto admitted=protocol::legacy_local_preview_admitted(
+        proof,true,9U,9U,42U,42U,self_id,self_id,
+        session_id,session_id);
+    if(!admitted)return 27;
+    if(protocol::legacy_local_preview_admitted(
+        proof,false,9U,9U,42U,42U,self_id,self_id,
+        session_id,session_id))return 28;
+    if(protocol::legacy_local_preview_admitted(
+        proof,true,9U,10U,42U,42U,self_id,self_id,
+        session_id,session_id))return 29;
+    if(protocol::legacy_local_preview_admitted(
+        proof,true,9U,9U,42U,43U,self_id,self_id,
+        session_id,session_id))return 30;
+    if(protocol::legacy_local_preview_admitted(
+        proof,true,9U,9U,42U,42U,self_id,other_id,
+        session_id,session_id))return 31;
+    if(protocol::legacy_local_preview_admitted(
+        proof,true,9U,9U,42U,42U,self_id,self_id,
+        session_id,other_id))return 32;
+    if(protocol::legacy_local_preview_admitted(
+        mismatch,true,9U,9U,42U,42U,self_id,self_id,
+        session_id,session_id))return 33;
     std::cout<<"OGL_AGENT_WEARABLES_LOW381_382_REAL_DATAGRAM_AUTH_PASS\n";
 }

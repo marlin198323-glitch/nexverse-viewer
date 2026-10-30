@@ -124,6 +124,7 @@
 #include "nexverse/protocol/firestorm_wearable_slots.hpp"
 #include "nexverse/protocol/legacy_wearables_cof_audit.hpp"
 #include "nexverse/protocol/legacy_wearable_inventory_probe.hpp"
+#include "nexverse/protocol/legacy_wearable_local_preview.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
@@ -6007,6 +6008,13 @@ int Application::run(bool enable_developer_modules)
     std::size_t legacy_originals_matched=0U;
     std::size_t legacy_originals_bodyparts=0U;
     std::string legacy_originals_status="Legacy-Originalitems: nicht geprueft";
+    // True ONLY after a current-owner, current-epoch, unambiguously EMPTY
+    // RAW server COF array. A zero parsed count is not proof by itself.
+    bool legacy_cof_raw_empty=false;
+    std::uint64_t legacy_cof_raw_epoch=0U;
+    std::uint64_t legacy_cof_raw_version=0U;
+    bool legacy_local_preview_active=false;
+    protocol::LegacyWearableInventoryEvidence legacy_local_preview_proof{};
     std::uint64_t gallery_wearables_fetch_epoch=0U;
     std::uint64_t gallery_wearables_fetch_version=0U;
     std::string gallery_wearables_fetch_cof;
@@ -8829,6 +8837,10 @@ int Application::run(bool enable_developer_modules)
                 legacy_originals_matched=0U;
                 legacy_originals_bodyparts=0U;
                 legacy_originals_status="Legacy-Originalitems: Region gewechselt";
+                legacy_cof_raw_empty=false;
+                legacy_cof_raw_epoch=legacy_cof_raw_version=0U;
+                legacy_local_preview_active=false;
+                legacy_local_preview_proof={};
                 gallery_wearables_fetch_cof.clear();
                 gallery_wearables_status=
                     "Regionswechsel: Wearable-Status unbestimmt";
@@ -9387,6 +9399,27 @@ int Application::run(bool enable_developer_modules)
                         firestorm_region_lease.matches(gallery_sync_issued_epoch)&&
                         update.valid&&
                         gallery_sync_dirty_revision==inventory_dirty_revision;
+                    // Prove actual empty RAW COF; an accepted zero-item
+                    // parse alone could hide malformed server records.
+                    // It is also an owner/epoch/version fence for the
+                    // optional local-only legacy texture preview.
+                    if(current_caps_reply&&active_session&&
+                       login_ui.authenticated)
+                    {
+                        const auto cof=protocol::current_outfit_folder_id(
+                            active_session->inventory_skeleton).value_or("");
+                        const auto found=update.versions.find(cof);
+                        if(!cof.empty()&&update.cof_folder_seen&&
+                           found!=update.versions.end()&&found->second>0U)
+                        {
+                            legacy_cof_raw_empty=update.cof_items_array_present&&
+                                update.cof_raw_items==0U&&
+                                update.cof_rejected_items==0U;
+                            legacy_cof_raw_epoch=gallery_sync_issued_epoch;
+                            legacy_cof_raw_version=found->second;
+                        }
+                        else legacy_cof_raw_empty=false;
+                    }
                     if(gallery_bootstrap_cof_polled_epoch==
                            gallery_sync_issued_epoch &&
                        active_session&&login_ui.authenticated)
@@ -9695,6 +9728,52 @@ int Application::run(bool enable_developer_modules)
                             firestorm_region_lease,cof);
                     });
             }
+            // Strict authenticated fallback for a LOCAL, SELF-only image:
+            // valid original inventory + empty raw COF + current Low382.
+            const auto legacy_preview_current=[&]() -> bool
+            {
+                if(!legacy_local_preview_active||!active_session||
+                   !login_ui.authenticated||!simulation_ready||
+                   !firestorm_region_lease.matches(current_firestorm_epoch)||
+                   legacy_originals_epoch!=current_firestorm_epoch||
+                   legacy_cof_raw_epoch!=current_firestorm_epoch||
+                   !legacy_cof_raw_empty||legacy_cof_raw_version==0U||
+                   caps_state.current_outfit_folder.empty())
+                    return false;
+                const auto cof=caps_state.outfit_folder_items.find(
+                    caps_state.current_outfit_folder);
+                const auto ver=gallery_inventory_sync.versions().find(
+                    caps_state.current_outfit_folder);
+                if(cof==caps_state.outfit_folder_items.end()||
+                   !cof->second.empty()||
+                   ver==gallery_inventory_sync.versions().end()||
+                   ver->second!=legacy_cof_raw_version)return false;
+                std::scoped_lock lock{world_mutex};
+                const auto& worn=world_model.self_wearables();
+                return worn&&protocol::legacy_local_preview_admitted(
+                    legacy_local_preview_proof,legacy_cof_raw_empty,
+                    legacy_originals_epoch,current_firestorm_epoch,
+                    legacy_originals_serial,worn->serial,
+                    legacy_originals_agent,worn->agent_id,
+                    legacy_originals_session,worn->session_id)&&
+                    active_session->agent_id==worn->agent_id&&
+                    active_session->session_id==worn->session_id&&
+                    world_model.region().connected;
+            };
+            if(legacy_local_preview_active&&!legacy_preview_current())
+            {
+                legacy_local_preview_active=false;
+                legacy_local_preview_proof={};
+                gallery_asset_pending.clear();
+                gallery_decoded_wearable_assets.clear();
+                gallery_asset_active_id.clear();
+                gallery_wearable_originals.clear();
+                gallery_asset_total=gallery_asset_errors=0U;
+                gallery_asset_status="Legacy-Vorschau verfallen: COF/Serial/Region";
+                clear_gallery_local_texture_previews();
+                core::info("Avatar legacy local preview revoked; "
+                    "owner/serial/COF lease changed");
+            }
             // If current-region InventoryDescendents2 accepted no COF
             // items (raw server array MAY still contain rejected rows),
             // while authenticated Low382 lists actual worn originals,
@@ -9752,6 +9831,58 @@ int Application::run(bool enable_developer_modules)
                         if(cof_items==caps_state.outfit_folder_items.end()||
                            cof_items->second.empty())
                             gallery_wearables_status=legacy_originals_status;
+                        const auto verified=protocol::legacy_local_preview_admitted(
+                            proof,legacy_cof_raw_empty,legacy_originals_epoch,
+                            current_firestorm_epoch,legacy_originals_serial,
+                            legacy_originals_serial,legacy_originals_agent,
+                            active_session->agent_id,legacy_originals_session,
+                            active_session->session_id);
+                        const auto v=gallery_inventory_sync.versions().find(
+                            caps_state.current_outfit_folder);
+                        if(verified&&!legacy_local_preview_active&&
+                           v!=gallery_inventory_sync.versions().end()&&
+                           v->second==legacy_cof_raw_version&&
+                           !gallery_wearables_fetch_future.valid()&&
+                           !gallery_wearables_visible&&
+                           gallery_asset_pending.empty()&&
+                           gallery_asset_active_id.empty()&&
+                           gallery_decoded_wearable_assets.empty()&&
+                           originals.items.size()<=16U)
+                        {
+                            gallery_wearable_originals=originals.items;
+                            gallery_asset_pending.clear();
+                            std::set<std::string> asset_keys;
+                            for(const auto& item:gallery_wearable_originals)
+                                if((item.asset_type==5||item.asset_type==13)&&
+                                   item.flags&&item.inventory_type==18&&
+                                   protocol::uuid_to_bytes(item.asset_id)&&
+                                   asset_keys.insert(item.asset_id).second)
+                                    gallery_asset_pending.push_back(item);
+                            if(!gallery_asset_pending.empty()&&
+                               gallery_asset_pending.size()<=16U&&
+                               gallery_asset_pending.size()==proof.matched)
+                            {
+                                legacy_local_preview_proof=proof;
+                                legacy_local_preview_active=true;
+                                gallery_asset_total=gallery_asset_pending.size();
+                                gallery_asset_errors=0U;
+                                gallery_asset_epoch=current_firestorm_epoch;
+                                gallery_asset_cof_version=v->second;
+                                gallery_asset_cof=caps_state.current_outfit_folder;
+                                gallery_wearables_fetch_owner=active_session->agent_id;
+                                gallery_wearables_fetch_cof=gallery_asset_cof;
+                                gallery_wearables_fetch_epoch=current_firestorm_epoch;
+                                gallery_wearables_fetch_version=v->second;
+                                auto_cof_wearable_assets_active=true;
+                                gallery_asset_status="Low382-Originale: "
+                                    "lokale UNBAKED Self-Vorschau wird geladen";
+                                core::info("Avatar legacy local preview: "
+                                    "verified originals admitted to current "
+                                    "LLWearable/local layer pipeline; "
+                                    "no COF link or simulator bake sent");
+                            }
+                            else gallery_asset_pending.clear();
+                        }
                     }
                     else core::info("Avatar legacy original readback discarded: "
                         "region/agent/session/serial no longer current");
@@ -9777,7 +9908,9 @@ int Application::run(bool enable_developer_modules)
                 if(gallery_inventory_sync.read()&&
                    version!=gallery_inventory_sync.versions().end()&&
                    cof!=caps_state.outfit_folder_items.end()&&
-                   cof->second.empty())
+                   cof->second.empty()&&legacy_cof_raw_empty&&
+                   legacy_cof_raw_epoch==current_firestorm_epoch&&
+                   legacy_cof_raw_version==version->second)
                 {
                     protocol::LegacyWearableInventoryProbe planned;
                     std::uint32_t serial=0U;
@@ -10140,9 +10273,10 @@ int Application::run(bool enable_developer_modules)
                        login_ui.authenticated&&simulation_ready&&
                        !gallery_texture_cap.empty()&&
                        protocol::is_valid_http_uri(gallery_texture_cap)&&
-                       auto_cof_read.matches(active_session->agent_id,
-                           current_firestorm_epoch,gallery_asset_cof,
-                           gallery_asset_cof_version)&&
+                       (auto_cof_read.matches(active_session->agent_id,
+                            current_firestorm_epoch,gallery_asset_cof,
+                            gallery_asset_cof_version)||
+                        legacy_preview_current())&&
                        gallery_decoded_wearable_assets.size()==
                            gallery_asset_total)
                     {
@@ -10648,9 +10782,10 @@ int Application::run(bool enable_developer_modules)
                     gallery_local_cof);
                 if(v!=gallery_inventory_sync.versions().end()&&
                    v->second==gallery_local_cof_version&&
-                   auto_cof_read.matches(active_session->agent_id,
-                       gallery_local_epoch,gallery_local_cof,
-                       gallery_local_cof_version))
+                   (auto_cof_read.matches(active_session->agent_id,
+                        gallery_local_epoch,gallery_local_cof,
+                        gallery_local_cof_version)||
+                    legacy_preview_current()))
                 {
                     gallery_texlayer_compose_requested=true;
                     auto_cof_compose_requested=true;
@@ -10776,6 +10911,7 @@ int Application::run(bool enable_developer_modules)
                         unresolved_colors=0U,globals_applied=0U,
                         multiple_masks_applied=0U;
                     std::size_t applied=0U,unsupported=0U,missing=0U;
+                    std::size_t local_avatar_gpu_slots=0U;
                     for(unsigned group=0U;group<3U;++group)
                     {
                         const auto result=assets::compose_firestorm_mask_preview(
@@ -10806,12 +10942,13 @@ int Application::run(bool enable_developer_modules)
                             // renderer gives real baked GPU textures
                             // absolute priority and keeps remote avatars
                             // completely unmodified.
-                            (void)world_renderer->
+                            if(world_renderer->
                                 set_self_avatar_local_layer_preview(
                                     group,
                                     {composed.image.width,
                                      composed.image.height,
-                                     composed.image.pixels});
+                                     composed.image.pixels}))
+                                ++local_avatar_gpu_slots;
                         }
                     }
                     const auto coverage=
@@ -10828,7 +10965,21 @@ int Application::run(bool enable_developer_modules)
                         "/11, Offen "+std::to_string(unsupported+missing+
                             failed_masks+unresolved_colors)+
                         " - lokale Teilfarben am eigenen Avatar; "
-                        "Server-Bake NICHT freigegeben";
+                        "Server-Bake NICHT freigegeben"+
+                        std::string{legacy_preview_current()
+                            ?"; Originale aus Low382, COF auf Server leer"
+                            :"; Originale aus COF"};
+                    core::info("Avatar local unbaked self-preview: "
+                        "source="+std::string{legacy_preview_current()
+                            ?"authenticated_legacy_originals":"verified_cof"}+
+                        " gpu_head_upper_lower="+
+                        std::to_string(local_avatar_gpu_slots)+"/3"+
+                        " real_local_source_textures="+
+                        std::to_string(gallery_local_te_rgba.size())+
+                        " incomplete_layers="+
+                        std::to_string(unsupported+missing+failed_masks+
+                            unresolved_colors)+
+                        "; server_bakes_not_claimed; no asset IDs logged");
                 }
             }
             if(gallery_appearance_check_requested)
