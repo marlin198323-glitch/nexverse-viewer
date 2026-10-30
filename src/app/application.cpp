@@ -8734,7 +8734,10 @@ int Application::run(bool enable_developer_modules)
                         "; failed_polls="+
                         std::to_string(result.failed_polls)+
                         "; rediscoveries="+
-                        std::to_string(result.rediscoveries));
+                        std::to_string(result.rediscoveries)+
+                        "; expired_rediscovery_failures="+
+                        std::to_string(
+                            result.expired_rediscovery_failures));
                 }
                 catch(const std::exception&)
                 {

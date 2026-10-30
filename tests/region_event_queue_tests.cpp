@@ -16,6 +16,8 @@ struct MockHttp final : nexverse::net::IHttpTransport
     bool expire_second=false;
     bool same_uri_after_refresh=false;
     bool fail_first_seed=false;
+    bool fail_second_seed=false;
+    bool missing_second_seed=false;
     bool missing=false;
     std::vector<int> acks;
     bool duplicate_forever=false;
@@ -33,9 +35,12 @@ struct MockHttp final : nexverse::net::IHttpTransport
             ++seed_calls;
             if(fail_first_seed&&seed_calls==1)
                 return {503,{},"temporary seed unavailable"};
+            if(fail_second_seed&&seed_calls==2)
+                return {503,{},"temporary rediscovery unavailable"};
             return {200,serialize_llsd_xml(LlsdValue::map({
                 {"EventQueueGet",LlsdValue::string(
-                    missing?"":(same_uri_after_refresh||seed_calls==1?
+                    (missing||(missing_second_seed&&seed_calls==2))?
+                        "":(same_uri_after_refresh||seed_calls==1?
                         "https://sim.test/queue1":"https://sim.test/queue2"))}
             })),{}};
         }
@@ -161,6 +166,46 @@ int main()
        same_uri_mock->acks!=std::vector<int>({-1,17,-1}))
        return 8;
 
+    // A missing/503 EventQueueGet after an HTTP 404 expires the old
+    // queue. The worker must TERMINATE and let the region restart gate
+    // rediscover the seed; continuing to poll the dead URL indefinitely
+    // used to strand CAPS and cross-region teleport notifications.
+    auto lost_seed=std::make_shared<MockHttp>();
+    lost_seed->expire_second=true;
+    lost_seed->fail_second_seed=true;
+    last_epoch=lease.enter(565U,2U,"https://sim.test/expired-seed-503");
+    const auto failed_refresh=poll_region_event_queue(
+        lost_seed,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,8U);
+    if(failed_refresh.advertised||failed_refresh.polls!=2U||
+       failed_refresh.failed_polls!=1U||
+       failed_refresh.rediscoveries!=1U||
+       failed_refresh.expired_rediscovery_failures!=1U||
+       lost_seed->queue_calls!=2||
+       lost_seed->seed_calls!=2)
+        return 24;
+    // Fresh worker and same lease can now rediscover and resume.
+    lost_seed->expire_second=false;
+    const auto after_retry=poll_region_event_queue(
+        lost_seed,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,1U);
+    if(!after_retry.advertised||after_retry.polls!=1U||
+       after_retry.expired_rediscovery_failures!=0U||
+       lost_seed->seed_calls!=3)
+        return 25;
+    auto missing_caps=std::make_shared<MockHttp>();
+    missing_caps->expire_second=true;
+    missing_caps->missing_second_seed=true;
+    last_epoch=lease.enter(566U,2U,"https://sim.test/expired-no-eq");
+    const auto missing_refresh=poll_region_event_queue(
+        missing_caps,"https://sim.test/seed",last_epoch,lease,
+        stop,receive,8U);
+    if(missing_refresh.advertised||missing_refresh.polls!=2U||
+       missing_refresh.rediscoveries!=1U||
+       missing_refresh.expired_rediscovery_failures!=1U||
+       missing_caps->queue_calls!=2)
+        return 26;
+
     RegionEventRestartGate gate;
     const auto origin=RegionEventRestartGate::Clock::now();
     if(!gate.can_start(1001U,11U,origin))return 9;
@@ -192,6 +237,17 @@ int main()
     if(!gate.completed(healthy,origin+std::chrono::seconds{7})||
        gate.can_start(1002U,11U,origin+std::chrono::seconds{120}))
        return 16;
+    // An expired queue with failed rediscovery is restartable, but
+    // only after the existing bounded region-scoped cooldown.
+    const auto expired_epoch=1003U;
+    if(!gate.can_start(expired_epoch,11U,origin))return 27;
+    gate.started(expired_epoch);
+    RegionEventQueueStats expired=failed_refresh;
+    expired.issued_epoch=expired_epoch;
+    if(!gate.completed(expired,origin) ||
+       gate.can_start(expired_epoch,11U,origin+std::chrono::seconds{4})||
+       !gate.can_start(expired_epoch,11U,origin+std::chrono::seconds{5}))
+        return 28;
     auto no_seed=std::make_shared<MockHttp>();
     no_seed->fail_first_seed=true;
     const auto missing_epoch=lease.enter(558U,2U,"https://sim.test/fail-seed");

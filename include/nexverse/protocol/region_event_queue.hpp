@@ -30,6 +30,9 @@ struct RegionEventQueueStats
     std::size_t idless_batches=0U;
     std::size_t idle_polls=0U;
     std::size_t failed_polls=0U;
+    // Expired endpoint could not be restored by the region seed CAP.
+    // Worker exits and hands restart to RegionEventRestartGate.
+    std::size_t expired_rediscovery_failures=0U;
 };
 // Render-thread restart gate. A failed first seed discovery used to strand
 // EventQueueGet for the entire region until teleport. Retry only after

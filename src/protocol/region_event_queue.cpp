@@ -96,20 +96,35 @@ RegionEventQueueStats poll_region_event_queue(
             ++stats.rediscoveries;
             const auto refreshed=lookup();
             if(!active())break;
+            bool renewed=false;
             if(refreshed.success)
             {
                 const auto found=refreshed.capabilities.find("EventQueueGet");
-                if(found!=refreshed.capabilities.end()&&!found->second.empty()&&
-                   (found->second!=uri||batch.expired))
+                if(found!=refreshed.capabilities.end()&&!found->second.empty())
                 {
-                    // HTTP 404 invalidated the queue incarnation even
-                    // if its rediscovered URL happens to be identical.
-                    // The old cursor must never be sent to the new one.
-                    uri=found->second;
-                    ack.reset();
-                    recent_batches.reset();
-                    recovery.on_contact();
+                    renewed=true;
+                    if(found->second!=uri||batch.expired)
+                    {
+                        // HTTP 404 invalidated the queue incarnation
+                        // even when the rediscovered URL is identical.
+                        // Never send its prior ACK to the new instance.
+                        uri=found->second;
+                        ack.reset();
+                        recent_batches.reset();
+                        recovery.on_contact();
+                    }
                 }
+            }
+            if(batch.expired&&!renewed)
+            {
+                // The previous URL is confirmed dead and the seed now
+                // has no usable EventQueueGet. Polling that expired URL
+                // forever strands this worker in a valid region.
+                // Signal a retryable failure to the existing 5-60s
+                // region-epoch-scoped restart gate, without tight loops.
+                ++stats.expired_rediscovery_failures;
+                stats.advertised=false;
+                break;
             }
         }
         pause(decision.pause);

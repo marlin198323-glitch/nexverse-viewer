@@ -593,5 +593,24 @@
     "cof_outfit": "OPEN",
     "authenticated_shutdown": "OPEN",
     "weighted_project_completion_percent": 38.65
+  },
+  "v0400_region_eventqueue_404_failed_rediscovery_restart_20261030": {
+    "status": "IMPLEMENTED_AND_MINT_FULL_TESTED_AUTHENTICATED_LIVE_GRID_STILL_OPEN",
+    "documentation": "docs/V0_4_0_0_REGION_EVENTQUEUE_EXPIRED_REDISCOVERY_20261030.md",
+    "http404_then_seed_http503_exits_worker": true,
+    "http404_then_missing_eventqueue_exits_worker": true,
+    "restart_uses_existing_bounded_region_epoch_backoff_5_to_60_seconds": true,
+    "valid_rediscovered_eventqueue_resets_old_ack": true,
+    "healthy_http502_longpoll_untouched": true,
+    "anonymized_expired_rediscovery_failures_counter": true,
+    "asynchronous_opengl_query_test_ctest_run_serial_without_weakening_assertions": true,
+    "native_ctests": "195/195 PASS",
+    "python_unittests": "750/750 PASS",
+    "original_firestorm_xvfb_opengl_gui_x11_icon": "PASS",
+    "authenticated_simulator_region_eventqueue_handoff": "OPEN",
+    "real_agent_movement_complete_and_wasd_flight": "OPEN",
+    "real_avatar_skin_rgb_cof_outfit": "OPEN",
+    "authenticated_shutdown_time": "OPEN",
+    "weighted_project_completion_percent": 38.65
   }
 }
