@@ -9,7 +9,8 @@ LOG = Path.home() / ".local/state/opengenesislink/viewer.log"
 KEYS = ("textures_wanted", "textures_resident", "textures_pending",
         "mesh_scene_samples", "mesh_in_flight", "texture_in_flight",
         "texture_mip0_gpu_ids", "texture_reduced_mip_gpu_ids",
-        "mesh_missing_unique", "texture_missing_unique")
+        "mesh_missing_unique", "texture_missing_unique",
+        "texture_coverage_pct")
 
 
 def summarize(raw: str) -> list[str]:
@@ -75,13 +76,27 @@ def summarize(raw: str) -> list[str]:
             s = records[-1]
             fields = re.findall(
                 r"(parallel_peak|parallel_in_flight|disk_hits|network_loads"
-                r"|lod_swaps|mip_swaps|scene_mip_rescue_uploads)"
+                r"|lod_swaps|mip_swaps|scene_mip_rescue_uploads"
+                r"|scene_compaction_requests|scene_compaction_uploads"
+                r"|gpu_staging_waiting|budget_deferrals|gpu_texture_bytes"
+                r"|gpu_texture_byte_budget)"
                 r"=(\d+)", s)
             if fields:
                 output.append(label + ": " +
                               ", ".join(f"{key}={value}" for key, value in fields))
             if "parallel_peak=" not in s:
                 output.append(label + ": Altes Binary ohne Paralleltelemetrie.")
+            if label == "Texturstream":
+                params = dict(fields)
+                used = int(params.get("gpu_texture_bytes", "0"))
+                limit = int(params.get("gpu_texture_byte_budget", "0"))
+                if limit > 0:
+                    output.append("Textur-GPU: " +
+                                  str(round(100 * used / limit)) +
+                                  "% des begrenzten Budgets belegt." +
+                                  (" Nicht geladene Materialien koennen "
+                                   "am GPU-Budget scheitern."
+                                   if used >= limit - limit // 20 else ""))
     # No asset identifiers leave the log parser; only repetition counts.
     mesh_uploads = re.findall(
         r"GetMesh loaded ([0-9a-f-]{36}); requested_lod=([a-z]+)",
@@ -107,6 +122,22 @@ def summarize(raw: str) -> list[str]:
                           ", ".join(f"{key}={value}" for key, value in state))
         else:
             output.append("COF-Bootstrap: Schreibgeschuetzte Nachfrage ausgefuehrt.")
+    readbacks = [line for line in session
+                 if "Avatar COF readback:" in line]
+    if readbacks:
+        last = readbacks[-1]
+        if "read-only request failed" in last:
+            output.append("COF-Readback: gescheitert (Server/CAPS prüfen).")
+        else:
+            parts = re.findall(
+                r"(valid|owner_region_current|returned_folders|"
+                r"cof_version_present|cof_item_records)=(\d+)", last)
+            if parts:
+                output.append("COF-Readback: " +
+                              ", ".join(f"{key}={val}" for key, val in parts))
+                if dict(parts).get("cof_item_records") == "0":
+                    output.append("COF ohne Originalitems: Viewer kann daraus "
+                                  "keine eigene Kleidung oder Bakes ableiten.")
     return output
 
 

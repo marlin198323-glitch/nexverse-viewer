@@ -137,6 +137,66 @@ int main()
            std::chrono::seconds{91})!=0U)return 23;
     scene_cooldown.enter(3U);
     if(scene_cooldown.minimum_mip("scene",now)!=0U)return 24;
+    // Under the live 256 MiB texture pressure prefer one distant
+    // resident, real non-avatar image for transactional downsampling.
+    const std::vector<std::string> far_priority{
+        "self-bake","particle","near","far","tiny"};
+    const std::unordered_map<std::string,std::size_t> gpu_bytes{
+        {"near",16U*1024U*1024U},
+        {"far",8U*1024U*1024U},
+        {"tiny",32U}};
+    const std::unordered_map<std::string,std::uint8_t> gpu_mips{
+        {"near",0U},{"far",1U},{"tiny",2U}};
+    const std::unordered_set<std::string> protected_ids{
+        "self-bake","particle"};
+    const auto chosen=choose_scene_texture_compaction(
+        far_priority,gpu_bytes,gpu_mips,gpu_mips,protected_ids,
+        256U*1024U*1024U,256U*1024U*1024U,53U);
+    if(!chosen||chosen->first!="far"||chosen->second!=2U)
+        return 25;
+    if(choose_scene_texture_compaction(
+        far_priority,gpu_bytes,gpu_mips,gpu_mips,protected_ids,
+        200U*1024U*1024U,256U*1024U*1024U,53U))
+        return 26;
+    if(choose_scene_texture_compaction(
+        far_priority,gpu_bytes,gpu_mips,gpu_mips,protected_ids,
+        256U*1024U*1024U,256U*1024U*1024U,0U))
+        return 27;
+    const std::unordered_set<std::string> all_protected{
+        "self-bake","particle","near","far"};
+    if(choose_scene_texture_compaction(
+        far_priority,gpu_bytes,gpu_mips,gpu_mips,all_protected,
+        256U*1024U*1024U,256U*1024U*1024U,53U))
+        return 28;
+    SceneTextureMipRescueCooldown pressure;
+    pressure.enter(3U);
+    pressure.requested("far",2U,now);
+    if(pressure.pending_count(now)!=1U||
+       pressure.minimum_mip("far",now)!=2U)
+        return 29;
+    if(pressure.confirm_requested("far",1U,now)||
+       pressure.pending_count(now)!=1U)
+        return 30;
+    if(!pressure.confirm_requested("far",2U,now)||
+       pressure.pending_count(now)!=0U||
+       pressure.minimum_mip("far",now)!=2U||
+       pressure.minimum_mip("far",now+std::chrono::seconds{91})!=0U)
+        return 31;
+    pressure.requested("near",1U,now);
+    if(pressure.pending_count(now+std::chrono::seconds{9})!=0U||
+       pressure.minimum_mip("near",now+std::chrono::seconds{9})!=0U)
+        return 32;
+    pressure.enter(4U);
+    if(pressure.pending_count(now)!=0U ||
+       pressure.minimum_mip("far",now)!=0U)
+        return 33;
+    // Bounded reservations must garbage-collect expired slots; otherwise
+    // only eight ever-requested scene assets can be recovered per region.
+    for(int index=0;index<14;++index)
+        pressure.requested("material-"+std::to_string(index),1U,
+            now+std::chrono::seconds{9*index});
+    if(pressure.pending_count(now+std::chrono::seconds{13*9})!=1U)
+        return 34;
     std::cout<<"CPU mip RGBA, alpha, distance hysteresis and byte-budget OK\n";
     return 0;
 }

@@ -6329,6 +6329,9 @@ int Application::run(bool enable_developer_modules)
     assets::TerrainDetailRetry terrain_detail_retry;
     assets::SceneTextureMipRescueCooldown scene_texture_mip_rescue;
     std::size_t scene_texture_rescued_uploads=0U;
+    std::size_t scene_texture_compaction_requests=0U;
+    std::size_t scene_texture_compaction_uploads=0U;
+    std::chrono::steady_clock::time_point last_scene_compaction{};
     assets::AvatarBakeRecheck avatar_bake_recheck;
     assets::AvatarBakeSourceRefresh avatar_bake_source_refresh;
     render::RenderTerrainTextures terrain_cached_textures;
@@ -9360,6 +9363,27 @@ int Application::run(bool enable_developer_modules)
                         firestorm_region_lease.matches(gallery_sync_issued_epoch)&&
                         update.valid&&
                         gallery_sync_dirty_revision==inventory_dirty_revision;
+                    if(gallery_bootstrap_cof_polled_epoch==
+                           gallery_sync_issued_epoch &&
+                       active_session&&login_ui.authenticated)
+                    {
+                        const auto self_cof=protocol::current_outfit_folder_id(
+                            active_session->inventory_skeleton).value_or("");
+                        const auto received_items=update.items.find(self_cof);
+                        const auto received_version=update.versions.find(self_cof);
+                        core::info("Avatar COF readback: valid="+
+                            std::to_string(update.valid?1:0)+
+                            " owner_region_current="+
+                            std::to_string(current_caps_reply?1:0)+
+                            " returned_folders="+
+                            std::to_string(update.returned_folders)+
+                            " cof_version_present="+
+                            std::to_string(received_version!=update.versions.end()?1:0)+
+                            " cof_item_records="+
+                            std::to_string(received_items!=update.items.end()
+                                ?received_items->second.size():0U)+
+                            "; no inventory UUIDs logged");
+                    }
                     if(gallery_verify_awaiting&&
                        gallery_sync_request_serial>=gallery_verify_expected_serial)
                     {
@@ -9461,6 +9485,10 @@ int Application::run(bool enable_developer_modules)
                         gallery_verify_status=
                             "COF-Pruefung fehlgeschlagen: CAPS-Antwort fehlt";
                     }
+                    if(gallery_bootstrap_cof_polled_epoch==
+                           gallery_sync_issued_epoch)
+                        core::warning("Avatar COF readback: read-only request "
+                            "failed; server inventory evidence unavailable");
                     core::warning("Firestorm inventory read-only refresh failed");
                 }
             }
@@ -11242,6 +11270,9 @@ int Application::run(bool enable_developer_modules)
                 texture_lod_dwell.reset();
                 scene_texture_mip_rescue.enter(material_scope.epoch());
                 scene_texture_rescued_uploads=0U;
+                scene_texture_compaction_requests=0U;
+                scene_texture_compaction_uploads=0U;
+                last_scene_compaction={};
                 texture_gpu_bytes.clear();
                 texture_gpu_used_bytes = 0U;
                 texture_budget_deferred_ids.clear();
@@ -12892,6 +12923,16 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_mip;
                         object_texture_loaded_ids.insert(
                             object_texture_loading_id);
+                        if(!rescued_scene_mip &&
+                           scene_texture_mip_rescue.confirm_requested(
+                               object_texture_loading_id,
+                               object_texture_loading_mip,
+                               gpu_submission_end))
+                        {
+                            ++scene_texture_compaction_uploads;
+                            core::info("GetTexture scene GPU compaction committed; "
+                                "transactional old handle replaced");
+                        }
                         if(rescued_scene_mip)
                         {
                             scene_texture_mip_rescue.admitted(
@@ -13149,15 +13190,18 @@ int Application::run(bool enable_developer_modules)
                     render_agent.position.y,render_agent.position.z,
                     texture_desired_mips,active_particles);
                 scene_texture_mip_rescue.enter(material_scope.epoch());
-                for(auto& [id,mip]:planned_mips)
-                    mip=std::max(mip,
-                        scene_texture_mip_rescue.minimum_mip(
-                            id,texture_plan_now));
                 texture_lod_dwell.prune(planned_mips);
                 for (auto& [id,level]:planned_mips)
                     if (!active_particles.contains(id))
                         level=texture_lod_dwell.resolve(
                             id,level,texture_gpu_mips,texture_plan_now);
+                // Budget-driven accepted/requested floor runs AFTER dwell:
+                // otherwise the old resident mip overrides it and the
+                // compaction loops through the same full-res texture.
+                for(auto& [id,mip]:planned_mips)
+                    mip=std::max(mip,
+                        scene_texture_mip_rescue.minimum_mip(
+                            id,texture_plan_now));
                 // Current self Head/Upper/Lower get full-resolution
                 // preference. Never bypass shared VRAM admission or retry.
                 // Never assume the authenticated self avatar is the
@@ -13218,6 +13262,53 @@ int Application::run(bool enable_developer_modules)
                     object_texture_loaded_ids, max_object_texture_assets,
                     avatar_body_priority);
                 texture_residency = std::move(updated_residency);
+                // The previous live session reached its full 256 MiB
+                // texture byte budget with 56 unique scene textures still
+                // missing. At >95% occupancy, request one lower mip for a
+                // distant cached real scene image, freeing VRAM for missing
+                // materials. No direct GPU mutations or invented pixels.
+                const auto current_texture_budget=
+                    assets::effective_gpu_family_budget(
+                        texture_gpu_budget_bytes,shared_gpu_budget_bytes,
+                        mesh_gpu_estimated_bytes);
+                const std::size_t missing_scene_textures=
+                    std::count_if(texture_residency.desired_ids.begin(),
+                        texture_residency.desired_ids.end(),
+                        [&](const std::string& id)
+                        {
+                            // A 404 with a ten-minute retry backoff cannot
+                            // be repaired by sacrificing real GPU quality.
+                            // Only genuinely eligible missing textures
+                            // justify compaction.
+                            return !object_texture_loaded_ids.contains(id)&&
+                                object_texture_retries.ready(
+                                    id,texture_plan_now);
+                        });
+                if(scene_texture_mip_rescue.pending_count(texture_plan_now)==0U&&
+                   (last_scene_compaction.time_since_epoch().count()==0||
+                    texture_plan_now-last_scene_compaction>=
+                        std::chrono::seconds{2}))
+                {
+                    std::unordered_set<std::string> protected_ids{
+                        emitter_texture_ids.begin(),emitter_texture_ids.end()};
+                    protected_ids.insert(avatar_body_priority.begin(),
+                                         avatar_body_priority.end());
+                    if(const auto compact=assets::choose_scene_texture_compaction(
+                        texture_residency.preferred_ids,texture_gpu_bytes,
+                        texture_gpu_mips,texture_desired_mips,
+                        protected_ids,texture_gpu_used_bytes,
+                        current_texture_budget,missing_scene_textures))
+                    {
+                        scene_texture_mip_rescue.requested(
+                            compact->first,compact->second,texture_plan_now);
+                        texture_desired_mips[compact->first]=compact->second;
+                        last_scene_compaction=texture_plan_now;
+                        ++scene_texture_compaction_requests;
+                        core::info("GetTexture scene GPU compaction queued; "
+                            "real cached texture, one mip lower; "
+                            "old GPU handle preserved until admission");
+                    }
+                }
                 texture_gpu_staging_recovery.synchronize(
                     texture_budget_deferred_ids,texture_residency.desired_ids);
                 texture_priority_feedback.observe(texture_residency.desired_ids);
@@ -13513,6 +13604,10 @@ int Application::run(bool enable_developer_modules)
                     std::to_string(texture_gpu_budget_bytes) +
                     " scene_mip_rescue_uploads=" +
                     std::to_string(scene_texture_rescued_uploads) +
+                    " scene_compaction_requests=" +
+                    std::to_string(scene_texture_compaction_requests) +
+                    " scene_compaction_uploads=" +
+                    std::to_string(scene_texture_compaction_uploads) +
                     " scene_mip_rescue_cooldowns=" +
                     std::to_string(scene_texture_mip_rescue.count()) +
                     " gpu_resident=" +
