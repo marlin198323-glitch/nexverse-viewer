@@ -21,6 +21,9 @@ public:
     [[nodiscard]] static std::uint64_t default_budget_bytes() noexcept;
     explicit TextureDiskCache(std::filesystem::path directory,
         std::uint64_t budget_bytes = default_budget_bytes());
+    // Cheap metadata-only test. Actual decoder/checksum checks are
+    // STILL enforced by load(). Never return the path or a secret URI.
+    [[nodiscard]] bool contains(std::string_view uuid) const noexcept;
     [[nodiscard]] std::optional<ImageRgba8> load(std::string_view uuid,
         AssetCacheLookup* status = nullptr) const;
     [[nodiscard]] bool store(std::string_view uuid, const ImageRgba8& image) const;

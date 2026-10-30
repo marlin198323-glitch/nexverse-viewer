@@ -112,6 +112,14 @@ std::filesystem::path TextureDiskCache::default_directory()
             "opengenesislink"/"textures-v1";
     return {};
 }
+bool TextureDiskCache::contains(std::string_view id) const noexcept
+{
+    if(!safe_uuid(id)||directory_.empty())return false;
+    std::error_code error;
+    const auto file=file_for(directory_,id);
+    const auto size=std::filesystem::file_size(file,error);
+    return !error && size>=24U && size<=max_image_bytes+24U;
+}
 std::optional<ImageRgba8> TextureDiskCache::load(
     std::string_view id,AssetCacheLookup* status) const
 {

@@ -95,17 +95,20 @@ std::unordered_map<std::string,std::uint8_t> plan_texture_mip_levels(
     levels.reserve(nearest.size()+particle_ids.size());
     for (const auto& [id,dist]:nearest)
     {
-        std::uint8_t level = dist < 24.0 ? 0U :
-                             dist < 64.0 ? 1U :
-                             dist < 128.0 ? 2U : 3U;
+        // Prefer original detail for nearby streets/building faces.
+        // Existing GPU byte budgets and actual driver admission still
+        // cap memory use on small as well as large graphics cards.
+        std::uint8_t level = dist < 48.0 ? 0U :
+                             dist < 96.0 ? 1U :
+                             dist < 176.0 ? 2U : 3U;
         if (const auto it = previous.find(id);it != previous.end())
         {
             switch(it->second)
             {
-            case 0U: if (dist < 29.0) level=0U;break;
-            case 1U: if (dist >= 19.0 && dist < 77.0) level=1U;break;
-            case 2U: if (dist >= 51.0 && dist < 154.0) level=2U;break;
-            case 3U: if (dist >= 102.0) level=3U;break;
+            case 0U: if (dist < 56.0) level=0U;break;
+            case 1U: if (dist >= 40.0 && dist < 112.0) level=1U;break;
+            case 2U: if (dist >= 82.0 && dist < 200.0) level=2U;break;
+            case 3U: if (dist >= 160.0) level=3U;break;
             default: break;
             }
         }

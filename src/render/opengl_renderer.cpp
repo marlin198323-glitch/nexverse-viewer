@@ -4,6 +4,7 @@
  */
 
 #include "nexverse/render/renderer.hpp"
+#include "nexverse/render/sky_projection.hpp"
 #include "nexverse/assets/mesh_residency_target.hpp"
 #include "nexverse/render/scene_forward_visibility.hpp"
 #include "nexverse/render/avatar_body_uv_evidence.hpp"
@@ -2389,18 +2390,26 @@ uniform vec3 uHorizon;
 uniform vec3 uZenith;
 uniform vec3 uSunColor;
 uniform vec2 uSunPosition;
+uniform float uCameraPitch;
+uniform float uVerticalFov;
+uniform float uSunVisible;
 uniform float uGamma;
 uniform float uHazeDensity;
 
 void main()
 {
-    float y = clamp(vUv.y, 0.0, 1.0);
+    // Relate the horizon to camera elevation and actual vertical FOV;
+    // the previous fixed screen gradient looked identical while looking
+    // upward/downward and placed the sun at a fictitious screen position.
+    float elevation = uCameraPitch +
+        (vUv.y - 0.5) * max(uVerticalFov, 0.1);
+    float y = clamp(elevation / max(uVerticalFov, 0.1) + 0.40, 0.0, 1.0);
     float gradientPower = clamp(0.62 + uHazeDensity * 0.20, 0.55, 1.15);
     vec3 sky = mix(uHorizon, uZenith, pow(y, gradientPower));
 
     float sunDist = distance(vUv, uSunPosition);
-    float sun = 1.0 - smoothstep(0.018, 0.070, sunDist);
-    float glow = 1.0 - smoothstep(0.05, 0.24, sunDist);
+    float sun = uSunVisible * (1.0 - smoothstep(0.013, 0.029, sunDist));
+    float glow = uSunVisible * (1.0 - smoothstep(0.025, 0.19, sunDist));
     sky += uSunColor * sun * 0.85;
     sky += uSunColor * glow * 0.10;
 
@@ -3720,14 +3729,9 @@ public:
             ? env.sunlight_color
             : RenderVec3{1.00f, 0.84f, 0.55f};
 
-        const float sun_x = std::clamp(
-            0.5f + 0.42f * std::cos(env.east_angle),
-            0.06f,
-            0.94f);
-        const float sun_y = std::clamp(
-            0.5f + 0.42f * std::sin(env.sun_angle),
-            0.06f,
-            0.94f);
+        const float sky_aspect=static_cast<float>(width_)/
+            static_cast<float>(height_>0?height_:1);
+        const auto sky=project_environment_sun(env,camera_,sky_aspect);
 
         glDisable(GL_DEPTH_TEST);
         glUseProgram(sky_program_);
@@ -3751,8 +3755,15 @@ public:
             sun_color.z);
         glUniform2f(
             glGetUniformLocation(sky_program_, "uSunPosition"),
-            sun_x,
-            sun_y);
+            sky.x,
+            sky.y);
+        glUniform1f(glGetUniformLocation(sky_program_, "uSunVisible"),
+            sky.sun_in_view?1.0f:0.0f);
+        glUniform1f(glGetUniformLocation(sky_program_, "uCameraPitch"),
+            sky.camera_pitch);
+        glUniform1f(glGetUniformLocation(sky_program_, "uVerticalFov"),
+            camera_.vertical_fov_degrees*
+            3.14159265358979323846f/180.0f);
         glUniform1f(
             glGetUniformLocation(sky_program_, "uGamma"),
             env.available ? env.gamma : 1.0f);

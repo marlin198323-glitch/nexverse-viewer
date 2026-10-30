@@ -25,7 +25,9 @@ int main()
         TextureDiskCache cache{root,128U};
         AssetCacheLookup status=AssetCacheLookup::not_checked;
         if(cache.load(a,&status) || status!=AssetCacheLookup::miss)error=10;
+        if(cache.contains(a)||cache.contains("../escape"))error=34;
         if(!error && !cache.store(a,red)) error=1;
+        if(!error && !cache.contains(a))error=35;
         else if(!error)
         {
             const auto got=cache.load(a,&status);

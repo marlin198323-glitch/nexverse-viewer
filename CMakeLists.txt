@@ -185,6 +185,7 @@ target_compile_definitions(nexverse-render PUBLIC GLFW_INCLUDE_NONE)
 add_library(nexverse-ui
     src/ui/avatar_diagnostic_report.cpp
     src/ui/brand_icon.cpp
+    src/ui/login_keyring.cpp
     src/ui/ui_renderer.cpp
     src/ui/viewer_shell_render.cpp
     src/ui/welcome_page.cpp
@@ -212,6 +213,15 @@ target_link_libraries(nexverse-ui PUBLIC
 )
 
 target_link_libraries(nexverse-ui PRIVATE Threads::Threads)
+# Linux desktop Secret Service / GNOME Keyring optional: no plaintext
+# password fallback on platforms without OS-protected credential stores.
+if(UNIX AND NOT APPLE)
+    pkg_check_modules(OGL_LIBSECRET QUIET IMPORTED_TARGET libsecret-1)
+    if(OGL_LIBSECRET_FOUND)
+        target_compile_definitions(nexverse-ui PRIVATE NEXVERSE_HAVE_LIBSECRET=1)
+        target_link_libraries(nexverse-ui PRIVATE PkgConfig::OGL_LIBSECRET)
+    endif()
+endif()
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(nexverse-ui PRIVATE PkgConfig::WEBKITGTK X11::X11)

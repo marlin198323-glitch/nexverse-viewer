@@ -142,6 +142,7 @@
 #include "nexverse/world/simulator_scene_validity.hpp"
 #include "nexverse/ui/welcome_page.hpp"
 #include "nexverse/ui/neon_login_layout.hpp"
+#include "nexverse/ui/login_keyring.hpp"
 #include "nexverse/ui/notice_clipping.hpp"
 
 #include <glad/glad.h>
@@ -450,6 +451,8 @@ struct LoginUiState
     bool busy = false;
     bool authenticated = false;
     bool show_password = false; // Local UI visibility only, never saved.
+    bool remember_login=false; // Opt-in; OS protected keyring only.
+    bool remembered_login_loaded=false;
     // Real NexVerse versioned ToS challenge. No automatic acceptance.
     nexverse::protocol::LoginTosConsent tos;
     nexverse::ui::TosAction tos_focus=nexverse::ui::TosAction::open_document;
@@ -1780,10 +1783,26 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int)
     double mouse_x=0.0,mouse_y=0.0;
     glfwGetCursorPos(window,&mouse_x,&mouse_y);
     LoginUiState& state=*context->login;
-    if(layout.password_eye.contains(mouse_x,mouse_y) ||
-       layout.remember_avatar.contains(mouse_x,mouse_y))
+    if(layout.password_eye.contains(mouse_x,mouse_y))
     {
         state.show_password=!state.show_password;
+        return;
+    }
+    if(layout.remember_avatar.contains(mouse_x,mouse_y))
+    {
+        if(nexverse::ui::login_keyring_supported())
+        {
+            state.remember_login=!state.remember_login;
+            if(!state.remember_login)
+            {
+                // Explicit opt-out revokes both saved fields from the
+                // protected OS keyring; no plaintext fallback.
+                const bool revoked=nexverse::ui::clear_saved_ogl_login();
+                state.notice=revoked
+                    ?"Gespeicherten Login aus Schlüsselbund entfernt."
+                    :"Schlüsselbund nicht verfügbar; gespeicherten Login prüfen.";
+            }
+        }
         return;
     }
     if(layout.username.contains(mouse_x,mouse_y))
@@ -3912,10 +3931,12 @@ void render_shell(
         with_alpha(theme::blue,0.14f),5.0f*sc);
     renderer.text(l.remember_avatar.x+4.0f*sc,
         l.remember_avatar.y+2.0f*sc,
-        8.0f*sc,login.show_password?"X":"",theme::cyan);
+        8.0f*sc,login.remember_login?"X":"",theme::cyan);
     renderer.text(l.remember_avatar.x+19.0f*sc,
         l.remember_avatar.y+3.0f*sc,
-        9.0f*sc,"Passwort zeigen",theme::text_muted);
+        9.0f*sc,nexverse::ui::login_keyring_supported()
+            ?"Login merken":"Kein Schlüsselbund",
+        theme::text_muted);
     const std::string neon_version=std::string{nexverse::core::version()};
     renderer.text(w-renderer.text_width(9.0f*sc,neon_version)-28.0f*sc,
         l.footer_y-14.0f*sc,8.0f*sc,neon_version,theme::text_muted);
@@ -4641,6 +4662,12 @@ int Application::run(bool enable_developer_modules)
     glfwGetWindowSize(window, &window_width, &window_height);
 
     LoginUiState login_ui;
+    // Read saved credentials off the GUI thread; never auto-login.
+    auto stored_login_future=std::async(std::launch::async,[]()
+    {
+        return ui::load_saved_ogl_login();
+    });
+    std::string pending_login_password_for_keyring;
     ui::ViewerShellState viewer_shell;
     bool avatar_report_save_requested=false;
     bool loading_diagnostics_open=false;
@@ -7067,6 +7094,22 @@ int Application::run(bool enable_developer_modules)
             }
 
             // Escape callback closes the Experience floater before quitting.
+            if(!login_ui.remembered_login_loaded &&
+               stored_login_future.valid() &&
+               stored_login_future.wait_for(std::chrono::seconds{0})==
+                   std::future_status::ready)
+            {
+                login_ui.remembered_login_loaded=true;
+                const auto saved=stored_login_future.get();
+                if(saved && login_ui.username.empty()&&login_ui.password.empty()&&
+                   !login_ui.busy&&!login_ui.authenticated)
+                {
+                    login_ui.username=saved->avatar;
+                    login_ui.password=saved->password;
+                    login_ui.remember_login=true;
+                    login_ui.notice="Login aus System-Schlüsselbund geladen.";
+                }
+            }
             if (login_ui.busy &&
                 login_future.valid() &&
                 login_future.wait_for(std::chrono::milliseconds{0}) == std::future_status::ready)
@@ -7099,6 +7142,20 @@ int Application::run(bool enable_developer_modules)
                             ? "OpenSim-Anmeldung erfolgreich."
                             : result.message;
                         login_ui.password.clear();
+                        if(login_ui.remember_login &&
+                           !pending_login_password_for_keyring.empty())
+                        {
+                            // Store only following authenticated success,
+                            // never plain config or log; if locked/failing
+                            // give a truthful status without leaking data.
+                            const bool saved=ui::save_ogl_login(
+                                login_ui.username,pending_login_password_for_keyring);
+                            if(!saved)login_ui.notice=
+                                "Angemeldet; Schlüsselbund konnte Login nicht speichern.";
+                        }
+                        std::fill(pending_login_password_for_keyring.begin(),
+                                  pending_login_password_for_keyring.end(),'\0');
+                        pending_login_password_for_keyring.clear();
                         core::info("OpenSim login succeeded; simulator session established");
 
                         const std::uint64_t region_handle =
@@ -7943,6 +8000,9 @@ int Application::run(bool enable_developer_modules)
                     login_ui.notice = "Anmeldevorgang konnte nicht abgeschlossen werden.";
                     core::error(std::string{"OpenSim login worker failed: "} + error.what());
                 }
+                std::fill(pending_login_password_for_keyring.begin(),
+                          pending_login_password_for_keyring.end(),'\0');
+                pending_login_password_for_keyring.clear();
                 pending_login_avatar.clear();
                 pending_login_uri.clear();
             }
@@ -7987,6 +8047,10 @@ int Application::run(bool enable_developer_modules)
                         }
                         credentials.password = std::move(login_ui.password);
                         login_ui.password.clear();
+                        if(login_ui.remember_login)
+                            pending_login_password_for_keyring=credentials.password;
+                        else
+                            pending_login_password_for_keyring.clear();
                         credentials.start = "last";
                         // Only the user's actual click, scoped to this
                         // avatar/grid, authorizes a future true value.
@@ -13030,10 +13094,29 @@ int Application::run(bool enable_developer_modules)
                         ? level == 0U : level == target->second)
                         satisfied.insert(id);
                 }
-                const auto request_choice=texture_request_fairness.choose(
-                    texture_residency.preferred_ids,satisfied,
-                    texture_budget_deferred_ids,object_texture_retries,
-                    texture_plan_now);
+                // During warm-start, prefer locally cached textures
+                // for two of every three requests. The third dispatch
+                // always uses the normal global priority list so remote
+                // and never-seen textures cannot starve. Just metadata
+                // checks; verified decode and region epoch remain in
+                // the existing asynchronous TextureCachedRequest worker.
+                std::optional<assets::AssetRequestChoice> request_choice;
+                if(texture_request_fairness.dispatched_count()%3U!=2U)
+                {
+                    const assets::TextureDiskCache disk{
+                        assets::TextureDiskCache::default_directory()};
+                    request_choice=texture_request_fairness.choose(
+                        texture_residency.preferred_ids,satisfied,
+                        texture_budget_deferred_ids,object_texture_retries,
+                        texture_plan_now,{},
+                        [&](const std::string& id)
+                        {return disk.contains(id);});
+                }
+                if(!request_choice)
+                    request_choice=texture_request_fairness.choose(
+                        texture_residency.preferred_ids,satisfied,
+                        texture_budget_deferred_ids,object_texture_retries,
+                        texture_plan_now);
                 if (request_choice)
                 {
                     const std::string& texture_id=request_choice->id;
