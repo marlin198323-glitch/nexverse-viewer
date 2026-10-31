@@ -179,6 +179,11 @@ def summarize(raw: str) -> list[str]:
             in line for line in session),
         "originals_rejected":sum("Avatar original wearable rejected:"
             in line for line in session),
+        "session_ram_hits":sum("Avatar original wearable RAM cache hit:"
+            in line for line in session),
+        "unsupported_cap_methods":sum(
+            "Avatar ViewerAsset method unsupported:" in line
+            for line in session),
     }
     cap = [line for line in session if
            "Avatar original asset transports:" in line]

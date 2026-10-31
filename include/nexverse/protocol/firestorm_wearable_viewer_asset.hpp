@@ -42,6 +42,12 @@ struct WearableViewerAssetResult
     std::shared_ptr<const assets::FirestormWearableAsset> asset;
     std::string error;
     bool capability_attempted=false;
+    long http_status=0L;
+    [[nodiscard]] bool method_unsupported() const noexcept
+    {
+        return capability_attempted &&
+            (http_status==405L||http_status==501L);
+    }
 };
 [[nodiscard]] inline WearableViewerAssetResult
 fetch_wearable_viewer_asset(
@@ -60,6 +66,7 @@ fetch_wearable_viewer_asset(
     const auto response=transport->get(*url,
         assets::max_firestorm_wearable_bytes,
         std::chrono::seconds{3},std::chrono::seconds{10});
+    result.http_status=response.status_code;
     if(!lease.matches(epoch))
     {result.error="stale region";return result;}
     if(!response.ok())

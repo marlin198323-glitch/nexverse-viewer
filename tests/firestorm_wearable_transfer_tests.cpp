@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. */
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/protocol/firestorm_wearable_viewer_asset.hpp"
+#include "nexverse/protocol/wearable_original_session_cache.hpp"
 #include <cassert>
 #include <iostream>
 using namespace nexverse::protocol;
@@ -184,6 +185,16 @@ int main()
     if(missing.asset||!missing.capability_attempted ||
        missing.error.find("HTTP failure")==std::string::npos)
         return 25;
+    http->code=405;
+    const auto unsupported=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease);
+    if(!unsupported.method_unsupported()||unsupported.http_status!=405L)
+        return 40;
+    http->code=501;
+    if(!fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease).method_unsupported())return 41;
     http->code=200;http->fixture="invalid wearable binary";
     if(fetch_wearable_viewer_asset(
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
@@ -193,6 +204,65 @@ int main()
     if(fetch_wearable_viewer_asset(
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
         epoch,lease).capability_attempted)return 27;
+    // Cache only parsed, independently owner/inventory verified originals.
+    WearableOriginalSessionCache original_cache;
+    OutfitInventoryItem verified_item{
+        ASSET,OTH,"White Shirt",5,18,std::uint32_t{4U}};
+    if(!original_cache.insert(ASSET,TID,verified_item,*via_cap.asset)||
+       original_cache.size()!=1U||
+       !original_cache.find(ASSET,TID,verified_item))
+        return 28;
+    if(original_cache.find(TX,TID,verified_item)||
+       original_cache.find(ASSET,TX,verified_item))
+        return 29;
+    auto changed=verified_item;
+    changed.flags=5U;
+    if(original_cache.find(ASSET,TID,changed)||
+       original_cache.insert(ASSET,TID,changed,*via_cap.asset))
+        return 30;
+    changed=verified_item;
+    changed.item_id=TX;
+    if(original_cache.find(ASSET,TID,changed))return 31;
+    changed=verified_item;
+    changed.asset_id=ASSET;
+    if(original_cache.find(ASSET,TID,changed))return 32;
+    changed=verified_item;
+    changed.asset_type=13;
+    if(original_cache.find(ASSET,TID,changed)||
+       original_cache.insert(ASSET,TID,changed,*via_cap.asset))
+        return 33;
+    changed=verified_item;
+    changed.inventory_type=6;
+    if(original_cache.find(ASSET,TID,changed))return 34;
+    changed=verified_item;
+    changed.item_id=NIL;
+    if(original_cache.insert(ASSET,TID,changed,*via_cap.asset))
+        return 35;
+    changed=verified_item;
+    changed.asset_id=TX;
+    if(!original_cache.insert(ASSET,TID,changed,*via_cap.asset)||
+       original_cache.find(ASSET,TID,verified_item)||
+       !original_cache.find(ASSET,TID,changed)||
+       original_cache.size()!=1U)
+        return 36;
+    // Oldest authenticated entries are evicted rather than growing
+    // without a bound. None are persisted to disk.
+    for(unsigned i=1U;i<=24U;++i)
+    {
+        auto entry=verified_item;
+        entry.item_id="99999999-9999-9999-9999-9999999999";
+        const char hex[]="0123456789abcdef";
+        entry.item_id+=hex[(i>>4U)&15U];
+        entry.item_id+=hex[i&15U];
+        if(!original_cache.insert(ASSET,TID,entry,*via_cap.asset)||
+           original_cache.size()>WearableOriginalSessionCache::max_entries)
+            return 37;
+    }
+    if(original_cache.size()!=WearableOriginalSessionCache::max_entries)
+        return 38;
+    original_cache.clear();
+    if(original_cache.size()!=0U||
+       original_cache.find(ASSET,TID,verified_item))return 39;
     std::cout<<"Wearable LLUDP Low153 real Clothing/Bodypart transfer multi-packet, owner type/transfer/epoch isolation and malformed/timeout failure OK\n";
     return 0;
 }
