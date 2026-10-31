@@ -59,6 +59,10 @@ int main()
         return 6;
     auto absent=decode_wearable_transfer_info(info(TID,ASSET,13,-2,0));
     if(!absent||absent->status!=-2)return 7;
+    auto refused=decode_wearable_transfer_info(info(TID,ASSET,13,-1,0));
+    if(!refused||refused->status!=-1 ||
+       decode_wearable_transfer_info(info(TID,ASSET,13,-17,0)))
+        return 44;
     WearableTransferInbox inbox;inbox.reset(7U);
     if(inbox.begin(7U,WearableAssetRequest{ASSET,TID,20})||
        inbox.begin(7U,WearableAssetRequest{ASSET,NIL,5})||
@@ -91,6 +95,7 @@ int main()
     inbox.on_packet(first);
     auto finished=inbox.pop();
     if(!finished||!finished->asset||
+       finished->failure!=WearableTransferFailure::none||
        finished->asset->type!=4||
        finished->asset->name!="White Shirt"||
        finished->asset->textures.at(1)!=TX||
@@ -102,26 +107,51 @@ int main()
     inbox.on_info(*decode_wearable_transfer_info(info(TID,ASSET,13,0,10)));
     finished=inbox.pop();
     if(!finished||finished->asset||
-       finished->error.find("mismatch")==std::string::npos)return 12;
+       finished->error.find("mismatch")==std::string::npos||
+       finished->failure!=
+           WearableTransferFailure::transfer_metadata_mismatch)return 12;
     inbox.reset(9U);
     if(!inbox.begin(9U,WearableAssetRequest{ASSET,TID,5}))return 13;
     inbox.on_packet(part(0U,true,"bad"));
     inbox.on_info(*decode_wearable_transfer_info(info(TID,ASSET,5,0,3)));
     finished=inbox.pop();
-    if(!finished||finished->asset||finished->error.empty())return 14;
+    if(!finished||finished->asset||finished->error.empty()||
+       finished->failure!=WearableTransferFailure::wearable_parse_rejected)
+        return 14;
     inbox.reset(10U);
     if(!inbox.begin(10U,WearableAssetRequest{ASSET,TID,5}))return 15;
     inbox.on_packet(part(0U,false,"abc"));
     inbox.on_packet(part(0U,false,"abcd"));
     finished=inbox.pop();
-    if(!finished||finished->asset)return 16;
+    if(!finished||finished->asset||
+       finished->failure!=WearableTransferFailure::conflicting_packet)
+        return 16;
     inbox.reset(11U);
     if(!inbox.begin(11U,WearableAssetRequest{ASSET,TID,5}))return 17;
     inbox.on_info(*decode_wearable_transfer_info(info(TID,ASSET,5,-2,0)));
     finished=inbox.pop();
-    if(!finished||finished->asset||finished->error.empty())return 18;
+    if(!finished||finished->asset||finished->error.empty()||
+       finished->failure!=WearableTransferFailure::simulator_absent ||
+       wearable_transfer_failure_label(finished->failure)!=
+           "simulator_absent")return 18;
     inbox.reset(12U);
     if(inbox.pop()||inbox.pending_count()!=0U)return 19;
+    if(!inbox.begin(12U,WearableAssetRequest{ASSET,TID,13}))
+        return 45;
+    inbox.on_info(*refused);
+    finished=inbox.pop();
+    if(!finished||finished->asset ||
+       finished->failure!=WearableTransferFailure::simulator_refused)
+        return 46;
+    inbox.reset(13U);
+    if(!inbox.begin(13U,WearableAssetRequest{ASSET,TID,5}))
+        return 47;
+    inbox.on_packet(part(0U,true,"abcd"));
+    inbox.on_info(*decode_wearable_transfer_info(info(TID,ASSET,5,0,5)));
+    finished=inbox.pop();
+    if(!finished||finished->asset||
+       finished->failure!=WearableTransferFailure::payload_size_mismatch)
+        return 48;
     // OpenSim ViewerAsset authentic original wearable GET, not a bake.
     struct TestViewerAsset : nexverse::net::IHttpTransport
     {
@@ -169,6 +199,7 @@ int main()
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
         epoch,lease);
     if(!via_cap.asset||via_cap.asset->type!=4 ||
+       via_cap.failure!=WearableViewerAssetFailure::none||
        via_cap.asset->name!="White Shirt"||
        via_cap.epoch!=epoch||via_cap.asset_id!=ASSET||
        !via_cap.capability_attempted||http->seen!=*url)return 23;
@@ -176,6 +207,8 @@ int main()
         http,"https://caps.test/asset",ASSET,asset_type_bodypart,
         epoch,lease);
     if(mismatched_category.asset||
+       mismatched_category.failure!=
+           WearableViewerAssetFailure::category_mismatch||
        mismatched_category.error.find("category")==std::string::npos)
         return 24;
     http->code=404;
@@ -183,22 +216,42 @@ int main()
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
         epoch,lease);
     if(missing.asset||!missing.capability_attempted ||
+       missing.failure!=WearableViewerAssetFailure::http_not_found||
+       wearable_viewer_asset_failure_label(missing.failure)!=
+           "http_not_found"||
        missing.error.find("HTTP failure")==std::string::npos)
         return 25;
+    http->code=403;
+    const auto forbidden=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease);
+    if(forbidden.failure!=WearableViewerAssetFailure::http_forbidden)
+        return 42;
+    http->code=500;
+    const auto server_error=fetch_wearable_viewer_asset(
+        http,"https://caps.test/asset",ASSET,asset_type_clothing,
+        epoch,lease);
+    if(server_error.failure!=
+        WearableViewerAssetFailure::http_server_error)return 43;
     http->code=405;
     const auto unsupported=fetch_wearable_viewer_asset(
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
         epoch,lease);
-    if(!unsupported.method_unsupported()||unsupported.http_status!=405L)
+    if(!unsupported.method_unsupported()||unsupported.http_status!=405L||
+       unsupported.failure!=
+           WearableViewerAssetFailure::http_method_unsupported)
         return 40;
     http->code=501;
     if(!fetch_wearable_viewer_asset(
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
         epoch,lease).method_unsupported())return 41;
     http->code=200;http->fixture="invalid wearable binary";
-    if(fetch_wearable_viewer_asset(
+    const auto rejected=fetch_wearable_viewer_asset(
         http,"https://caps.test/asset",ASSET,asset_type_clothing,
-        epoch,lease).asset)return 26;
+        epoch,lease);
+    if(rejected.asset||
+       rejected.failure!=WearableViewerAssetFailure::parser_rejected)
+        return 26;
     const auto next_epoch=lease.enter(2U,2U,"https://caps.test/new");
     (void)next_epoch;
     if(fetch_wearable_viewer_asset(

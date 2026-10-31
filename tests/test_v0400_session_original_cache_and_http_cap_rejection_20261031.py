@@ -88,7 +88,8 @@ class OriginalSessionCacheContracts(unittest.TestCase):
   self.assertNotIn("AgentSetAppearance(",x)
  def test_http_unsupported_methods_are_specific(self):
   h=read("include/nexverse/protocol/firestorm_wearable_viewer_asset.hpp")
-  self.assertIn("http_status==405L||http_status==501L",h)
+  self.assertIn("status==405L||status==501L",h)
+  self.assertIn("failure==WearableViewerAssetFailure::http_method_unsupported",h)
   self.assertIn("result.http_status=response.status_code",h)
   self.assertNotIn("http_status==404L",h)
  def test_only_method_rejections_disable_cap(self):

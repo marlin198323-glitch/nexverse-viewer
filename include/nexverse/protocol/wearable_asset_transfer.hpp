@@ -55,10 +55,39 @@ decode_wearable_transfer_info(std::span<const std::uint8_t> bytes)
     const auto size=transfer_detail::i32(bytes,28U);
     if(!((status==0&&size>0&&
            static_cast<std::size_t>(size)<=assets::max_firestorm_wearable_bytes)||
-         (status==-2&&size==0)))return std::nullopt;
+         (status<0&&status>=-16&&size==0)))
+        return std::nullopt;
     return WearableTransferInfo{
         transfer_detail::uuid(bytes.first(16U)),
         transfer_detail::uuid(bytes.subspan(34U,16U)),status,size,type};
+}
+enum class WearableTransferFailure
+{
+    none, simulator_absent, simulator_refused, transfer_metadata_mismatch,
+    transfer_info_invalid, packet_budget, conflicting_packet,
+    packet_after_final, conflicting_final, payload_size_mismatch,
+    wearable_parse_rejected
+};
+// Only static labels reach logs; never log raw asset bytes, transfer IDs,
+// inventory UUIDs, or a server-controlled error body.
+[[nodiscard]] inline constexpr std::string_view
+wearable_transfer_failure_label(WearableTransferFailure code) noexcept
+{
+    switch(code)
+    {
+    case WearableTransferFailure::none:return "none";
+    case WearableTransferFailure::simulator_absent:return "simulator_absent";
+    case WearableTransferFailure::simulator_refused:return "simulator_refused";
+    case WearableTransferFailure::transfer_metadata_mismatch:return "metadata_mismatch";
+    case WearableTransferFailure::transfer_info_invalid:return "info_invalid";
+    case WearableTransferFailure::packet_budget:return "packet_budget";
+    case WearableTransferFailure::conflicting_packet:return "conflicting_packet";
+    case WearableTransferFailure::packet_after_final:return "packet_after_final";
+    case WearableTransferFailure::conflicting_final:return "conflicting_final";
+    case WearableTransferFailure::payload_size_mismatch:return "payload_size_mismatch";
+    case WearableTransferFailure::wearable_parse_rejected:return "wearable_parse_rejected";
+    }
+    return "unknown";
 }
 class WearableTransferInbox
 {
@@ -68,6 +97,7 @@ public:
         std::string asset_id;
         std::shared_ptr<const assets::FirestormWearableAsset> asset;
         std::string error;
+        WearableTransferFailure failure=WearableTransferFailure::none;
     };
     void reset(std::uint64_t epoch)
     {
@@ -109,16 +139,26 @@ public:
         if(info.asset_id!=found->second.asset_id ||
            info.type!=found->second.asset_type)
         {
-            reject(found,"TransferInfo asset/type mismatch");return;
+            reject(found,"TransferInfo asset/type mismatch",
+                WearableTransferFailure::transfer_metadata_mismatch);return;
         }
         if(info.status==-2)
         {
-            reject(found,"Asset absent on simulator");return;
+            reject(found,"Asset absent on simulator",
+                WearableTransferFailure::simulator_absent);return;
+        }
+        if(info.status<0)
+        {
+            // Other bounded negative server statuses are not evidence of
+            // asset absence, but should fail promptly instead of timing out.
+            reject(found,"Transfer refused by simulator",
+                WearableTransferFailure::simulator_refused);return;
         }
         if(info.status!=0||info.size<=0||
            static_cast<std::size_t>(info.size)>assets::max_firestorm_wearable_bytes)
         {
-            reject(found,"TransferInfo invalid size/status");return;
+            reject(found,"TransferInfo invalid size/status",
+                WearableTransferFailure::transfer_info_invalid);return;
         }
         found->second.expected=static_cast<std::size_t>(info.size);
         finish_if_ready(found);
@@ -133,24 +173,28 @@ public:
            pending.size+packet.data.size()>assets::max_firestorm_wearable_bytes ||
            pending.packets.size()>=4096U)
         {
-            reject(found,"TransferPacket bounded budget exceeded");return;
+            reject(found,"TransferPacket bounded budget exceeded",
+                WearableTransferFailure::packet_budget);return;
         }
         if(const auto seen=pending.packets.find(packet.index);
            seen!=pending.packets.end())
         {
             if(seen->second!=packet.data||
                (pending.last&&*pending.last==packet.index&&!packet.last))
-                reject(found,"TransferPacket conflicting duplicate");
+                reject(found,"TransferPacket conflicting duplicate",
+                    WearableTransferFailure::conflicting_packet);
             return;
         }
         if(pending.last&&packet.index>*pending.last)
         {
-            reject(found,"TransferPacket arrived beyond final");return;
+            reject(found,"TransferPacket arrived beyond final",
+                WearableTransferFailure::packet_after_final);return;
         }
         if(packet.last)
         {
             if(pending.last&&*pending.last!=packet.index)
-            {reject(found,"TransferPacket multiple finals");return;}
+            {reject(found,"TransferPacket multiple finals",
+                    WearableTransferFailure::conflicting_final);return;}
             pending.last=packet.index;
         }
         pending.size+=packet.data.size();
@@ -183,18 +227,31 @@ private:
         std::size_t size=0U;
     };
     using Iterator=std::map<std::string,Pending,std::less<>>::iterator;
-    void reject(Iterator it,std::string message)
+    void reject(Iterator it,std::string message,
+                WearableTransferFailure failure)
     {
         if(done_.size()>=16U)done_.erase(done_.begin());
-        done_.push_back({it->second.asset_id,{},std::move(message)});
+        done_.push_back({it->second.asset_id,{},std::move(message),
+                         failure});
         pending_.erase(it);
     }
     void finish_if_ready(Iterator it)
     {
         auto& p=it->second;
-        if(!p.expected||!p.last||p.size!=*p.expected||
+        if(!p.expected||!p.last||
            p.packets.size()!=static_cast<std::size_t>(*p.last)+1U)
             return;
+        // Require contiguous, terminal-bounded packet indices before
+        // diagnosing byte-count mismatch. Last-but-first arrival must
+        // not be rejected prematurely.
+        for(std::uint32_t i=0U;i<=*p.last;++i)
+            if(!p.packets.contains(i))return;
+        if(p.size!=*p.expected)
+        {
+            reject(it,"TransferPacket complete byte count mismatch",
+                WearableTransferFailure::payload_size_mismatch);
+            return;
+        }
         std::vector<std::uint8_t> data;
         data.reserve(p.size);
         for(std::uint32_t i=0U;i<=*p.last;++i)
@@ -213,7 +270,9 @@ private:
         done_.push_back({p.asset_id,
             parsed.asset?std::make_shared<const assets::FirestormWearableAsset>(
                 std::move(*parsed.asset)):nullptr,
-            parsed.ok()?std::string{}:parsed.error});
+            parsed.ok()?std::string{}:parsed.error,
+            parsed.ok()?WearableTransferFailure::none:
+                WearableTransferFailure::wearable_parse_rejected});
         pending_.erase(it);
     }
     mutable std::mutex mutex_;

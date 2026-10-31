@@ -79,7 +79,8 @@ class ViewerAssetOriginals(unittest.TestCase):
   a=read("src/app/application.cpp")
   self.assertIn("CAP URL secret omitted",a)
   self.assertIn("asset/CAP URL omitted",a)
-  self.assertIn("no bake or asset IDs accepted",a)
+  self.assertIn("no bake, asset ID or auth tokens logged",a)
+  self.assertIn("no URLs, IDs or response bodies logged",a)
  def test_diagnostic_counts_failed_and_accepted(self):
   raw=('2026-10-31 00:42:04 [INFO] OpenSim login succeeded; simulator session established\n'
        '2026-10-31 00:42:05 [INFO] Avatar original asset transports: ViewerAsset CAP available=1; LLUDP fallback\n'

@@ -127,6 +127,7 @@
 #include "nexverse/protocol/legacy_wearable_local_preview.hpp"
 #include "nexverse/protocol/firestorm_wearable_viewer_asset.hpp"
 #include "nexverse/protocol/wearable_original_session_cache.hpp"
+#include "nexverse/assets/stream_pressure_log_policy.hpp"
 #include "nexverse/protocol/firestorm_appearance_packets.hpp"
 #include "nexverse/protocol/wearable_asset_transfer.hpp"
 #include "nexverse/assets/firestorm_wearable_texture_plan.hpp"
@@ -10290,6 +10291,13 @@ int Application::run(bool enable_developer_modules)
                     else if(current)
                     {
                         ++gallery_viewer_asset_failures;
+                        core::warning("Avatar original wearable ViewerAsset "
+                            "failure: cause="+std::string{
+                                protocol::wearable_viewer_asset_failure_label(
+                                    response.failure)}+
+                            " http_status="+
+                            std::to_string(response.http_status)+
+                            "; no URLs, IDs or response bodies logged");
                         // An unsupported GET method affects all originals.
                         // Leave HTTP 404 item-specific; avoid repeated CAP
                         // attempts when a region refuses the GET method.
@@ -10427,9 +10435,23 @@ int Application::run(bool enable_developer_modules)
                         completed->error.empty()
                             ?"Asset-Typ/COF/Region ungueltig":
                              "Asset abgelehnt: "+completed->error;
+                    const auto failure=
+                        !scope?"stale_owner_session_cof_region":
+                        original==gallery_wearable_originals.end()
+                            ?"original_not_current":
+                        !completed->asset?protocol::
+                            wearable_transfer_failure_label(completed->failure):
+                        !original->flags?"original_flags_missing":
+                        completed->asset->type!=static_cast<int>(
+                            *original->flags&0xffU)
+                                ?"original_wearable_subtype_mismatch":
+                        "original_inventory_asset_type_mismatch";
                     core::warning("Avatar original wearable rejected: "
-                        "owner/COF/type/transfer evidence invalid; "
-                        "no bake or asset IDs accepted");
+                        "cause="+std::string{failure}+
+                        "; no bake, asset ID or auth tokens logged");
+                    gallery_asset_status=
+                        "Wearable nicht uebernommen: "+
+                        std::string{failure};
                 }
                 gallery_asset_active_id.clear();
                 if(gallery_asset_pending.empty()&&
@@ -13364,16 +13386,19 @@ int Application::run(bool enable_developer_modules)
                             object_texture_loading_id,
                             std::chrono::steady_clock::now(),
                             texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
-                        core::warning(
-                            "Deferred GetTexture transactional GPU staging: "
-                            "peak estimate exceeds reserve-adjusted budget;"
-                            " candidate_bytes="+std::to_string(next_bytes)+
-                            "; resident_texture_bytes="+
-                            std::to_string(texture_gpu_used_bytes)+
-                            "; resident_mesh_bytes="+
-                            std::to_string(mesh_gpu_estimated_bytes)+
-                            "; safety_reserve_bytes="+
-                            std::to_string(staging.reserve_bytes));
+                        if(assets::stream_pressure_warning_due(
+                               texture_gpu_staging_deferrals))
+                            core::warning(
+                                "Deferred GetTexture transactional GPU staging: "
+                                "peak estimate exceeds reserve-adjusted budget;"
+                                " total_staging_deferrals="+
+                                std::to_string(texture_gpu_staging_deferrals)+
+                                "; resident_texture_bytes="+
+                                std::to_string(texture_gpu_used_bytes)+
+                                "; resident_mesh_bytes="+
+                                std::to_string(mesh_gpu_estimated_bytes)+
+                                "; safety_reserve_bytes="+
+                                std::to_string(staging.reserve_bytes));
                     }
                     else if (!byte_plan.fits || !slot_plan.fits)
                     {
@@ -13384,8 +13409,14 @@ int Application::run(bool enable_developer_modules)
                             std::chrono::steady_clock::now(),
                             texture_gpu_used_bytes,mesh_gpu_estimated_bytes);
                         ++texture_budget_rejections;
-                        core::warning("Deferred GetTexture GPU upload [asset id omitted]: "
-                            "texture byte/slot budget exhausted");
+                        if(assets::stream_pressure_warning_due(
+                               texture_budget_rejections))
+                            core::warning("Deferred GetTexture GPU upload [asset id omitted]: "
+                                "texture byte/slot budget exhausted; "
+                                "total_deferrals="+
+                                std::to_string(texture_budget_rejections)+
+                                " (rate-limited; exact counters remain in "
+                                "streaming metrics)");
                     }
                     else
                     {

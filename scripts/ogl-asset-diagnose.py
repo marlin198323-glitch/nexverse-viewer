@@ -185,6 +185,55 @@ def summarize(raw: str) -> list[str]:
             "Avatar ViewerAsset method unsupported:" in line
             for line in session),
     }
+    # Categorical provenance only: no raw server response, private UUID,
+    # CAP URL or account name is ever copied into diagnostic summaries.
+    http_causes = ("http_not_found", "http_forbidden",
+                   "http_method_unsupported", "http_server_error",
+                   "http_client_error", "http_transport_error",
+                   "parser_rejected", "category_mismatch",
+                   "request_unavailable", "stale_region")
+    udp_causes = ("simulator_absent", "simulator_refused",
+                  "metadata_mismatch", "info_invalid", "packet_budget",
+                  "conflicting_packet", "packet_after_final",
+                  "conflicting_final", "payload_size_mismatch",
+                  "wearable_parse_rejected",
+                  "stale_owner_session_cof_region",
+                  "original_not_current", "original_flags_missing",
+                  "original_wearable_subtype_mismatch",
+                  "original_inventory_asset_type_mismatch")
+    http_errors = []
+    udp_errors = []
+    for line in session:
+        if "Avatar original wearable ViewerAsset failure:" in line:
+            cause = re.search(r"\bcause=([a-z_]+)", line)
+            status = re.search(r"\bhttp_status=(\d+)", line)
+            if cause and cause.group(1) in http_causes:
+                http_errors.append(cause.group(1))
+                # HTTP number only, not server text or URL.
+                if status and int(status.group(1)) <= 599:
+                    http_errors[-1] += "(" + status.group(1) + ")"
+        elif "Avatar original wearable rejected:" in line:
+            cause = re.search(r"\bcause=([a-z_]+)", line)
+            if cause and cause.group(1) in udp_causes:
+                udp_errors.append(cause.group(1))
+    if http_errors:
+        from collections import Counter
+        errors=Counter(http_errors)
+        output.append("Wearable ViewerAsset Fehlerursachen: " +
+                      ", ".join(f"{k}={v}" for k,v in sorted(errors.items())) +
+                      "; HTTP-Antwort ist kein verifizierter Server-Bake.")
+    if udp_errors:
+        from collections import Counter
+        errors=Counter(udp_errors)
+        output.append("Wearable LLUDP/Original-Pruefung: " +
+                      ", ".join(f"{k}={v}" for k,v in sorted(errors.items())) +
+                      "; kein lokaler GPU-Erfolg abgeleitet.")
+    if not http_errors and originals_http["http_fallback"]:
+        output.append("Wearable-HTTP-Fehlerursache im alten Viewer-Log "
+                      "NICHT vorhanden: neuen Viewer starten.")
+    if not udp_errors and originals_http["originals_rejected"]:
+        output.append("Wearable-LLUDP-Ablehnungsursache im alten Viewer-Log "
+                      "NICHT vorhanden: neuen Viewer starten.")
     cap = [line for line in session if
            "Avatar original asset transports:" in line]
     if cap:

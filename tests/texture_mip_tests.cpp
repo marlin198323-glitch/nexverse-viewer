@@ -1,12 +1,23 @@
 #include "nexverse/assets/texture_mip.hpp"
 #include "nexverse/render/sky_projection.hpp"
 #include "nexverse/assets/scene_texture_budget_rescue.hpp"
+#include "nexverse/assets/stream_pressure_log_policy.hpp"
 #include <iostream>
 #include <limits>
 
 using namespace nexverse::assets;
 int main()
 {
+    if(stream_pressure_warning_due(0U)||
+       !stream_pressure_warning_due(1U)||
+       !stream_pressure_warning_due(2U)||
+       !stream_pressure_warning_due(3U)||
+       stream_pressure_warning_due(4U)||
+       stream_pressure_warning_due(63U)||
+       !stream_pressure_warning_due(64U)||
+       stream_pressure_warning_due(65U)||
+       !stream_pressure_warning_due(128U))
+        return 97;
     // Red opaque beside fully transparent saturated green: no green bleed.
     const ImageRgba8 original{2U,2U,{
         255,0,0,255, 0,255,0,0,
